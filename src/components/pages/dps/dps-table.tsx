@@ -59,8 +59,10 @@ export const DpsTable: React.FC = () => {
 
     fetchDpsData();
     const interval = setInterval(() => {
-      fetchDpsData();
-    }, 6000);
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        fetchDpsData();
+      }
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);

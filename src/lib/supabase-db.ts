@@ -11,8 +11,9 @@ import {
   SystemTahapan,
   MasterPengumuman,
   PublicWebConfig,
+  MasterPetugasDpt,
 } from "./data-store";
-import { maskNIK } from "./encryption";
+import { maskNIK, maskKK } from "./encryption";
 
 interface SupabaseTpsRow {
   id: string;
@@ -161,6 +162,37 @@ interface SupabasePengumumanRow {
   updated_at?: string | null;
 }
 
+interface SupabasePetugasDptRow {
+  id: string;
+  nomor_registrasi: string;
+  nik: string;
+  nik_masked?: string | null;
+  nama_lengkap: string;
+  tempat_lahir: string;
+  tanggal_lahir: string;
+  jenis_kelamin: string;
+  no_kk: string;
+  no_kk_masked?: string | null;
+  alamat: string;
+  rt: string;
+  rw: string;
+  dusun: string;
+  nomor_wa: string;
+  is_calon_kades: boolean;
+  keterangan_calon_kades?: string | null;
+  is_tim_sukses: boolean;
+  keterangan_tim_sukses?: string | null;
+  is_kepentingan_calon: boolean;
+  keterangan_kepentingan?: string | null;
+  persetujuan_pernyataan: boolean;
+  tanda_tangan_url: string;
+  status: string;
+  catatan_panitia?: string | null;
+  assigned_wilayah?: string | null;
+  tanggal_pendaftaran: string;
+  updated_at?: string | null;
+}
+
 interface SupabaseWebConfigRow {
   id: string;
   nama_desa: string;
@@ -264,6 +296,14 @@ export class SupabaseDbService {
       const { data: webConfigData } = await client.from("web_config").select("*").limit(1);
       // 11. Fetch Audit
       const { data: auditData } = await client.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100);
+      // 12. Fetch Petugas DPT
+      let petugasData: SupabasePetugasDptRow[] | null = null;
+      try {
+        const { data: pData } = await client.from("pendaftaran_petugas_dpt").select("*").order("tanggal_pendaftaran", { ascending: false });
+        petugasData = pData as SupabasePetugasDptRow[];
+      } catch (e) {
+        console.warn("⚠️ Fetch pendaftaran_petugas_dpt optional fallback:", e);
+      }
 
       if (tpsErr || agtErr) {
         console.warn("⚠️ Database fetch notice:", { tpsErr, agtErr });
@@ -472,6 +512,37 @@ export class SupabaseDbService {
         };
       }
 
+      const petugasDptList: MasterPetugasDpt[] = ((petugasData as SupabasePetugasDptRow[]) || []).map((p) => ({
+        id: p.id,
+        nomorRegistrasi: p.nomor_registrasi,
+        nik: p.nik,
+        nikMasked: p.nik_masked || maskNIK(p.nik),
+        namaLengkap: p.nama_lengkap,
+        tempatLahir: p.tempat_lahir,
+        tanggalLahir: p.tanggal_lahir,
+        jenisKelamin: (p.jenis_kelamin as "L" | "P") || "L",
+        noKk: p.no_kk,
+        noKkMasked: p.no_kk_masked || maskKK(p.no_kk),
+        alamat: p.alamat,
+        rt: p.rt,
+        rw: p.rw,
+        dusun: p.dusun,
+        nomorWa: p.nomor_wa,
+        isCalonKades: Boolean(p.is_calon_kades),
+        keteranganCalonKades: p.keterangan_calon_kades || undefined,
+        isTimSukses: Boolean(p.is_tim_sukses),
+        keteranganTimSukses: p.keterangan_tim_sukses || undefined,
+        isKepentinganCalon: Boolean(p.is_kepentingan_calon),
+        keteranganKepentingan: p.keterangan_kepentingan || undefined,
+        persetujuanPernyataan: Boolean(p.persetujuan_pernyataan),
+        tandaTanganUrl: p.tanda_tangan_url,
+        status: (p.status as MasterPetugasDpt["status"]) || "MENUNGGU_VERIFIKASI",
+        catatanPanitia: p.catatan_panitia || undefined,
+        assignedWilayah: p.assigned_wilayah || undefined,
+        tanggalPendaftaran: p.tanggal_pendaftaran,
+        updatedAt: p.updated_at || p.tanggal_pendaftaran,
+      }));
+
       const resultObj = {
         success: true,
         data: {
@@ -479,6 +550,7 @@ export class SupabaseDbService {
           pemilihList,
           anggotaList,
           balonList,
+          petugasDptList,
           kandidatList,
           tpsVoteCounts,
           aduanList,
@@ -913,6 +985,65 @@ export class SupabaseDbService {
       await this.adminClient.from("balon_penjaringan").delete().eq("id", id);
     } catch (err) {
       console.warn("Supabase deleteBalon sync failed:", err);
+    }
+  }
+
+  public static async insertPetugasDpt(data: MasterPetugasDpt) {
+    try {
+      await this.adminClient.from("pendaftaran_petugas_dpt").insert({
+        id: data.id,
+        nomor_registrasi: data.nomorRegistrasi,
+        nik: data.nik,
+        nik_masked: data.nikMasked,
+        nama_lengkap: data.namaLengkap,
+        tempat_lahir: data.tempatLahir,
+        tanggal_lahir: data.tanggalLahir,
+        jenis_kelamin: data.jenisKelamin,
+        no_kk: data.noKk,
+        no_kk_masked: data.noKkMasked,
+        alamat: data.alamat,
+        rt: data.rt,
+        rw: data.rw,
+        dusun: data.dusun,
+        nomor_wa: data.nomorWa,
+        is_calon_kades: data.isCalonKades,
+        keterangan_calon_kades: data.keteranganCalonKades || null,
+        is_tim_sukses: data.isTimSukses,
+        keterangan_tim_sukses: data.keteranganTimSukses || null,
+        is_kepentingan_calon: data.isKepentinganCalon,
+        keterangan_kepentingan: data.keteranganKepentingan || null,
+        persetujuan_pernyataan: data.persetujuanPernyataan,
+        tanda_tangan_url: data.tandaTanganUrl,
+        status: data.status,
+        catatan_panitia: data.catatanPanitia || null,
+        assigned_wilayah: data.assignedWilayah || null,
+        tanggal_pendaftaran: data.tanggalPendaftaran,
+        updated_at: data.updatedAt,
+      });
+    } catch (err) {
+      console.warn("Supabase insertPetugasDpt sync failed:", err);
+    }
+  }
+
+  public static async updatePetugasDpt(id: string, data: Partial<MasterPetugasDpt>) {
+    try {
+      const payload: Record<string, unknown> = {};
+      if (data.status) payload.status = data.status;
+      if (data.catatanPanitia !== undefined) payload.catatan_panitia = data.catatanPanitia;
+      if (data.assignedWilayah !== undefined) payload.assigned_wilayah = data.assignedWilayah;
+      if (data.updatedAt) payload.updated_at = data.updatedAt;
+
+      await this.adminClient.from("pendaftaran_petugas_dpt").update(payload).eq("id", id);
+    } catch (err) {
+      console.warn("Supabase updatePetugasDpt sync failed:", err);
+    }
+  }
+
+  public static async deletePetugasDpt(id: string) {
+    try {
+      await this.adminClient.from("pendaftaran_petugas_dpt").delete().eq("id", id);
+    } catch (err) {
+      console.warn("Supabase deletePetugasDpt sync failed:", err);
     }
   }
 

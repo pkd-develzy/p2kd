@@ -5,10 +5,17 @@ import { SupabaseDbService } from "@/lib/supabase-db";
 export async function GET() {
   try {
     const list = await SupabaseDbService.fetchPengumuman();
-    return NextResponse.json({
-      success: true,
-      data: list,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: list,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch {
     return NextResponse.json(
       { success: false, message: "Gagal memuat daftar pengumuman dari database." },

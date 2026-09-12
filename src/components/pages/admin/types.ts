@@ -60,86 +60,6 @@ export interface TPSItem {
   persentaseTerisi?: number;
 }
 
-export interface BalonPenjaringanItem {
-  id: string;
-  namaLengkap: string;
-  nik: string;
-  tempatTanggalLahir: string;
-  alamatDomisili: string;
-  pendidikanTerakhir: string;
-  pekerjaan: string;
-  fotoUrl?: string;
-  tanggalPendaftaran: string;
-  statusBerkas: "LENGKAP" | "BELUM_LENGKAP" | "DITOLAK";
-  kelengkapan: {
-    suratLamaran: boolean;
-    ktpDanKk: boolean;
-    ijazahLegalisir: boolean;
-    skck: boolean;
-    bebasNarkoba: boolean;
-    keteranganSehat: boolean;
-    keteranganPengadilan: boolean;
-    pernyataanSetia: boolean;
-  };
-  catatanPenjaringan?: string;
-}
-
-export interface Kandidat {
-  id: string;
-  nomorUrut: number;
-  namaLengkap: string;
-  gelarDepan?: string;
-  gelarBelakang?: string;
-  tempatTanggalLahir: string;
-  pendidikanTerakhir: string;
-  pekerjaan: string;
-  tagline: string;
-  visi: string;
-  misi: string[];
-  programUnggulan: string[];
-  fotoUrl: string;
-  warnaTema: string;
-  statusVerifikasi: "TERDAFTAR" | "MS" | "DITETAPKAN";
-  skorPenilaian?: {
-    pengalamanPemdes: number; // Max 35%
-    pendidikan: number; // Max 35%
-    usia: number; // Max 30%
-    totalSkor: number;
-  };
-}
-
-export interface TpsRealCountItem {
-  tpsId: string;
-  nomorTps: string;
-  namaTps: string;
-  lokasi: string;
-  totalDpt: number;
-  suaraMasuk: number;
-  suaraSah: number;
-  suaraTidakSah: number;
-  suaraKandidat: Record<number, number>; // nomorUrut -> jumlah suara
-  statusPlenoTps: "BELUM" | "SELESAI";
-  waktuInput?: string;
-  petugasInput?: string;
-}
-
-export interface RealCountStats {
-  totalDptDesa: number;
-  totalSuaraMasuk: number;
-  totalSuaraSah: number;
-  totalSuaraTidakSah: number;
-  persentasePartisipasi: number;
-  tpsMasukCount: number;
-  totalTpsCount: number;
-  kandidatStats: Array<{
-    nomorUrut: number;
-    namaLengkap: string;
-    totalSuara: number;
-    persentaseSuara: number;
-    warnaTema: string;
-  }>;
-}
-
 export type SeksiP2KDType =
   | "PIMPINAN"
   | "SEKSI_PEMILIH"
@@ -226,13 +146,12 @@ export type TabType =
   | "dpt"
   | "coklit"
   | "aduan"
-  | "penjaringan"
-  | "kandidat"
-  | "realcount"
   | "tps"
   | "print"
   | "export"
   | "lock"
   | "anggota"
   | "audit"
-  | "pengaturan_web";
+  | "pengaturan_web"
+  | "petugas_dpt";
+

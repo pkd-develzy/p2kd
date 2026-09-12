@@ -17,11 +17,7 @@ import {
   ExternalLink,
   Sparkles,
   Printer,
-  Award,
-  BarChart3,
-  FileCheck2,
   Shield,
-  Vote,
   Globe,
 } from "lucide-react";
 import { Logo } from "@/components/ui";
@@ -40,8 +36,7 @@ interface SidebarProps {
   isDptLocked: boolean;
   auditCount: number;
   anggotaCount?: number;
-  balonCount?: number;
-  kandidatCount?: number;
+  petugasCount?: number;
   dbStatus: DbStatus | null;
   isAdmin: boolean;
   userRole?: string; // SUPER_ADMIN, SEKSI_PEMILIH, SEKSI_PENJARINGAN, SEKSI_PENYARINGAN, SEKSI_PUNGUT_HITUNG, SEKSI_LOGISTIK_PUBLIKASI, PETUGAS_TPS
@@ -65,8 +60,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
   isDptLocked,
   auditCount,
   anggotaCount = 15,
-  balonCount = 0,
-  kandidatCount = 0,
+  petugasCount = 0,
   dbStatus,
   isAdmin,
   userRole = "SUPER_ADMIN",
@@ -125,6 +119,14 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
         },
         {
+          id: "petugas_dpt" as TabType,
+          label: "Petugas Pendataan DPT",
+          icon: UserCheck,
+          badge: petugasCount > 0 ? `${petugasCount} Berkas` : "Rekrutmen",
+          badgeColor: petugasCount > 0 ? "bg-blue-600 text-white font-bold" : "bg-slate-800 text-slate-400 border-slate-700",
+          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "SEKSI_PENJARINGAN", "SEKSI_PENYARINGAN"],
+        },
+        {
           id: "aduan" as TabType,
           label: "Aduan & Masukan Warga",
           icon: AlertTriangle,
@@ -156,32 +158,8 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      title: "2. PENJARINGAN & KANDIDAT",
-      icon: Award,
-      color: "text-indigo-400",
-      allowedRoles: ["SUPER_ADMIN", "SEKSI_PENJARINGAN", "SEKSI_PENYARINGAN"],
-      items: [
-        {
-          id: "penjaringan" as TabType,
-          label: "Penjaringan Berkas Balon",
-          icon: FileCheck2,
-          badge: `${balonCount} Balon`,
-          badgeColor: "bg-indigo-900/80 text-indigo-200 border-indigo-600/70",
-          allowedRoles: ["SUPER_ADMIN", "SEKSI_PENJARINGAN"],
-        },
-        {
-          id: "kandidat" as TabType,
-          label: "Penetapan Calon & Visi Misi",
-          icon: Award,
-          badge: `${kandidatCount} Calon`,
-          badgeColor: "bg-purple-900/80 text-purple-200 border-purple-600/70 font-bold",
-          allowedRoles: ["SUPER_ADMIN", "SEKSI_PENYARINGAN"],
-        },
-      ],
-    },
-    {
-      title: "3. WILAYAH RW & REAL COUNT",
-      icon: Vote,
+      title: "2. WILAYAH RW & LOGISTIK",
+      icon: Building2,
       color: "text-emerald-400",
       allowedRoles: ["SUPER_ADMIN", "SEKSI_PUNGUT_HITUNG", "SEKSI_LOGISTIK_PUBLIKASI", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
       items: [
@@ -201,18 +179,10 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           badgeColor: "bg-cyan-900/80 text-cyan-200 border-cyan-600/70 font-bold",
           allowedRoles: ["SUPER_ADMIN", "SEKSI_LOGISTIK_PUBLIKASI", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
         },
-        {
-          id: "realcount" as TabType,
-          label: "Perhitungan Suara (Real Count RW)",
-          icon: BarChart3,
-          badge: "Live Pleno",
-          badgeColor: "bg-teal-900/80 text-teal-200 border-teal-600/70 font-bold",
-          allowedRoles: ["SUPER_ADMIN", "SEKSI_PUNGUT_HITUNG", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
-        },
       ],
     },
     {
-      title: "4. KEPANITIAAN & KEAMANAN",
+      title: "3. KEPANITIAAN & KEAMANAN",
       icon: Shield,
       color: "text-blue-400",
       allowedRoles: [
@@ -378,7 +348,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all group cursor-pointer ${
                           isActive
-                            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 font-bold border border-blue-400/40"
+                            ? "bg-linear-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-600/30 font-bold border border-blue-400/40"
                             : "text-slate-200 hover:bg-slate-800 hover:text-white"
                         }`}
                       >

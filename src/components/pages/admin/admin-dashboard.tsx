@@ -16,11 +16,7 @@ import {
   DbStatus,
   VoterFormData,
   TabType,
-  Kandidat,
-  TpsRealCountItem,
-  RealCountStats,
   AnggotaP2KD,
-  BalonPenjaringanItem,
   SeksiP2KDType,
 } from "./types";
 
@@ -31,8 +27,6 @@ import { MetricsOverview } from "./metrics-overview";
 import { TabDashboardOverview } from "./tabs/tab-dashboard-overview";
 import { TabMasterPemilih } from "./tabs/tab-master-pemilih";
 import { TabCoklitLapangan } from "./tabs/tab-coklit-lapangan";
-import { TabKandidat } from "./tabs/tab-kandidat";
-import { TabRealCount } from "./tabs/tab-real-count";
 import { TabMasterTPS } from "./tabs/tab-master-tps";
 import { TabAduanWarga } from "./tabs/tab-aduan-warga";
 import { TabPrintCenter } from "./tabs/tab-print-center";
@@ -40,8 +34,8 @@ import { TabFinalisasiDPT } from "./tabs/tab-finalisasi-dpt";
 import { TabRekapEkspor } from "./tabs/tab-rekap-ekspor";
 import { TabAuditTrail } from "./tabs/tab-audit-trail";
 import { TabAnggotaP2KD } from "./tabs/tab-anggota-p2kd";
-import { TabPenjaringanBalon } from "./tabs/tab-penjaringan-balon";
 import { TabPengaturanWeb } from "./tabs/tab-pengaturan-web";
+import { TabPetugasDpt } from "./tabs/tab-petugas-dpt";
 
 import { ModalVoterForm } from "./modals/modal-voter-form";
 import { ModalTms } from "./modals/modal-tms";
@@ -136,10 +130,10 @@ export const AdminDashboard: React.FC = () => {
   }
 
   // Navigation Initial Tab
-  const defaultInitialTab: TabType = isFieldOfficer ? "coklit" : roleParam === "seksi_pemilih" ? "pemilih" : roleParam === "seksi_penjaringan" ? "penjaringan" : roleParam === "seksi_penyaringan" ? "kandidat" : roleParam === "seksi_pemungutan" ? "realcount" : roleParam === "seksi_logistik" || roleParam === "seksi_publikasi" ? "print" : "dashboard";
+  const defaultInitialTab: TabType = isFieldOfficer ? "coklit" : roleParam === "seksi_pemilih" ? "pemilih" : roleParam === "seksi_logistik" || roleParam === "seksi_publikasi" ? "print" : "dashboard";
 
   const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
-  const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "realcount", "tps"];
+  const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "tps"];
   const effectiveActiveTab: TabType = isFieldOfficer && !allowedFieldTabs.includes(activeTab) ? "coklit" : activeTab;
   const [currentCoklitTps, setCurrentCoklitTps] = useState(assignedTps);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -150,20 +144,8 @@ export const AdminDashboard: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [aduanList, setAduanList] = useState<Aduan[]>([]);
   const [tpsList, setTpsList] = useState<TPSItem[]>([]);
-  const [kandidatList, setKandidatList] = useState<Kandidat[]>([]);
-  const [tpsVoteList, setTpsVoteList] = useState<TpsRealCountItem[]>([]);
   const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>([]);
-  const [balonList, setBalonList] = useState<BalonPenjaringanItem[]>([]);
-  const [realCountStats, setRealCountStats] = useState<RealCountStats>({
-    totalDptDesa: 0,
-    totalSuaraMasuk: 0,
-    totalSuaraSah: 0,
-    totalSuaraTidakSah: 0,
-    persentasePartisipasi: 0,
-    tpsMasukCount: 0,
-    totalTpsCount: 7,
-    kandidatStats: [],
-  });
+  const [petugasCount, setPetugasCount] = useState(0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(null);
   const [isDptLocked, setIsDptLocked] = useState(false);
@@ -266,20 +248,16 @@ export const AdminDashboard: React.FC = () => {
         resTps,
         resAudit,
         resDb,
-        resKandidat,
-        resRealCount,
         resAnggota,
-        resBalon,
+        resPetugas,
       ] = await Promise.all([
         fetch(`/api/admin/pemilih?tps=${effectiveTps}&status=${selectedStatusFilter}&role=${isAdmin ? "admin" : "petugas"}&assignedTps=${encodeURIComponent(assignedTps)}`),
         fetch(`/api/admin/aduan?status=${selectedAduanFilter}`),
         fetch("/api/admin/tps"),
         fetch("/api/admin/audit"),
         fetch("/api/admin/db-status"),
-        fetch("/api/admin/kandidat"),
-        fetch(`/api/admin/real-count?role=${isAdmin ? "admin" : "petugas"}&assignedTps=${encodeURIComponent(assignedTps)}`),
         fetch("/api/admin/anggota"),
-        fetch("/api/admin/balon"),
+        fetch("/api/admin/petugas-dpt"),
       ]);
 
       const [
@@ -288,20 +266,16 @@ export const AdminDashboard: React.FC = () => {
         dataTps,
         dataAudit,
         dataDb,
-        dataKandidat,
-        dataRealCount,
         dataAnggota,
-        dataBalon,
+        dataPetugas,
       ] = await Promise.all([
         resVoters.json(),
         resAduan.json(),
         resTps.json(),
         resAudit.json(),
         resDb.json(),
-        resKandidat.json(),
-        resRealCount.json(),
         resAnggota.json(),
-        resBalon.json(),
+        resPetugas.json(),
       ]);
 
       if (resVoters.status === 401 || resAduan.status === 401 || resTps.status === 401) {
@@ -314,13 +288,8 @@ export const AdminDashboard: React.FC = () => {
       if (dataAduan.success) setAduanList(dataAduan.data);
       if (dataTps.success) setTpsList(dataTps.data);
       if (dataAudit.success) setAuditLogs(dataAudit.data);
-      if (dataKandidat.success) setKandidatList(dataKandidat.data);
       if (dataAnggota.success) setAnggotaList(dataAnggota.data);
-      if (dataBalon.success) setBalonList(dataBalon.data);
-      if (dataRealCount.success) {
-        setRealCountStats(dataRealCount.stats);
-        setTpsVoteList(dataRealCount.tpsData);
-      }
+      if (dataPetugas?.success && Array.isArray(dataPetugas.data)) setPetugasCount(dataPetugas.data.length);
       if (dataDb.success) {
         setDbStatus(dataDb.data);
         if (dataDb.data.tahapan) {
@@ -350,11 +319,7 @@ export const AdminDashboard: React.FC = () => {
     setAduanList,
     setTpsList,
     setAuditLogs,
-    setKandidatList,
     setAnggotaList,
-    setBalonList,
-    setRealCountStats,
-    setTpsVoteList,
     setDbStatus,
     setIsDptLocked,
     setLockHashSignature,
@@ -376,7 +341,7 @@ export const AdminDashboard: React.FC = () => {
     };
   }, [fetchData]);
 
-  // 2. Realtime Background Sync (Supabase Realtime Channel + 4-second Fallback Polling)
+  // 2. Realtime Background Sync (Supabase Realtime Channel + Smart Visibility-Aware Fallback Polling)
   useEffect(() => {
     // A. Supabase Realtime Postgres Changes Channel
     const channel = supabase
@@ -390,13 +355,24 @@ export const AdminDashboard: React.FC = () => {
       )
       .subscribe();
 
-    // B. Silent Background Polling Interval (Every 4 seconds)
+    // B. Smart Fallback Polling (Every 45s, ONLY when tab is active/visible)
     const interval = setInterval(() => {
-      void fetchData();
-    }, 4000);
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        void fetchData();
+      }
+    }, 45000);
+
+    // C. Re-fetch immediately when admin returns to tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void fetchData();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       supabase.removeChannel(channel);
     };
   }, [fetchData]);
@@ -826,84 +802,6 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleSaveKandidat = async (kandidatData: Partial<Kandidat>, isEdit: boolean) => {
-    try {
-      const res = await fetch("/api/admin/kandidat", {
-        method: isEdit ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...kandidatData, user: currentUser }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success(isEdit ? "Profil Diperbarui" : "Calon Ditambahkan", result.message);
-        fetchData();
-      } else {
-        toast.error("Gagal", result.message);
-      }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
-    }
-  };
-
-  const handleDeleteKandidat = async (kandidat: Kandidat) => {
-    const approved = await confirm({
-      title: `Hapus Calon No. ${kandidat.nomorUrut}?`,
-      message: `Apakah Anda yakin ingin menghapus data calon kepala desa ${kandidat.namaLengkap}?`,
-      confirmText: "Hapus Calon",
-      cancelText: "Batal",
-      variant: "danger",
-    });
-
-    if (approved) {
-      try {
-        const res = await fetch(`/api/admin/kandidat?id=${kandidat.id}&user=${encodeURIComponent(currentUser)}`, {
-          method: "DELETE",
-        });
-        const result = await res.json();
-        if (result.success) {
-          toast.success("Calon Dihapus", result.message);
-          fetchData();
-        } else {
-          toast.error("Gagal", result.message);
-        }
-      } catch {
-        toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
-      }
-    }
-  };
-
-  const handleSubmitTpsVote = async (
-    nomorTps: string,
-    suaraKandidat: Record<number, number>,
-    suaraTidakSah: number,
-    statusPlenoTps: "BELUM" | "SELESAI"
-  ) => {
-    try {
-      const res = await fetch("/api/admin/real-count", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nomorTps,
-          suaraKandidat,
-          suaraTidakSah,
-          statusPlenoTps,
-          user: currentUser,
-          role: isAdmin ? "admin" : "petugas",
-          assignedTps,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Hasil Suara Disimpan", result.message);
-        fetchData();
-      } else {
-        toast.error("Gagal Menyimpan", result.message);
-      }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
-    }
-  };
-
   // --- STATS COMPUTATION ---
   const totalAktif = voters.filter((v) => v.statusAktif === "AKTIF").length;
   const totalLaki = voters.filter((v) => v.statusAktif === "AKTIF" && String(v.jenisKelamin).toUpperCase().startsWith("L")).length;
@@ -934,8 +832,7 @@ export const AdminDashboard: React.FC = () => {
         isDptLocked={isDptLocked}
         auditCount={auditLogs.length}
         anggotaCount={anggotaList.length}
-        balonCount={balonList.length}
-        kandidatCount={kandidatList.length}
+        petugasCount={petugasCount}
         dbStatus={dbStatus}
         isAdmin={isAdmin}
         userRole={computedUserRole}
@@ -986,8 +883,7 @@ export const AdminDashboard: React.FC = () => {
               voters={voters}
               tpsList={tpsList}
               aduanList={aduanList}
-              kandidatList={kandidatList}
-              balonList={balonList}
+              petugasDptCount={petugasCount}
               isDptLocked={isDptLocked}
               onNavigateTab={(tab) => setActiveTab(tab)}
               currentUser={{
@@ -1010,12 +906,11 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "penjaringan" && (
-            <TabPenjaringanBalon
-              balonList={balonList}
+          {effectiveActiveTab === "petugas_dpt" && (
+            <TabPetugasDpt
               isAdmin={isAdmin}
-              currentUser={currentUser}
-              onRefresh={() => fetchData()}
+              userRole={computedUserRole}
+              userName={computedUserName}
             />
           )}
 
@@ -1131,26 +1026,7 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "kandidat" && (
-            <TabKandidat
-              kandidatList={kandidatList}
-              balonList={balonList}
-              isAdmin={isAdmin}
-              onSaveKandidat={handleSaveKandidat}
-              onDeleteKandidat={handleDeleteKandidat}
-            />
-          )}
 
-          {effectiveActiveTab === "realcount" && (
-            <TabRealCount
-              kandidatList={kandidatList}
-              tpsVoteList={tpsVoteList}
-              stats={realCountStats}
-              isAdmin={isAdmin}
-              assignedTps={assignedTps}
-              onSubmitTpsVote={handleSubmitTpsVote}
-            />
-          )}
 
           {effectiveActiveTab === "tps" && (
             <TabMasterTPS

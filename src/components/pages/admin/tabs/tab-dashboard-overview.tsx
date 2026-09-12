@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React from "react";
@@ -6,19 +5,15 @@ import {
   Voter,
   TPSItem,
   Aduan,
-  Kandidat,
-  BalonPenjaringanItem,
   TabType,
 } from "../types";
 import {
   Users,
   Building2,
-  Award,
   BarChart3,
   CheckCircle2,
   AlertTriangle,
   FileCheck2,
-  Printer,
   Sparkles,
   ArrowRight,
   ShieldCheck,
@@ -27,6 +22,8 @@ import {
   Layers,
   FileSpreadsheet,
   Clock,
+  UserCheck,
+  Printer,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui";
@@ -35,8 +32,7 @@ interface TabDashboardOverviewProps {
   voters: Voter[];
   tpsList: TPSItem[];
   aduanList: Aduan[];
-  kandidatList: Kandidat[];
-  balonList: BalonPenjaringanItem[];
+  petugasDptCount?: number;
   isDptLocked: boolean;
   onNavigateTab: (tab: TabType) => void;
   currentUser: {
@@ -50,8 +46,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   voters,
   tpsList,
   aduanList,
-  kandidatList,
-  balonList,
+  petugasDptCount = 0,
   isDptLocked,
   onNavigateTab,
   currentUser,
@@ -76,7 +71,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   return (
     <div className="space-y-6">
       {/* 1. Executive Master Header Banner */}
-      <Card className="p-6 sm:p-8 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-xl rounded-3xl relative overflow-hidden">
+      <Card className="p-6 sm:p-8 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-xl rounded-3xl relative overflow-hidden">
         {/* Subtle Decorative Background Glow */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
         <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -mb-20" />
@@ -105,7 +100,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
               Selamat bertugas, <strong className="text-white">{currentUser.namaLengkap}</strong> ({currentUser.jabatan}). 
-              Seluruh data pemilih, 7 tabung pemilihan lapangan, berkas bakal calon, penetapan kandidat, dan aduan warga terpantau secara realtime.
+              Seluruh data pemilih, 7 tabung pemilihan lapangan, pendaftaran petugas pendataan DPT, dan aduan warga terpantau secara realtime.
             </p>
           </div>
 
@@ -242,24 +237,24 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
           </div>
         </Card>
 
-        {/* KPI 4: Calon Kades */}
+        {/* KPI 4: Petugas DPT */}
         <Card
-          onClick={() => onNavigateTab("kandidat")}
+          onClick={() => onNavigateTab("petugas_dpt")}
           className="p-4 bg-white border-slate-200 hover:border-amber-300 hover:shadow-md transition-all cursor-pointer rounded-2xl group space-y-1.5"
         >
           <div className="flex items-center justify-between">
             <div className="p-2 rounded-xl bg-amber-50 text-amber-700 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-              <Award className="w-4 h-4" />
+              <UserCheck className="w-4 h-4" />
             </div>
             <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
           </div>
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Calon Kades
+              Petugas DPT
             </span>
-            <div className="text-2xl font-black text-amber-600">{kandidatList.length} Calon</div>
+            <div className="text-2xl font-black text-amber-600">{petugasDptCount} Petugas</div>
             <span className="text-[10px] text-slate-500 font-medium block">
-              {balonList.length} Balon Terdaftar
+              Pendaftar & Pantarlih
             </span>
           </div>
         </Card>
@@ -397,91 +392,56 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
             </div>
           </Card>
 
-          {/* Section B: Rekap Calon Kepala Desa & Visi Misi */}
+          {/* Section B: Pendaftaran & Verifikasi Petugas Pendataan DPT */}
           <Card className="p-6 bg-white border-slate-200 shadow-xs rounded-3xl space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
-                  <Award className="w-5 h-5" />
+                  <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 tracking-tight">
-                    Daftar Calon Kepala Desa Kalisalak Ditetapkan
+                    Pendaftaran & Verifikasi Petugas Pendataan DPT
                   </h3>
                   <p className="text-xs text-slate-500 font-normal">
-                    Kandidat resmi beserta nomor urut, visi, misi, dan tema warna surat suara.
+                    Pantarlih bertugas melakukan pencocokan dan penelitian (Coklit) DPT di 13 RW Desa Kalisalak.
                   </p>
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => onNavigateTab("kandidat")}
+                onClick={() => onNavigateTab("petugas_dpt")}
                 className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
               >
-                <span>Lihat Calon</span>
+                <span>Kelola Petugas</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {kandidatList.length === 0 ? (
-              <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-xs text-slate-500 space-y-2">
-                <Award className="w-8 h-8 mx-auto text-slate-300" />
-                <p className="font-semibold">Belum ada Calon Kepala Desa yang ditetapkan.</p>
-                <p className="text-[11px] text-slate-400">
-                  Tarik berkas dari Bakal Calon terverifikasi di menu Seksi Penyaringan.
-                </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-1">
+                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">
+                  Total Pendaftar
+                </span>
+                <div className="text-2xl font-black text-amber-900">{petugasDptCount} Petugas</div>
+                <span className="text-[10px] text-amber-700 block">Tercatat di Database</span>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                {kandidatList.map((k) => (
-                  <div
-                    key={k.id}
-                    className="p-4 rounded-2xl border border-slate-200 bg-white hover:shadow-md transition-all space-y-3 relative overflow-hidden"
-                  >
-                    {/* Top Color Accent Bar */}
-                    <div
-                      style={{ backgroundColor: k.warnaTema || "#2563eb" }}
-                      className="absolute top-0 left-0 right-0 h-1.5"
-                    />
-
-                    <div className="flex items-center gap-3">
-                      {k.fotoUrl ? (
-                        <img
-                          src={k.fotoUrl}
-                          alt={k.namaLengkap}
-                          className="w-12 h-14 object-cover rounded-xl border border-slate-200 shadow-xs"
-                        />
-                      ) : (
-                        <div
-                          style={{ backgroundColor: `${k.warnaTema || "#2563eb"}20`, color: k.warnaTema || "#2563eb" }}
-                          className="w-12 h-14 rounded-xl flex items-center justify-center font-black text-lg border border-slate-200"
-                        >
-                          {k.nomorUrut}
-                        </div>
-                      )}
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-5 h-5 rounded-full bg-slate-900 text-white font-black text-[10px] flex items-center justify-center">
-                            {k.nomorUrut}
-                          </span>
-                          <span className="text-xs font-black text-slate-900 line-clamp-1">
-                            {k.namaLengkap}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-500 font-medium block mt-0.5 line-clamp-1">
-                          {k.pendidikanTerakhir} • {k.pekerjaan}
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-xl line-clamp-2">
-                      &ldquo;{k.tagline || k.visi || "Mewujudkan Desa Kalisalak yang Maju dan Sejahtera"}&rdquo;
-                    </p>
-                  </div>
-                ))}
+              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-1">
+                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
+                  Pakta Integritas
+                </span>
+                <div className="text-sm font-bold text-emerald-900 mt-1">100% Wajib Netral</div>
+                <span className="text-[10px] text-emerald-700 block">Surat Pernyataan Ditandatangani</span>
               </div>
-            )}
+              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-1">
+                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider block">
+                  Cakupan Wilayah
+                </span>
+                <div className="text-sm font-bold text-blue-900 mt-1">Desa Kalisalak</div>
+                <span className="text-[10px] text-blue-700 block">13 RW • 39 RT</span>
+              </div>
+            </div>
           </Card>
         </div>
 
@@ -523,8 +483,8 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-start gap-2.5">
                 <Clock className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-indigo-900 block">3. Penjaringan & Seleksi Balon</span>
-                  <span className="text-[11px] text-indigo-700">{balonList.length} balon terdaftar • {kandidatList.length} calon resmi.</span>
+                  <span className="font-bold text-indigo-900 block">3. Rekrutmen Petugas Pendataan</span>
+                  <span className="text-[11px] text-indigo-700">Verifikasi berkas & integritas petugas DPT ({petugasDptCount} pendaftar).</span>
                 </div>
               </div>
 
@@ -540,7 +500,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 <BarChart3 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold text-slate-800 block">5. Pemungutan di Lapangan (Hari-H)</span>
-                  <span className="text-[11px] text-slate-500">Rabu, 3 Februari 2027 & Live Real Count.</span>
+                  <span className="text-[11px] text-slate-500">Rabu, 3 Februari 2027 di Lapangan Kalisalak.</span>
                 </div>
               </div>
             </div>
@@ -585,7 +545,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                     className="p-3 rounded-2xl border border-slate-100 bg-slate-50/70 text-xs space-y-1"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 truncate max-w-[140px]">
+                      <span className="font-bold text-slate-900 truncate max-w-35">
                         {a.namaPelapor}
                       </span>
                       <Badge

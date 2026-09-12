@@ -21,6 +21,7 @@ import {
   FileText,
   Shield,
   Award,
+  UserCheck,
 } from "lucide-react";
 import { Button, Logo } from "@/components/ui";
 
@@ -104,6 +105,12 @@ const menuCategories: Record<string, MenuCategory> = {
   layanan: {
     title: "Layanan & Regulasi",
     items: [
+      {
+        href: "/daftarpantarlih",
+        label: "Pendaftaran Petugas DPT",
+        desc: "Rekrutmen & Uji Integritas Pantarlih/Coklit",
+        icon: <UserCheck className="w-4 h-4 text-blue-700" />,
+      },
       {
         href: "/aduan",
         label: "Form Aduan & Perbaikan",
@@ -191,14 +198,14 @@ export const Navbar: React.FC = () => {
 
       {/* 1.5. Dynamic Running Announcement Banner (Seamless Continuous Marquee) */}
       {isRunningActive && runningText && (
-        <div className="w-full bg-gradient-to-r from-blue-950 via-indigo-950 to-blue-950 text-blue-100 text-[11px] sm:text-xs py-1.5 sm:py-2 px-2 sm:px-4 border-b border-blue-800/80 shadow-inner overflow-hidden">
+        <div className="w-full bg-linear-to-r from-blue-950 via-indigo-950 to-blue-950 text-blue-100 text-[11px] sm:text-xs py-1.5 sm:py-2 px-2 sm:px-4 border-b border-blue-800/80 shadow-inner overflow-hidden">
           <div className="max-w-7xl mx-auto flex items-center gap-2 sm:gap-3">
             <span className="bg-amber-400 text-slate-950 font-black px-2 sm:px-2.5 py-0.5 rounded-md text-[9px] sm:text-[10px] uppercase tracking-wider shrink-0 flex items-center gap-1 sm:gap-1.5 z-10 shadow-xs">
               <Megaphone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-950" />
               <span className="hidden xs:inline sm:inline">PENGUMUMAN RESMI</span>
               <span className="xs:hidden sm:hidden">INFO</span>
             </span>
-            <div className="flex-1 overflow-hidden relative [mask-image:linear-gradient(to_right,transparent,black_8px,black_calc(100%-8px),transparent)]">
+            <div className="flex-1 overflow-hidden relative mask-[linear-gradient(to_right,transparent,black_8px,black_calc(100%-8px),transparent)]">
               <div className="animate-marquee-seamless font-medium text-amber-200 text-[11px] sm:text-xs tracking-wide cursor-pointer hover:text-white">
                 <span className="inline-flex items-center gap-2 pr-8 sm:pr-12 shrink-0">
                   📢 {runningText} • Silakan hubungi Panitia P2KD Desa Kalisalak untuk konfirmasi data atau bantuan layanan •

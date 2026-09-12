@@ -5,10 +5,17 @@ export async function GET() {
   try {
     await dataStore.ensureSynced();
     const config = dataStore.getWebConfig();
-    return NextResponse.json({
-      success: true,
-      data: config,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: config,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
   } catch {
     return NextResponse.json(
       { success: false, message: "Gagal memuat konfigurasi website publik." },

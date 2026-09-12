@@ -26,10 +26,6 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
     title: "Manajemen Anggota P2KD & Akun Petugas",
     subtitle: "Struktur kepanitiaan, hak akses, SK penetapan, dan cetak kartu tanda pengenal (ID Card)",
   },
-  penjaringan: {
-    title: "Seksi Penjaringan: Berkas Bakal Calon",
-    subtitle: "Penerimaan pendaftaran & verifikasi 8 dokumen persyaratan balon Kepala Desa",
-  },
   coklit: {
     title: "Coklit Lapangan (Koordinator RW)",
     subtitle: "Pencocokan, penelitian, dan verifikasi faktual pemilih door-to-door per RW",
@@ -41,14 +37,6 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
   dpt: {
     title: "1.2 Daftar Pemilih Tetap (DPT)",
     subtitle: "Daftar pemilih sah yang telah lolos verifikasi dan siap disahkan pada Sidang Pleno",
-  },
-  kandidat: {
-    title: "Seksi Penyaringan: Calon Kepala Desa & Visi Misi",
-    subtitle: "Uji kompetensi pembobotan seleksi (35%-35%-30%) dan profil calon kades ditetapkan",
-  },
-  realcount: {
-    title: "Seksi Pemungutan Suara: Real Count Hari-H",
-    subtitle: "Hasil perolehan suara live terpusat per Tabung Suara & Berita Acara C1 Plano",
   },
   tps: {
     title: "13 Meja Pendaftaran & Wilayah RW",
@@ -77,6 +65,10 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
   pengaturan_web: {
     title: "Pengaturan Website Publik & Lokasi Lapangan",
     subtitle: "Kendali konfigurasi lokasi terpusat, pengumuman running text, dan sakelar visibilitas fitur publik",
+  },
+  petugas_dpt: {
+    title: "Pendaftaran Petugas Pendataan DPT",
+    subtitle: "Penerimaan berkas, uji integritas netralitas, verifikasi tanda tangan digital, dan penetapan wilayah penugasan Pantarlih",
   },
 };
 

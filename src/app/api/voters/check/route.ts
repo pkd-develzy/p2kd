@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hashSearchIndex } from "@/lib/encryption";
 import { dataStore } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 function normalizeDate(dateStr: string): string {
   if (!dateStr) return "";
@@ -43,6 +44,19 @@ function normalizeDate(dateStr: string): string {
 
 export async function POST(req: Request) {
   try {
+    // 0. Rate Limiting Protection (Anti-Brute Force & Anti-Scraping)
+    const clientIp = getClientIp(req);
+    const rateLimit = checkRateLimit(`voter-check:${clientIp}`, 12, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Terlalu banyak permintaan verifikasi NIK. Demi keamanan dan perlindungan privasi warga, silakan coba lagi dalam ${rateLimit.resetSeconds} detik.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
     const { nik, dob, turnstileToken } = body;
 

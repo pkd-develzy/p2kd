@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { maskNIK } from "./encryption";
+import { maskNIK, maskKK } from "./encryption";
 import { SupabaseDbService } from "./supabase-db";
 import { getAutoTabungByRtRw } from "./kalisalak-wilayah";
 
@@ -176,6 +176,47 @@ export interface MasterBalonPenjaringan {
   catatanPenjaringan?: string;
 }
 
+export type PetugasStatus =
+  | "MENUNGGU_VERIFIKASI"
+  | "PERLU_KLARIFIKASI"
+  | "LOLOS"
+  | "TIDAK_LOLOS"
+  | "DITETAPKAN";
+
+export interface MasterPetugasDpt {
+  id: string;
+  nomorRegistrasi: string; // PTG-KLS-2026-00001
+  nik: string;
+  nikMasked: string;
+  namaLengkap: string;
+  tempatLahir: string;
+  tanggalLahir: string; // YYYY-MM-DD
+  jenisKelamin: "L" | "P";
+  noKk: string;
+  noKkMasked: string;
+  alamat: string;
+  rt: string;
+  rw: string;
+  dusun: string;
+  nomorWa: string;
+  // Pertanyaan Wajib Netralitas & Kepentingan
+  isCalonKades: boolean;
+  keteranganCalonKades?: string;
+  isTimSukses: boolean;
+  keteranganTimSukses?: string;
+  isKepentinganCalon: boolean;
+  keteranganKepentingan?: string;
+  // Surat Pernyataan & Tanda Tangan
+  persetujuanPernyataan: boolean;
+  tandaTanganUrl: string; // Base64 data PNG
+  // Status Panitia & Verifikasi
+  status: PetugasStatus;
+  catatanPanitia?: string;
+  assignedWilayah?: string; // e.g. "RW 01" / "RW 05"
+  tanggalPendaftaran: string; // YYYY-MM-DD HH:mm:ss atau ISO
+  updatedAt: string;
+}
+
 export interface AuditLogItem {
   id: string;
   waktu: string;
@@ -248,6 +289,90 @@ class SystemDataStore {
     perbupPilkades: "Perda No. 2/2015 & Perbup Tegal No. 27/2018 jo PP No. 16/2026",
   };
 
+  private petugasDptList: MasterPetugasDpt[] = [
+    {
+      id: "ptg-seed-01",
+      nomorRegistrasi: "PTG-KLS-2026-00001",
+      nik: "3328091205920001",
+      nikMasked: "3328************",
+      namaLengkap: "Tri Wahyudi, S.Pd",
+      tempatLahir: "Tegal",
+      tanggalLahir: "1992-05-12",
+      jenisKelamin: "L",
+      noKk: "3328092408100001",
+      noKkMasked: "3328************",
+      alamat: "RT 02 / RW 02, Desa Kalisalak",
+      rt: "02",
+      rw: "02",
+      dusun: "Desa Kalisalak",
+      nomorWa: "081234567890",
+      isCalonKades: false,
+      isTimSukses: false,
+      isKepentinganCalon: false,
+      persetujuanPernyataan: true,
+      tandaTanganUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M10 25 Q 30 10, 60 25 T 110 20' stroke='%230f172a' fill='none' stroke-width='2'/></svg>",
+      status: "MENUNGGU_VERIFIKASI",
+      assignedWilayah: "RW 02",
+      tanggalPendaftaran: "2026-09-08 09:30:00",
+      updatedAt: "2026-09-08 09:30:00",
+    },
+    {
+      id: "ptg-seed-02",
+      nomorRegistrasi: "PTG-KLS-2026-00002",
+      nik: "3328095503950002",
+      nikMasked: "3328************",
+      namaLengkap: "Siti Nurjanah",
+      tempatLahir: "Brebes",
+      tanggalLahir: "1995-03-15",
+      jenisKelamin: "P",
+      noKk: "3328091501120002",
+      noKkMasked: "3328************",
+      alamat: "RT 01 / RW 05, Desa Kalisalak",
+      rt: "01",
+      rw: "05",
+      dusun: "Desa Kalisalak",
+      nomorWa: "085712345678",
+      isCalonKades: false,
+      isTimSukses: true,
+      keteranganTimSukses: "Pernah membantu kegiatan konsolidasi keluarga bakal calon Kades.",
+      isKepentinganCalon: false,
+      persetujuanPernyataan: true,
+      tandaTanganUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M15 30 Q 40 5, 75 25 T 105 15' stroke='%230f172a' fill='none' stroke-width='2'/></svg>",
+      status: "PERLU_KLARIFIKASI",
+      catatanPanitia: "Perlu klarifikasi tertulis terkait komitmen pelepasan afiliasi tim sukses sebelum penetapan.",
+      assignedWilayah: "RW 05",
+      tanggalPendaftaran: "2026-09-09 14:15:00",
+      updatedAt: "2026-09-09 16:00:00",
+    },
+    {
+      id: "ptg-seed-03",
+      nomorRegistrasi: "PTG-KLS-2026-00003",
+      nik: "3328091807880003",
+      nikMasked: "3328************",
+      namaLengkap: "Budi Santoso",
+      tempatLahir: "Tegal",
+      tanggalLahir: "1988-07-18",
+      jenisKelamin: "L",
+      noKk: "3328090906080003",
+      noKkMasked: "3328************",
+      alamat: "RT 03 / RW 07, Desa Kalisalak",
+      rt: "03",
+      rw: "07",
+      dusun: "Desa Kalisalak",
+      nomorWa: "087812349988",
+      isCalonKades: false,
+      isTimSukses: false,
+      isKepentinganCalon: false,
+      persetujuanPernyataan: true,
+      tandaTanganUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M10 20 Q 35 35, 70 15 T 110 25' stroke='%230f172a' fill='none' stroke-width='2'/></svg>",
+      status: "LOLOS",
+      catatanPanitia: "Berkas lengkap dan memenuhi syarat integritas.",
+      assignedWilayah: "RW 07",
+      tanggalPendaftaran: "2026-09-10 10:00:00",
+      updatedAt: "2026-09-10 11:30:00",
+    },
+  ];
+
   private constructor() {
     this.syncWithSupabase();
   }
@@ -288,6 +413,7 @@ class SystemDataStore {
         if (res.data.auditLogs) this.auditLogs = res.data.auditLogs;
         if (res.data.tahapanState) this.tahapanState = res.data.tahapanState;
         if (res.data.webConfig) this.webConfig = { ...this.webConfig, ...res.data.webConfig };
+        if (res.data.petugasDptList && res.data.petugasDptList.length > 0) this.petugasDptList = res.data.petugasDptList;
         this.isSupabaseSynced = true;
       }
     } catch (err) {
@@ -1351,6 +1477,151 @@ class SystemDataStore {
     return this.balonList[idx];
   }
 
+  // --- PETUGAS PENDATAAN DPT (PANTARLIH / COKLIT) METHODS ---
+  public getPetugasDptList(): MasterPetugasDpt[] {
+    return [...this.petugasDptList];
+  }
+
+  public getPetugasDptById(id: string): MasterPetugasDpt | undefined {
+    return this.petugasDptList.find((p) => p.id === id);
+  }
+
+  public getPetugasDptByRegAndWa(nomorRegistrasi: string, nomorWa: string): MasterPetugasDpt | undefined {
+    const cleanReg = nomorRegistrasi.trim().toUpperCase();
+    const cleanWa = nomorWa.replace(/\D/g, "");
+    return this.petugasDptList.find((p) => {
+      const matchReg = p.nomorRegistrasi.trim().toUpperCase() === cleanReg;
+      const pWa = p.nomorWa.replace(/\D/g, "");
+      const matchWa = pWa === cleanWa || pWa.endsWith(cleanWa) || cleanWa.endsWith(pWa);
+      return matchReg && matchWa;
+    });
+  }
+
+  public checkNikPetugasDptExists(nik: string): boolean {
+    const clean = nik.replace(/\D/g, "");
+    return this.petugasDptList.some((p) => p.nik.replace(/\D/g, "") === clean);
+  }
+
+  public generateNomorRegistrasiPetugas(): string {
+    const prefix = "PTG-KLS-2026-";
+    let maxSeq = 0;
+    for (const p of this.petugasDptList) {
+      if (p.nomorRegistrasi && p.nomorRegistrasi.startsWith(prefix)) {
+        const numPart = p.nomorRegistrasi.replace(prefix, "");
+        const num = parseInt(numPart, 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+    const nextSeq = maxSeq + 1;
+    return `${prefix}${String(nextSeq).padStart(5, "0")}`;
+  }
+
+  public addPetugasDpt(
+    data: Omit<MasterPetugasDpt, "id" | "nomorRegistrasi" | "updatedAt" | "nikMasked" | "noKkMasked">,
+    user = "Masyarakat"
+  ): MasterPetugasDpt {
+    const id = `ptg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const nomorRegistrasi = this.generateNomorRegistrasiPetugas();
+    const now = new Date().toISOString();
+
+    const newPetugas: MasterPetugasDpt = {
+      ...data,
+      id,
+      nomorRegistrasi,
+      nikMasked: maskNIK(data.nik),
+      noKkMasked: maskKK(data.noKk),
+      updatedAt: now,
+    };
+
+    this.petugasDptList.unshift(newPetugas);
+
+    // Sync to Supabase Cloud
+    SupabaseDbService.insertPetugasDpt(newPetugas);
+
+    this.addAuditLog({
+      user,
+      role: "WARGA_PENDAFTAR",
+      aksi: "PETUGAS_DPT_REGISTER",
+      entity: "PETUGAS_DPT",
+      target: `${newPetugas.namaLengkap} (${newPetugas.nomorRegistrasi})`,
+      detail: `Pendaftaran Petugas Pendataan DPT: ${newPetugas.namaLengkap}, No. Reg: ${newPetugas.nomorRegistrasi}, Wilayah: RW ${newPetugas.rw}, Desa Kalisalak.`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return newPetugas;
+  }
+
+  public updateStatusPetugasDpt(
+    id: string,
+    updateData: {
+      status?: PetugasStatus;
+      catatanPanitia?: string;
+      assignedWilayah?: string;
+    },
+    user = "Panitia P2KD"
+  ): MasterPetugasDpt | null {
+    const idx = this.petugasDptList.findIndex((p) => p.id === id);
+    if (idx === -1) return null;
+
+    const existing = this.petugasDptList[idx];
+    const prevStatus = existing.status;
+    const now = new Date().toISOString();
+
+    const updated: MasterPetugasDpt = {
+      ...existing,
+      status: updateData.status !== undefined ? updateData.status : existing.status,
+      catatanPanitia: updateData.catatanPanitia !== undefined ? updateData.catatanPanitia : existing.catatanPanitia,
+      assignedWilayah: updateData.assignedWilayah !== undefined ? updateData.assignedWilayah : existing.assignedWilayah,
+      updatedAt: now,
+    };
+
+    this.petugasDptList[idx] = updated;
+
+    // Sync to Supabase Cloud
+    SupabaseDbService.updatePetugasDpt(id, {
+      status: updated.status,
+      catatanPanitia: updated.catatanPanitia,
+      assignedWilayah: updated.assignedWilayah,
+      updatedAt: now,
+    });
+
+    this.addAuditLog({
+      user,
+      role: "PANITIA_P2KD",
+      aksi: "PETUGAS_DPT_VERIFIKASI",
+      entity: "PETUGAS_DPT",
+      target: `${updated.namaLengkap} (${updated.nomorRegistrasi})`,
+      detail: `Memperbarui status pendaftar petugas ${updated.namaLengkap}: ${prevStatus} -> ${updated.status}${updateData.assignedWilayah ? `, Penugasan: ${updateData.assignedWilayah}` : ""}.`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return updated;
+  }
+
+  public deletePetugasDpt(id: string, user = "Panitia P2KD"): boolean {
+    const idx = this.petugasDptList.findIndex((p) => p.id === id);
+    if (idx === -1) return false;
+
+    const target = this.petugasDptList[idx];
+    this.petugasDptList.splice(idx, 1);
+
+    SupabaseDbService.deletePetugasDpt(id);
+
+    this.addAuditLog({
+      user,
+      role: "PANITIA_P2KD",
+      aksi: "PETUGAS_DPT_DELETE",
+      entity: "PETUGAS_DPT",
+      target: `${target.namaLengkap} (${target.nomorRegistrasi})`,
+      detail: `Menghapus pendaftar petugas DPT: ${target.namaLengkap} (${target.nomorRegistrasi}).`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return true;
+  }
+
   // --- DPT LOCK & AUDIT ---
   public getTahapanState() {
     return { ...this.tahapanState };
@@ -1504,6 +1775,12 @@ class SystemDataStore {
     const totalRt = uniqueRtSet.size || 39;
     const totalTps = this.tpsList.length;
 
+    const totalPetugas = this.petugasDptList.length;
+    const petugasMenunggu = this.petugasDptList.filter((p) => p.status === "MENUNGGU_VERIFIKASI").length;
+    const petugasKlarifikasi = this.petugasDptList.filter((p) => p.status === "PERLU_KLARIFIKASI").length;
+    const petugasLolos = this.petugasDptList.filter((p) => p.status === "LOLOS").length;
+    const petugasDitetapkan = this.petugasDptList.filter((p) => p.status === "DITETAPKAN").length;
+
     return {
       totalSemua,
       totalAktif,
@@ -1515,6 +1792,11 @@ class SystemDataStore {
       aduanSelesai,
       totalAnggota,
       totalBalon,
+      totalPetugas,
+      petugasMenunggu,
+      petugasKlarifikasi,
+      petugasLolos,
+      petugasDitetapkan,
       totalTps,
       totalRw,
       totalRt,

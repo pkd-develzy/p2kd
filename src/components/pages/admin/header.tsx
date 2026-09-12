@@ -40,7 +40,7 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
   },
   tps: {
     title: "13 Wilayah RW",
-    subtitle: "Pusat pemungutan suara Lapangan Desa Kalisalak dan pembagian 13 Wilayah RW",
+    subtitle: "Manajemen pembagian 13 Wilayah RW Pilkades Kalisalak",
   },
   aduan: {
     title: "Aduan & Masukan Masyarakat",

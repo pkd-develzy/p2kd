@@ -96,7 +96,7 @@ const ModalMutasiInner: React.FC<{
             >
               <span>{computedTps}</span>
               <span className="text-[10px] font-bold text-blue-600 bg-blue-200/60 px-1.5 py-0.5 rounded shrink-0">
-                Lapangan Kalisalak
+                Desa Kalisalak
               </span>
             </div>
           </div>

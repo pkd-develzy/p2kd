@@ -138,7 +138,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
                 <div className="grid grid-cols-3 gap-1">
                   <span className="text-slate-600">Wilayah Pemilihan</span>
                   <span className="col-span-2 font-bold text-blue-950">
-                    {mejaName} — Pusat Lapangan Desa Kalisalak
+                    {mejaName}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-1">

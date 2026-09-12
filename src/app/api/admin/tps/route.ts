@@ -87,7 +87,7 @@ export async function POST(req: Request) {
         nomorTps: formattedNomor,
         namaTps,
         lokasi,
-        alamat: alamat || "Lapangan Desa Kalisalak",
+        alamat: alamat || "Desa Kalisalak",
         rt: rt || "01",
         rw: rw || "01",
         kuotaMaksimal: Number(kuotaMaksimal) || 300,

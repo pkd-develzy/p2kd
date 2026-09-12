@@ -44,7 +44,7 @@ export async function GET(req: Request) {
         alamat: `${voter.alamat} (RT ${rtNum} / RW ${rwNum})`,
         rt: rtNum,
         rw: rwNum,
-        mejaPendaftaran: `RW ${rwNum} — Pusat Lapangan Desa Kalisalak`,
+        mejaPendaftaran: `RW ${rwNum}`,
         tahap: voter.tahap || "DPS",
         statusAktif: voter.statusAktif,
         waktuPemilihan: "Rabu, 02 September 2026 • 07.00 - 13.00 WIB",

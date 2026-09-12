@@ -37,11 +37,11 @@ const defaultWebConfig: PublicWebConfig = {
   kecamatan: "Margasari",
   kabupaten: "Tegal",
   provinsi: "Jawa Tengah",
-  lokasiUtama: "Lapangan Desa Kalisalak",
-  lokasiMapsUrl: "https://www.google.com/maps/search/?api=1&query=Lapangan+Desa+Kalisalak+Margasari+Tegal",
+  lokasiUtama: "Desa Kalisalak",
+  lokasiMapsUrl: "https://www.google.com/maps/search/?api=1&query=Desa+Kalisalak+Margasari+Tegal",
   periodeMasaBakti: "2027 – 2035",
   hariHTanggal: "Rabu, 3 Februari 2027",
-  runningText: "Pemberitahuan Resmi P2KD: Seluruh rangkaian pemungutan dan penghitungan suara Pilkades Desa Kalisalak dipusatkan di LAPANGAN DESA KALISALAK pada hari Rabu, 3 Februari 2027. Mohon membawa KTP-el dan Undangan Memilih.",
+  runningText: "Pemberitahuan Resmi P2KD: Seluruh rangkaian pemungutan dan penghitungan suara Pilkades Desa Kalisalak diselenggarakan pada hari Rabu, 3 Februari 2027. Mohon membawa KTP-el dan Undangan Memilih.",
   isRunningTextActive: true,
   isCekHakPilihOpen: true,
   isProfilCalonVisible: true,
@@ -268,7 +268,7 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
               Pengaturan Website Publik & Database Live
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Kelola lokasi pemungutan di Lapangan Desa Kalisalak, banner teks berjalan (*running text*), sakelar visibilitas modul publik, dan kelola dokumen pengumuman resmi.
+              Kelola lokasi pemungutan di Desa Kalisalak, banner teks berjalan (*running text*), sakelar visibilitas modul publik, dan kelola dokumen pengumuman resmi.
             </p>
           </div>
 
@@ -309,7 +309,7 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
                 <Input
                   value={config.lokasiUtama}
                   onChange={(e) => setConfig({ ...config, lokasiUtama: e.target.value })}
-                  placeholder="Contoh: Lapangan Desa Kalisalak"
+                  placeholder="Contoh: Desa Kalisalak"
                   className="text-xs font-bold text-rose-950"
                   required
                 />

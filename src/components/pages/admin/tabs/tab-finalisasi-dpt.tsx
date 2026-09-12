@@ -214,7 +214,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
             <input
               type="text"
               readOnly
-              value="Terpusat di Lapangan Desa Kalisalak (13 Wilayah RW)"
+              value="Desa Kalisalak (13 Wilayah RW)"
               className="w-full h-10 px-3.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold cursor-not-allowed"
             />
           </div>

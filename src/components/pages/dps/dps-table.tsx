@@ -141,7 +141,7 @@ export const DpsTable: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 flex items-center gap-1.5 font-medium text-slate-600">
                       <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                      <span>Lapangan Desa Kalisalak</span>
+                      <span>Desa Kalisalak</span>
                     </td>
                     <td className="py-3 px-4 text-right text-slate-600">{row.laki.toLocaleString("id-ID")}</td>
                     <td className="py-3 px-4 text-right text-slate-600">{row.perempuan.toLocaleString("id-ID")}</td>

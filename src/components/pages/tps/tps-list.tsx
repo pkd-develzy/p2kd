@@ -31,8 +31,8 @@ export const TpsList: React.FC = () => {
   const [tabungList, setTabungList] = useState<TabungItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [mapsUrl, setMapsUrl] = useState("https://www.google.com/maps/search/?api=1&query=Lapangan+Desa+Kalisalak+Margasari+Tegal");
-  const [venueName, setVenueName] = useState("Lapangan Desa Kalisalak");
+  const [mapsUrl, setMapsUrl] = useState("https://www.google.com/maps/search/?api=1&query=Desa+Kalisalak+Margasari+Tegal");
+  const [venueName, setVenueName] = useState("Desa Kalisalak");
 
   useEffect(() => {
     let active = true;
@@ -106,7 +106,7 @@ export const TpsList: React.FC = () => {
         </p>
       </div>
 
-      {/* Main Venue Banner (Lapangan Desa Kalisalak) */}
+      {/* Main Venue Banner (Desa Kalisalak) */}
       <Card className="p-6 sm:p-8 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl shadow-xl overflow-hidden relative border border-blue-900/60">
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3">

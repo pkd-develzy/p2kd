@@ -156,7 +156,7 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
                 <div className="grid grid-cols-3 gap-1">
                   <span className="text-slate-600 font-medium">Wilayah Pemilihan</span>
                   <span className="col-span-2 font-bold text-blue-900">
-                    RW {rwNum} (Pusat Lapangan Kalisalak)
+                    RW {rwNum}
                   </span>
                 </div>
               </div>

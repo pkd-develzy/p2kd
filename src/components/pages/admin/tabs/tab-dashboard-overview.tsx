@@ -144,7 +144,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
             </span>
             <div className="text-sm sm:text-base font-black text-white mt-0.5 flex items-center gap-1.5 truncate">
               <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-              <span>Lapangan Kalisalak</span>
+              <span>Desa Kalisalak</span>
             </div>
           </div>
 
@@ -232,7 +232,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
             </span>
             <div className="text-2xl font-black text-slate-900">{tpsList.length} Tabung</div>
             <span className="text-[10px] text-indigo-600 font-semibold block">
-              Lapangan Kalisalak
+              Desa Kalisalak
             </span>
           </div>
         </Card>
@@ -308,7 +308,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column (8 Cols): Tabung Lapangan + Calon Kades */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Section A: Rekap 7 Tabung Pemilihan di Lapangan Desa Kalisalak */}
+          {/* Section A: Rekap 7 Tabung Pemilihan Desa Kalisalak */}
           <Card className="p-6 bg-white border-slate-200 shadow-xs rounded-3xl space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
@@ -317,7 +317,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 tracking-tight">
-                    Rekapitulasi 7 Tabung Pemilihan (Pusat Lapangan Desa Kalisalak)
+                    Rekapitulasi 7 Tabung Pemilihan Desa Kalisalak
                   </h3>
                   <p className="text-xs text-slate-500 font-normal">
                     Pembagian kuota pemilih per tabung suara untuk melayani 13 RW dan 39 RT secara serentak.
@@ -499,8 +499,8 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
                 <BarChart3 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-slate-800 block">5. Pemungutan di Lapangan (Hari-H)</span>
-                  <span className="text-[11px] text-slate-500">Rabu, 3 Februari 2027 di Lapangan Kalisalak.</span>
+                  <span className="font-bold text-slate-800 block">5. Pemungutan Suara (Hari-H)</span>
+                  <span className="text-[11px] text-slate-500">Rabu, 3 Februari 2027 di Desa Kalisalak.</span>
                 </div>
               </div>
             </div>

@@ -80,7 +80,7 @@ export async function GET(req: Request) {
         desa: "Kalisalak",
         kecamatan: "Margasari",
         kabupaten: "Tegal",
-        mejaPendaftaran: `RW ${rwNum} — Pusat Lapangan Desa Kalisalak`,
+        mejaPendaftaran: `RW ${rwNum}`,
         tanggalCoklit: targetVoter.coklitTanggal || "14 Agustus 2026",
         petugasPantarlih: targetVoter.coklitPetugas || `Petugas Pantarlih RW ${rwNum}`,
         totalPemilihRumah: members.length,

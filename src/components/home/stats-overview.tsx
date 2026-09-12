@@ -89,7 +89,7 @@ export const StatsOverview: React.FC = () => {
     {
       title: "Tabung Pemilihan",
       value: loading ? null : `${tps} Tabung`,
-      label: "Pusat: Lapangan Kalisalak",
+      label: "Wilayah Desa Kalisalak",
       icon: <Landmark className="w-5 h-5 text-amber-700" />,
       href: "/tps",
       bg: "bg-amber-50/70",

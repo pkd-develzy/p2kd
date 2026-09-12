@@ -186,7 +186,7 @@ export async function POST(req: Request) {
         nama: voter.namaLengkap,
         jenisKelamin: voter.jenisKelamin,
         tps: voter.tps,
-        lokasiTps: matchedTps?.lokasi || "Lapangan Desa Kalisalak",
+        lokasiTps: matchedTps?.lokasi || "Desa Kalisalak",
         rt: voter.rt,
         rw: voter.rw,
         dusun: "Desa Kalisalak",

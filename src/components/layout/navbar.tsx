@@ -134,7 +134,7 @@ const menuCategories: Record<string, MenuCategory> = {
 };
 
 const DEFAULT_RUNNING_TEXT =
-  "Pemberitahuan Resmi P2KD: Seluruh rangkaian pemungutan dan penghitungan suara Pilkades Desa Kalisalak dipusatkan di LAPANGAN DESA KALISALAK pada hari Rabu, 3 Februari 2027. Mohon membawa KTP-el dan Undangan Memilih.";
+  "Pemberitahuan Resmi P2KD: Seluruh rangkaian pemungutan dan penghitungan suara Pilkades Desa Kalisalak diselenggarakan pada hari Rabu, 3 Februari 2027. Mohon membawa KTP-el dan Undangan Memilih.";
 
 export const Navbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);

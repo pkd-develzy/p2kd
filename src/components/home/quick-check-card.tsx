@@ -398,7 +398,7 @@ export const QuickCheckCard: React.FC = () => {
 
                     <div className="bg-white/80 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
                       <span className="text-slate-500 text-[11px] font-semibold block mb-0.5">Pusat Lokasi Pemungutan:</span>
-                      <span className="text-slate-900 font-bold text-sm text-rose-900">Lapangan Desa Kalisalak</span>
+                      <span className="text-slate-900 font-bold text-sm text-rose-900">Desa Kalisalak</span>
                     </div>
 
                     <div className="sm:col-span-2 bg-white/80 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">

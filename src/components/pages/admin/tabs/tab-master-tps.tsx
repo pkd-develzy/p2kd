@@ -34,14 +34,14 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
               >
                 Pusat Pemungutan Suara Terpadu
               </Badge>
-              <span className="text-xs text-slate-400 font-medium">• Lapangan Desa Kalisalak (13 Wilayah RW)</span>
+              <span className="text-xs text-slate-400 font-medium">• 13 Wilayah RW</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
               <MapPin className="w-6 h-6 text-rose-400" />
               Wilayah RW Pilkades
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Seluruh rangkaian pemungutan suara Pilkades dipusatkan di Lapangan Desa Kalisalak yang dibagi menjadi 13 Wilayah RW (RW 01 s/d RW 13) dan dikoordinir oleh Petugas / Koordinator Lapangan per RW.
+              Seluruh rangkaian pemungutan suara Pilkades dibagi menjadi 13 Wilayah RW (RW 01 s/d RW 13) dan dikoordinir oleh Petugas / Koordinator per RW.
             </p>
           </div>
 

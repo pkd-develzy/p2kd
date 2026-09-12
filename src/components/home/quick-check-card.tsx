@@ -389,10 +389,10 @@ export const QuickCheckCard: React.FC = () => {
                     </div>
 
                     <div className="bg-white/80 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
-                      <span className="text-slate-500 text-[11px] font-semibold block mb-0.5">Meja Pendaftaran / Wilayah RW:</span>
+                      <span className="text-slate-500 text-[11px] font-semibold block mb-0.5">Wilayah Pemilihan (RW):</span>
                       <strong className="text-blue-900 text-base font-black flex items-center gap-1">
                         <MapPin className="w-4 h-4 text-blue-700" />
-                        {result.tps ? (result.tps.includes("RW") ? `Meja Pendaftaran ${result.tps}` : `Meja Pendaftaran RW ${result.tps.replace(/\D/g, "").padStart(2, "0")}`) : "Meja Pendaftaran RW"}
+                        {result.tps ? (result.tps.includes("RW") ? result.tps.replace(/Meja\s*(Pendaftaran\s*)?/gi, "") : `RW ${result.tps.replace(/\D/g, "").padStart(2, "0")}`) : "Wilayah RW"}
                       </strong>
                     </div>
 

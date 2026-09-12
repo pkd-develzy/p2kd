@@ -38,10 +38,10 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
               <MapPin className="w-6 h-6 text-rose-400" />
-              Meja Pendaftaran & Wilayah RW Pilkades
+              Wilayah RW Pilkades
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Seluruh rangkaian pemungutan suara Pilkades dipusatkan di Lapangan Desa Kalisalak yang dibagi menjadi 13 Meja Pendaftaran RW (RW 01 s/d RW 13) dan dikoordinir oleh Petugas / Koordinator Lapangan per RW.
+              Seluruh rangkaian pemungutan suara Pilkades dipusatkan di Lapangan Desa Kalisalak yang dibagi menjadi 13 Wilayah RW (RW 01 s/d RW 13) dan dikoordinir oleh Petugas / Koordinator Lapangan per RW.
             </p>
           </div>
 
@@ -62,7 +62,7 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
               className="text-xs font-bold bg-blue-600 hover:bg-blue-500 rounded-2xl py-2.5 px-4 shadow-md"
             >
               <Plus className="w-4 h-4 mr-1" />
-              Tambah Meja RW Baru
+              Tambah Wilayah RW Baru
             </Button>
           </div>
         </div>
@@ -85,19 +85,19 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
                   <Badge variant="primary" className="text-[10px] font-bold">
                     {t.kodeTps.includes("RW") ? t.kodeTps : `RW-${t.nomorTps}`}
                   </Badge>
-                  <h4 className="text-sm font-bold text-slate-900 mt-1">{t.namaTabung || t.namaTps}</h4>
+                  <h4 className="text-sm font-bold text-slate-900 mt-1">{String(t.namaTabung || t.namaTps).replace(/Meja\s*(Pendaftaran\s*)?/gi, "")}</h4>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => onOpenEditTps(t)}
-                    title="Edit Meja RW"
+                    title="Edit Wilayah RW"
                     className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100"
                   >
                     <Edit className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => onDeleteTps(t)}
-                    title="Hapus Meja RW"
+                    title="Hapus Wilayah RW"
                     className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

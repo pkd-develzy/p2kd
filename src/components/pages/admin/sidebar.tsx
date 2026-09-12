@@ -165,7 +165,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
       items: [
         {
           id: "tps" as TabType,
-          label: "13 Meja Pendaftaran & Wilayah RW",
+          label: "13 Wilayah RW",
           icon: Building2,
           badge: `${tpsCount} Wilayah RW`,
           badgeColor: "bg-emerald-900/80 text-emerald-200 border-emerald-600/70",

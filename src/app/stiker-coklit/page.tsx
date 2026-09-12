@@ -247,7 +247,7 @@ function StikerCoklitContent() {
               <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-blue-950 space-y-1.5 text-xs">
                 <div className="text-[10.5px] uppercase font-extrabold text-blue-900 flex items-center gap-1.5">
                   <Building2 className="w-3.5 h-3.5 text-blue-700" />
-                  Lokasi Meja Pemungutan Suara di Hari-H
+                  Lokasi Pemungutan Suara di Hari-H
                 </div>
                 <div className="font-black text-blue-950">{data.mejaPendaftaran}</div>
                 <div className="text-[11px] text-blue-800 font-semibold">

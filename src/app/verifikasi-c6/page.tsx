@@ -198,7 +198,7 @@ function VerifikasiC6Content() {
                 <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200 text-blue-950 space-y-1.5">
                   <div className="text-[10.5px] uppercase font-extrabold text-blue-900 flex items-center gap-1.5">
                     <Building2 className="w-3.5 h-3.5 text-blue-700" />
-                    Lokasi Meja Pendaftaran & Pemungutan Suara
+                    Lokasi Wilayah & Pemungutan Suara
                   </div>
                   <div className="text-xs font-black text-blue-950">
                     {data.mejaPendaftaran}

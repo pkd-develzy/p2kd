@@ -318,7 +318,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                 <th className="py-3 px-4">NIK (Sensor Proteksi)</th>
                 <th className="py-3 px-4">Nama Lengkap & JK</th>
                 <th className="py-3 px-4">Wilayah / Domisili</th>
-                <th className="py-3 px-4">Meja Pendaftaran</th>
+                <th className="py-3 px-4">Wilayah RW</th>
                 <th className="py-3 px-4 text-center">Status Tahap</th>
                 <th className="py-3 px-4 text-center">Aksi Petugas</th>
               </tr>
@@ -345,9 +345,9 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                   const isSelected = selectedIds.includes(p.id);
                   const rtNum = (p.rt || "01").replace(/\D/g, "").padStart(2, "0");
                   const rwNum = (p.rw || "01").replace(/\D/g, "").padStart(2, "0");
-                  const mejaName = p.tps && p.tps.includes("Meja")
-                    ? p.tps
-                    : `Meja RW ${rwNum}`;
+                  const mejaName = p.tps && p.tps.trim()
+                    ? p.tps.replace(/Meja\s*/gi, "")
+                    : `RW ${rwNum}`;
                   const maskedNikDisplay = p.nikMasked || (p.nik ? `${p.nik.slice(0, 1)}*************${p.nik.slice(-2)}` : "****************");
                   const maskedKkDisplay = p.kk ? `${p.kk.slice(0, 1)}*************${p.kk.slice(-2)}` : "-";
                   const isLaki = String(p.jenisKelamin).toUpperCase().startsWith("L");
@@ -445,7 +445,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                           {/* Mutasi RW */}
                           <button
                             onClick={() => onOpenMutasi(p)}
-                            title="Pindah Meja RW"
+                            title="Pindah Wilayah RW"
                             className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors"
                           >
                             <ArrowRightLeft className="w-3.5 h-3.5" />

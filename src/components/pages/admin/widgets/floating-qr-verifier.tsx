@@ -322,9 +322,9 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
                     <div className="p-3 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 flex items-center gap-2 font-bold">
                       <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0" />
                       <div>
-                        <div>SALAH MEJA / SALAH RW!</div>
+                        <div>SALAH WILAYAH RW!</div>
                         <div className="text-[10px] font-normal text-amber-800">
-                          Pemilih ini terdaftar di {result.mejaPendaftaran} (Bukan Meja {assignedMeja}).
+                          Pemilih ini terdaftar di {result.mejaPendaftaran} (Bukan {assignedMeja}).
                         </div>
                       </div>
                     </div>
@@ -332,7 +332,7 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
                     <div className="p-3 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-900 flex items-center gap-2 font-bold">
                       <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0" />
                       <div>
-                        <div>SAH DI DPT &amp; TEPAT DI MEJA RW INI</div>
+                        <div>SAH DI DPT &amp; TEPAT DI RW INI</div>
                         <div className="text-[10px] font-normal text-emerald-800">
                           Data pemilih valid dan siap mencoblos.
                         </div>
@@ -364,7 +364,7 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
                     </div>
 
                     <div className="pt-2 border-t border-slate-200">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Meja Pemungutan Suara</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Wilayah Pemungutan Suara</span>
                       <span className="font-bold text-blue-900">{result.mejaPendaftaran}</span>
                     </div>
                   </div>
@@ -385,7 +385,7 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
                         {isMarkedPresent ? (
                           <>
                             <Check className="w-4 h-4 mr-1.5" />
-                            Sudah Ditandai Hadir di Meja RW
+                            Sudah Ditandai Hadir di RW
                           </>
                         ) : (
                           <>

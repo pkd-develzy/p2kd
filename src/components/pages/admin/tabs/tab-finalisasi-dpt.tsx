@@ -214,7 +214,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
             <input
               type="text"
               readOnly
-              value="Terpusat di Lapangan Desa Kalisalak (13 Meja RW)"
+              value="Terpusat di Lapangan Desa Kalisalak (13 Wilayah RW)"
               className="w-full h-10 px-3.5 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold cursor-not-allowed"
             />
           </div>
@@ -236,8 +236,8 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10.5px]">
                   <th className="py-2.5 px-3 w-10 text-center">No</th>
-                  <th className="py-2.5 px-3">Meja Pendaftaran / Wilayah</th>
-                  <th className="py-2.5 px-3">Lokasi Meja</th>
+                  <th className="py-2.5 px-3">Wilayah RW</th>
+                  <th className="py-2.5 px-3">Lokasi Pemungutan</th>
                   <th className="py-2.5 px-3 text-center w-20 text-amber-800 bg-amber-50/50">Di DPS</th>
                   <th className="py-2.5 px-3 text-center w-16 text-indigo-800">L (DPT)</th>
                   <th className="py-2.5 px-3 text-center w-16 text-pink-800">P (DPT)</th>

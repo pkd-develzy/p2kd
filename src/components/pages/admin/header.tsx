@@ -39,8 +39,8 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
     subtitle: "Daftar pemilih sah yang telah lolos verifikasi dan siap disahkan pada Sidang Pleno",
   },
   tps: {
-    title: "13 Meja Pendaftaran & Wilayah RW",
-    subtitle: "Pusat pemungutan suara Lapangan Desa Kalisalak dan pembagian 13 Meja RW",
+    title: "13 Wilayah RW",
+    subtitle: "Pusat pemungutan suara Lapangan Desa Kalisalak dan pembagian 13 Wilayah RW",
   },
   aduan: {
     title: "Aduan & Masukan Masyarakat",

@@ -182,13 +182,13 @@ export const PrintBeritaAcara: React.FC<PrintBeritaAcaraProps> = ({
           </p>
         </div>
 
-        {/* Tabel Rekapitulasi 13 Meja Pendaftaran & Wilayah RW */}
+        {/* Tabel Rekapitulasi 13 Wilayah RW */}
         <div className="my-5">
           <table className="w-full text-xs font-sans border-collapse border border-black">
             <thead>
               <tr className="bg-slate-100 font-bold text-center">
                 <th className="border border-black p-2 w-10">NO</th>
-                <th className="border border-black p-2">MEJA PENDAFTARAN / WILAYAH</th>
+                <th className="border border-black p-2">WILAYAH RW</th>
                 <th className="border border-black p-2">LOKASI PEMUNGUTAN SUARA</th>
                 <th className="border border-black p-2 w-16">L</th>
                 <th className="border border-black p-2 w-16">P</th>

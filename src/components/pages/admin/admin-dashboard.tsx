@@ -210,7 +210,7 @@ export const AdminDashboard: React.FC = () => {
     computedUserJabatan = dbMatchedMember.jabatan;
   }
 
-  // Floating QR Verifier is STRICTLY ONLY for PETUGAS_TPS (PPS / KPPS Meja RW)
+  // Floating QR Verifier is STRICTLY ONLY for PETUGAS_TPS (PPS / KPPS RW)
   const isPetugasTpsOnly =
     !isAdmin &&
     !isSuperAdmin &&

@@ -60,7 +60,7 @@ export const DptOverview: React.FC = () => {
             <h4 className="text-sm font-bold text-slate-900">Daftar Pemilih Tambahan (DPTb)</h4>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Warga Kalisalak yang memenuhi syarat namun baru mengurus dokumen kependudukan dapat menggunakan hak pilihnya melalui mekanisme Daftar Pemilih Tambahan dengan menunjukkan KTP-el asli di Meja Pendaftaran RW sesuai domisili di Lapangan Desa Kalisalak pada hari H pencoblosan.
+            Warga Kalisalak yang memenuhi syarat namun baru mengurus dokumen kependudukan dapat menggunakan hak pilihnya melalui mekanisme Daftar Pemilih Tambahan dengan menunjukkan KTP-el asli di Pendaftaran RW sesuai domisili di Lapangan Desa Kalisalak pada hari H pencoblosan.
           </p>
         </Card>
       </div>

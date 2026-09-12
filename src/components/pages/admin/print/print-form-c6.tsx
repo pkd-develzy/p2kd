@@ -95,7 +95,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
         {displayedVoters.map((v, idx) => {
           const rwNum = (v.rw || "01").replace(/\D/g, "").padStart(2, "0");
           const rtNum = (v.rt || "01").replace(/\D/g, "").padStart(2, "0");
-          const mejaName = v.tps && v.tps.includes("Meja") ? v.tps : `Meja RW ${rwNum}`;
+          const mejaName = v.tps && v.tps.trim() ? v.tps.replace(/Meja\s*/gi, "") : `RW ${rwNum}`;
           const maskedNik = v.nikMasked || (v.nik ? `${v.nik.slice(0, 1)}*************${v.nik.slice(-2)}` : "****************");
           const verifyUrl = `${baseUrl}/verifikasi-c6?id=${encodeURIComponent(v.id)}`;
 
@@ -115,27 +115,28 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
                   </h4>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-mono font-bold block">No. Urut DPT:</span>
-                  <span className="text-sm font-black text-blue-900 block font-mono">#{idx + 1}</span>
+                  <span className="font-mono font-bold text-[10px] bg-black text-white px-2 py-0.5 rounded-sm print:bg-black print:text-white">
+                    {mejaName}
+                  </span>
                 </div>
               </div>
 
-              {/* Voter Data */}
-              <div className="space-y-1 text-[11px] mb-3">
+              {/* Body Card */}
+              <div className="space-y-1.5 mb-2.5 text-[10px]">
                 <div className="grid grid-cols-3 gap-1">
                   <span className="text-slate-600">Nama Pemilih</span>
-                  <span className="col-span-2 font-bold uppercase text-slate-950">{v.namaLengkap}</span>
+                  <span className="col-span-2 font-black text-black text-xs uppercase">{v.namaLengkap}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1">
-                  <span className="text-slate-600">NIK Pemilih</span>
+                  <span className="text-slate-600">NIK Terdaftar</span>
                   <span className="col-span-2 font-mono font-bold">{maskedNik}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1">
-                  <span className="text-slate-600">Alamat Domisili</span>
+                  <span className="text-slate-600">Alamat TPS</span>
                   <span className="col-span-2">{v.alamat} (RT {rtNum} / RW {rwNum})</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1">
-                  <span className="text-slate-600">Lokasi TPS</span>
+                  <span className="text-slate-600">Wilayah Pemilihan</span>
                   <span className="col-span-2 font-bold text-blue-950">
                     {mejaName} — Pusat Lapangan Desa Kalisalak
                   </span>

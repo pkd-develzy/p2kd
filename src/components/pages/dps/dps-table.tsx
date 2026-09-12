@@ -124,7 +124,7 @@ export const DpsTable: React.FC = () => {
             <table className="w-full text-left text-xs text-slate-700">
               <thead className="bg-slate-100/80 text-slate-800 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="py-3.5 px-4">Wilayah / Meja Pendaftaran</th>
+                  <th className="py-3.5 px-4">Wilayah RW</th>
                   <th className="py-3.5 px-4">Cakupan Wilayah</th>
                   <th className="py-3.5 px-4">Pusat Lokasi Pemilihan</th>
                   <th className="py-3.5 px-4 text-right">Laki-Laki</th>
@@ -135,7 +135,7 @@ export const DpsTable: React.FC = () => {
               <tbody className="divide-y divide-slate-100">
                 {pagedList.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-4 font-bold text-blue-900">Meja {row.rw}</td>
+                    <td className="py-3 px-4 font-bold text-blue-900">{row.rw}</td>
                     <td className="py-3 px-4 font-semibold text-slate-900">
                       {row.rw} (RT 01, 02, 03)
                     </td>

@@ -184,7 +184,7 @@ export const AdminLoginForm: React.FC = () => {
                   </div>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed font-normal">
-                  Super Admin • Seksi 1-4 • Koordinator Pantarlih & KPPS Meja RW
+                  Super Admin • Seksi 1-4 • Koordinator Pantarlih & KPPS RW
                 </p>
               </div>
 
@@ -325,7 +325,7 @@ export const AdminLoginForm: React.FC = () => {
                   Pleno &amp; Coklit Terpadu
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed font-normal">
-                  Sinkronisasi 13 Meja RW secara instan dengan verifikasi QR Code C6 &amp; Stiker.
+                  Sinkronisasi 13 Wilayah RW secara instan dengan verifikasi QR Code C6 &amp; Stiker.
                 </p>
               </div>
             </div>

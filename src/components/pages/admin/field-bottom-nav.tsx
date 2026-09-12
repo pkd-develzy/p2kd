@@ -45,13 +45,13 @@ export const FieldBottomNav: React.FC<FieldBottomNavProps> = ({
     { id: "export" as TabType, label: "Rekap RW", icon: FileSpreadsheet },
   ];
 
-  // 2. PPS / KPPS Meja Navigation Tabs
+  // 2. PPS / KPPS Navigation Tabs
   const ppsTabs = [
-    { id: "dpt" as TabType, label: "DPT Meja", icon: UserCheck },
-    { id: "realcount" as TabType, label: "C1 Plano", icon: BarChart3 },
+    { id: "dpt" as TabType, label: "DPT RW", icon: UserCheck },
+    { id: "export" as TabType, label: "Rekap RW", icon: FileSpreadsheet },
     { id: "SCANNER", label: "Scan C6", icon: QrCode, isCenterAction: true },
     { id: "print" as TabType, label: "Form C6", icon: Printer },
-    { id: "tps" as TabType, label: "Meja RW", icon: Building2 },
+    { id: "tps" as TabType, label: "Wilayah RW", icon: Building2 },
   ];
 
   const currentTabs = isPps ? ppsTabs : pantarlihTabs;

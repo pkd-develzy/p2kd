@@ -168,6 +168,7 @@ export async function DELETE(
       );
     }
 
+    await dataStore.ensureSynced();
     const success = await dataStore.deletePemilih(id, user.nama || user.username);
     if (!success) {
       return NextResponse.json(

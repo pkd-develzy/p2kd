@@ -21,21 +21,25 @@ export async function GET(req: Request) {
     try {
       const startTime = Date.now();
       const client = getSupabaseAdmin();
-      const { count: pemilihCount, error: pemErr } = await client.from("pemilih").select("*", { count: "exact", head: true });
-      const { count: anggotaCount } = await client.from("anggota_p2kd").select("*", { count: "exact", head: true });
-      const { count: tpsCount } = await client.from("tps").select("*", { count: "exact", head: true });
+
+      // Parallelize queries to measure true network latency and eliminate sequential roundtrip delays
+      const [pemRes, agtRes, tpsRes] = await Promise.all([
+        client.from("pemilih").select("*", { count: "exact", head: true }),
+        client.from("anggota_p2kd").select("*", { count: "exact", head: true }),
+        client.from("tps").select("*", { count: "exact", head: true }),
+      ]);
 
       latencyMs = Date.now() - startTime;
 
-      if (pemErr) {
-        errorMessage = pemErr.message;
+      if (pemRes.error) {
+        errorMessage = pemRes.error.message;
         isConnected = false;
       } else {
         isConnected = true;
         cloudStats = {
-          pemilihCount: pemilihCount || 0,
-          anggotaCount: anggotaCount || 0,
-          tpsCount: tpsCount || 0,
+          pemilihCount: pemRes.count || 0,
+          anggotaCount: agtRes.count || 0,
+          tpsCount: tpsRes.count || 0,
         };
       }
     } catch (err: unknown) {
@@ -66,6 +70,11 @@ export async function GET(req: Request) {
       supabaseUrl: isConfigured ? "Server Terkoneksi Aman (Encrypted)" : "Belum terkonfigurasi",
       error: errorMessage || null,
       tahapan: localStats.tahapan,
+    },
+  },
+  {
+    headers: {
+      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
     },
   });
 }

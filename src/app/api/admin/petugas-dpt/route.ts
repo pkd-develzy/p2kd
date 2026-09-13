@@ -10,14 +10,23 @@ export async function GET(req: Request) {
       return session.response!;
     }
 
-    await dataStore.ensureSynced();
+    const { searchParams } = new URL(req.url);
+    const forceRefresh = searchParams.get("refresh") === "true";
+    await dataStore.ensureSynced(forceRefresh);
     const list = dataStore.getPetugasDptList();
 
-    return NextResponse.json({
-      success: true,
-      data: list,
-      total: list.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: list,
+        total: list.length,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error in GET /api/admin/petugas-dpt:", error);
     return NextResponse.json(
@@ -111,6 +120,7 @@ export async function DELETE(req: Request) {
       );
     }
 
+    await dataStore.ensureSynced();
     const operatorName = session.user.nama || session.user.username;
     const success = await dataStore.deletePetugasDpt(id, operatorName);
 

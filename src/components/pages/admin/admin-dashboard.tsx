@@ -251,13 +251,13 @@ export const AdminDashboard: React.FC = () => {
         resAnggota,
         resPetugas,
       ] = await Promise.all([
-        fetch(`/api/admin/pemilih?tps=${effectiveTps}&status=${selectedStatusFilter}&role=${isAdmin ? "admin" : "petugas"}&assignedTps=${encodeURIComponent(assignedTps)}`),
-        fetch(`/api/admin/aduan?status=${selectedAduanFilter}`),
-        fetch("/api/admin/tps"),
-        fetch("/api/admin/audit"),
-        fetch("/api/admin/db-status"),
-        fetch("/api/admin/anggota"),
-        fetch("/api/admin/petugas-dpt"),
+        fetch(`/api/admin/pemilih?tps=${effectiveTps}&status=${selectedStatusFilter}&role=${isAdmin ? "admin" : "petugas"}&assignedTps=${encodeURIComponent(assignedTps)}`, { cache: "no-store" }),
+        fetch(`/api/admin/aduan?status=${selectedAduanFilter}`, { cache: "no-store" }),
+        fetch("/api/admin/tps", { cache: "no-store" }),
+        fetch("/api/admin/audit", { cache: "no-store" }),
+        fetch("/api/admin/db-status", { cache: "no-store" }),
+        fetch("/api/admin/anggota?refresh=true", { cache: "no-store" }),
+        fetch("/api/admin/petugas-dpt?refresh=true", { cache: "no-store" }),
       ]);
 
       const [

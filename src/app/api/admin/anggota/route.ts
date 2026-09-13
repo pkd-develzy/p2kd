@@ -21,14 +21,22 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const seksi = searchParams.get("seksi") || "SEMUA";
-    await dataStore.ensureSynced();
+    const forceRefresh = searchParams.get("refresh") === "true";
+    await dataStore.ensureSynced(forceRefresh);
     const anggota = dataStore.getAnggotaList(seksi);
 
-    return NextResponse.json({
-      success: true,
-      data: anggota.map(sanitizeAnggota),
-      total: anggota.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: anggota.map(sanitizeAnggota),
+        total: anggota.length,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+      }
+    );
   } catch {
     return NextResponse.json(
       { success: false, message: "Gagal mengambil data anggota P2KD." },
@@ -284,6 +292,7 @@ export async function DELETE(req: Request) {
       );
     }
 
+    await dataStore.ensureSynced();
     const success = await dataStore.deleteAnggota(id, user.nama || user.username);
     if (!success) {
       return NextResponse.json(

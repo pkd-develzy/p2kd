@@ -644,21 +644,24 @@ class SystemDataStore {
 
   public async deletePemilih(id: string, user = "Petugas P2KD"): Promise<boolean> {
     const idx = this.pemilihList.findIndex((p) => p.id === id);
-    if (idx === -1) return false;
+    const target = idx !== -1 ? this.pemilihList[idx] : null;
+    if (idx !== -1) {
+      this.pemilihList.splice(idx, 1);
+    }
 
-    const target = this.pemilihList[idx];
-    this.pemilihList.splice(idx, 1);
+    // Always delete directly from Supabase Cloud
+    const dbDeleted = await SupabaseDbService.deletePemilih(id);
+    SupabaseDbService.invalidateCache();
 
-    // Sync to Supabase Cloud
-    await SupabaseDbService.deletePemilih(id);
+    if (idx === -1 && !dbDeleted) return false;
 
     this.addAuditLog({
       user,
       role: "SUPER_ADMIN",
       aksi: "DELETE_PEMILIH",
       entity: "PEMILIH",
-      target: `${target.namaLengkap} (${target.nikMasked})`,
-      detail: `Menghapus data pemilih secara permanen dari ${target.tps}.`,
+      target: target ? `${target.namaLengkap} (${target.nikMasked})` : id,
+      detail: `Menghapus data pemilih secara permanen ${target ? `dari ${target.tps}` : ""}.`,
       ipAddress: "127.0.0.1",
     });
 
@@ -1237,21 +1240,30 @@ class SystemDataStore {
 
   public async deleteAnggota(id: string, user = "admin_kalisalak"): Promise<boolean> {
     const idx = this.anggotaList.findIndex((a) => a.id === id);
-    if (idx === -1) return false;
+    const target = idx !== -1 ? this.anggotaList[idx] : null;
 
-    const target = this.anggotaList[idx];
-    this.anggotaList.splice(idx, 1);
+    if (idx !== -1) {
+      this.anggotaList.splice(idx, 1);
+    }
 
-    // Sync to Supabase Cloud
-    await SupabaseDbService.deleteAnggota(id);
+    // Always delete directly from Supabase Cloud
+    const dbDeleted = await SupabaseDbService.deleteAnggota(id);
+    SupabaseDbService.invalidateCache();
+
+    if (idx === -1 && !dbDeleted) {
+      return false;
+    }
+
+    const targetName = target ? target.namaLengkap : id;
+    const targetJabatan = target ? target.jabatan : "Anggota";
 
     this.addAuditLog({
       user,
       role: "SUPER_ADMIN",
       aksi: "ANGGOTA_DELETE",
       entity: "ANGGOTA_P2KD",
-      target: `${target.namaLengkap} (${target.jabatan})`,
-      detail: `Menghapus anggota P2KD ${target.namaLengkap} dari daftar kepanitiaan.`,
+      target: `${targetName} (${targetJabatan})`,
+      detail: `Menghapus anggota P2KD ${targetName} dari daftar kepanitiaan.`,
       ipAddress: "127.0.0.1",
     });
 
@@ -1518,20 +1530,29 @@ class SystemDataStore {
 
   public async deletePetugasDpt(id: string, user = "Panitia P2KD"): Promise<boolean> {
     const idx = this.petugasDptList.findIndex((p) => p.id === id);
-    if (idx === -1) return false;
+    const target = idx !== -1 ? this.petugasDptList[idx] : null;
 
-    const target = this.petugasDptList[idx];
-    this.petugasDptList.splice(idx, 1);
+    if (idx !== -1) {
+      this.petugasDptList.splice(idx, 1);
+    }
 
-    await SupabaseDbService.deletePetugasDpt(id);
+    const dbDeleted = await SupabaseDbService.deletePetugasDpt(id);
+    SupabaseDbService.invalidateCache();
+
+    if (idx === -1 && !dbDeleted) {
+      return false;
+    }
+
+    const targetName = target ? target.namaLengkap : id;
+    const targetReg = target ? target.nomorRegistrasi : id;
 
     this.addAuditLog({
       user,
       role: "PANITIA_P2KD",
       aksi: "PETUGAS_DPT_DELETE",
       entity: "PETUGAS_DPT",
-      target: `${target.namaLengkap} (${target.nomorRegistrasi})`,
-      detail: `Menghapus pendaftar petugas DPT: ${target.namaLengkap} (${target.nomorRegistrasi}).`,
+      target: `${targetName} (${targetReg})`,
+      detail: `Menghapus pendaftar petugas DPT: ${targetName} (${targetReg}).`,
       ipAddress: "127.0.0.1",
     });
 

@@ -10,7 +10,7 @@ export const HeroSection: React.FC = () => {
   return (
     <div className="relative pt-8 pb-14 text-center max-w-5xl mx-auto px-4 overflow-hidden">
       {/* Dynamic Background Glowing Mesh */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[340px] bg-gradient-to-tr from-blue-200/60 via-indigo-100/50 to-teal-100/50 rounded-full blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-162.5 h-85 bg-linear-to-tr from-blue-200/60 via-indigo-100/50 to-teal-100/50 rounded-full blur-3xl pointer-events-none -z-10" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -40,7 +40,7 @@ export const HeroSection: React.FC = () => {
         {/* Main Title */}
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.12]">
           Sistem Informasi & Pendaftaran Pemilih <br className="hidden sm:inline" />
-          <span className="bg-gradient-to-r from-blue-700 via-indigo-800 to-blue-950 bg-clip-text text-transparent">
+          <span className="bg-linear-to-r from-blue-700 via-indigo-800 to-blue-950 bg-clip-text text-transparent">
             Pilkades Desa Kalisalak
           </span>
         </h1>

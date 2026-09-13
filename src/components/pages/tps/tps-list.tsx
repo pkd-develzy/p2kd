@@ -203,15 +203,9 @@ export const TpsList: React.FC = () => {
                   <MapPin className="w-3 h-3 text-rose-500" />
                   {venueName}
                 </span>
-                <a
-                  href={mapsUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-700 hover:underline font-bold text-[11px] flex items-center gap-1"
-                >
-                  <span>Arah Rute</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                <span className="text-[10.5px] text-slate-400 font-semibold">
+                  Lokasi Terpusat
+                </span>
               </div>
             </Card>
           ))}

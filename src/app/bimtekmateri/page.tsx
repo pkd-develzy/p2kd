@@ -102,19 +102,19 @@ export default function BimtekMateriPage() {
 
   // Pemetaan 13 TPS & 13 RW
   const pemetaanTps = [
-    { tps: "TPS 01", rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03", dusun: "Dusun I" },
-    { tps: "TPS 02", rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03", dusun: "Dusun I" },
-    { tps: "TPS 03", rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03", dusun: "Dusun I" },
-    { tps: "TPS 04", rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03", dusun: "Dusun II" },
-    { tps: "TPS 05", rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03", dusun: "Dusun II" },
-    { tps: "TPS 06", rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03", dusun: "Dusun II" },
-    { tps: "TPS 07", rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03", dusun: "Dusun III" },
-    { tps: "TPS 08", rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03", dusun: "Dusun III" },
-    { tps: "TPS 09", rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03", dusun: "Dusun III" },
-    { tps: "TPS 10", rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
-    { tps: "TPS 11", rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
-    { tps: "TPS 12", rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
-    { tps: "TPS 13", rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
+    { tps: "TPS 01", rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 02", rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 03", rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 04", rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 05", rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 06", rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 07", rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 08", rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 09", rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 10", rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 11", rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 12", rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03" },
+    { tps: "TPS 13", rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03" },
   ];
 
   // FAQ Penanganan Lapangan
@@ -729,7 +729,6 @@ export default function BimtekMateriPage() {
                   <th className="p-3">TPS Resmi</th>
                   <th className="p-3">Wilayah RW Penugasan</th>
                   <th className="p-3">Cakupan Lingkungan RT</th>
-                  <th className="p-3">Wilayah Dusun</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-medium">
@@ -738,7 +737,6 @@ export default function BimtekMateriPage() {
                     <td className="p-3 font-black text-white font-mono">{row.tps}</td>
                     <td className="p-3 font-bold text-blue-300">{row.rw}</td>
                     <td className="p-3 text-slate-300">{row.rt}</td>
-                    <td className="p-3 text-slate-400">{row.dusun}</td>
                   </tr>
                 ))}
               </tbody>

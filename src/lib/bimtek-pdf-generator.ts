@@ -418,19 +418,19 @@ export function generateMateriBimtekPdf(): jsPDF {
   y += 6.5;
 
   const tpsTable = [
-    { rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03", tps: "TPS 01 (Dusun I)" },
-    { rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03", tps: "TPS 02 (Dusun I)" },
-    { rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03", tps: "TPS 03 (Dusun I)" },
-    { rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03", tps: "TPS 04 (Dusun II)" },
-    { rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03", tps: "TPS 05 (Dusun II)" },
-    { rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03", tps: "TPS 06 (Dusun II)" },
-    { rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03", tps: "TPS 07 (Dusun III)" },
-    { rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03", tps: "TPS 08 (Dusun III)" },
-    { rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03", tps: "TPS 09 (Dusun III)" },
-    { rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03", tps: "TPS 10 (Dusun IV)" },
-    { rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03", tps: "TPS 11 (Dusun IV)" },
-    { rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03", tps: "TPS 12 (Dusun IV)" },
-    { rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03", tps: "TPS 13 (Dusun IV)" },
+    { rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03", tps: "TPS 01" },
+    { rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03", tps: "TPS 02" },
+    { rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03", tps: "TPS 03" },
+    { rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03", tps: "TPS 04" },
+    { rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03", tps: "TPS 05" },
+    { rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03", tps: "TPS 06" },
+    { rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03", tps: "TPS 07" },
+    { rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03", tps: "TPS 08" },
+    { rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03", tps: "TPS 09" },
+    { rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03", tps: "TPS 10" },
+    { rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03", tps: "TPS 11" },
+    { rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03", tps: "TPS 12" },
+    { rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03", tps: "TPS 13" },
   ];
 
   tpsTable.forEach((row, idx) => {

@@ -163,7 +163,9 @@ export function verifyAuthToken(token: string): AuthTokenPayload | null {
     const secret = getJwtSecret();
     const expectedSignature = crypto.createHmac("sha256", secret).update(payloadEncoded).digest("base64url");
 
-    if (signature !== expectedSignature) {
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expectedSignature);
+    if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
       return null;
     }
 

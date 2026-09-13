@@ -24,20 +24,35 @@ export async function POST(
       );
     }
 
-    const updated = dataStore.pindahTPS(
-      id,
-      tpsBaru,
-      rtBaru || "01",
-      rwBaru || "01",
-      session.user.nama || session.user.username
-    );
-
-    if (!updated) {
+    const existing = dataStore.getPemilihById(id);
+    if (!existing) {
       return NextResponse.json(
         { success: false, message: "Data pemilih tidak ditemukan." },
         { status: 404 }
       );
     }
+
+    const user = session.user;
+    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
+
+    // Strict TPS protection: field officers can only mutate voters within their assigned TPS
+    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA" && !existing.tps.includes(user.assignedTps)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Akses Ditolak: Anda tidak memiliki wewenang memutasikan pemilih di luar wilayah ${user.assignedTps}.`,
+        },
+        { status: 403 }
+      );
+    }
+
+    const updated = dataStore.pindahTPS(
+      id,
+      tpsBaru,
+      rtBaru || "01",
+      rwBaru || "01",
+      user.nama || user.username
+    );
 
     return NextResponse.json({
       success: true,

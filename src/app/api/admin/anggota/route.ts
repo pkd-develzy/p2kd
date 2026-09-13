@@ -4,6 +4,13 @@ import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 import { hashPassword } from "@/lib/encryption";
 
+// Helper to strip passwordHash from responses
+function sanitizeAnggota<T extends { passwordHash?: string }>(agt: T): Omit<T, "passwordHash"> {
+  const copy = { ...agt };
+  delete copy.passwordHash;
+  return copy;
+}
+
 // GET /api/admin/anggota?seksi=...
 export async function GET(req: Request) {
   try {
@@ -19,7 +26,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       success: true,
-      data: anggota,
+      data: anggota.map(sanitizeAnggota),
       total: anggota.length,
     });
   } catch {
@@ -122,7 +129,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: `Anggota ${newAnggota.namaLengkap} (${newAnggota.username}) berhasil didaftarkan. Kata sandi: '${plainPass}'.`,
-      data: newAnggota,
+      data: sanitizeAnggota(newAnggota),
     });
   } catch {
     return NextResponse.json(
@@ -239,7 +246,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({
       success: true,
       message: "Data anggota P2KD berhasil diperbarui.",
-      data: updated,
+      data: sanitizeAnggota(updated),
     });
   } catch {
     return NextResponse.json(

@@ -1,33 +1,40 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { hashPassword, verifyPassword, verifyAuthToken, generateAuthToken } from "@/lib/encryption";
+import { hashPassword, verifyPassword, generateAuthToken } from "@/lib/encryption";
 import { validatePasswordPolicy, isInitialDefaultPassword, checkLeakedPasswordHIBP } from "@/lib/password-policy";
 import { SupabaseDbService } from "@/lib/supabase-db";
+import { verifyAdminSession } from "@/lib/auth-middleware";
 
 export async function POST(req: Request) {
   try {
-    const authHeader = req.headers.get("authorization");
-    let sessionUser: string | null = null;
-
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.substring(7);
-      const decoded = verifyAuthToken(token);
-      if (decoded) {
-        sessionUser = decoded.username;
-      }
-    }
-
+    const session = verifyAdminSession(req);
     const body = await req.json();
     const { username, currentPassword, newPassword, confirmPassword } = body;
 
     await dataStore.ensureSynced();
 
+    const sessionUser = session.authenticated && session.user ? session.user.username : null;
     const targetUsername = (username || sessionUser || "").toLowerCase().trim();
 
     if (!targetUsername) {
       return NextResponse.json(
         { success: false, message: "Username pengguna wajib disertakan." },
         { status: 400 }
+      );
+    }
+
+    const cleanTargetUsername = targetUsername.replace("@kalisalak.desa.id", "").trim();
+
+    // Authorization checks:
+    // If authenticated, normal users can ONLY change their own password.
+    // Only Superadmin / Pimpinan can change another user's password.
+    const isSuperAdmin = session.authenticated && session.user && (session.user.isSuperAdmin || session.user.role === "SUPER_ADMIN" || session.user.seksi === "PIMPINAN");
+    const isSelf = session.authenticated && session.user && session.user.username.toLowerCase().trim() === cleanTargetUsername;
+
+    if (session.authenticated && !isSuperAdmin && !isSelf) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang mengubah kata sandi akun pengguna lain." },
+        { status: 403 }
       );
     }
 
@@ -81,11 +88,6 @@ export async function POST(req: Request) {
       );
     }
 
-    const cleanTargetUsername = targetUsername.replace("@kalisalak.desa.id", "").trim();
-
-    // Ensure dataStore is synced with Supabase cloud on serverless cold starts
-    await dataStore.ensureSynced();
-
     // Look up Anggota in dataStore (including hidden developer accounts)
     const allAnggota = dataStore.getAnggotaList("SEMUA", true);
     const targetAnggota = allAnggota.find(
@@ -102,12 +104,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify current password if provided
-    if (currentPassword) {
+    // Strict Password Verification:
+    // If not a Superadmin changing someone else's password, currentPassword is strictly MANDATORY
+    if (!isSuperAdmin || isSelf) {
+      if (!currentPassword || typeof currentPassword !== "string") {
+        return NextResponse.json(
+          { success: false, message: "Kata sandi saat ini (lama) wajib diisi untuk verifikasi keamanan." },
+          { status: 400 }
+        );
+      }
+
       const stored = targetAnggota.passwordHash || "p2kd2026";
       if (!verifyPassword(currentPassword, stored)) {
         return NextResponse.json(
-          { success: false, message: "Kata sandi saat ini tidak valid." },
+          { success: false, message: "Kata sandi saat ini tidak valid atau salah." },
           { status: 401 }
         );
       }
@@ -140,14 +150,14 @@ export async function POST(req: Request) {
       ipAddress: "127.0.0.1",
     });
 
-    const isSuperAdmin = targetAnggota.role === "SUPER_ADMIN" || targetAnggota.seksi === "PIMPINAN";
+    const targetIsSuperAdmin = targetAnggota.role === "SUPER_ADMIN" || targetAnggota.seksi === "PIMPINAN";
     const newToken = generateAuthToken({
       username: targetAnggota.username,
       nama: `${targetAnggota.namaLengkap} (${targetAnggota.jabatan})`,
       role: targetAnggota.role,
       seksi: targetAnggota.seksi,
       assignedTps: targetAnggota.assignedTps || "SEMUA",
-      isSuperAdmin,
+      isSuperAdmin: Boolean(targetIsSuperAdmin),
     });
 
     return NextResponse.json({

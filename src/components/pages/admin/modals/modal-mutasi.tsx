@@ -35,7 +35,7 @@ const ModalMutasiInner: React.FC<{
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-base font-bold text-slate-900 flex items-center gap-2 text-emerald-700">
+          <h3 className="text-base font-bold flex items-center gap-2 text-emerald-700">
             <ArrowRightLeft className="w-5 h-5" />
             Mutasi / Pindah Domisili RT-RW
           </h3>

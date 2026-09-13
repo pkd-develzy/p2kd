@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { dataStore } from "@/lib/data-store";
+import { verifyAdminSession } from "@/lib/auth-middleware";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const session = verifyAdminSession(req);
+  if (!session.authenticated || !session.user) {
+    return session.response!;
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const isConfigured = supabaseUrl.includes("supabase.co");
 

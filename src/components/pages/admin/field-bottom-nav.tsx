@@ -6,7 +6,6 @@ import {
   Users,
   UserCheck,
   FileSpreadsheet,
-  BarChart3,
   Printer,
   Building2,
   QrCode,
@@ -69,7 +68,7 @@ export const FieldBottomNav: React.FC<FieldBottomNavProps> = ({
                 <button
                   type="button"
                   onClick={onOpenScanner}
-                  className="relative group p-4 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 text-white shadow-xl shadow-emerald-600/40 border-3 border-slate-950 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                  className="relative group p-4 rounded-full bg-linear-to-tr from-emerald-600 via-teal-500 to-emerald-400 text-white shadow-xl shadow-emerald-600/40 border-3 border-slate-950 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                   title="Scan QR Code Kamera Belakang"
                 >
                   <span className="absolute -top-1 -right-1 flex h-3 w-3">

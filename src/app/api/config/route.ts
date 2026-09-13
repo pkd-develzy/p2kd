@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore, PublicWebConfig } from "@/lib/data-store";
+import { verifyAdminSession } from "@/lib/auth-middleware";
 
 export async function GET() {
   try {
@@ -26,8 +27,22 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = verifyAdminSession(req);
+    if (!session.authenticated || !session.user) {
+      return session.response!;
+    }
+
+    const user = session.user;
+    const isAuthorized = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN";
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Hanya Ketua / Pimpinan P2KD yang berwenang mengubah konfigurasi portal publik." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
-    const { data, user } = body as { data: Partial<PublicWebConfig>; user?: string };
+    const { data } = body as { data: Partial<PublicWebConfig> };
 
     if (!data) {
       return NextResponse.json(
@@ -36,7 +51,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const updated = dataStore.updateWebConfig(data, user || "Admin P2KD");
+    const userName = user.nama || user.username || "Admin P2KD";
+    const updated = dataStore.updateWebConfig(data, userName);
 
     return NextResponse.json({
       success: true,

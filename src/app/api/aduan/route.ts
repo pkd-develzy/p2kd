@@ -1,50 +1,67 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 export async function POST(req: Request) {
   try {
+    // 0. Rate Limiting Protection (Anti-Spam Form Protection)
+    const clientIp = getClientIp(req);
+    const rateLimit = checkRateLimit(`aduan-submit:${clientIp}`, 6, 300);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Terlalu banyak pengiriman aduan dari perangkat Anda. Silakan tunggu ${rateLimit.resetSeconds} detik sebelum mengirim kembali.`,
+        },
+        { status: 429 }
+      );
+    }
+
     await dataStore.ensureSynced();
     const body = await req.json();
     const { nama, nik, kontak, rt, rw, jenis, pesan, turnstileToken } = body;
 
     // Verify Cloudflare Turnstile Token (anti-spam form protection)
     const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
-    if (turnstileSecret && turnstileToken) {
-      if (typeof turnstileToken === "string" && turnstileToken.length > 0) {
-        try {
-          const clientIp =
-            req.headers.get("cf-connecting-ip") ||
-            req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-            "";
+    if (turnstileSecret) {
+      if (!turnstileToken || typeof turnstileToken !== "string" || turnstileToken.trim().length === 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Verifikasi keamanan sistem (Turnstile) wajib diselesaikan.",
+          },
+          { status: 403 }
+        );
+      }
 
-          const cfRes = await fetch(
-            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/x-www-form-urlencoded" },
-              signal: AbortSignal.timeout(10000),
-              body: new URLSearchParams({
-                secret: turnstileSecret,
-                response: turnstileToken,
-                remoteip: clientIp,
-              }),
-            }
-          );
-
-          const cfData = await cfRes.json();
-          if (!cfData.success) {
-            return NextResponse.json(
-              {
-                success: false,
-                message:
-                  "Verifikasi keamanan sistem gagal atau kadaluarsa. Silakan coba kembali.",
-              },
-              { status: 403 }
-            );
+      try {
+        const cfRes = await fetch(
+          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            signal: AbortSignal.timeout(10000),
+            body: new URLSearchParams({
+              secret: turnstileSecret,
+              response: turnstileToken,
+              remoteip: clientIp,
+            }),
           }
-        } catch (err) {
-          console.error("Turnstile error in /api/aduan:", err);
+        );
+
+        const cfData = await cfRes.json();
+        if (!cfData.success) {
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "Verifikasi keamanan sistem gagal atau kadaluarsa. Silakan coba kembali.",
+            },
+            { status: 403 }
+          );
         }
+      } catch (err) {
+        console.error("Turnstile error in /api/aduan:", err);
       }
     }
 

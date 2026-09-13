@@ -138,7 +138,7 @@ export const AdminLoginForm: React.FC = () => {
         }}
       />
       {/* Multi-layered dark glass overlay for high readability */}
-      <div className="fixed inset-0 z-0 bg-gradient-to-r from-slate-950/95 via-slate-950/85 to-blue-950/90 backdrop-blur-[2px]" />
+      <div className="fixed inset-0 z-0 bg-linear-to-r from-slate-950/95 via-slate-950/85 to-blue-950/90 backdrop-blur-[2px]" />
       <div className="fixed inset-0 z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(37,99,235,0.15),rgba(255,255,255,0))]" />
 
       {/* Top Header Navbar */}
@@ -256,7 +256,7 @@ export const AdminLoginForm: React.FC = () => {
                     variant="primary"
                     isLoading={loading}
                     disabled={!isSecurityVerified || loading}
-                    className="w-full h-12 font-black text-xs sm:text-sm rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 border border-blue-400/30 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-12 font-black text-xs sm:text-sm rounded-2xl bg-linear-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 border border-blue-400/30 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span>Masuk Aplikasi Sekretariat</span>
                     <ArrowRight className="w-4 h-4" />

@@ -75,7 +75,7 @@ function VerifikasiC6Content() {
   }, [id, nik]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-blue-950 to-slate-900 text-white py-8 px-4 flex flex-col justify-between">
+    <div className="min-h-screen bg-linear-to-b from-slate-900 via-blue-950 to-slate-900 text-white py-8 px-4 flex flex-col justify-between">
       <div className="max-w-xl mx-auto w-full space-y-6">
         {/* Header Institution */}
         <div className="text-center space-y-2">
@@ -128,7 +128,7 @@ function VerifikasiC6Content() {
         {!loading && data && (
           <div className="space-y-4">
             {/* Status Banner */}
-            <Card className="p-5 bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 border-emerald-500/50 shadow-2xl rounded-3xl space-y-3">
+            <Card className="p-5 bg-linear-to-r from-emerald-950 via-teal-950 to-slate-950 border-emerald-500/50 shadow-2xl rounded-3xl space-y-3">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300">
                   <CheckCircle2 className="w-6 h-6" />

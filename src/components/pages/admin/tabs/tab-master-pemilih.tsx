@@ -157,8 +157,8 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
       <Card
         className={`p-6 text-white border shadow-xl rounded-3xl ${
           mode === "DPT"
-            ? "bg-gradient-to-r from-emerald-950 via-teal-950 to-slate-950 border-emerald-900/60"
-            : "bg-gradient-to-r from-slate-900 via-blue-950 to-slate-950 border-blue-900/60"
+            ? "bg-linear-to-r from-emerald-950 via-teal-950 to-slate-950 border-emerald-900/60"
+            : "bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 border-blue-900/60"
         }`}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
@@ -204,7 +204,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
       <Card className="p-4 bg-white border-slate-200 shadow-sm space-y-3">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[240px]">
+          <div className="relative flex-1 min-w-60">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"

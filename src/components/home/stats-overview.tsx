@@ -136,7 +136,7 @@ export const StatsOverview: React.FC = () => {
                   </div>
                 </div>
                 <div className="mt-2.5">
-                  <div className="text-2xl font-black text-slate-900 tracking-tight min-h-[32px] flex items-center">
+                  <div className="text-2xl font-black text-slate-900 tracking-tight min-h-8 flex items-center">
                     {loading || stat.value === null ? (
                       <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                         <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
@@ -146,7 +146,7 @@ export const StatsOverview: React.FC = () => {
                       stat.value
                     )}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5 font-medium min-h-[16px]">
+                  <div className="text-[11px] text-slate-500 mt-0.5 font-medium min-h-4">
                     {loading ? "Sinkronisasi..." : stat.label}
                   </div>
                 </div>

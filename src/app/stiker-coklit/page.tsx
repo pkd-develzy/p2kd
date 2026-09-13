@@ -93,7 +93,7 @@ function StikerCoklitContent() {
   }, [id, kk, nik]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-amber-950/20 to-slate-900 text-white py-8 px-4 flex flex-col justify-between">
+    <div className="min-h-screen bg-linear-to-b from-slate-900 via-amber-950/20 to-slate-900 text-white py-8 px-4 flex flex-col justify-between">
       <div className="max-w-2xl mx-auto w-full space-y-6">
         {/* Header Institution */}
         <div className="text-center space-y-2">
@@ -147,7 +147,7 @@ function StikerCoklitContent() {
         {!loading && data && (
           <div className="space-y-4">
             {/* Status Banner */}
-            <Card className="p-5 bg-gradient-to-r from-amber-950/90 via-slate-900 to-slate-950 border-amber-500/50 shadow-2xl rounded-3xl space-y-3">
+            <Card className="p-5 bg-linear-to-r from-amber-950/90 via-slate-900 to-slate-950 border-amber-500/50 shadow-2xl rounded-3xl space-y-3">
               <div className="flex items-start gap-3">
                 <div className="p-2.5 rounded-2xl bg-amber-500/20 border border-amber-400/40 text-amber-300 shrink-0 mt-0.5">
                   <CheckCircle2 className="w-6 h-6" />

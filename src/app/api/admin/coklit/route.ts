@@ -52,8 +52,12 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     const session = verifyAdminSession(req);
+    if (!session.authenticated || !session.user) {
+      return session.response!;
+    }
+
     const body = await req.json();
-    const { voterId, status, catatan, user: bodyUser } = body;
+    const { voterId, status, catatan } = body;
 
     if (!voterId || !status) {
       return NextResponse.json(
@@ -62,7 +66,25 @@ export async function PUT(req: Request) {
       );
     }
 
-    const userName = session.user?.nama || session.user?.username || bodyUser || "Koordinator RW";
+    const user = session.user;
+    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
+
+    // Strict TPS protection: field officers can only coklit voters in their assigned TPS
+    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA") {
+      await dataStore.ensureSynced();
+      const targetVoter = dataStore.getPemilihById(voterId);
+      if (targetVoter && !targetVoter.tps.includes(user.assignedTps)) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Akses Ditolak: Anda hanya berwenang melakukan coklit pemilih di wilayah ${user.assignedTps}.`,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
+    const userName = user.nama || user.username || "Koordinator RW";
 
     // Direct Supabase update
     await SupabaseDbService.updateCoklitStatus(voterId, status, catatan || "", userName);

@@ -92,7 +92,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
 
       {/* Grid of C6 Invitation Cards (Layout for 2 columns per A4 page) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto print:grid-cols-2 print:gap-3 print:max-w-full print:m-0 print:p-0">
-        {displayedVoters.map((v, idx) => {
+        {displayedVoters.map((v) => {
           const rwNum = (v.rw || "01").replace(/\D/g, "").padStart(2, "0");
           const rtNum = (v.rt || "01").replace(/\D/g, "").padStart(2, "0");
           const mejaName = v.tps && v.tps.trim() ? v.tps.replace(/Meja\s*/gi, "") : `RW ${rwNum}`;
@@ -156,10 +156,10 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
                     <ActiveQRCode
                       value={verifyUrl}
                       size={60}
-                      className="w-[60px] h-[60px]"
+                      className="w-15 h-15"
                     />
                   </div>
-                  <div className="space-y-0.5 max-w-[150px]">
+                  <div className="space-y-0.5 max-w-37.5">
                     <div className="font-bold text-black text-[9px] uppercase tracking-tight">
                       QR VERIFIKASI REALTIME
                     </div>

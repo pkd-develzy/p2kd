@@ -238,7 +238,7 @@ export const QuickCheckCard: React.FC = () => {
   return (
     <Card className="max-w-3xl mx-auto border-blue-200/90 bg-white shadow-xl shadow-blue-950/5 rounded-3xl overflow-hidden">
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-blue-950 p-6 text-white relative overflow-hidden">
+      <div className="bg-linear-to-r from-blue-900 via-indigo-900 to-blue-950 p-6 text-white relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-2xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
@@ -282,7 +282,7 @@ export const QuickCheckCard: React.FC = () => {
                 value={nik}
                 onChange={(e) => handleNikChange(e.target.value)}
                 placeholder="16 Digit NIK KTP-el (Contoh: 3328...)"
-                className="py-3 px-3.5 text-sm font-medium border-slate-300 rounded-xl focus:border-blue-600 font-mono font-bold"
+                className="py-3 px-3.5 text-sm border-slate-300 rounded-xl focus:border-blue-600 font-mono font-bold"
                 required
               />
               <span className="text-[10px] text-slate-400 block pl-1">
@@ -357,7 +357,7 @@ export const QuickCheckCard: React.FC = () => {
               className="overflow-hidden pt-2"
             >
               {result.found ? (
-                <div className="p-6 rounded-3xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-50/90 via-teal-50/60 to-white space-y-4 shadow-md">
+                <div className="p-6 rounded-3xl border-2 border-emerald-300 bg-linear-to-br from-emerald-50/90 via-teal-50/60 to-white space-y-4 shadow-md">
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-emerald-200">
                     <div className="flex items-center gap-2">
                       <div className="p-2 rounded-xl bg-emerald-600 text-white shadow-xs">
@@ -398,7 +398,7 @@ export const QuickCheckCard: React.FC = () => {
 
                     <div className="bg-white/80 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
                       <span className="text-slate-500 text-[11px] font-semibold block mb-0.5">Pusat Lokasi Pemungutan:</span>
-                      <span className="text-slate-900 font-bold text-sm text-rose-900">Desa Kalisalak</span>
+                      <span className="font-bold text-sm text-rose-900">Desa Kalisalak</span>
                     </div>
 
                     <div className="sm:col-span-2 bg-white/80 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
@@ -433,7 +433,7 @@ export const QuickCheckCard: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="p-6 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50/90 to-orange-50/40 space-y-3 shadow-md">
+                <div className="p-6 rounded-3xl border border-amber-200 bg-linear-to-br from-amber-50/90 to-orange-50/40 space-y-3 shadow-md">
                   <div className="flex items-center gap-2.5 text-amber-950 font-bold text-base">
                     <div className="p-2 rounded-xl bg-amber-200 text-amber-900">
                       <ShieldAlert className="w-5 h-5" />

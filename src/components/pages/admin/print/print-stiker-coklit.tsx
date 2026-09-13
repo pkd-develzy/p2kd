@@ -165,9 +165,9 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
               <div className="pt-2 border-t border-amber-300 flex items-center justify-between text-[9px]">
                 <div className="flex items-center gap-2">
                   <div className="bg-white p-0.5 rounded border border-black shrink-0">
-                    <ActiveQRCode value={qrPayloadUrl} size={54} className="w-[54px] h-[54px]" />
+                    <ActiveQRCode value={qrPayloadUrl} size={54} className="w-13.5 h-13.5" />
                   </div>
-                  <div className="space-y-0.5 max-w-[120px]">
+                  <div className="space-y-0.5 max-w-30">
                     <div className="font-bold text-black text-[8px] uppercase">
                       SCAN QR COKLIT
                     </div>

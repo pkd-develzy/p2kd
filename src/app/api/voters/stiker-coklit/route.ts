@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { MasterPemilih } from "@/lib/data-store";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 export async function GET(req: Request) {
   try {
+    const clientIp = getClientIp(req);
+    const rateLimit = checkRateLimit(`stiker-coklit:${clientIp}`, 30, 60);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, message: `Terlalu banyak permintaan verifikasi stiker. Silakan tunggu ${rateLimit.resetSeconds} detik.` },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
     const kk = searchParams.get("kk");

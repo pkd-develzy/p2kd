@@ -61,7 +61,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
   return (
     <div className="space-y-6">
       {/* Hero Header */}
-      <Card className="p-6 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-xl rounded-3xl">
+      <Card className="p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-xl rounded-3xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -179,7 +179,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
         {/* Input Nomor BA & Info Sidang */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1.5 flex items-center gap-1.5">
+            <label className="text-[11px] font-bold text-slate-600 uppercase mb-1.5 flex items-center gap-1.5">
               <FileCheck2 className="w-3.5 h-3.5 text-blue-600" />
               Nomor Berita Acara Pleno
             </label>
@@ -194,7 +194,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1.5 flex items-center gap-1.5">
+            <label className="text-[11px] font-bold text-slate-600 uppercase mb-1.5 flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-blue-600" />
               Lokasi Sidang Pleno
             </label>
@@ -207,7 +207,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1.5 flex items-center gap-1.5">
+            <label className="text-[11px] font-bold text-slate-600 uppercase mb-1.5 flex items-center gap-1.5">
               <Calendar className="w-3.5 h-3.5 text-blue-600" />
               Pusat Pemungutan Suara
             </label>

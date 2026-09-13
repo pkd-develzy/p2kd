@@ -150,7 +150,7 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 print:hidden hidden sm:block">
           <button
             onClick={() => setInternalOpen(true)}
-            className="group relative flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white font-black text-xs sm:text-sm shadow-2xl hover:shadow-emerald-500/50 border-2 border-emerald-300/80 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            className="group relative flex items-center gap-2.5 px-6 py-3.5 rounded-full bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white font-black text-xs sm:text-sm shadow-2xl hover:shadow-emerald-500/50 border-2 border-emerald-300/80 transition-all hover:scale-105 active:scale-95 cursor-pointer"
           >
             <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
@@ -177,7 +177,7 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
         <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
           <Card className="w-full max-w-lg bg-white border-slate-200 shadow-2xl rounded-3xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-auto">
             {/* Header Modal */}
-            <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white flex items-center justify-between">
+            <div className="p-4 sm:p-5 bg-linear-to-r from-slate-900 via-blue-950 to-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300">
                   <Camera className="w-5 h-5" />

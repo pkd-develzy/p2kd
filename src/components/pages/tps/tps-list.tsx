@@ -107,7 +107,7 @@ export const TpsList: React.FC = () => {
       </div>
 
       {/* Main Venue Banner (Desa Kalisalak) */}
-      <Card className="p-6 sm:p-8 bg-gradient-to-r from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl shadow-xl overflow-hidden relative border border-blue-900/60">
+      <Card className="p-6 sm:p-8 bg-linear-to-r from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl shadow-xl overflow-hidden relative border border-blue-900/60">
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">

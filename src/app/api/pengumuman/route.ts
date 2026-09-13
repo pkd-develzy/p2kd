@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dataStore, MasterPengumuman } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
+import { verifyAdminSession } from "@/lib/auth-middleware";
 
 export async function GET() {
   try {
@@ -26,8 +27,22 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = verifyAdminSession(req);
+    if (!session.authenticated || !session.user) {
+      return session.response!;
+    }
+
+    const user = session.user;
+    const isAuthorized = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN" || user.seksi === "SEKSI_LOGISTIK_PUBLIKASI";
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang menerbitkan pengumuman resmi." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
-    const { nomor, judul, kategori, tanggal, ringkasan, fileUrl, fileName, fileSize, user } = body;
+    const { nomor, judul, kategori, tanggal, ringkasan, fileUrl, fileName, fileSize } = body;
 
     if (!nomor || !judul || !kategori) {
       return NextResponse.json(
@@ -36,6 +51,7 @@ export async function POST(req: Request) {
       );
     }
 
+    const userName = user.nama || user.username || "Admin P2KD";
     const created = dataStore.insertPengumuman(
       {
         nomor,
@@ -47,7 +63,7 @@ export async function POST(req: Request) {
         fileName: fileName || `${judul.slice(0, 30)}.pdf`,
         fileSize: fileSize || "Dokumen Resmi PDF",
       },
-      user || "Admin P2KD"
+      userName
     );
 
     return NextResponse.json({
@@ -65,8 +81,22 @@ export async function POST(req: Request) {
 
 export async function PUT(req: Request) {
   try {
+    const session = verifyAdminSession(req);
+    if (!session.authenticated || !session.user) {
+      return session.response!;
+    }
+
+    const user = session.user;
+    const isAuthorized = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN" || user.seksi === "SEKSI_LOGISTIK_PUBLIKASI";
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang mengedit pengumuman." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
-    const { id, data, user } = body as { id: string; data: Partial<MasterPengumuman>; user?: string };
+    const { id, data } = body as { id: string; data: Partial<MasterPengumuman> };
 
     if (!id || !data) {
       return NextResponse.json(
@@ -75,7 +105,8 @@ export async function PUT(req: Request) {
       );
     }
 
-    const updated = dataStore.updatePengumuman(id, data, user || "Admin P2KD");
+    const userName = user.nama || user.username || "Admin P2KD";
+    const updated = dataStore.updatePengumuman(id, data, userName);
     if (!updated) {
       return NextResponse.json(
         { success: false, message: "Pengumuman tidak ditemukan." },
@@ -98,8 +129,22 @@ export async function PUT(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const session = verifyAdminSession(req);
+    if (!session.authenticated || !session.user) {
+      return session.response!;
+    }
+
+    const user = session.user;
+    const isAuthorized = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN" || user.seksi === "SEKSI_LOGISTIK_PUBLIKASI";
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang menghapus pengumuman." },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
-    const { id, user } = body as { id: string; user?: string };
+    const { id } = body as { id: string };
 
     if (!id) {
       return NextResponse.json(
@@ -108,7 +153,8 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const success = dataStore.deletePengumuman(id, user || "Admin P2KD");
+    const userName = user.nama || user.username || "Admin P2KD";
+    const success = dataStore.deletePengumuman(id, userName);
     if (!success) {
       return NextResponse.json(
         { success: false, message: "Pengumuman tidak ditemukan." },

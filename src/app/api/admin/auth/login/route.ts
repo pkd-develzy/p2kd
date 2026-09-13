@@ -17,8 +17,9 @@ export async function POST(req: Request) {
 
     // Canonical Server-Side Cloudflare Turnstile Siteverify
     const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
-    if (turnstileSecret && turnstileToken) {
+    if (turnstileSecret) {
       if (
+        !turnstileToken ||
         typeof turnstileToken !== "string" ||
         turnstileToken.length === 0 ||
         turnstileToken.length > 2048
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             success: false,
-            message: "Token verifikasi keamanan sistem tidak valid.",
+            message: "Verifikasi keamanan (Turnstile) wajib diselesaikan.",
           },
           { status: 403 }
         );

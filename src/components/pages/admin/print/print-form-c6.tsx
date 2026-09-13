@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { Voter, TPSItem } from "../types";
-import { Printer, ArrowLeft } from "lucide-react";
-import { Button, ActiveQRCode } from "@/components/ui";
+import { Printer, ArrowLeft, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Button, ActiveQRCode, Badge, Card } from "@/components/ui";
 
 interface PrintFormC6Props {
   voters: Voter[];
@@ -28,9 +28,17 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
   };
 
   const tpsObj = tpsList.find((t) => t.namaTps === selectedTps) || tpsList[0];
-  const tpsVoters = voters.filter(
+
+  // STRICT FILTER: Form C6 (Surat Undangan Nyoblos) HANYA untuk pemilih berstatus DPT & AKTIF!
+  const dptVotersAll = voters.filter(
+    (v) => v.statusAktif === "AKTIF" && v.tahap === "DPT"
+  );
+  const dpsVotersCount = voters.filter(
+    (v) => v.statusAktif === "AKTIF" && v.tahap !== "DPT"
+  ).length;
+
+  const tpsVoters = dptVotersAll.filter(
     (v) =>
-      v.statusAktif === "AKTIF" &&
       (tpsObj?.nomorTps ? v.tps.toLowerCase().includes(tpsObj.nomorTps.toLowerCase()) : true)
   );
 
@@ -42,10 +50,21 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
     <div className="space-y-4">
       {/* Top Action Bar (Hidden when printing) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-xs gap-3 print:hidden">
-        <Button variant="outline" size="sm" onClick={onBack} className="text-xs w-fit">
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          Kembali ke Pusat Cetak
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" size="sm" onClick={onBack} className="text-xs w-fit">
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
+            Kembali ke Pusat Cetak
+          </Button>
+
+          <Badge
+            variant={dptVotersAll.length > 0 ? "success" : "warning"}
+            className="text-[10px] font-bold"
+          >
+            {dptVotersAll.length > 0
+              ? `KHUSUS DPT (${dptVotersAll.length} Pemilih)`
+              : "KHUSUS DPT (0 Pemilih DPT)"}
+          </Badge>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
@@ -69,12 +88,15 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
             <select
               value={limitPrint}
               onChange={(e) => setLimitPrint(Number(e.target.value))}
-              className="h-8 px-2.5 text-xs rounded-lg border border-slate-300 bg-white font-semibold"
+              disabled={tpsVoters.length === 0}
+              className="h-8 px-2.5 text-xs rounded-lg border border-slate-300 bg-white font-semibold disabled:bg-slate-100"
             >
               <option value={6}>6 Pemilih (1 Lembar A4)</option>
               <option value={12}>12 Pemilih (2 Lembar A4)</option>
               <option value={24}>24 Pemilih (4 Lembar A4)</option>
-              <option value={tpsVoters.length}>Semua Pemilih {selectedTps} ({tpsVoters.length} Kartu)</option>
+              <option value={tpsVoters.length || 1}>
+                Semua Pemilih DPT {selectedTps} ({tpsVoters.length} Kartu)
+              </option>
             </select>
           </div>
 
@@ -82,7 +104,8 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
             variant="primary"
             size="sm"
             onClick={handlePrint}
-            className="text-xs font-bold bg-blue-700 hover:bg-blue-600 shadow-md"
+            disabled={displayedVoters.length === 0}
+            className="text-xs font-bold bg-blue-700 hover:bg-blue-600 shadow-md disabled:opacity-50"
           >
             <Printer className="w-4 h-4 mr-1.5" />
             Cetak Form C6 ({displayedVoters.length} Undangan)
@@ -90,8 +113,50 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
         </div>
       </div>
 
-      {/* Grid of C6 Invitation Cards (Layout for 2 columns per A4 page) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto print:grid-cols-2 print:gap-3 print:max-w-full print:m-0 print:p-0">
+      {/* Notice DPS Excluded (Hidden on Print) */}
+      {dpsVotersCount > 0 && (
+        <div className="p-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-xl text-xs flex items-center justify-between print:hidden">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+            <span>
+              <strong>Ketentuan Regulasi:</strong> Form C6 hanya dicetak untuk pemilih yang telah berstatus <strong>DPT ({dptVotersAll.length} pemilih)</strong>. Sebanyak <strong>{dpsVotersCount} pemilih berstatus DPS otomatis tidak dimasukkan</strong>.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State if NO DPT Voters */}
+      {dptVotersAll.length === 0 ? (
+        <Card className="p-8 bg-amber-50/80 border border-amber-200 rounded-3xl text-center space-y-4 max-w-2xl mx-auto shadow-sm">
+          <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base font-black text-amber-950">
+              Form C6 Belum Tersedia (Masih Tahap DPS)
+            </h3>
+            <p className="text-xs text-amber-900 leading-relaxed max-w-lg mx-auto">
+              Surat Pemberitahuan Pemungutan Suara (Model C6-Pilkades) secara hukum <strong>hanya berlaku dan diterbitkan bagi warga yang telah disahkan ke dalam Daftar Pemilih Tetap (DPT)</strong>.
+            </p>
+            <p className="text-xs text-amber-800 leading-relaxed max-w-lg mx-auto">
+              Saat ini, seluruh <strong>{dpsVotersCount} pemilih aktif</strong> masih berada pada tahap <strong>Daftar Pemilih Sementara (DPS)</strong> sehingga tidak dapat dibuatkan surat undangan C6.
+            </p>
+          </div>
+          <div className="pt-2 border-t border-amber-200">
+            <p className="text-[11px] text-amber-700 font-medium">
+              💡 <em>Langkah Selanjutnya: Silakan tetapkan pemilih dari DPS ke DPT pada tab <strong>Master Pemilih (DPS)</strong> atau lakukan sidang pleno penetapan DPT terlebih dahulu.</em>
+            </p>
+          </div>
+        </Card>
+      ) : displayedVoters.length === 0 ? (
+        <Card className="p-8 bg-slate-50 border border-slate-200 rounded-3xl text-center space-y-2 max-w-2xl mx-auto">
+          <p className="text-xs text-slate-500 font-medium">
+            Tidak ada pemilih DPT aktif pada wilayah {selectedTps}.
+          </p>
+        </Card>
+      ) : (
+        /* Grid of C6 Invitation Cards (Layout for 2 columns per A4 page) */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto print:grid-cols-2 print:gap-3 print:max-w-full print:m-0 print:p-0">
         {displayedVoters.map((v) => {
           const rwNum = (v.rw || "01").replace(/\D/g, "").padStart(2, "0");
           const rtNum = (v.rt || "01").replace(/\D/g, "").padStart(2, "0");
@@ -181,6 +246,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
           );
         })}
       </div>
-    </div>
-  );
+    )}
+  </div>
+);
 };

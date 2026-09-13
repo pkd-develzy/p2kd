@@ -8,6 +8,7 @@ import {
   Mail,
   Home,
   FileSpreadsheet,
+  AlertTriangle,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge } from "@/components/ui";
@@ -41,6 +42,9 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
 }) => {
   const [activeDoc, setActiveDoc] = useState<PrintDocType>("MENU");
   const firstTpsName = tpsList[0]?.namaTps || "SEMUA";
+
+  const dptVotersCount = voters.filter((v) => v.statusAktif === "AKTIF" && v.tahap === "DPT").length;
+  const dpsVotersCount = voters.filter((v) => v.statusAktif === "AKTIF" && v.tahap !== "DPT").length;
 
   if (activeDoc === "BERITA_ACARA") {
     return (
@@ -212,8 +216,11 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
             <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-700">
               <Mail className="w-6 h-6" />
             </div>
-            <Badge variant="primary" className="text-[10px]">
-              MODEL C6-PILKADES
+            <Badge
+              variant={dptVotersCount > 0 ? "success" : "warning"}
+              className="text-[10px] font-bold"
+            >
+              {dptVotersCount > 0 ? `MODEL C6 • ${dptVotersCount} DPT` : "MODEL C6 • KHUSUS DPT"}
             </Badge>
           </div>
 
@@ -222,9 +229,18 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
               3. Surat Undangan Nyoblos (Form C6 Digital)
             </h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Cetak massal surat pemberitahuan pemungutan suara per warga yang memuat nama pemilih, nomor DPT, lokasi TPS, dan tanggal pemungutan suara.
+              Cetak massal surat pemberitahuan pemungutan suara per warga. <strong>Hanya diterbitkan untuk pemilih berstatus DPT</strong> (pemilih berstatus DPS tidak dimasukkan).
             </p>
           </div>
+
+          {dptVotersCount === 0 && (
+            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                Belum ada DPT ({dpsVotersCount} pemilih masih berstatus DPS). Form C6 hanya bisa dicetak setelah pemilih ditetapkan ke DPT.
+              </span>
+            </div>
+          )}
 
           <div className="pt-2 flex items-center justify-between border-t border-slate-100">
             <span className="text-[11px] text-slate-600 font-semibold">
@@ -234,7 +250,11 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
               variant="primary"
               size="sm"
               onClick={() => setActiveDoc("FORM_C6")}
-              className="text-xs font-bold bg-indigo-700 hover:bg-indigo-600"
+              className={`text-xs font-bold ${
+                dptVotersCount > 0
+                  ? "bg-indigo-700 hover:bg-indigo-600"
+                  : "bg-slate-600 hover:bg-slate-500"
+              }`}
             >
               <Printer className="w-3.5 h-3.5 mr-1" />
               Buka / Cetak C6

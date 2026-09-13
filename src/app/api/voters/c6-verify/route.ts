@@ -50,6 +50,18 @@ export async function GET(req: Request) {
     const rwNum = (voter.rw || "01").replace(/\D/g, "").padStart(2, "0");
     const isSahDpt = voter.tahap === "DPT" && voter.statusAktif === "AKTIF";
 
+    if (!isSahDpt) {
+      const reasonMsg = voter.statusAktif === "TMS"
+        ? `Pemilih berstatus Tidak Memenuhi Syarat (TMS). Form C6 tidak berlaku.`
+        : "Surat Undangan Memilih (Form C6) tidak berlaku karena pemilih masih berstatus Daftar Pemilih Sementara (DPS). Form C6 hanya sah dan diterbitkan untuk pemilih yang telah ditetapkan dalam Daftar Pemilih Tetap (DPT).";
+
+      return NextResponse.json({
+        success: false,
+        valid: false,
+        message: reasonMsg,
+      });
+    }
+
     // Protect birth date privacy for public scan: display day & month, mask year (e.g. "15-08-****")
     const maskedDob = session.authenticated
       ? voter.tanggalLahir

@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import { Voter, TPSItem } from "../types";
-import { Printer, ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Printer, ArrowLeft, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Button, Badge, Card } from "@/components/ui";
 
 interface PrintDptTpsProps {
   voters: Voter[];
@@ -28,9 +28,17 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
   };
 
   const tpsObj = tpsList.find((t) => t.namaTps === selectedTps) || tpsList[0];
-  const tpsVoters = voters.filter(
+
+  // STRICT FILTER: Lembar DPT Model A HANYA untuk pemilih berstatus DPT & AKTIF!
+  const dptVotersAll = voters.filter(
+    (v) => v.statusAktif === "AKTIF" && v.tahap === "DPT"
+  );
+  const dpsVotersCount = voters.filter(
+    (v) => v.statusAktif === "AKTIF" && v.tahap !== "DPT"
+  ).length;
+
+  const tpsVoters = dptVotersAll.filter(
     (v) =>
-      v.statusAktif === "AKTIF" &&
       (tpsObj?.nomorTps ? v.tps.toLowerCase().includes(tpsObj.nomorTps.toLowerCase()) : true)
   );
 
@@ -41,10 +49,21 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
     <div className="space-y-4">
       {/* Top Action Bar (Hidden when printing) */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-xs gap-3 print:hidden">
-        <Button variant="outline" size="sm" onClick={onBack} className="text-xs w-fit">
-          <ArrowLeft className="w-4 h-4 mr-1.5" />
-          Kembali ke Pusat Cetak
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="outline" size="sm" onClick={onBack} className="text-xs w-fit">
+            <ArrowLeft className="w-4 h-4 mr-1.5" />
+            Kembali ke Pusat Cetak
+          </Button>
+
+          <Badge
+            variant={dptVotersAll.length > 0 ? "success" : "warning"}
+            className="text-[10px] font-bold"
+          >
+            {dptVotersAll.length > 0
+              ? `KHUSUS DPT (${dptVotersAll.length} Pemilih)`
+              : "KHUSUS DPT (0 Pemilih DPT)"}
+          </Badge>
+        </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* TPS Selector (disabled for pantarlih) */}
@@ -80,16 +99,59 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
             variant="primary"
             size="sm"
             onClick={handlePrint}
-            className="text-xs font-bold bg-blue-700 hover:bg-blue-600 shadow-md"
+            disabled={tpsVoters.length === 0}
+            className="text-xs font-bold bg-blue-700 hover:bg-blue-600 shadow-md disabled:opacity-50"
           >
             <Printer className="w-4 h-4 mr-1.5" />
-            Cetak Lembar DPT
+            Cetak Lembar DPT ({tpsVoters.length})
           </Button>
         </div>
       </div>
 
-      {/* Official Document Sheet */}
-      <div className="bg-white text-black p-6 sm:p-10 rounded-2xl border border-slate-300 shadow-lg max-w-5xl mx-auto font-sans print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full">
+      {/* Notice DPS Excluded (Hidden on Print) */}
+      {dpsVotersCount > 0 && (
+        <div className="p-3 bg-blue-50 border border-blue-200 text-blue-900 rounded-xl text-xs flex items-center justify-between print:hidden">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
+            <span>
+              <strong>Validasi DPT Resmi:</strong> Lembar Model A hanya memuat pemilih yang telah berstatus <strong>DPT ({dptVotersAll.length} pemilih)</strong>. Sebanyak <strong>{dpsVotersCount} pemilih berstatus DPS tidak dimasukkan</strong>.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State if NO DPT Voters */}
+      {dptVotersAll.length === 0 ? (
+        <Card className="p-8 bg-amber-50/80 border border-amber-200 rounded-3xl text-center space-y-4 max-w-2xl mx-auto shadow-sm print:hidden">
+          <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-2xl flex items-center justify-center mx-auto">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base font-black text-amber-950">
+              Lembar DPT Model A Belum Tersedia (Masih Tahap DPS)
+            </h3>
+            <p className="text-xs text-amber-900 leading-relaxed max-w-lg mx-auto">
+              Buku lembar DPT per TPS secara resmi hanya memuat warga yang telah ditetapkan menjadi <strong>Daftar Pemilih Tetap (DPT)</strong>.
+            </p>
+            <p className="text-xs text-amber-800 leading-relaxed max-w-lg mx-auto">
+              Saat ini seluruh <strong>{dpsVotersCount} pemilih aktif</strong> masih berada pada tahap <strong>Daftar Pemilih Sementara (DPS)</strong>.
+            </p>
+          </div>
+          <div className="pt-2 border-t border-amber-200">
+            <p className="text-[11px] text-amber-700 font-medium">
+              💡 <em>Silakan sahkan/pindahkan pemilih ke DPT melalui menu Master Pemilih atau Penetapan DPT Final terlebih dahulu.</em>
+            </p>
+          </div>
+        </Card>
+      ) : tpsVoters.length === 0 ? (
+        <Card className="p-8 bg-slate-50 border border-slate-200 rounded-3xl text-center space-y-2 max-w-2xl mx-auto print:hidden">
+          <p className="text-xs text-slate-500 font-medium">
+            Tidak ada pemilih DPT aktif pada {selectedTps}.
+          </p>
+        </Card>
+      ) : (
+        /* Official Document Sheet */
+        <div className="bg-white text-black p-6 sm:p-10 rounded-2xl border border-slate-300 shadow-lg max-w-5xl mx-auto font-sans print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full">
         {/* Kop Surat Resmi */}
         <div className="text-center border-b-2 border-black pb-3 mb-4">
           <div className="text-[11px] font-bold uppercase tracking-widest text-slate-600">
@@ -186,6 +248,7 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
           </div>
         </div>
       </div>
-    </div>
-  );
+    )}
+  </div>
+);
 };

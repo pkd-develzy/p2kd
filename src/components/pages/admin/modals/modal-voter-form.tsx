@@ -160,7 +160,7 @@ export const ModalVoterForm: React.FC<ModalVoterFormProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 mb-1">
                 RW Domisili Kalisalak
@@ -195,31 +195,7 @@ export const ModalVoterForm: React.FC<ModalVoterFormProps> = ({
               </select>
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block font-bold text-slate-700">
-                  Tabung TPS
-                </label>
-                <span className="text-[10px] text-blue-700 font-bold bg-blue-100/80 px-1.5 py-0.5 rounded flex items-center gap-1">
-                  <svg className="w-2.5 h-2.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                  Terkunci Otomatis
-                </span>
-              </div>
-              <div
-                title="Tabung TPS terkunci otomatis dari pemetaan RT/RW resmi Desa Kalisalak"
-                className="w-full h-10 px-3 text-xs rounded-xl border border-blue-300 bg-blue-50/80 font-black text-blue-900 flex items-center justify-between cursor-not-allowed select-none shadow-xs"
-              >
-                <span className="truncate">
-                  {voterForm.tps || getAutoTabungByRtRw(currentRw, currentRt, tpsList)}
-                </span>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-200/60 px-1.5 py-0.5 rounded shrink-0 ml-1">
-                  Lapangan
-                </span>
-              </div>
-              <input type="hidden" name="tps" value={voterForm.tps || getAutoTabungByRtRw(currentRw, currentRt, tpsList)} />
-            </div>
+            <input type="hidden" name="tps" value={voterForm.tps || getAutoTabungByRtRw(currentRw, currentRt, tpsList)} />
           </div>
 
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">

@@ -84,17 +84,17 @@ const ModalMutasiInner: React.FC<{
 
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block font-bold text-slate-700">Tabung TPS Tujuan</label>
+              <label className="block font-bold text-slate-700">Tabung Pemilihan Tujuan</label>
               <span className="text-[10px] text-blue-700 font-bold bg-blue-100/80 px-1.5 py-0.5 rounded flex items-center gap-1">
                 <Lock className="w-2.5 h-2.5 text-blue-600" />
                 Terkunci Otomatis
               </span>
             </div>
             <div
-              title="Tabung TPS tujuan otomatis dipetakan dari RT/RW baru"
+              title="Tabung Pemilihan tujuan otomatis dipetakan dari RT/RW baru"
               className="w-full h-10 px-3 text-xs rounded-xl border border-blue-300 bg-blue-50/80 font-black text-blue-900 flex items-center justify-between cursor-not-allowed select-none shadow-xs"
             >
-              <span>{computedTps}</span>
+              <span>{computedTps.replace(/TPS/gi, "Tabung")}</span>
               <span className="text-[10px] font-bold text-blue-600 bg-blue-200/60 px-1.5 py-0.5 rounded shrink-0">
                 Desa Kalisalak
               </span>
@@ -113,7 +113,7 @@ const ModalMutasiInner: React.FC<{
             onClick={() => onConfirmMutasi(computedTps, rtBaru, rwBaru)}
             className="font-bold"
           >
-            Simpan Mutasi TPS
+            Simpan Mutasi Tabung
           </Button>
         </div>
       </div>

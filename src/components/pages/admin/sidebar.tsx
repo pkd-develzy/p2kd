@@ -292,7 +292,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
                   : "bg-indigo-900/80 text-indigo-200 border-indigo-600/70"
               }`}
             >
-              {isAdmin ? "SUPERADMIN" : userRole === "PETUGAS_TPS" ? assignedTps : "SEKSI"}
+              {isAdmin ? "SUPERADMIN" : userRole === "PETUGAS_TPS" ? (assignedTps || "PETUGAS").replace(/TPS/gi, "Tabung") : "SEKSI"}
             </span>
           </div>
 
@@ -302,7 +302,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
               {isAdmin
                 ? "👁️ Mode Pimpinan: Semua Seksi Aktif"
                 : userRole === "PETUGAS_TPS"
-                ? `📍 Operasional Khusus ${assignedTps}`
+                ? `📍 Operasional Khusus ${(assignedTps || "Tabung").replace(/TPS/gi, "Tabung")}`
                 : `📋 Mode Khusus ${userJabatan}`}
             </span>
           </div>

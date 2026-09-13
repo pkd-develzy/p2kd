@@ -44,10 +44,10 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({
       </Card>
 
       <Card className="p-3.5 bg-white border-slate-200 shadow-xs hover:shadow-sm transition-shadow">
-        <span className="text-[11px] font-bold text-slate-500 uppercase">Master TPS</span>
+        <span className="text-[11px] font-bold text-slate-500 uppercase">Master Tabung Pemilihan</span>
         <div className="text-2xl font-black text-slate-900 mt-1">{tpsCount}</div>
         <div className="text-[10px] text-slate-500 mt-0.5">
-          {tpsCount > 0 ? `${tpsCount} TPS Terdaftar` : "Belum Ada Data TPS"}
+          {tpsCount > 0 ? `${tpsCount} Tabung Terdaftar` : "Belum Ada Data Tabung"}
         </div>
       </Card>
 

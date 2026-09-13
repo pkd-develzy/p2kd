@@ -79,7 +79,7 @@ const menuCategories: Record<string, MenuCategory> = {
       {
         href: "/cek-pemilih",
         label: "Cek Hak Pilih Mandiri",
-        desc: "Pencarian NIK & lokasi TPS terenkripsi",
+        desc: "Pencarian NIK & nomor Tabung terenkripsi",
         icon: <Search className="w-4 h-4 text-blue-700" />,
       },
       {

@@ -100,7 +100,7 @@ export const Footer: React.FC = () => {
           <div className="space-y-3">
             <h5 className="font-black text-white uppercase tracking-wider text-[11px] flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
               <Database className="w-3.5 h-3.5 text-emerald-400" />
-              Data & Layanan TPS
+              Data & Tabung Pemilihan
             </h5>
             <ul className="space-y-2.5 text-slate-200 font-medium pt-1">
               <li>
@@ -111,7 +111,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link href="/dps" className="hover:text-blue-300 transition-colors block py-0.5">
-                  Rekapitulasi DPS per TPS
+                  Rekapitulasi DPS per Tabung
                 </Link>
               </li>
               <li>
@@ -121,7 +121,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link href="/tps" className="hover:text-blue-300 transition-colors block py-0.5">
-                  Daftar Lokasi TPS di RW
+                  Lokasi Pemungutan & Tabung Suara
                 </Link>
               </li>
               <li>

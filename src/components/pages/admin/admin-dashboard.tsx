@@ -517,7 +517,7 @@ export const AdminDashboard: React.FC = () => {
         fetchData();
       }
     } catch {
-      toast.error("Gagal", "Tidak dapat memproses mutasi TPS.");
+      toast.error("Gagal", "Tidak dapat memproses mutasi Tabung.");
     }
   };
 
@@ -776,10 +776,11 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleDeleteTps = async (tps: TPSItem) => {
+    const namaLabel = (tps.namaTabung || tps.namaTps).replace(/TPS/gi, "Tabung");
     const approved = await confirm({
-      title: `Hapus ${tps.namaTps}?`,
-      message: `Apakah Anda yakin ingin menghapus ${tps.namaTps} (${tps.lokasi})? Tindakan ini hanya diizinkan jika tidak ada pemilih aktif yang terdaftar pada TPS ini.`,
-      confirmText: "Hapus TPS",
+      title: `Hapus ${namaLabel}?`,
+      message: `Apakah Anda yakin ingin menghapus ${namaLabel} (${tps.lokasi})? Tindakan ini hanya diizinkan jika tidak ada pemilih aktif yang terdaftar pada Tabung ini.`,
+      confirmText: "Hapus Tabung",
       cancelText: "Batal",
       variant: "danger",
     });
@@ -791,10 +792,10 @@ export const AdminDashboard: React.FC = () => {
         });
         const result = await res.json();
         if (result.success) {
-          toast.success("TPS Dihapus", result.message);
+          toast.success("Tabung Dihapus", result.message?.replace(/TPS/gi, "Tabung"));
           fetchData();
         } else {
-          toast.error("Gagal Menghapus TPS", result.message);
+          toast.error("Gagal Menghapus Tabung", result.message?.replace(/TPS/gi, "Tabung"));
         }
       } catch {
         toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
@@ -1155,12 +1156,12 @@ export const AdminDashboard: React.FC = () => {
             });
             const result = await res.json();
             if (result.success) {
-              toast.success("TPS Tersimpan", "Pengaturan master TPS berhasil diperbarui.");
+              toast.success("Tabung Tersimpan", "Pengaturan master Tabung berhasil diperbarui.");
               setShowEditTpsModal(false);
               fetchData();
             }
           } catch {
-            toast.error("Gagal", "Tidak dapat menyimpan TPS.");
+            toast.error("Gagal", "Tidak dapat menyimpan Tabung.");
           }
         }}
       />

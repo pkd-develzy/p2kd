@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { SupabaseDbService } from "@/lib/supabase-db";
-import { MasterPemilih } from "@/lib/data-store";
+import { dataStore, MasterPemilih } from "@/lib/data-store";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 export async function GET(req: Request) {
@@ -26,8 +25,8 @@ export async function GET(req: Request) {
       );
     }
 
-    const { allData } = await SupabaseDbService.fetchAllData();
-    const pemilihList: MasterPemilih[] = allData.pemilihList || [];
+    await dataStore.ensureSynced();
+    const pemilihList: MasterPemilih[] = dataStore.getPemilihList();
 
     // Find reference voter
     let targetVoter: MasterPemilih | null = null;

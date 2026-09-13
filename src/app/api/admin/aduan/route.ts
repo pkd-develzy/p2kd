@@ -45,12 +45,12 @@ export async function PUT(req: Request) {
       );
     }
 
-    const resolved = dataStore.resolveAduan(
+    const resolved = await dataStore.resolveAduan(
       id,
       status,
       catatan || "",
       session.user.nama || session.user.username,
-      autoUpdateMaster ?? true
+      autoUpdateMaster !== false
     );
 
     if (!resolved) {

@@ -46,7 +46,7 @@ export async function POST(
       );
     }
 
-    const updated = dataStore.pindahTPS(
+    const updated = await dataStore.pindahTPS(
       id,
       tpsBaru,
       rtBaru || "01",

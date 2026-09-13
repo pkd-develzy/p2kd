@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 import { hashPassword } from "@/lib/encryption";
 
@@ -111,7 +110,7 @@ export async function POST(req: Request) {
     const plainPass = password || customPassword || "p2kd2026";
     const passwordHash = hashPassword(plainPass);
 
-    const newAnggota = dataStore.addAnggota(
+    const newAnggota = await dataStore.addAnggota(
       {
         namaLengkap: namaLengkap.trim(),
         nik: nik ? nik.trim() : "332801" + Math.floor(1000000000 + Math.random() * 9000000000),
@@ -130,9 +129,6 @@ export async function POST(req: Request) {
       },
       user.nama || user.username
     );
-
-    // Synchronously commit to Supabase Cloud
-    await SupabaseDbService.insertAnggota(newAnggota);
 
     return NextResponse.json({
       success: true,
@@ -187,8 +183,7 @@ export async function PUT(req: Request) {
         );
       }
       const resetHash = hashPassword(resetRes.defaultPassword);
-      dataStore.updateAnggota(id, { passwordHash: resetHash }, userName);
-      await SupabaseDbService.updateAnggota(id, { passwordHash: resetHash });
+      await dataStore.updateAnggota(id, { passwordHash: resetHash }, userName);
 
       return NextResponse.json({
         success: true,
@@ -215,8 +210,7 @@ export async function PUT(req: Request) {
       }
 
       const passwordHash = hashPassword(newPassword);
-      dataStore.updateAnggota(id, { passwordHash }, userName);
-      await SupabaseDbService.updateAnggota(id, { passwordHash });
+      await dataStore.updateAnggota(id, { passwordHash }, userName);
 
       dataStore.addAuditLog({
         user: userName,
@@ -240,16 +234,13 @@ export async function PUT(req: Request) {
       updateFields.passwordHash = hashPassword(customPassword || password);
     }
 
-    const updated = dataStore.updateAnggota(id, updateFields, userName);
+    const updated = await dataStore.updateAnggota(id, updateFields, userName);
     if (!updated) {
       return NextResponse.json(
         { success: false, message: "Anggota tidak ditemukan." },
         { status: 404 }
       );
     }
-
-    // Synchronously commit to Supabase Cloud
-    await SupabaseDbService.updateAnggota(id, updateFields);
 
     return NextResponse.json({
       success: true,

@@ -26,6 +26,17 @@ import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK } from "@/lib/kalisalak-wilaya
 import { MasterPetugasDpt } from "@/lib/data-store";
 import { downloadPetugasPdf } from "@/lib/petugas-pdf-generator";
 
+const formatTanggalWaktu = (val?: string) => {
+  if (!val) return "-";
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return val;
+  return d.toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+};
+
 export default function PendaftaranPetugasPage() {
   const [activeTab, setActiveTab] = useState<"daftar" | "status">("daftar");
 
@@ -1091,7 +1102,7 @@ export default function PendaftaranPetugasPage() {
                     </div>
                     <div className="text-xs text-slate-500 flex items-center gap-1.5">
                       <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                      Daftar: {statusResult.tanggalPendaftaran}
+                      Daftar: {formatTanggalWaktu(statusResult.tanggalPendaftaran)}
                     </div>
                   </div>
 

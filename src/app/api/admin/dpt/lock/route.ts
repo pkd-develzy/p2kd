@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const user = session.user.nama || session.user.username;
 
     if (action === "UNLOCK") {
-      const state = dataStore.unlockDPT(user, alasan || "Revisi Pleno");
+      const state = await dataStore.unlockDPT(user, alasan || "Revisi Pleno");
       return NextResponse.json({
         success: true,
         message: "Status DPT berhasil dibuka kembali untuk perbaikan.",
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
 
     // Default action is LOCK
     const baNumber = nomorBeritaAcara || `BA/${Date.now().toString().slice(-4)}/P2KD-KLS/VIII/2026`;
-    const state = dataStore.lockDPT(user, baNumber);
+    const state = await dataStore.lockDPT(user, baNumber);
 
     return NextResponse.json({
       success: true,

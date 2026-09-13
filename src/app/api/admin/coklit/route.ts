@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
@@ -86,11 +85,8 @@ export async function PUT(req: Request) {
 
     const userName = user.nama || user.username || "Koordinator RW";
 
-    // Direct Supabase update
-    await SupabaseDbService.updateCoklitStatus(voterId, status, catatan || "", userName);
-
-    // Also update in-memory dataStore
-    const updated = dataStore.updateCoklitStatus(
+    // Update in-memory dataStore and sync to Supabase Cloud
+    const updated = await dataStore.updateCoklitStatus(
       voterId,
       status,
       catatan || "",

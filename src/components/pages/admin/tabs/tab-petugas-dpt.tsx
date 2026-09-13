@@ -61,10 +61,22 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Format helper for timestamps
+  const formatTanggalWaktu = (val?: string) => {
+    if (!val) return "-";
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return d.toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
   // Fetch Petugas List on initial load
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/admin/petugas-dpt")
+    fetch("/api/admin/petugas-dpt?refresh=true")
       .then((res) => res.json())
       .then((json) => {
         if (isMounted) {
@@ -88,7 +100,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   const fetchPetugasList = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/petugas-dpt");
+      const res = await fetch("/api/admin/petugas-dpt?refresh=true");
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setPetugasList(json.data);
@@ -337,7 +349,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       item.isTimSukses ? "Ya" : "Tidak",
       item.isKepentinganCalon ? "Ya" : "Tidak",
       `"${(item.catatanPanitia || "-").replace(/"/g, '""')}"`,
-      item.tanggalPendaftaran,
+      formatTanggalWaktu(item.tanggalPendaftaran),
     ]);
 
     const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
@@ -868,7 +880,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                       Disetujui 8 Poin Pernyataan
                     </div>
                     <span className="text-[10px] text-slate-400 block pt-1">
-                      Waktu Registrasi: {selectedPetugas.tanggalPendaftaran}
+                      Waktu Registrasi: {formatTanggalWaktu(selectedPetugas.tanggalPendaftaran)}
                     </span>
                   </div>
 

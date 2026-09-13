@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     }
 
     const userName = user.nama || user.username || "Admin P2KD";
-    const created = dataStore.insertPengumuman(
+    const created = await dataStore.insertPengumuman(
       {
         nomor,
         judul,
@@ -106,7 +106,7 @@ export async function PUT(req: Request) {
     }
 
     const userName = user.nama || user.username || "Admin P2KD";
-    const updated = dataStore.updatePengumuman(id, data, userName);
+    const updated = await dataStore.updatePengumuman(id, data, userName);
     if (!updated) {
       return NextResponse.json(
         { success: false, message: "Pengumuman tidak ditemukan." },
@@ -154,7 +154,7 @@ export async function DELETE(req: Request) {
     }
 
     const userName = user.nama || user.username || "Admin P2KD";
-    const success = dataStore.deletePengumuman(id, userName);
+    const success = await dataStore.deletePengumuman(id, userName);
     if (!success) {
       return NextResponse.json(
         { success: false, message: "Pengumuman tidak ditemukan." },

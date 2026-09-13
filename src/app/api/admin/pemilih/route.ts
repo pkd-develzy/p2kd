@@ -106,7 +106,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const newPemilih = dataStore.addPemilih(
+    const newPemilih = await dataStore.addPemilih(
       {
         nik,
         kk: kk || `${nik.slice(0, 6)}0000000000`,

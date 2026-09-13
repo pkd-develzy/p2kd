@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const savedAduan = dataStore.addAduan({
+    const savedAduan = await dataStore.addAduan({
       nama,
       nik,
       kontak,

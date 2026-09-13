@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { SupabaseDbService } from "@/lib/supabase-db";
+import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 
 export async function POST(req: Request) {
@@ -38,6 +39,8 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    await dataStore.ensureSynced(true);
 
     return NextResponse.json({
       success: true,

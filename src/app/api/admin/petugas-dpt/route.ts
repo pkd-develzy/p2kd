@@ -11,7 +11,7 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const forceRefresh = searchParams.get("refresh") === "true";
+    const forceRefresh = searchParams.get("refresh") !== "false";
     await dataStore.ensureSynced(forceRefresh);
     const list = dataStore.getPetugasDptList();
 

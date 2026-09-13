@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const result = dataStore.batchImportPemilih(voters, session.user.nama || session.user.username);
+    const result = await dataStore.batchImportPemilih(voters, session.user.nama || session.user.username);
 
     return NextResponse.json({
       success: true,

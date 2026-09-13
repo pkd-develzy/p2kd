@@ -61,6 +61,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { nik, dob, turnstileToken } = body;
 
+    await dataStore.ensureSynced();
+
     // Verify Cloudflare Turnstile Token (anti-scraping bot protection)
     const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "cek_nik");
     if (!turnstileCheck.success) {

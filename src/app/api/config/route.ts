@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     }
 
     const userName = user.nama || user.username || "Admin P2KD";
-    const updated = dataStore.updateWebConfig(data, userName);
+    const updated = await dataStore.updateWebConfig(data, userName);
 
     return NextResponse.json({
       success: true,

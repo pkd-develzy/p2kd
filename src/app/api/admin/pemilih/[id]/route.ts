@@ -90,7 +90,7 @@ export async function PUT(
       updates.namaLengkap = updates.namaLengkap.toUpperCase();
     }
 
-    const updated = dataStore.updatePemilih(
+    const updated = await dataStore.updatePemilih(
       id,
       updates,
       user.nama || user.username,
@@ -149,7 +149,7 @@ export async function DELETE(
     }
 
     if (mode === "tms") {
-      const updated = dataStore.markTMS(id, alasanTms, user.nama || user.username);
+      const updated = await dataStore.markTMS(id, alasanTms, user.nama || user.username);
       return NextResponse.json({
         success: true,
         message: `Pemilih berhasil ditandai sebagai TMS (${alasanTms}).`,

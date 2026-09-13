@@ -263,6 +263,17 @@ export function generateBuktiPendaftaranPdf(data: MasterPetugasDpt): jsPDF {
   doc.text("A. BIODATA PENDAFTAR", 20, currentY);
   currentY += 5;
 
+  const formatPdfWaktu = (val?: string) => {
+    if (!val) return "-";
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return d.toLocaleString("id-ID", {
+      timeZone: "Asia/Jakarta",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
   const bioRows = [
     ["Nama Lengkap", `: ${data.namaLengkap}`],
     ["NIK", `: ${data.nik}`],
@@ -272,7 +283,7 @@ export function generateBuktiPendaftaranPdf(data: MasterPetugasDpt): jsPDF {
     ["Alamat Domisili", `: ${data.alamat}, RT ${data.rt} / RW ${data.rw}`],
     ["Desa", ": Desa Kalisalak"],
     ["Nomor WhatsApp", `: ${data.nomorWa}`],
-    ["Waktu Pendaftaran", `: ${data.tanggalPendaftaran}`],
+    ["Waktu Pendaftaran", `: ${formatPdfWaktu(data.tanggalPendaftaran)}`],
   ];
 
   doc.setFontSize(8.5);

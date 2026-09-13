@@ -352,10 +352,10 @@ class SystemDataStore {
     return this.pengumumanList.find((p) => p.id === id);
   }
 
-  public insertPengumuman(
+  public async insertPengumuman(
     data: Omit<MasterPengumuman, "id"> & { id?: string },
     user = "Admin P2KD"
-  ): MasterPengumuman {
+  ): Promise<MasterPengumuman> {
     const newPengumuman: MasterPengumuman = {
       id: data.id || `ann-${Date.now()}`,
       nomor: data.nomor,
@@ -372,9 +372,11 @@ class SystemDataStore {
 
     this.pengumumanList.unshift(newPengumuman);
 
-    SupabaseDbService.insertPengumuman(newPengumuman).catch((err) =>
-      console.warn("Supabase insertPengumuman async failed:", err)
-    );
+    try {
+      await SupabaseDbService.insertPengumuman(newPengumuman);
+    } catch (err) {
+      console.warn("Supabase insertPengumuman async failed:", err);
+    }
 
     this.addAuditLog({
       user,
@@ -389,11 +391,11 @@ class SystemDataStore {
     return newPengumuman;
   }
 
-  public updatePengumuman(
+  public async updatePengumuman(
     id: string,
     data: Partial<MasterPengumuman>,
     user = "Admin P2KD"
-  ): MasterPengumuman | null {
+  ): Promise<MasterPengumuman | null> {
     const idx = this.pengumumanList.findIndex((p) => p.id === id);
     if (idx === -1) return null;
 
@@ -405,9 +407,11 @@ class SystemDataStore {
 
     const updated = this.pengumumanList[idx];
 
-    SupabaseDbService.updatePengumuman(id, updated).catch((err) =>
-      console.warn("Supabase updatePengumuman async failed:", err)
-    );
+    try {
+      await SupabaseDbService.updatePengumuman(id, updated);
+    } catch (err) {
+      console.warn("Supabase updatePengumuman async failed:", err);
+    }
 
     this.addAuditLog({
       user,
@@ -422,15 +426,17 @@ class SystemDataStore {
     return updated;
   }
 
-  public deletePengumuman(id: string, user = "Admin P2KD"): boolean {
+  public async deletePengumuman(id: string, user = "Admin P2KD"): Promise<boolean> {
     const existing = this.pengumumanList.find((p) => p.id === id);
     if (!existing) return false;
 
     this.pengumumanList = this.pengumumanList.filter((p) => p.id !== id);
 
-    SupabaseDbService.deletePengumuman(id).catch((err) =>
-      console.warn("Supabase deletePengumuman async failed:", err)
-    );
+    try {
+      await SupabaseDbService.deletePengumuman(id);
+    } catch (err) {
+      console.warn("Supabase deletePengumuman async failed:", err);
+    }
 
     this.addAuditLog({
       user,
@@ -450,15 +456,17 @@ class SystemDataStore {
     return { ...this.webConfig };
   }
 
-  public updateWebConfig(data: Partial<PublicWebConfig>, user = "Admin P2KD"): PublicWebConfig {
+  public async updateWebConfig(data: Partial<PublicWebConfig>, user = "Admin P2KD"): Promise<PublicWebConfig> {
     this.webConfig = {
       ...this.webConfig,
       ...data,
     };
 
-    SupabaseDbService.saveWebConfig(this.webConfig).catch((err) =>
-      console.warn("Supabase saveWebConfig async failed:", err)
-    );
+    try {
+      await SupabaseDbService.saveWebConfig(this.webConfig);
+    } catch (err) {
+      console.warn("Supabase saveWebConfig async failed:", err);
+    }
 
     this.addAuditLog({
       user,
@@ -529,10 +537,10 @@ class SystemDataStore {
     return this.findPemilihById(id);
   }
 
-  public addPemilih(
-    data: Omit<MasterPemilih, "id" | "nikMasked" | "updatedAt">,
+  public async addPemilih(
+    data: Omit<MasterPemilih, "id" | "updatedAt" | "nikMasked">,
     user = "Petugas P2KD"
-  ) {
+  ): Promise<MasterPemilih> {
     if (this.tahapanState.isDptLocked) {
       throw new Error("DPT telah dikunci dan disegel. Tidak dapat menambah pemilih baru.");
     }
@@ -551,7 +559,7 @@ class SystemDataStore {
     this.pemilihList.push(newPemilih);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertPemilih(newPemilih);
+    await SupabaseDbService.insertPemilih(newPemilih);
 
     this.addAuditLog({
       user,
@@ -566,12 +574,12 @@ class SystemDataStore {
     return newPemilih;
   }
 
-  public updatePemilih(
+  public async updatePemilih(
     id: string,
     data: Partial<MasterPemilih>,
     user = "Petugas P2KD",
     alasan = "Perbaikan data manual oleh petugas"
-  ) {
+  ): Promise<MasterPemilih | null> {
     if (this.tahapanState.isDptLocked) {
       throw new Error("DPT telah dikunci dan disegel. Tidak dapat mengubah data pemilih.");
     }
@@ -590,7 +598,7 @@ class SystemDataStore {
     this.pemilihList[idx] = updated;
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updatePemilih(id, data);
+    await SupabaseDbService.updatePemilih(id, data);
 
     this.addAuditLog({
       user,
@@ -605,11 +613,11 @@ class SystemDataStore {
     return updated;
   }
 
-  public setPemilihTms(
+  public async setPemilihTms(
     id: string,
     alasan: string,
     user = "Petugas P2KD"
-  ) {
+  ): Promise<MasterPemilih | null> {
     if (this.tahapanState.isDptLocked) {
       throw new Error("DPT telah dikunci. Tidak dapat menandai TMS.");
     }
@@ -623,7 +631,7 @@ class SystemDataStore {
     this.pemilihList[idx].updatedAt = new Date().toISOString();
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updatePemilih(id, { statusAktif: "TMS", alasanTms: alasan, coklitStatus: "TMS" });
+    await SupabaseDbService.updatePemilih(id, { statusAktif: "TMS", alasanTms: alasan, coklitStatus: "TMS" });
 
     this.addAuditLog({
       user,
@@ -638,8 +646,8 @@ class SystemDataStore {
     return this.pemilihList[idx];
   }
 
-  public markTMS(id: string, alasan: string, user = "Petugas P2KD") {
-    return this.setPemilihTms(id, alasan, user);
+  public async markTMS(id: string, alasan: string, user = "Petugas P2KD"): Promise<MasterPemilih | null> {
+    return await this.setPemilihTms(id, alasan, user);
   }
 
   public async deletePemilih(id: string, user = "Petugas P2KD"): Promise<boolean> {
@@ -668,12 +676,12 @@ class SystemDataStore {
     return true;
   }
 
-  public mutasiTpsPemilih(
+  public async mutasiTpsPemilih(
     id: string,
     tpsTujuan: string,
     alasan: string,
     user = "Petugas P2KD"
-  ) {
+  ): Promise<MasterPemilih | null> {
     if (this.tahapanState.isDptLocked) {
       throw new Error("DPT telah dikunci. Tidak dapat memindahkan TPS.");
     }
@@ -686,7 +694,7 @@ class SystemDataStore {
     this.pemilihList[idx].updatedAt = new Date().toISOString();
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updatePemilih(id, { tps: tpsTujuan });
+    await SupabaseDbService.updatePemilih(id, { tps: tpsTujuan });
 
     this.addAuditLog({
       user,
@@ -701,12 +709,12 @@ class SystemDataStore {
     return this.pemilihList[idx];
   }
 
-  public updateCoklitStatus(
+  public async updateCoklitStatus(
     id: string,
     status: "SESUAI" | "UBAH_DATA" | "TMS" | "BELUM_COKLIT",
     catatan = "",
     petugas = "Koordinator RW"
-  ) {
+  ): Promise<MasterPemilih | null> {
     const idx = this.pemilihList.findIndex((p) => p.id === id);
     if (idx === -1) return null;
 
@@ -726,7 +734,7 @@ class SystemDataStore {
     }
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateCoklitStatus(id, status, catatan, petugas);
+    await SupabaseDbService.updateCoklitStatus(id, status, catatan, petugas);
 
     this.addAuditLog({
       user: petugas,
@@ -741,13 +749,13 @@ class SystemDataStore {
     return this.pemilihList[idx];
   }
 
-  public pindahTPS(
+  public async pindahTPS(
     id: string,
     tpsBaru: string,
     rtBaru = "01",
     rwBaru = "01",
     user = "Petugas P2KD"
-  ) {
+  ): Promise<MasterPemilih | null> {
     const idx = this.pemilihList.findIndex((p) => p.id === id);
     if (idx === -1) return null;
 
@@ -757,7 +765,7 @@ class SystemDataStore {
     this.pemilihList[idx].updatedAt = new Date().toISOString();
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updatePemilih(id, { tps: tpsBaru, rt: rtBaru, rw: rwBaru });
+    await SupabaseDbService.updatePemilih(id, { tps: tpsBaru, rt: rtBaru, rw: rwBaru });
 
     this.addAuditLog({
       user,
@@ -772,17 +780,45 @@ class SystemDataStore {
     return this.pemilihList[idx];
   }
 
-  public batchImportPemilih(voters: Array<Omit<MasterPemilih, "id" | "nikMasked" | "updatedAt">>, user = "Petugas P2KD") {
+  public async batchImportPemilih(
+    voters: Array<Omit<MasterPemilih, "id" | "nikMasked" | "updatedAt">>,
+    user = "Petugas P2KD"
+  ): Promise<{ totalSuccess: number; totalDuplicate: number; totalInput: number }> {
     let totalSuccess = 0;
     let totalDuplicate = 0;
+    const newPemilihList: MasterPemilih[] = [];
 
     for (const v of voters) {
       if (this.findPemilihByNik(v.nik)) {
         totalDuplicate++;
         continue;
       }
-      this.addPemilih(v, user);
+      const newId = `pml-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
+      const newPemilih: MasterPemilih = {
+        ...v,
+        id: newId,
+        nikMasked: maskNIK(v.nik),
+        tahap: v.tahap || "DPS",
+        statusAktif: v.statusAktif || "AKTIF",
+        coklitStatus: v.coklitStatus || "BELUM_COKLIT",
+        updatedAt: new Date().toISOString(),
+      };
+      this.pemilihList.push(newPemilih);
+      newPemilihList.push(newPemilih);
       totalSuccess++;
+    }
+
+    if (newPemilihList.length > 0) {
+      await SupabaseDbService.insertPemilihBatch(newPemilihList);
+      this.addAuditLog({
+        user,
+        role: "SUPER_ADMIN",
+        aksi: "IMPORT_PEMILIH_MASSAL",
+        entity: "PEMILIH",
+        target: `${newPemilihList.length} Pemilih Baru`,
+        detail: `Berhasil mengimpor ${newPemilihList.length} data pemilih baru secara massal. ${totalDuplicate} duplikat dilewati.`,
+        ipAddress: "127.0.0.1",
+      });
     }
 
     return { totalSuccess, totalDuplicate, totalInput: voters.length };
@@ -820,7 +856,7 @@ class SystemDataStore {
     return this.aduanList.filter((a) => a.status === status);
   }
 
-  public addAduan(data: {
+  public async addAduan(data: {
     nama?: string;
     namaPelapor?: string;
     nik: string;
@@ -832,7 +868,7 @@ class SystemDataStore {
     jenisAduan?: MasterAduan["jenisAduan"];
     pesan?: string;
     isiAduan?: string;
-  }) {
+  }): Promise<MasterAduan> {
     const newId = `adu-${Date.now().toString(36)}`;
     const randomNum = Math.floor(10000 + Math.random() * 90000);
     const nomorAduan = `ADU-KLS-${randomNum}`;
@@ -860,7 +896,7 @@ class SystemDataStore {
     this.aduanList.unshift(newAduan);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertAduan(newAduan);
+    await SupabaseDbService.insertAduan(newAduan);
 
     this.addAuditLog({
       user: namaPelapor,
@@ -875,13 +911,13 @@ class SystemDataStore {
     return newAduan;
   }
 
-  public resolveAduan(
+  public async resolveAduan(
     id: string,
     status: "DISETUJUI" | "DITOLAK",
     catatan: string,
     user = "Petugas P2KD",
     autoUpdateMaster = true
-  ) {
+  ): Promise<MasterAduan | null> {
     const idx = this.aduanList.findIndex((a) => a.id === id);
     if (idx === -1) return null;
 
@@ -890,7 +926,7 @@ class SystemDataStore {
     this.aduanList[idx].tanggalDisetujui = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateAduan(id, status, catatan);
+    await SupabaseDbService.updateAduan(id, status, catatan);
 
     this.addAuditLog({
       user,
@@ -910,7 +946,7 @@ class SystemDataStore {
     return [...this.tpsList];
   }
 
-  public addTps(data: Omit<MasterTPS, "id">, user = "Petugas P2KD") {
+  public async addTps(data: Omit<MasterTPS, "id">, user = "Petugas P2KD"): Promise<MasterTPS> {
     const newId = `tps-${Date.now().toString(36)}`;
     const newTps: MasterTPS = {
       ...data,
@@ -919,7 +955,7 @@ class SystemDataStore {
     this.tpsList.push(newTps);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertTps(newTps);
+    await SupabaseDbService.insertTps(newTps);
 
     this.addAuditLog({
       user,
@@ -934,7 +970,7 @@ class SystemDataStore {
     return newTps;
   }
 
-  public updateTps(id: string, data: Partial<MasterTPS>, user = "Petugas P2KD") {
+  public async updateTps(id: string, data: Partial<MasterTPS>, user = "Petugas P2KD"): Promise<MasterTPS | null> {
     const idx = this.tpsList.findIndex((t) => t.id === id || t.nomorTps === id);
     if (idx === -1) return null;
 
@@ -945,7 +981,7 @@ class SystemDataStore {
     this.tpsList[idx] = updated;
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateTps(this.tpsList[idx].id, data);
+    await SupabaseDbService.updateTps(this.tpsList[idx].id, data);
 
     this.addAuditLog({
       user,
@@ -997,7 +1033,7 @@ class SystemDataStore {
     return [...this.kandidatList];
   }
 
-  public addKandidat(data: Omit<MasterKandidat, "id">, user = "Panitia P2KD") {
+  public async addKandidat(data: Omit<MasterKandidat, "id">, user = "Panitia P2KD"): Promise<MasterKandidat> {
     const newId = `knd-${Date.now().toString(36)}`;
     const newKandidat: MasterKandidat = {
       ...data,
@@ -1007,7 +1043,7 @@ class SystemDataStore {
     this.kandidatList.sort((a, b) => a.nomorUrut - b.nomorUrut);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertKandidat(newKandidat);
+    await SupabaseDbService.insertKandidat(newKandidat);
 
     this.addAuditLog({
       user,
@@ -1022,7 +1058,7 @@ class SystemDataStore {
     return newKandidat;
   }
 
-  public updateKandidat(id: string, data: Partial<MasterKandidat>, user = "Panitia P2KD") {
+  public async updateKandidat(id: string, data: Partial<MasterKandidat>, user = "Panitia P2KD"): Promise<MasterKandidat | null> {
     const idx = this.kandidatList.findIndex((k) => k.id === id || k.nomorUrut === Number(id));
     if (idx === -1) return null;
 
@@ -1034,7 +1070,7 @@ class SystemDataStore {
     this.kandidatList.sort((a, b) => a.nomorUrut - b.nomorUrut);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateKandidat(this.kandidatList[idx].id, data);
+    await SupabaseDbService.updateKandidat(this.kandidatList[idx].id, data);
 
     this.addAuditLog({
       user,
@@ -1049,7 +1085,7 @@ class SystemDataStore {
     return updated;
   }
 
-  public deleteKandidat(id: string, user = "Panitia P2KD") {
+  public async deleteKandidat(id: string, user = "Panitia P2KD"): Promise<boolean> {
     const idx = this.kandidatList.findIndex((k) => k.id === id || k.nomorUrut === Number(id));
     if (idx === -1) return false;
 
@@ -1057,7 +1093,7 @@ class SystemDataStore {
     this.kandidatList.splice(idx, 1);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.deleteKandidat(target.id);
+    await SupabaseDbService.deleteKandidat(target.id);
 
     this.addAuditLog({
       user,
@@ -1077,7 +1113,7 @@ class SystemDataStore {
     return [...this.tpsVoteCounts];
   }
 
-  public updateTpsVoteCount(
+  public async updateTpsVoteCount(
     tpsIdOrNomor: string,
     data: {
       suaraMasuk?: number;
@@ -1086,7 +1122,7 @@ class SystemDataStore {
       statusPlenoTps: "BELUM" | "SELESAI";
     },
     user = "Petugas KPPS"
-  ) {
+  ): Promise<MasterTpsVoteCount | null> {
     const formattedNomor = tpsIdOrNomor.replace(/[^0-9]/g, "").padStart(3, "0");
     const idx = this.tpsVoteCounts.findIndex(
       (t) => t.tpsId === tpsIdOrNomor || t.nomorTps === formattedNomor || t.nomorTps === tpsIdOrNomor
@@ -1112,7 +1148,7 @@ class SystemDataStore {
     this.tpsVoteCounts[idx] = updated;
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateVoteCount(existing.nomorTps, {
+    await SupabaseDbService.updateVoteCount(existing.nomorTps, {
       suaraKandidat: data.suaraKandidat,
       suaraTidakSah: Number(data.suaraTidakSah) || 0,
       statusPlenoTps: data.statusPlenoTps,
@@ -1187,7 +1223,7 @@ class SystemDataStore {
     return this.anggotaList.find((a) => a.id === id);
   }
 
-  public addAnggota(data: Omit<MasterAnggotaP2KD, "id">, user = "admin_kalisalak") {
+  public async addAnggota(data: Omit<MasterAnggotaP2KD, "id">, user = "admin_kalisalak"): Promise<MasterAnggotaP2KD> {
     const newId = `agt-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
     const newAnggota: MasterAnggotaP2KD = {
       ...data,
@@ -1196,7 +1232,7 @@ class SystemDataStore {
     this.anggotaList.push(newAnggota);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertAnggota(newAnggota);
+    await SupabaseDbService.insertAnggota(newAnggota);
 
     this.addAuditLog({
       user,
@@ -1211,7 +1247,7 @@ class SystemDataStore {
     return newAnggota;
   }
 
-  public updateAnggota(id: string, data: Partial<MasterAnggotaP2KD>, user = "admin_kalisalak") {
+  public async updateAnggota(id: string, data: Partial<MasterAnggotaP2KD>, user = "admin_kalisalak"): Promise<MasterAnggotaP2KD | null> {
     const idx = this.anggotaList.findIndex((a) => a.id === id);
     if (idx === -1) return null;
 
@@ -1223,7 +1259,7 @@ class SystemDataStore {
     this.anggotaList[idx] = updated;
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateAnggota(id, data);
+    await SupabaseDbService.updateAnggota(id, data);
 
     this.addAuditLog({
       user,
@@ -1297,7 +1333,7 @@ class SystemDataStore {
     return this.balonList.find((b) => b.id === id);
   }
 
-  public addBalon(data: Omit<MasterBalonPenjaringan, "id">, user = "seksi_penjaringan") {
+  public async addBalon(data: Omit<MasterBalonPenjaringan, "id">, user = "seksi_penjaringan"): Promise<MasterBalonPenjaringan> {
     const newId = `bln-${Date.now().toString(36)}`;
     const newBalon: MasterBalonPenjaringan = {
       ...data,
@@ -1306,7 +1342,7 @@ class SystemDataStore {
     this.balonList.push(newBalon);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertBalon(newBalon);
+    await SupabaseDbService.insertBalon(newBalon);
 
     this.addAuditLog({
       user,
@@ -1321,7 +1357,7 @@ class SystemDataStore {
     return newBalon;
   }
 
-  public updateBalon(id: string, data: Partial<MasterBalonPenjaringan>, user = "seksi_penjaringan") {
+  public async updateBalon(id: string, data: Partial<MasterBalonPenjaringan>, user = "seksi_penjaringan"): Promise<MasterBalonPenjaringan | null> {
     const idx = this.balonList.findIndex((b) => b.id === id);
     if (idx === -1) return null;
 
@@ -1333,7 +1369,7 @@ class SystemDataStore {
     this.balonList[idx] = updated;
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateBalon(id, data);
+    await SupabaseDbService.updateBalon(id, data);
 
     this.addAuditLog({
       user,
@@ -1348,7 +1384,7 @@ class SystemDataStore {
     return updated;
   }
 
-  public deleteBalon(id: string, user = "seksi_penjaringan") {
+  public async deleteBalon(id: string, user = "seksi_penjaringan"): Promise<boolean> {
     const idx = this.balonList.findIndex((b) => b.id === id);
     if (idx === -1) return false;
 
@@ -1356,7 +1392,7 @@ class SystemDataStore {
     this.balonList.splice(idx, 1);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.deleteBalon(id);
+    await SupabaseDbService.deleteBalon(id);
 
     this.addAuditLog({
       user,
@@ -1371,13 +1407,13 @@ class SystemDataStore {
     return true;
   }
 
-  public updateStatusBerkasBalon(
+  public async updateStatusBerkasBalon(
     id: string,
     kelengkapan: MasterBalonPenjaringan["kelengkapan"],
     statusBerkas: MasterBalonPenjaringan["statusBerkas"],
     catatan?: string,
     user = "seksi_penjaringan"
-  ) {
+  ): Promise<MasterBalonPenjaringan | null> {
     const idx = this.balonList.findIndex((b) => b.id === id);
     if (idx === -1) return null;
 
@@ -1386,7 +1422,7 @@ class SystemDataStore {
     if (catatan !== undefined) this.balonList[idx].catatanPenjaringan = catatan;
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updateBalon(id, {
+    await SupabaseDbService.updateBalon(id, {
       kelengkapan,
       statusBerkas,
       catatanPenjaringan: catatan,
@@ -1430,8 +1466,9 @@ class SystemDataStore {
     return this.petugasDptList.some((p) => p.nik.replace(/\D/g, "") === clean);
   }
 
-  public generateNomorRegistrasiPetugas(): string {
+  public async generateNomorRegistrasiPetugas(): Promise<string> {
     const prefix = "PTG-KLS-2026-";
+    await this.ensureSynced(true);
     let maxSeq = 0;
     for (const p of this.petugasDptList) {
       if (p.nomorRegistrasi && p.nomorRegistrasi.startsWith(prefix)) {
@@ -1451,7 +1488,7 @@ class SystemDataStore {
     user = "Masyarakat"
   ): Promise<MasterPetugasDpt> {
     const id = `ptg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    const nomorRegistrasi = this.generateNomorRegistrasiPetugas();
+    const nomorRegistrasi = await this.generateNomorRegistrasiPetugas();
     const now = new Date().toISOString();
 
     const newPetugas: MasterPetugasDpt = {
@@ -1460,13 +1497,18 @@ class SystemDataStore {
       nomorRegistrasi,
       nikMasked: maskNIK(data.nik),
       noKkMasked: maskKK(data.noKk),
+      tanggalPendaftaran: data.tanggalPendaftaran || now,
       updatedAt: now,
     };
 
     this.petugasDptList.unshift(newPetugas);
 
     // Sync to Supabase Cloud
-    await SupabaseDbService.insertPetugasDpt(newPetugas);
+    const dbSuccess = await SupabaseDbService.insertPetugasDpt(newPetugas);
+    if (!dbSuccess) {
+      this.petugasDptList = this.petugasDptList.filter((p) => p.id !== id);
+      throw new Error("Gagal menyimpan data pendaftaran ke server database utama.");
+    }
 
     this.addAuditLog({
       user,
@@ -1564,7 +1606,7 @@ class SystemDataStore {
     return { ...this.tahapanState };
   }
 
-  public lockDpt(lockedBy = "Ahmad Subagyo, S.Pd (Ketua P2KD)", nomorBeritaAcara?: string) {
+  public async lockDpt(lockedBy = "Ahmad Subagyo, S.Pd (Ketua P2KD)", nomorBeritaAcara?: string): Promise<SystemTahapan> {
     if (this.tahapanState.isDptLocked) {
       return this.tahapanState;
     }
@@ -1586,7 +1628,7 @@ class SystemDataStore {
     };
 
     // Sync to Supabase Cloud
-    SupabaseDbService.lockDptTahapan(true, ba, lockedBy, signature);
+    await SupabaseDbService.lockDptTahapan(true, ba, lockedBy, signature);
 
     this.addAuditLog({
       user: lockedBy,
@@ -1601,11 +1643,11 @@ class SystemDataStore {
     return this.tahapanState;
   }
 
-  public lockDPT(lockedBy = "Ahmad Subagyo, S.Pd (Ketua P2KD)", nomorBeritaAcara?: string) {
+  public async lockDPT(lockedBy = "Ahmad Subagyo, S.Pd (Ketua P2KD)", nomorBeritaAcara?: string): Promise<SystemTahapan> {
     return this.lockDpt(lockedBy, nomorBeritaAcara);
   }
 
-  public unlockDPT(user = "Ketua P2KD", alasan = "Revisi Pleno") {
+  public async unlockDPT(user = "Ketua P2KD", alasan = "Revisi Pleno"): Promise<SystemTahapan> {
     this.tahapanState = {
       ...this.tahapanState,
       dptStatus: "DRAFT",
@@ -1615,7 +1657,7 @@ class SystemDataStore {
     };
 
     // Sync to Supabase Cloud
-    SupabaseDbService.lockDptTahapan(false, this.tahapanState.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026", user, undefined);
+    await SupabaseDbService.lockDptTahapan(false, this.tahapanState.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026", user, undefined);
 
     this.addAuditLog({
       user,
@@ -1646,7 +1688,9 @@ class SystemDataStore {
     }
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertAuditLog(newLog);
+    SupabaseDbService.insertAuditLog(newLog).catch((err) => {
+      console.warn("Supabase insertAuditLog background sync failed:", err);
+    });
 
     return newLog;
   }

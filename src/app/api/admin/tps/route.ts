@@ -81,7 +81,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const newTps = dataStore.addTps(
+    const newTps = await dataStore.addTps(
       {
         kodeTps: `TPS-KLS-${formattedNomor}`,
         nomorTps: formattedNomor,
@@ -126,7 +126,7 @@ export async function PUT(req: Request) {
       );
     }
 
-    const updated = dataStore.updateTps(id, updates, session.user.nama || session.user.username);
+    const updated = await dataStore.updateTps(id, updates, session.user.nama || session.user.username);
     if (!updated) {
       return NextResponse.json(
         { success: false, message: "TPS tidak ditemukan." },

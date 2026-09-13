@@ -79,6 +79,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Pencegahan Pendaftaran NIK Ganda (Anti-Double Registration)
+    await dataStore.ensureSynced(true);
     if (dataStore.checkNikPetugasDptExists(cleanNik)) {
       return NextResponse.json(
         {
@@ -118,11 +119,7 @@ export async function POST(req: Request) {
 
     // 6. Simpan Data Pendaftaran
     const now = new Date();
-    const formattedTanggal = now.toLocaleString("id-ID", {
-      timeZone: "Asia/Jakarta",
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
+    const isoTanggal = now.toISOString();
 
     const newPetugas = await dataStore.addPetugasDpt(
       {
@@ -147,7 +144,7 @@ export async function POST(req: Request) {
         tandaTanganUrl,
         status: initialStatus,
         assignedWilayah: `RW ${String(rw).padStart(2, "0")}`,
-        tanggalPendaftaran: formattedTanggal,
+        tanggalPendaftaran: isoTanggal,
       },
       `${namaLengkap} (Mandiri)`
     );

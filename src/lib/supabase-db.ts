@@ -550,9 +550,9 @@ export class SupabaseDbService {
         tandaTanganUrl: p.surat_pernyataan_url || p.tanda_tangan_url || "",
         status: ((p.status_verifikasi || p.status || "MENUNGGU_VERIFIKASI") as MasterPetugasDpt["status"]),
         catatanPanitia: p.catatan_verifikasi || p.catatan_panitia || undefined,
-        assignedWilayah: p.desa || p.assigned_wilayah || undefined,
+        assignedWilayah: p.assigned_wilayah || (p.rw ? `RW ${p.rw}` : undefined),
         tanggalPendaftaran: p.tanggal_pendaftaran,
-        updatedAt: p.created_at || p.updated_at || p.tanggal_pendaftaran,
+        updatedAt: p.updated_at || p.created_at || p.tanggal_pendaftaran,
       }));
 
       const resultObj = {
@@ -873,6 +873,38 @@ export class SupabaseDbService {
     }
   }
 
+  public static async insertPemilihBatch(dataList: MasterPemilih[]) {
+    try {
+      this.invalidateCache();
+      const chunkSize = 100;
+      for (let i = 0; i < dataList.length; i += chunkSize) {
+        const chunk = dataList.slice(i, i + chunkSize);
+        const rows = chunk.map((data) => ({
+          id: data.id,
+          nik: data.nik,
+          no_kk: data.kk,
+          nama_lengkap: data.namaLengkap,
+          tempat_lahir: data.tempatLahir,
+          tanggal_lahir: data.tanggalLahir,
+          jenis_kelamin: data.jenisKelamin,
+          status_perkawinan: data.statusPerkawinan,
+          alamat: data.alamat,
+          rt: data.rt,
+          rw: data.rw,
+          desa: data.desa,
+          kecamatan: data.kecamatan,
+          tps: data.tps,
+          status_aktif: data.statusAktif,
+          alasan_tms: data.alasanTms,
+          coklit_status: data.coklitStatus || "BELUM_COKLIT",
+        }));
+        await this.adminClient.from("pemilih").insert(rows);
+      }
+    } catch (err) {
+      console.warn("Supabase insertPemilihBatch sync failed:", err);
+    }
+  }
+
   public static async updatePemilih(id: string, data: Partial<MasterPemilih>) {
     try {
       this.invalidateCache();
@@ -1029,6 +1061,23 @@ export class SupabaseDbService {
   public static async insertPetugasDpt(data: MasterPetugasDpt): Promise<boolean> {
     try {
       this.invalidateCache();
+
+      // Ensure tanggal_pendaftaran is a valid ISO timestamp format for PostgreSQL timestamptz column
+      let tanggalPendaftaranIso = new Date().toISOString();
+      if (data.tanggalPendaftaran) {
+        const parsed = Date.parse(data.tanggalPendaftaran);
+        if (!isNaN(parsed)) {
+          tanggalPendaftaranIso = new Date(parsed).toISOString();
+        } else {
+          // Attempt parsing locale date format like "13 Sep 2026, 16.51"
+          const normalized = data.tanggalPendaftaran.replace(/,/g, "").replace(/\./g, ":");
+          const p2 = Date.parse(normalized);
+          if (!isNaN(p2)) {
+            tanggalPendaftaranIso = new Date(p2).toISOString();
+          }
+        }
+      }
+
       const payload = {
         id: data.id,
         nomor_registrasi: data.nomorRegistrasi,
@@ -1063,7 +1112,7 @@ export class SupabaseDbService {
         catatan_panitia: data.catatanPanitia || null,
         catatan_verifikasi: data.catatanPanitia || null,
         assigned_wilayah: data.assignedWilayah || null,
-        tanggal_pendaftaran: data.tanggalPendaftaran,
+        tanggal_pendaftaran: tanggalPendaftaranIso,
         created_at: new Date().toISOString(),
         updated_at: data.updatedAt || new Date().toISOString(),
       };
@@ -1210,17 +1259,21 @@ export class SupabaseDbService {
 
   public static async updateVoteCount(nomorTps: string, data: { suaraKandidat: Record<number, number>; suaraTidakSah: number; statusPlenoTps: string }) {
     try {
+      this.invalidateCache();
       const suaraMasuk = Object.values(data.suaraKandidat).reduce((a, b) => a + b, 0) + data.suaraTidakSah;
       const suaraSah = Object.values(data.suaraKandidat).reduce((a, b) => a + b, 0);
 
-      await this.adminClient.from("tps_vote_count").update({
+      await this.adminClient.from("tps_vote_counts").upsert({
+        id: `vote-${nomorTps}`,
+        nomor_tps: nomorTps,
         suara_kandidat: data.suaraKandidat,
         suara_tidak_sah: data.suaraTidakSah,
         suara_sah: suaraSah,
         suara_masuk: suaraMasuk,
         status_pleno_tps: data.statusPlenoTps,
-        waktu_input: new Date().toLocaleTimeString("id-ID"),
-      }).eq("nomor_tps", nomorTps);
+        waktu_input: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "nomor_tps" });
     } catch (err) {
       console.warn("Supabase updateVoteCount sync failed:", err);
     }
@@ -1228,14 +1281,19 @@ export class SupabaseDbService {
 
   public static async lockDptTahapan(isLocked: boolean, nomorBeritaAcara: string, lockedBy?: string, lockHash?: string) {
     try {
-      await this.adminClient.from("tahapan").update({
+      this.invalidateCache();
+      await this.adminClient.from("tahapan").upsert({
+        id: "thp-penetapan-dpt",
+        kode_tahapan: "THP-PENETAPAN-DPT",
+        nama_tahapan: "Penetapan Daftar Pemilih Tetap (DPT)",
+        kategori: "PENETAPAN",
         is_locked: isLocked,
         status: isLocked ? "SELESAI" : "AKTIF",
         nomor_berita_acara: nomorBeritaAcara,
         locked_by: lockedBy,
         lock_hash: lockHash,
         updated_at: new Date().toISOString(),
-      }).eq("kode_tahapan", "THP-PENETAPAN-DPT");
+      });
     } catch (err) {
       console.warn("Supabase lockDptTahapan sync failed:", err);
     }

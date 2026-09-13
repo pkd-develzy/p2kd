@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Shield, FileText, Search, MapPin, Phone, Clock, ShieldCheck, Database, Calendar, ArrowRight } from "lucide-react";
+import { Shield, FileText, Search, MapPin, Clock, ShieldCheck, Database, Calendar, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui";
 
 export const Footer: React.FC = () => {
@@ -43,10 +43,6 @@ export const Footer: React.FC = () => {
                     <p>• Sabtu – Minggu (Libur)</p>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span><strong className="text-white font-bold">Layanan Informasi Warga:</strong> (0283) 345-6789 / 0812-3456-7890</span>
               </div>
             </div>
           </div>

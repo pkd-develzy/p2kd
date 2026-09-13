@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MessageSquarePlus, ArrowRight, MapPin, Phone, HelpCircle, ShieldCheck } from "lucide-react";
+import { MessageSquarePlus, ArrowRight, MapPin, HelpCircle, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -34,10 +34,6 @@ export const HomeCtaAduan: React.FC = () => {
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
                 <span>Balai Desa Kalisalak, Kec. Margasari</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
-                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>Hotline P2KD: (0283) 345-6789 / 0812-3456-7890</span>
               </div>
             </div>
           </div>

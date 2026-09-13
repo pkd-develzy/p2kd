@@ -262,7 +262,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md animate-bounce"
               >
                 <UserCheck className="w-4 h-4 mr-1.5" />
-                Verifikasi {selectedIds.length} Terpilih $\to$ Masuk DPT
+                Verifikasi {selectedIds.length} Terpilih → Masuk DPT
               </Button>
             )}
 

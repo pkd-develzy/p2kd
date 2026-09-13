@@ -71,16 +71,27 @@ export async function verifyTurnstileToken(
     }
 
     // Validate expected hostname if configured
-    const allowedHostnames = (process.env.TURNSTILE_HOSTNAMES ?? "")
+    const allowedHostnames = (process.env.TURNSTILE_HOSTNAMES ?? "p2kdkalisalak.my.id,www.p2kdkalisalak.my.id,localhost,127.0.0.1")
       .split(",")
-      .map((h) => h.trim())
+      .map((h) => h.trim().toLowerCase())
       .filter(Boolean);
 
     if (allowedHostnames.length > 0 && data.hostname) {
-      const isAllowed = allowedHostnames.some(
-        (h) => h.toLowerCase() === data.hostname.toLowerCase()
-      );
+      const incomingHost = data.hostname.toLowerCase();
+      const isAllowed = allowedHostnames.some((h) => {
+        // Exact match
+        if (h === incomingHost) return true;
+        // Support www <-> apex equivalence (e.g. p2kdkalisalak.my.id matches www.p2kdkalisalak.my.id)
+        if (incomingHost === `www.${h}` || h === `www.${incomingHost}`) return true;
+        // Subdomain matching
+        if (incomingHost.endsWith(`.${h}`)) return true;
+        // Vercel preview domains
+        if (incomingHost.endsWith(".vercel.app")) return true;
+        return false;
+      });
+
       if (!isAllowed) {
+        console.warn(`[Turnstile] Hostname mismatch: incoming=${data.hostname}, allowed=${allowedHostnames.join(", ")}`);
         return {
           success: false,
           message: `Hostname token (${data.hostname}) tidak diizinkan.`,

@@ -27,7 +27,7 @@ export const InformasiContent: React.FC = () => {
       </div>
 
       {/* Tata Cara Pilkades Berdasarkan PP No. 16 Tahun 2026 */}
-      <Card className="p-6 sm:p-8 bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl shadow-xl border border-blue-800/40">
+      <Card className="p-6 sm:p-8 bg-linear-to-br from-blue-950 via-slate-900 to-indigo-950 text-white rounded-3xl shadow-xl border border-blue-800/40">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-blue-800/60 pb-3">
             <div className="flex items-center gap-2.5">

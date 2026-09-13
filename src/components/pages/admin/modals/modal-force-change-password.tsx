@@ -139,7 +139,7 @@ export const ModalForceChangePassword: React.FC<ModalForceChangePasswordProps> =
     >
       <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden animate-scaleUp">
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-950 p-6 text-white border-b border-blue-900/60 relative">
+        <div className="bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 p-6 text-white border-b border-blue-900/60 relative">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
               <KeyRound className="w-5 h-5" />

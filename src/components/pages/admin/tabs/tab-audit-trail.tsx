@@ -20,7 +20,7 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
   return (
     <div className="space-y-5">
       {/* Hero Header */}
-      <Card className="p-6 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-lg rounded-3xl">
+      <Card className="p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-lg rounded-3xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex items-center gap-2">

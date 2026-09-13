@@ -167,7 +167,7 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
               <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
 
               {/* Animated Laser Line */}
-              <div className="w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent absolute top-0 animate-[scan_2s_ease-in-out_infinite] shadow-[0_0_12px_#34d399]" />
+              <div className="w-full h-1 bg-linear-to-r from-transparent via-emerald-400 to-transparent absolute top-0 animate-[scan_2s_ease-in-out_infinite] shadow-[0_0_12px_#34d399]" />
             </div>
 
             <div className="mt-4 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] text-emerald-300 font-bold tracking-wider uppercase border border-emerald-400/30 flex items-center gap-1.5 animate-pulse">

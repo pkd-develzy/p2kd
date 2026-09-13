@@ -12,7 +12,7 @@ export interface ButtonProps extends HTMLMotionProps<"button"> {
 
 const variants = {
   primary:
-    "bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white shadow-md shadow-blue-900/20 border border-blue-600/30",
+    "bg-linear-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white shadow-md shadow-blue-900/20 border border-blue-600/30",
   secondary:
     "bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 shadow-sm",
   danger:

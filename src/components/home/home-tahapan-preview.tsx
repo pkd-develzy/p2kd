@@ -54,7 +54,7 @@ export const HomeTahapanPreview: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Phase 1: Currently Active (Persiapan & Sosialisasi) */}
         <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-          <Card className="h-full p-6 border-2 border-blue-500 bg-gradient-to-b from-blue-50/80 to-white rounded-3xl shadow-md relative overflow-hidden flex flex-col justify-between">
+          <Card className="h-full p-6 border-2 border-blue-500 bg-linear-to-b from-blue-50/80 to-white rounded-3xl shadow-md relative overflow-hidden flex flex-col justify-between">
             <div className="absolute top-0 right-0 w-2.5 h-full bg-blue-600" />
             <div>
               <div className="flex items-center justify-between gap-2 mb-3">
@@ -85,7 +85,7 @@ export const HomeTahapanPreview: React.FC = () => {
 
         {/* Phase 2: Upcoming (Pencalonan & Pendataan Pemilih) */}
         <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-          <Card className="h-full p-6 border-slate-200/90 bg-gradient-to-b from-slate-50/60 to-white rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+          <Card className="h-full p-6 border-slate-200/90 bg-linear-to-b from-slate-50/60 to-white rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between gap-2 mb-3">
                 <span className="text-[11px] font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
@@ -115,7 +115,7 @@ export const HomeTahapanPreview: React.FC = () => {
 
         {/* Phase 3: Voting Day Target */}
         <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2 }}>
-          <Card className="h-full p-6 border-indigo-200/90 bg-gradient-to-b from-indigo-50/50 to-white rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+          <Card className="h-full p-6 border-indigo-200/90 bg-linear-to-b from-indigo-50/50 to-white rounded-3xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between gap-2 mb-3">
                 <span className="text-[11px] font-black text-indigo-900 bg-indigo-100 px-2.5 py-1 rounded-lg">

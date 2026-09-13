@@ -5,6 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge, Input } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import {
   Globe,
   MapPin,
@@ -56,6 +58,7 @@ const defaultWebConfig: PublicWebConfig = {
 
 export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser }) => {
   const toast = useToast();
+  const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
   const [config, setConfig] = useState<PublicWebConfig>(defaultWebConfig);
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -185,7 +188,14 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
   };
 
   const handleDeletePengumuman = async (id: string, judul: string) => {
-    if (!confirm(`Hapus pengumuman "${judul}" dari database?`)) return;
+    const approved = await confirm({
+      title: "Hapus Pengumuman?",
+      message: `Apakah Anda yakin ingin menghapus pengumuman "${judul}" dari database? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: "Hapus Pengumuman",
+      cancelText: "Batal",
+      variant: "danger",
+    });
+    if (!approved) return;
 
     try {
       const res = await fetch("/api/pengumuman", {
@@ -906,6 +916,14 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
           </div>
         </div>
       )}
+
+      {/* Modern Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        options={confirmOptions}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

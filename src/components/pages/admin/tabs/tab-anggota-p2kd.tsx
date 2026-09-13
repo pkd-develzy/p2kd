@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { AnggotaP2KD, SeksiP2KDType, TPSItem } from "../types";
 import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { compressImage } from "@/lib/image-compressor";
 
 interface TabAnggotaP2KDProps {
@@ -54,6 +56,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   onRefresh,
 }) => {
   const toast = useToast();
+  const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
   const isSuperAdminUser = isAdmin || userRole === "SUPER_ADMIN" || userSeksi === "PIMPINAN";
   const userSectionCode = !isSuperAdminUser && userSeksi ? userSeksi : null;
   const canManage = isSuperAdminUser || Boolean(userSectionCode);
@@ -356,7 +359,15 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   };
 
   const handleDelete = async (agt: AnggotaP2KD) => {
-    if (!window.confirm(`Hapus anggota ${agt.namaLengkap} (${agt.jabatan}) dari sistem P2KD?`)) {
+    const approved = await confirm({
+      title: "Hapus Anggota P2KD?",
+      message: `Apakah Anda yakin ingin menghapus ${agt.namaLengkap} (${agt.jabatan}) dari sistem P2KD?`,
+      confirmText: "Hapus Anggota",
+      cancelText: "Batal",
+      variant: "danger",
+    });
+
+    if (!approved) {
       return;
     }
 
@@ -1272,6 +1283,14 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modern Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        options={confirmOptions}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

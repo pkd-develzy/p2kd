@@ -27,6 +27,9 @@ import {
 import { MasterPetugasDpt, PetugasStatus } from "@/lib/data-store";
 import { downloadPetugasPdf } from "@/lib/petugas-pdf-generator";
 import { DAFTAR_RW_KALISALAK } from "@/lib/kalisalak-wilayah";
+import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
+import { ConfirmDialog } from "@/components/ui/dialog";
 
 interface TabPetugasDptProps {
   isAdmin?: boolean;
@@ -39,6 +42,8 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   userRole = "SUPER_ADMIN",
   userName = "Panitia P2KD",
 }) => {
+  const toast = useToast();
+  const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
   const [petugasList, setPetugasList] = useState<MasterPetugasDpt[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -179,7 +184,14 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 
   // Delete Item
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus data pendaftar: ${name}?`)) return;
+    const approved = await confirm({
+      title: "Hapus Pendaftar Petugas?",
+      message: `Apakah Anda yakin ingin menghapus data pendaftar: ${name}? Tindakan ini tidak dapat dibatalkan.`,
+      confirmText: "Hapus Pendaftar",
+      cancelText: "Batal",
+      variant: "danger",
+    });
+    if (!approved) return;
 
     try {
       const res = await fetch(`/api/admin/petugas-dpt?id=${encodeURIComponent(id)}`, {
@@ -191,11 +203,12 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         if (selectedPetugas?.id === id) {
           handleCloseDetail();
         }
+        toast.success("Data Dihapus", `Data pendaftar ${name} berhasil dihapus.`);
       } else {
-        alert(json.message || "Gagal menghapus data.");
+        toast.error("Gagal Menghapus", json.message || "Gagal menghapus data.");
       }
     } catch {
-      alert("Terjadi kesalahan koneksi.");
+      toast.error("Kesalahan Koneksi", "Terjadi kesalahan koneksi saat menghapus data.");
     }
   };
 
@@ -901,6 +914,14 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modern Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        options={confirmOptions}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
     </div>
   );
 };

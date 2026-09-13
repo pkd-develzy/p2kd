@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { generateAuthToken, verifyPassword } from "@/lib/encryption";
 import { isInitialDefaultPassword } from "@/lib/password-policy";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(req: Request) {
   try {
@@ -16,70 +17,20 @@ export async function POST(req: Request) {
     }
 
     // Canonical Server-Side Cloudflare Turnstile Siteverify
-    const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
-    if (turnstileSecret) {
-      if (
-        !turnstileToken ||
-        typeof turnstileToken !== "string" ||
-        turnstileToken.length === 0 ||
-        turnstileToken.length > 2048
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Verifikasi keamanan (Turnstile) wajib diselesaikan.",
-          },
-          { status: 403 }
-        );
-      }
+    const clientIp =
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      "";
 
-      const clientIp =
-        req.headers.get("cf-connecting-ip") ||
-        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-        "";
-
-      try {
-        const cfRes = await fetch(
-          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            signal: AbortSignal.timeout(10000),
-            body: new URLSearchParams({
-              secret: turnstileSecret,
-              response: turnstileToken,
-              remoteip: clientIp,
-            }),
-          }
-        );
-
-        if (!cfRes.ok) {
-          throw new Error(`siteverify returned HTTP ${cfRes.status}`);
-        }
-
-        const cfData = await cfRes.json();
-
-        if (!cfData.success) {
-          return NextResponse.json(
-            {
-              success: false,
-              message:
-                "Verifikasi keamanan sistem tidak valid atau telah kadaluarsa. Silakan coba kembali.",
-            },
-            { status: 403 }
-          );
-        }
-      } catch (err) {
-        console.error("Siteverify error:", err);
-        return NextResponse.json(
-          {
-            success: false,
-            message:
-              "Gagal memverifikasi respon keamanan ke server database.",
-          },
-          { status: 403 }
-        );
-      }
+    const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "login");
+    if (!turnstileCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: turnstileCheck.message || "Verifikasi keamanan (Turnstile) wajib diselesaikan.",
+        },
+        { status: 403 }
+      );
     }
 
     const inputRaw = String(username).toLowerCase().trim();

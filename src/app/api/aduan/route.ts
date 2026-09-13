@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(req: Request) {
   try {
@@ -22,47 +23,15 @@ export async function POST(req: Request) {
     const { nama, nik, kontak, rt, rw, jenis, pesan, turnstileToken } = body;
 
     // Verify Cloudflare Turnstile Token (anti-spam form protection)
-    const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
-    if (turnstileSecret) {
-      if (!turnstileToken || typeof turnstileToken !== "string" || turnstileToken.trim().length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Verifikasi keamanan sistem (Turnstile) wajib diselesaikan.",
-          },
-          { status: 403 }
-        );
-      }
-
-      try {
-        const cfRes = await fetch(
-          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            signal: AbortSignal.timeout(10000),
-            body: new URLSearchParams({
-              secret: turnstileSecret,
-              response: turnstileToken,
-              remoteip: clientIp,
-            }),
-          }
-        );
-
-        const cfData = await cfRes.json();
-        if (!cfData.success) {
-          return NextResponse.json(
-            {
-              success: false,
-              message:
-                "Verifikasi keamanan sistem gagal atau kadaluarsa. Silakan coba kembali.",
-            },
-            { status: 403 }
-          );
-        }
-      } catch (err) {
-        console.error("Turnstile error in /api/aduan:", err);
-      }
+    const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "aduan_warga");
+    if (!turnstileCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: turnstileCheck.message || "Verifikasi keamanan sistem (Turnstile) wajib diselesaikan.",
+        },
+        { status: 403 }
+      );
     }
 
     if (!nama || !nik || !kontak || !pesan) {

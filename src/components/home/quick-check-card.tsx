@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { CloudflareTurnstileShield } from "@/components/ui/cloudflare-turnstile-shield";
+import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
 
 interface VoterResult {
   found: boolean;
@@ -39,19 +39,15 @@ export const QuickCheckCard: React.FC = () => {
   const [dob, setDob] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<VoterResult | null>(null);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const [isVerified, setIsVerified] = useState<boolean>(false);
+  const turnstileRef = useRef<TurnstileShieldHandle>(null);
 
   const toast = useToast();
 
   const handleTurnstileVerify = useCallback((token: string) => {
-    if (token) {
-      setIsVerified(true);
-      setTurnstileToken(token);
-    } else {
-      setIsVerified(false);
-      setTurnstileToken(null);
-    }
+    setTurnstileToken(token);
+    setIsVerified(Boolean(token));
   }, []);
 
   const handleNikChange = (val: string) => {
@@ -167,14 +163,6 @@ export const QuickCheckCard: React.FC = () => {
   const handleCheck = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isVerified) {
-      toast.warning(
-        "Verifikasi Keamanan Wajib",
-        "Silakan selesaikan verifikasi centang keamanan sistem terlebih dahulu."
-      );
-      return;
-    }
-
     if (!nik || nik.length !== 16) {
       toast.warning(
         "Format NIK Tidak Valid",
@@ -187,6 +175,14 @@ export const QuickCheckCard: React.FC = () => {
       toast.warning(
         "Tanggal Lahir Diperlukan",
         "Silakan masukkan tanggal lahir untuk verifikasi pencarian hak pilih."
+      );
+      return;
+    }
+
+    if (!turnstileToken) {
+      toast.warning(
+        "Verifikasi Keamanan Wajib",
+        "Silakan selesaikan centang verifikasi keamanan Cloudflare Turnstile terlebih dahulu."
       );
       return;
     }
@@ -232,6 +228,7 @@ export const QuickCheckCard: React.FC = () => {
       );
     } finally {
       setLoading(false);
+      turnstileRef.current?.reset();
     }
   };
 
@@ -308,13 +305,14 @@ export const QuickCheckCard: React.FC = () => {
             </div>
           </div>
 
-          {/* Develzy Security Shield Bot Protection */}
+          {/* Cloudflare Turnstile Bot Protection */}
           <div className="pt-1">
             <CloudflareTurnstileShield
+              ref={turnstileRef}
               action="cek_nik"
               isVerified={isVerified}
               onVerify={handleTurnstileVerify}
-              label="Verifikasi Keamanan Warga Lolos • Develzy Shield"
+              label="Verifikasi Keamanan Warga Lolos • Cloudflare Turnstile"
             />
           </div>
 
@@ -324,7 +322,7 @@ export const QuickCheckCard: React.FC = () => {
               type="submit"
               variant="primary"
               isLoading={loading}
-              disabled={!isVerified}
+              disabled={!isVerified || loading}
               className="flex-1 py-3.5 text-sm font-black shadow-lg shadow-blue-900/15 rounded-xl disabled:opacity-50"
             >
               <Search className="w-4 h-4 mr-2" />

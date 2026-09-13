@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import { ShieldCheck, Loader2, ShieldAlert } from "lucide-react";
+import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
+import { ShieldCheck, Loader2, AlertCircle } from "lucide-react";
 
 declare global {
   interface Window {
@@ -26,152 +26,189 @@ declare global {
   }
 }
 
+export interface TurnstileShieldHandle {
+  reset: () => void;
+}
+
 interface TurnstileShieldProps {
   onVerify: (token: string) => void;
-  isVerified: boolean;
+  isVerified?: boolean;
   action?: string;
   size?: "normal" | "compact" | "flexible";
   label?: string;
 }
 
-export const CloudflareTurnstileShield: React.FC<TurnstileShieldProps> = ({
-  onVerify,
-  isVerified,
-  action = "login",
-  size = "normal",
-  label = "Verifikasi Keamanan Sistem Berhasil • Develzy Shield",
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetIdRef = useRef<string | null>(null);
-  const onVerifyRef = useRef(onVerify);
+const DEFAULT_SITE_KEY = "0x4AAAAAAEx_igNuBYRNZzT3";
 
-  useEffect(() => {
-    onVerifyRef.current = onVerify;
-  }, [onVerify]);
+export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, TurnstileShieldProps>(
+  (
+    {
+      onVerify,
+      isVerified = false,
+      action = "form_submit",
+      size = "normal",
+      label = "Verifikasi Keamanan Sistem Berhasil • Cloudflare Turnstile",
+    },
+    ref
+  ) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const widgetIdRef = useRef<string | null>(null);
+    const onVerifyRef = useRef(onVerify);
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+    useEffect(() => {
+      onVerifyRef.current = onVerify;
+    }, [onVerify]);
 
-  const siteKey = process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITEKEY || "";
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isCancelled = false;
+    const siteKey =
+      process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITEKEY || DEFAULT_SITE_KEY;
 
-    const renderTurnstile = () => {
-      if (isCancelled || !containerRef.current || !window.turnstile) return;
-      if (widgetIdRef.current) return;
-
-      try {
-        if (containerRef.current) {
-          containerRef.current.innerHTML = "";
-        }
-
-        widgetIdRef.current = window.turnstile.render(containerRef.current, {
-          sitekey: siteKey,
-          action,
-          theme: "light",
-          size,
-          appearance: "always",
-          execution: "render",
-          callback: (token: string) => {
-            if (!isCancelled && token) {
-              setLoading(false);
-              setError(null);
-              onVerifyRef.current(token);
-            }
-          },
-          "error-callback": () => {
-            if (!isCancelled) {
-              setLoading(false);
-              setError("Verifikasi keamanan gagal. Silakan muat ulang halaman.");
-            }
-          },
-          "expired-callback": () => {
-            if (!isCancelled) {
-              onVerifyRef.current("");
-            }
-          },
-        });
-        setLoading(false);
-      } catch (err) {
-        console.error("Turnstile render error:", err);
-      }
-    };
-
-    if (window.turnstile) {
-      renderTurnstile();
-    } else {
-      const scriptId = "cf-turnstile-script";
-      let script = document.getElementById(scriptId) as HTMLScriptElement | null;
-
-      if (!script) {
-        script = document.createElement("script");
-        script.id = scriptId;
-        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          renderTurnstile();
-        };
-        script.onerror = () => {
-          if (!isCancelled) {
-            setLoading(false);
-            setError("Gagal memuat sistem verifikasi keamanan.");
-          }
-        };
-        document.head.appendChild(script);
-      } else {
-        const interval = setInterval(() => {
-          if (window.turnstile) {
-            clearInterval(interval);
-            renderTurnstile();
-          }
-        }, 100);
-        return () => clearInterval(interval);
-      }
-    }
-
-    return () => {
-      isCancelled = true;
+    const resetWidget = useCallback(() => {
       if (widgetIdRef.current && window.turnstile) {
         try {
-          window.turnstile.remove(widgetIdRef.current);
-        } catch {
-          // ignore cleanup errors during fast refresh
+          window.turnstile.reset(widgetIdRef.current);
+          onVerifyRef.current("");
+          setLoading(true);
+          setError(null);
+        } catch (e) {
+          console.warn("Turnstile reset warning:", e);
         }
-        widgetIdRef.current = null;
       }
-    };
-  }, [siteKey, action, size]);
+    }, []);
 
-  return (
-    <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs">
-      {/* Official Security Render Target */}
-      <div ref={containerRef} className="flex justify-center min-h-[65px]" />
+    useImperativeHandle(ref, () => ({
+      reset: resetWidget,
+    }));
 
-      {loading && !isVerified && (
-        <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-500">
-          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-          <span>Memeriksa integritas sistem & database...</span>
-        </div>
-      )}
+    useEffect(() => {
+      let isCancelled = false;
 
-      {error && (
-        <div className="flex items-center justify-center gap-1.5 py-2 text-xs text-rose-600 font-semibold">
-          <ShieldAlert className="w-4 h-4" />
-          <span>{error}</span>
-        </div>
-      )}
+      const renderTurnstile = () => {
+        if (isCancelled || !containerRef.current || !window.turnstile) return;
+        if (widgetIdRef.current) return;
 
-      {isVerified && (
-        <div className="flex items-center justify-between text-[11px] font-bold text-emerald-700 pt-1.5 px-1 border-t border-slate-100 mt-1">
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            {label}
-          </span>
-          <span className="text-[10px] text-slate-400 font-mono">Develzy Security Shield</span>
-        </div>
-      )}
-    </div>
-  );
-};
+        try {
+          if (containerRef.current) {
+            containerRef.current.innerHTML = "";
+          }
+
+          widgetIdRef.current = window.turnstile.render(containerRef.current, {
+            sitekey: siteKey,
+            action,
+            theme: "light",
+            size,
+            appearance: "always",
+            execution: "render",
+            callback: (token: string) => {
+              if (!isCancelled && token) {
+                setLoading(false);
+                setError(null);
+                onVerifyRef.current(token);
+              }
+            },
+            "error-callback": (code?: string) => {
+              if (!isCancelled) {
+                setLoading(false);
+                setError(
+                  code ? `Verifikasi keamanan Turnstile gagal (${code}).` : "Verifikasi keamanan gagal. Silakan muat ulang halaman."
+                );
+              }
+            },
+            "expired-callback": () => {
+              if (!isCancelled) {
+                onVerifyRef.current("");
+                resetWidget();
+              }
+            },
+          });
+          setLoading(false);
+        } catch (err) {
+          console.error("Turnstile render error:", err);
+          if (!isCancelled) {
+            setLoading(false);
+          }
+        }
+      };
+
+      if (window.turnstile) {
+        renderTurnstile();
+      } else {
+        const scriptId = "cf-turnstile-script";
+        let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+        if (!script) {
+          script = document.createElement("script");
+          script.id = scriptId;
+          script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+          script.async = true;
+          script.defer = true;
+          script.onload = () => {
+            renderTurnstile();
+          };
+          script.onerror = () => {
+            if (!isCancelled) {
+              setLoading(false);
+              setError("Gagal memuat skrip keamanan Cloudflare Turnstile.");
+            }
+          };
+          document.head.appendChild(script);
+        } else {
+          const interval = setInterval(() => {
+            if (window.turnstile) {
+              clearInterval(interval);
+              renderTurnstile();
+            }
+          }, 100);
+          return () => clearInterval(interval);
+        }
+      }
+
+      return () => {
+        isCancelled = true;
+        if (widgetIdRef.current && window.turnstile) {
+          try {
+            window.turnstile.remove(widgetIdRef.current);
+          } catch {
+            // ignore cleanup errors during fast refresh
+          }
+          widgetIdRef.current = null;
+        }
+      };
+    }, [siteKey, action, size, resetWidget]);
+
+    return (
+      <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs">
+        {/* Cloudflare Widget Render Target */}
+        <div ref={containerRef} className="flex justify-center min-h-[65px]" />
+
+        {loading && !isVerified && (
+          <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-500">
+            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            <span>Menyiapkan proteksi keamanan Cloudflare Turnstile...</span>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex items-center justify-center gap-1.5 py-2 text-xs text-rose-600 font-semibold">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {isVerified && (
+          <div className="flex items-center justify-between text-[11px] font-bold text-emerald-700 pt-1.5 px-1 border-t border-slate-100 mt-1">
+            <span className="flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+              {label}
+            </span>
+            <span className="text-[10px] text-slate-400 font-mono">Protected by Turnstile</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+CloudflareTurnstileShield.displayName = "CloudflareTurnstileShield";

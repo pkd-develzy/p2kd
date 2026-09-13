@@ -3,6 +3,7 @@ import { hashSearchIndex } from "@/lib/encryption";
 import { dataStore } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 function normalizeDate(dateStr: string): string {
   if (!dateStr) return "";
@@ -61,52 +62,15 @@ export async function POST(req: Request) {
     const { nik, dob, turnstileToken } = body;
 
     // Verify Cloudflare Turnstile Token (anti-scraping bot protection)
-    const turnstileSecret = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY;
-    if (turnstileSecret) {
-      if (!turnstileToken || typeof turnstileToken !== "string" || turnstileToken.trim().length === 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Verifikasi keamanan sistem (Turnstile) wajib diselesaikan.",
-          },
-          { status: 403 }
-        );
-      }
-
-      try {
-        const clientIp =
-          req.headers.get("cf-connecting-ip") ||
-          req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-          "";
-
-        const cfRes = await fetch(
-          "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            signal: AbortSignal.timeout(10000),
-            body: new URLSearchParams({
-              secret: turnstileSecret,
-              response: turnstileToken,
-              remoteip: clientIp,
-            }),
-          }
-        );
-
-        const cfData = await cfRes.json();
-        if (!cfData.success) {
-          return NextResponse.json(
-            {
-              success: false,
-              message:
-                "Verifikasi keamanan sistem gagal atau kadaluarsa. Silakan ulangi centang keamanan.",
-            },
-            { status: 403 }
-          );
-        }
-      } catch (err) {
-        console.error("Turnstile error in /voters/check:", err);
-      }
+    const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "cek_nik");
+    if (!turnstileCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: turnstileCheck.message || "Verifikasi keamanan sistem (Turnstile) wajib diselesaikan.",
+        },
+        { status: 403 }
+      );
     }
 
     if (!nik || typeof nik !== "string" || nik.trim().length !== 16) {

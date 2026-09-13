@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Button, Logo } from "@/components/ui";
 import { useToast } from "@/hooks/use-toast";
-import { CloudflareTurnstileShield } from "@/components/ui/cloudflare-turnstile-shield";
+import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
 
 export const AdminLoginForm: React.FC = () => {
   const router = useRouter();
@@ -26,9 +26,15 @@ export const AdminLoginForm: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isSecurityVerified, setIsSecurityVerified] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const [isSecurityVerified, setIsSecurityVerified] = useState(false);
+  const turnstileRef = useRef<TurnstileShieldHandle>(null);
+
+  const handleTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setIsSecurityVerified(Boolean(token));
+  }, []);
   const [currentDateStr] = useState<string>(() => {
     try {
       const now = new Date();
@@ -54,29 +60,19 @@ export const AdminLoginForm: React.FC = () => {
     return false;
   });
 
-  const handleTurnstileVerify = useCallback((token: string) => {
-    if (token) {
-      setIsSecurityVerified(true);
-      setTurnstileToken(token);
-    } else {
-      setIsSecurityVerified(false);
-      setTurnstileToken(null);
-    }
-  }, []);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isSecurityVerified) {
-      toast.warning(
-        "Verifikasi Keamanan Wajib",
-        "Silakan selesaikan verifikasi keamanan Develzy Shield terlebih dahulu."
-      );
+    if (!username.trim() || !password.trim()) {
+      toast.warning("Form Belum Lengkap", "Silakan masukkan username dan kata sandi.");
       return;
     }
 
-    if (!username.trim() || !password.trim()) {
-      toast.warning("Form Belum Lengkap", "Silakan masukkan username dan kata sandi.");
+    if (!turnstileToken) {
+      toast.warning(
+        "Verifikasi Keamanan Wajib",
+        "Silakan selesaikan verifikasi keamanan Cloudflare Turnstile terlebih dahulu."
+      );
       return;
     }
 
@@ -98,6 +94,7 @@ export const AdminLoginForm: React.FC = () => {
       if (!res.ok || !data.success) {
         toast.error("Gagal Masuk", data.message || "Username atau kata sandi tidak cocok.");
         setLoading(false);
+        turnstileRef.current?.reset();
         return;
       }
 
@@ -125,6 +122,7 @@ export const AdminLoginForm: React.FC = () => {
     } catch {
       toast.error("Kesalahan Jaringan", "Gagal menghubungi server database resmi P2KD.");
       setLoading(false);
+      turnstileRef.current?.reset();
     }
   };
 
@@ -243,9 +241,11 @@ export const AdminLoginForm: React.FC = () => {
                 {/* Cloudflare Turnstile Shield */}
                 <div className="pt-1">
                   <CloudflareTurnstileShield
+                    ref={turnstileRef}
+                    action="login"
                     isVerified={isSecurityVerified}
                     onVerify={handleTurnstileVerify}
-                    label="Verifikasi Akses Panitia Lolos • Develzy Shield"
+                    label="Verifikasi Akses Panitia Lolos • Cloudflare Turnstile"
                   />
                 </div>
 

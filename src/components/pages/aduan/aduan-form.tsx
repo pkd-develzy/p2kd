@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge, Input, Logo, Button } from "@/components/ui";
 import { Send, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { CloudflareTurnstileShield } from "@/components/ui/cloudflare-turnstile-shield";
+import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
 import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK } from "@/lib/kalisalak-wilayah";
 
 export const AduanForm: React.FC = () => {
@@ -18,31 +18,19 @@ export const AduanForm: React.FC = () => {
   const [pesan, setPesan] = useState("");
   const [loading, setLoading] = useState(false);
   const [submittedNo, setSubmittedNo] = useState<string | null>(null);
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [isVerified, setIsVerified] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
+  const [isVerified, setIsVerified] = useState<boolean>(false);
+  const turnstileRef = useRef<TurnstileShieldHandle>(null);
 
   const toast = useToast();
 
   const handleTurnstileVerify = useCallback((token: string) => {
-    if (token) {
-      setIsVerified(true);
-      setTurnstileToken(token);
-    } else {
-      setIsVerified(false);
-      setTurnstileToken(null);
-    }
+    setTurnstileToken(token);
+    setIsVerified(Boolean(token));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isVerified) {
-      toast.warning(
-        "Verifikasi Keamanan Wajib",
-        "Silakan selesaikan verifikasi centang keamanan sistem sebelum mengirimkan aduan."
-      );
-      return;
-    }
 
     if (!nik || nik.length !== 16) {
       toast.warning("NIK Tidak Lengkap", "NIK harus terdiri dari 16 digit angka KTP-el.");
@@ -54,13 +42,30 @@ export const AduanForm: React.FC = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      toast.warning(
+        "Verifikasi Keamanan Wajib",
+        "Silakan selesaikan centang verifikasi keamanan Cloudflare Turnstile sebelum mengirimkan aduan."
+      );
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch("/api/aduan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nama, nik, kontak, rt, rw, jenis, pesan, turnstileToken }),
+        body: JSON.stringify({
+          nama,
+          nik,
+          kontak,
+          rt,
+          rw,
+          jenis,
+          pesan,
+          turnstileToken,
+        }),
       });
 
       const json = await res.json();
@@ -78,6 +83,7 @@ export const AduanForm: React.FC = () => {
       toast.error("Kesalahan Jaringan", "Tidak dapat terhubung ke server database. Silakan coba beberapa saat lagi.");
     } finally {
       setLoading(false);
+      turnstileRef.current?.reset();
     }
   };
 
@@ -117,7 +123,7 @@ export const AduanForm: React.FC = () => {
                   setKontak("");
                   setPesan("");
                   setIsVerified(false);
-                  setTurnstileToken(null);
+                  setTurnstileToken("");
                 }}
               >
                 Kirim Aduan Lainnya
@@ -235,13 +241,14 @@ export const AduanForm: React.FC = () => {
               />
             </div>
 
-            {/* Develzy Security Shield Anti-Spam Widget */}
-            <div>
+            {/* Cloudflare Turnstile Bot Protection */}
+            <div className="pt-1">
               <CloudflareTurnstileShield
+                ref={turnstileRef}
                 action="aduan_warga"
                 isVerified={isVerified}
                 onVerify={handleTurnstileVerify}
-                label="Verifikasi Keamanan Aduan Lolos • Develzy Shield"
+                label="Verifikasi Keamanan Aduan Lolos • Cloudflare Turnstile"
               />
             </div>
 
@@ -250,7 +257,7 @@ export const AduanForm: React.FC = () => {
                 type="submit"
                 variant="primary"
                 isLoading={loading}
-                disabled={!isVerified}
+                disabled={!isVerified || loading}
                 className="w-full py-3 disabled:opacity-50"
               >
                 <Send className="w-4 h-4 mr-2" />

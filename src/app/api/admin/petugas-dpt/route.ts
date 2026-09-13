@@ -112,7 +112,7 @@ export async function DELETE(req: Request) {
     }
 
     const operatorName = session.user.nama || session.user.username;
-    const success = dataStore.deletePetugasDpt(id, operatorName);
+    const success = await dataStore.deletePetugasDpt(id, operatorName);
 
     if (!success) {
       return NextResponse.json(

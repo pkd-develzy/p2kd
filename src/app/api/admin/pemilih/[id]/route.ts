@@ -168,7 +168,7 @@ export async function DELETE(
       );
     }
 
-    const success = dataStore.deletePemilih(id, user.nama || user.username);
+    const success = await dataStore.deletePemilih(id, user.nama || user.username);
     if (!success) {
       return NextResponse.json(
         { success: false, message: "Data pemilih tidak ditemukan." },

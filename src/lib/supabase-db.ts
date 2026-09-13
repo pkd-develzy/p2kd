@@ -801,6 +801,7 @@ export class SupabaseDbService {
 
   public static async updateAnggota(id: string, data: Partial<MasterAnggotaP2KD>) {
     try {
+      this.invalidateCache();
       const updatePayload: Record<string, string | undefined> = {};
       if (data.namaLengkap) updatePayload.nama_lengkap = data.namaLengkap;
       if (data.nik) updatePayload.nik = data.nik;
@@ -822,16 +823,24 @@ export class SupabaseDbService {
     }
   }
 
-  public static async deleteAnggota(id: string) {
+  public static async deleteAnggota(id: string): Promise<boolean> {
     try {
-      await this.adminClient.from("anggota_p2kd").delete().eq("id", id);
+      this.invalidateCache();
+      const { error } = await this.adminClient.from("anggota_p2kd").delete().eq("id", id);
+      if (error) {
+        console.error("Supabase deleteAnggota error:", error);
+        return false;
+      }
+      return true;
     } catch (err) {
       console.warn("Supabase deleteAnggota background sync failed:", err);
+      return false;
     }
   }
 
   public static async insertPemilih(data: MasterPemilih) {
     try {
+      this.invalidateCache();
       await this.adminClient.from("pemilih").insert({
         id: data.id,
         nik: data.nik,
@@ -858,6 +867,7 @@ export class SupabaseDbService {
 
   public static async updatePemilih(id: string, data: Partial<MasterPemilih>) {
     try {
+      this.invalidateCache();
       const payload: Record<string, string | undefined> = { updated_at: new Date().toISOString() };
       if (data.namaLengkap) payload.nama_lengkap = data.namaLengkap;
       if (data.nik) payload.nik = data.nik;
@@ -879,16 +889,24 @@ export class SupabaseDbService {
     }
   }
 
-  public static async deletePemilih(id: string) {
+  public static async deletePemilih(id: string): Promise<boolean> {
     try {
-      await this.adminClient.from("pemilih").delete().eq("id", id);
+      this.invalidateCache();
+      const { error } = await this.adminClient.from("pemilih").delete().eq("id", id);
+      if (error) {
+        console.error("Supabase deletePemilih error:", error);
+        return false;
+      }
+      return true;
     } catch (err) {
       console.warn("Supabase deletePemilih sync failed:", err);
+      return false;
     }
   }
 
   public static async insertTps(data: MasterTPS) {
     try {
+      this.invalidateCache();
       await this.adminClient.from("tps").insert({
         id: data.id,
         kode_tps: data.kodeTps,
@@ -908,6 +926,7 @@ export class SupabaseDbService {
 
   public static async updateTps(id: string, data: Partial<MasterTPS>) {
     try {
+      this.invalidateCache();
       const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
       if (data.kodeTps) payload.kode_tps = data.kodeTps;
       if (data.nomorTps) payload.nomor_tps = data.nomorTps;
@@ -925,11 +944,18 @@ export class SupabaseDbService {
     }
   }
 
-  public static async deleteTps(id: string) {
+  public static async deleteTps(id: string): Promise<boolean> {
     try {
-      await this.adminClient.from("tps").delete().eq("id", id);
+      this.invalidateCache();
+      const { error } = await this.adminClient.from("tps").delete().eq("id", id);
+      if (error) {
+        console.error("Supabase deleteTps error:", error);
+        return false;
+      }
+      return true;
     } catch (err) {
       console.warn("Supabase deleteTps sync failed:", err);
+      return false;
     }
   }
 
@@ -994,6 +1020,7 @@ export class SupabaseDbService {
 
   public static async insertPetugasDpt(data: MasterPetugasDpt) {
     try {
+      this.invalidateCache();
       await this.adminClient.from("pendaftaran_petugas_dpt").insert({
         id: data.id,
         nomor_registrasi: data.nomorRegistrasi,
@@ -1031,6 +1058,7 @@ export class SupabaseDbService {
 
   public static async updatePetugasDpt(id: string, data: Partial<MasterPetugasDpt>) {
     try {
+      this.invalidateCache();
       const payload: Record<string, unknown> = {};
       if (data.status) payload.status = data.status;
       if (data.catatanPanitia !== undefined) payload.catatan_panitia = data.catatanPanitia;
@@ -1043,11 +1071,18 @@ export class SupabaseDbService {
     }
   }
 
-  public static async deletePetugasDpt(id: string) {
+  public static async deletePetugasDpt(id: string): Promise<boolean> {
     try {
-      await this.adminClient.from("pendaftaran_petugas_dpt").delete().eq("id", id);
+      this.invalidateCache();
+      const { error } = await this.adminClient.from("pendaftaran_petugas_dpt").delete().eq("id", id);
+      if (error) {
+        console.error("Supabase deletePetugasDpt error:", error);
+        return false;
+      }
+      return true;
     } catch (err) {
       console.warn("Supabase deletePetugasDpt sync failed:", err);
+      return false;
     }
   }
 

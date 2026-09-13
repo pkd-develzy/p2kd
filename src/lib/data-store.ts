@@ -724,7 +724,7 @@ class SystemDataStore {
     return this.setPemilihTms(id, alasan, user);
   }
 
-  public deletePemilih(id: string, user = "Petugas P2KD") {
+  public async deletePemilih(id: string, user = "Petugas P2KD"): Promise<boolean> {
     const idx = this.pemilihList.findIndex((p) => p.id === id);
     if (idx === -1) return false;
 
@@ -732,7 +732,7 @@ class SystemDataStore {
     this.pemilihList.splice(idx, 1);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.deletePemilih(id);
+    await SupabaseDbService.deletePemilih(id);
 
     this.addAuditLog({
       user,
@@ -1039,14 +1039,12 @@ class SystemDataStore {
     return updated;
   }
 
-  public deleteTps(id: string, user = "Petugas P2KD") {
-    const idx = this.tpsList.findIndex((t) => t.id === id || t.nomorTps === id);
+  public async deleteTps(id: string, user = "admin_kalisalak"): Promise<{ success: boolean; message: string }> {
+    const idx = this.tpsList.findIndex((t) => t.id === id);
     if (idx === -1) return { success: false, message: "TPS tidak ditemukan." };
 
     const target = this.tpsList[idx];
-    const assignedVoters = this.pemilihList.filter(
-      (p) => p.statusAktif === "AKTIF" && p.tps.includes(target.nomorTps)
-    );
+    const assignedVoters = this.pemilihList.filter((p) => p.tps === target.nomorTps);
 
     if (assignedVoters.length > 0) {
       return {
@@ -1058,7 +1056,7 @@ class SystemDataStore {
     this.tpsList.splice(idx, 1);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.deleteTps(target.id);
+    await SupabaseDbService.deleteTps(target.id);
 
     this.addAuditLog({
       user,
@@ -1319,7 +1317,7 @@ class SystemDataStore {
     return updated;
   }
 
-  public deleteAnggota(id: string, user = "admin_kalisalak") {
+  public async deleteAnggota(id: string, user = "admin_kalisalak"): Promise<boolean> {
     const idx = this.anggotaList.findIndex((a) => a.id === id);
     if (idx === -1) return false;
 
@@ -1327,7 +1325,7 @@ class SystemDataStore {
     this.anggotaList.splice(idx, 1);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.deleteAnggota(id);
+    await SupabaseDbService.deleteAnggota(id);
 
     this.addAuditLog({
       user,
@@ -1600,14 +1598,14 @@ class SystemDataStore {
     return updated;
   }
 
-  public deletePetugasDpt(id: string, user = "Panitia P2KD"): boolean {
+  public async deletePetugasDpt(id: string, user = "Panitia P2KD"): Promise<boolean> {
     const idx = this.petugasDptList.findIndex((p) => p.id === id);
     if (idx === -1) return false;
 
     const target = this.petugasDptList[idx];
     this.petugasDptList.splice(idx, 1);
 
-    SupabaseDbService.deletePetugasDpt(id);
+    await SupabaseDbService.deletePetugasDpt(id);
 
     this.addAuditLog({
       user,

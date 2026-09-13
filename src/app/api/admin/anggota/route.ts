@@ -284,7 +284,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const success = dataStore.deleteAnggota(id, user.nama || user.username);
+    const success = await dataStore.deleteAnggota(id, user.nama || user.username);
     if (!success) {
       return NextResponse.json(
         { success: false, message: "Anggota tidak ditemukan." },

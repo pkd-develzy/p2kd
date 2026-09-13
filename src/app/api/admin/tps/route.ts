@@ -171,7 +171,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const result = dataStore.deleteTps(id, session.user.nama || session.user.username);
+    const result = await dataStore.deleteTps(id, session.user.nama || session.user.username);
 
     if (!result.success) {
       return NextResponse.json(

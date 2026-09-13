@@ -37,7 +37,7 @@ export default function PrivasiPage() {
             Kebijakan Perlindungan Data Pribadi (Privasi)
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Pemerintah Kabupaten Tegal • Komitmen Keamanan Database Tertinggi
+            Panitia Pemilihan Kepala Desa Kalisalak • Komitmen Keamanan Database Tertinggi
           </p>
         </div>
 
@@ -52,7 +52,7 @@ export default function PrivasiPage() {
               <div className="space-y-2">
                 <h2 className="text-base font-bold text-slate-900">1. Komitmen Perlindungan Data Kependudukan</h2>
                 <p>
-                  Pemerintah Kabupaten Tegal berkomitmen penuh untuk melindungi kerahasiaan dan integritas data pribadi seluruh warga negara sesuai dengan <strong>Undang-Undang Nomor 27 Tahun 2022 tentang Perlindungan Data Pribadi (UU PDP)</strong>. Data yang dikumpulkan semata-mata digunakan untuk kepentingan validasi hak pilih dan administrasi kepemiluan yang sah.
+                  Panitia Pemilihan Kepala Desa Kalisalak berkomitmen penuh untuk melindungi kerahasiaan dan integritas data pribadi seluruh warga negara sesuai dengan <strong>Undang-Undang Nomor 27 Tahun 2022 tentang Perlindungan Data Pribadi (UU PDP)</strong>. Data yang dikumpulkan semata-mata digunakan untuk kepentingan validasi hak pilih dan administrasi kepemiluan yang sah.
                 </p>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function PrivasiPage() {
               <div className="space-y-2">
                 <h2 className="text-base font-bold text-blue-900">5. Ketiadaan Bagi-Pakai Komersial</h2>
                 <p className="text-blue-800 text-xs sm:text-sm">
-                  Pemerintah Kabupaten Tegal tidak pernah menjual, menyewakan, atau membagikan data pemilih kepada pihak ketiga untuk kepentingan komersial, periklanan, maupun kepentingan non-pemerintahan lainnya.
+                  Panitia Pemilihan Kepala Desa Kalisalak tidak pernah menjual, menyewakan, atau membagikan data pemilih kepada pihak ketiga untuk kepentingan komersial, periklanan, maupun kepentingan non-pemerintahan lainnya.
                 </p>
               </div>
             </div>

@@ -37,7 +37,7 @@ export default function KetentuanPage() {
             Syarat & Ketentuan Pendaftaran Pemilih
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Pemerintah Kabupaten Tegal • Terakhir diperbarui: 14 Agustus 2026
+            Panitia Pemilihan Kepala Desa Kalisalak • Terakhir diperbarui: 14 Agustus 2026
           </p>
         </div>
 
@@ -52,7 +52,7 @@ export default function KetentuanPage() {
               <div className="space-y-2">
                 <h2 className="text-base font-bold text-slate-900">1. Landasan Hukum & Ketentuan Umum</h2>
                 <p>
-                  Sistem Pendaftaran Pemilih Kabupaten Tegal diselenggarakan berdasarkan Undang-Undang Pemilihan Umum dan Peraturan Komisi Pemilihan Umum (PKPU) yang berlaku di Republik Indonesia. Layanan ini bertujuan untuk memastikan setiap warga negara yang memenuhi persyaratan memiliki hak pilih yang sah dan terdaftar dalam Daftar Pemilih Tetap (DPT).
+                  Sistem Pendaftaran Pemilih Pilkades Kalisalak diselenggarakan oleh Panitia Pemilihan Kepala Desa Kalisalak berdasarkan Peraturan Daerah Kabupaten Tegal dan Regulasi Pilkades yang berlaku. Layanan ini bertujuan untuk memastikan setiap warga Desa Kalisalak yang memenuhi persyaratan memiliki hak pilih yang sah dan terdaftar dalam Daftar Pemilih Tetap (DPT).
                 </p>
               </div>
             </div>

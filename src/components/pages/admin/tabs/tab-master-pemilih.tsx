@@ -345,9 +345,8 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                   const isSelected = selectedIds.includes(p.id);
                   const rtNum = (p.rt || "01").replace(/\D/g, "").padStart(2, "0");
                   const rwNum = (p.rw || "01").replace(/\D/g, "").padStart(2, "0");
-                  const mejaName = p.tps && p.tps.trim()
-                    ? p.tps.replace(/Meja\s*/gi, "")
-                    : `RW ${rwNum}`;
+                  // Wilayah RW selalu sinkron mengikuti wilayah / domisili RW pemilih
+                  const wilayahRwDisplay = `Wilayah RW ${rwNum}`;
                   const maskedNikDisplay = p.nikMasked || (p.nik ? `${p.nik.slice(0, 1)}*************${p.nik.slice(-2)}` : "****************");
                   const maskedKkDisplay = p.kk ? `${p.kk.slice(0, 1)}*************${p.kk.slice(-2)}` : "-";
                   const isLaki = String(p.jenisKelamin).toUpperCase().startsWith("L");
@@ -388,7 +387,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                       </td>
                       <td className="py-3 px-4">
                         <Badge variant="primary" className="text-[11px] font-bold">
-                          {mejaName}
+                          {wilayahRwDisplay}
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-center">

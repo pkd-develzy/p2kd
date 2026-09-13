@@ -14,18 +14,18 @@ export interface WilayahRwItem {
 
 export const DAFTAR_RW_KALISALAK: { value: string; label: string; defaultTps: string }[] = [
   { value: "01", label: "RW 01", defaultTps: "01" },
-  { value: "02", label: "RW 02", defaultTps: "01" },
-  { value: "03", label: "RW 03", defaultTps: "02" },
-  { value: "04", label: "RW 04", defaultTps: "02" },
-  { value: "05", label: "RW 05", defaultTps: "03" },
-  { value: "06", label: "RW 06", defaultTps: "03" },
-  { value: "07", label: "RW 07", defaultTps: "04" },
-  { value: "08", label: "RW 08", defaultTps: "04" },
-  { value: "09", label: "RW 09", defaultTps: "05" },
-  { value: "10", label: "RW 10", defaultTps: "05" },
-  { value: "11", label: "RW 11", defaultTps: "06" },
-  { value: "12", label: "RW 12", defaultTps: "06" },
-  { value: "13", label: "RW 13", defaultTps: "07" },
+  { value: "02", label: "RW 02", defaultTps: "02" },
+  { value: "03", label: "RW 03", defaultTps: "03" },
+  { value: "04", label: "RW 04", defaultTps: "04" },
+  { value: "05", label: "RW 05", defaultTps: "05" },
+  { value: "06", label: "RW 06", defaultTps: "06" },
+  { value: "07", label: "RW 07", defaultTps: "07" },
+  { value: "08", label: "RW 08", defaultTps: "08" },
+  { value: "09", label: "RW 09", defaultTps: "09" },
+  { value: "10", label: "RW 10", defaultTps: "10" },
+  { value: "11", label: "RW 11", defaultTps: "11" },
+  { value: "12", label: "RW 12", defaultTps: "12" },
+  { value: "13", label: "RW 13", defaultTps: "13" },
 ];
 
 export const DAFTAR_RT_KALISALAK: { value: string; label: string }[] = [
@@ -47,15 +47,13 @@ export function normalizeWilayahCode(val: string | number | undefined | null): s
 }
 
 /**
- * Pemetaan otomatis Tabung Pemilihan (TPS) berdasarkan RW dan RT Desa Kalisalak
- * Pembagian Tabung TPS Resmi:
- * - TPS 01 / Tabung 01: RW 01 & RW 02
- * - TPS 02 / Tabung 02: RW 03 & RW 04
- * - TPS 03 / Tabung 03: RW 05 & RW 06
- * - TPS 04 / Tabung 04: RW 07 & RW 08
- * - TPS 05 / Tabung 05: RW 09 & RW 10
- * - TPS 06 / Tabung 06: RW 11 & RW 12
- * - TPS 07 / Tabung 07: RW 13 & Khusus
+ * Pemetaan otomatis Wilayah TPS berdasarkan RW dan RT Desa Kalisalak
+ * Di Desa Kalisalak, terdapat 13 TPS yang masing-masing melayani 13 RW secara presisi (1-to-1 mapping):
+ * - RW 01 -> Wilayah RW 01 (TPS 01)
+ * - RW 02 -> Wilayah RW 02 (TPS 02)
+ * - RW 03 -> Wilayah RW 03 (TPS 03)
+ * ...
+ * - RW 13 -> Wilayah RW 13 (TPS 13)
  */
 export function getAutoTabungByRtRw(
   rwVal: string | number,
@@ -64,21 +62,11 @@ export function getAutoTabungByRtRw(
 ): string {
   const cleanRw = normalizeWilayahCode(rwVal);
   const rwNum = parseInt(cleanRw, 10);
-
-  let targetTpsNomor = "01";
-
-  if (rwNum === 1 || rwNum === 2) targetTpsNomor = "01";
-  else if (rwNum === 3 || rwNum === 4) targetTpsNomor = "02";
-  else if (rwNum === 5 || rwNum === 6) targetTpsNomor = "03";
-  else if (rwNum === 7 || rwNum === 8) targetTpsNomor = "04";
-  else if (rwNum === 9 || rwNum === 10) targetTpsNomor = "05";
-  else if (rwNum === 11 || rwNum === 12) targetTpsNomor = "06";
-  else if (rwNum >= 13) targetTpsNomor = "07";
-  else targetTpsNomor = "01";
+  const targetTpsNomor = rwNum < 10 ? `0${rwNum}` : `${rwNum}`;
 
   // Jika ada availableTpsList, sesuaikan nama resmi dari database TPS
   if (availableTpsList && availableTpsList.length > 0) {
-    const numInt = parseInt(targetTpsNomor, 10);
+    const numInt = rwNum;
     const matched = availableTpsList.find(
       (t) =>
         (t.nomorTps && (t.nomorTps === targetTpsNomor || parseInt(t.nomorTps, 10) === numInt)) ||
@@ -88,5 +76,5 @@ export function getAutoTabungByRtRw(
     if (matched && matched.namaTps) return matched.namaTps;
   }
 
-  return `Tabung Pemilihan ${targetTpsNomor}`;
+  return `Wilayah RW ${targetTpsNomor}`;
 }

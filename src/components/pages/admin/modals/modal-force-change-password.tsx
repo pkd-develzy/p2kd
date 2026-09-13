@@ -133,7 +133,7 @@ export const ModalForceChangePassword: React.FC<ModalForceChangePasswordProps> =
 
   return (
     <div
-      className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-999 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
       role="dialog"
       aria-modal="true"
     >

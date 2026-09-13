@@ -152,7 +152,7 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
   return (
     <div className="relative w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 shadow-2xl flex flex-col items-center">
       {/* Live Video Container */}
-      <div className="relative w-full max-w-[340px] aspect-square flex items-center justify-center overflow-hidden rounded-2xl bg-black">
+      <div className="relative w-full max-w-85 aspect-square flex items-center justify-center overflow-hidden rounded-2xl bg-black">
         <div id={readerElementId} className="w-full h-full object-cover" />
 
         {/* Laser Scanning Overlay Animation */}
@@ -185,7 +185,7 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
               <h4 className="text-xs font-bold text-rose-300 flex items-center justify-center gap-1">
                 <AlertCircle className="w-3.5 h-3.5" /> Kamera Belum Aktif
               </h4>
-              <p className="text-[11px] text-slate-300 max-w-[260px] leading-relaxed">
+              <p className="text-[11px] text-slate-300 max-w-65 leading-relaxed">
                 {cameraError}
               </p>
             </div>

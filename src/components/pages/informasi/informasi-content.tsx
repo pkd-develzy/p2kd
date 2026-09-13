@@ -50,7 +50,7 @@ export const InformasiContent: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-200">
             <div className="bg-white/5 border border-white/10 p-4 rounded-2xl space-y-2">
-              <h4 className="font-bold text-white flex items-center gap-2 text-sm text-blue-300">
+              <h4 className="font-bold flex items-center gap-2 text-sm text-blue-300">
                 <Users className="w-4 h-4 text-blue-400" />
                 1. Tahapan & Jumlah Calon (Pasal 38 & 39)
               </h4>
@@ -60,7 +60,7 @@ export const InformasiContent: React.FC = () => {
             </div>
 
             <div className="bg-white/5 border border-white/10 p-4 rounded-2xl space-y-2">
-              <h4 className="font-bold text-white flex items-center gap-2 text-sm text-amber-300">
+              <h4 className="font-bold flex items-center gap-2 text-sm text-amber-300">
                 <Award className="w-4 h-4 text-amber-400" />
                 2. Masa Jabatan Kades 8 Tahun (Pasal 50)
               </h4>
@@ -70,7 +70,7 @@ export const InformasiContent: React.FC = () => {
             </div>
 
             <div className="bg-white/5 border border-white/10 p-4 rounded-2xl space-y-2">
-              <h4 className="font-bold text-white flex items-center gap-2 text-sm text-emerald-300">
+              <h4 className="font-bold flex items-center gap-2 text-sm text-emerald-300">
                 <FileCheck2 className="w-4 h-4 text-emerald-400" />
                 3. Ketentuan Pilkades 1 Calon (Pasal 44 & 46)
               </h4>
@@ -80,7 +80,7 @@ export const InformasiContent: React.FC = () => {
             </div>
 
             <div className="bg-white/5 border border-white/10 p-4 rounded-2xl space-y-2">
-              <h4 className="font-bold text-white flex items-center gap-2 text-sm text-rose-300">
+              <h4 className="font-bold flex items-center gap-2 text-sm text-rose-300">
                 <UserCheck className="w-4 h-4 text-rose-400" />
                 4. Kewajiban Cuti & Pengunduran Diri (Pasal 40–42)
               </h4>

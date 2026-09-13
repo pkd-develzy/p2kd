@@ -112,6 +112,17 @@ export const AduanForm: React.FC = () => {
             <p className="text-xs text-slate-600 max-w-md mx-auto leading-relaxed">
               Laporan Anda telah tercatat dengan nomor registrasi <strong className="text-blue-900 font-mono text-sm bg-blue-50 px-2 py-1 rounded">{submittedNo}</strong>. Panitia P2KD Desa Kalisalak akan memverifikasi berkas Anda.
             </p>
+            <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+              Butuh konfirmasi cepat atau bantuan teknis? Hubungi Layanan Aduan & Bantuan Resmi P2KD via WhatsApp di{" "}
+              <a
+                href={`https://wa.me/6285879584257?text=${encodeURIComponent(`Halo Panitia P2KD Kalisalak, saya ingin konfirmasi aduan nomor registrasi: ${submittedNo}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-emerald-700 font-bold hover:underline"
+              >
+                0858-7958-4257
+              </a>.
+            </p>
             <div className="pt-4">
               <Button
                 variant="outline"

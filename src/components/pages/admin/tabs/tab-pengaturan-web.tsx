@@ -49,8 +49,8 @@ const defaultWebConfig: PublicWebConfig = {
   isProfilCalonVisible: true,
   isRealCountPublic: false,
   isAduanOpen: true,
-  kontakWaP2kd: "081234567890",
-  jamLayanan: "08.00 - 15.00 WIB (Senin - Sabtu)",
+  kontakWaP2kd: "0858-7958-4257",
+  jamLayanan: "Senin – Kamis (08:00 – 13:00 WIB), Jum'at (08.00 - 11.00 WIB), Sabtu - Minggu (Libur)",
   alamatSekretariat: "Kantor Balai Desa Kalisalak, Jl. Raya Kalisalak No. 01, Kec. Margasari, Kab. Tegal",
   totalRw: 13,
   totalRt: 39,
@@ -547,7 +547,7 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
                 <Input
                   value={config.kontakWaP2kd}
                   onChange={(e) => setConfig({ ...config, kontakWaP2kd: e.target.value })}
-                  placeholder="081234567890"
+                  placeholder="0858-7958-4257"
                   className="text-xs font-mono"
                 />
               </div>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge, Logo } from "@/components/ui";
-import { HelpCircle, ChevronDown } from "lucide-react";
+import { HelpCircle, ChevronDown, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const faqData = [
@@ -98,6 +98,31 @@ export const FaqAccordion: React.FC = () => {
           );
         })}
       </div>
+
+      {/* Helpdesk Contact Card */}
+      <Card className="mt-8 p-6 bg-linear-to-r from-blue-950 via-slate-900 to-slate-950 text-white rounded-2xl border border-blue-900/50 shadow-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              <Phone className="w-4 h-4 text-emerald-400" />
+              Masih Ada Pertanyaan yang Belum Terjawab?
+            </h4>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Silakan hubungi Layanan Bantuan & Helpdesk Resmi Panitia P2KD Desa Kalisalak di nomor kontak/WhatsApp:{" "}
+              <strong className="text-emerald-300 font-mono">0858-7958-4257</strong>.
+            </p>
+          </div>
+          <a
+            href="https://wa.me/6285879584257?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20ingin%20bertanya%20seputar%20informasi%20Pilkades"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all shrink-0"
+          >
+            <Phone className="w-3.5 h-3.5" />
+            <span>Chat WhatsApp P2KD</span>
+          </a>
+        </div>
+      </Card>
     </div>
   );
 };

@@ -151,7 +151,7 @@ export const PrintBeritaAcara: React.FC<PrintBeritaAcaraProps> = ({
             KABUPATEN TEGAL PROVINSI JAWA TENGAH
           </h3>
           <p className="text-[11px] font-sans text-slate-700 italic mt-1">
-            Sekretariat: Jl. K. Abdullatif, Balai Desa Kalisalak, Margasari 52463
+            Sekretariat: Jl. K. Abdullatif, Balai Desa Kalisalak, Margasari 52463 | Kontak/WA: 0858-7958-4257
           </p>
         </div>
 

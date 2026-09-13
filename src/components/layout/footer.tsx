@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Shield, FileText, Search, MapPin, Clock, ShieldCheck, Database, Calendar, ArrowRight } from "lucide-react";
+import { Shield, FileText, Search, MapPin, Clock, ShieldCheck, Database, Calendar, ArrowRight, Phone } from "lucide-react";
 import { Logo } from "@/components/ui";
 
 export const Footer: React.FC = () => {
@@ -31,6 +31,20 @@ export const Footer: React.FC = () => {
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                 <span>
                   <strong className="text-white font-bold">Sekretariat P2KD:</strong> Gedung Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01, Kec. Margasari, Kab. Tegal 52463
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-white font-bold">Kontak Bantuan / WA Resmi:</strong>{" "}
+                  <a
+                    href="https://wa.me/6285879584257?text=Halo%20Panitia%20P2KD%20Desa%20Kalisalak%2C%20saya%20ingin%20berkonsultasi"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-emerald-300 font-bold hover:underline transition-colors"
+                  >
+                    0858-7958-4257
+                  </a>
                 </span>
               </div>
               <div className="flex items-start gap-2.5">

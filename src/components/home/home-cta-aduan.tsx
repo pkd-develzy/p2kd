@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { MessageSquarePlus, ArrowRight, MapPin, HelpCircle, ShieldCheck } from "lucide-react";
+import { MessageSquarePlus, ArrowRight, MapPin, HelpCircle, ShieldCheck, Phone } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -30,11 +30,20 @@ export const HomeCtaAduan: React.FC = () => {
               Panitia Pemilihan Kepala Desa (P2KD) Kalisalak membuka kanal pelaporan perbaikan DPSHP secara transparan. Segera ajukan permohonan koreksi atau pendaftaran pemilih baru secara online atau kunjungi sekretariat P2KD di Balai Desa.
             </p>
 
-            <div className="pt-2 flex flex-wrap gap-5 text-xs text-slate-300 font-medium">
+            <div className="pt-2 flex flex-wrap gap-3 text-xs text-slate-300 font-medium">
               <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
                 <span>Balai Desa Kalisalak, Kec. Margasari</span>
               </div>
+              <a
+                href="https://wa.me/6285879584257?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20butuh%20bantuan%20layanan%20pemilih"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-xl border border-emerald-500/30 transition-colors"
+              >
+                <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Hotline WA: 0858-7958-4257</span>
+              </a>
             </div>
           </div>
 

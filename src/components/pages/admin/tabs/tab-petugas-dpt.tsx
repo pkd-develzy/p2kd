@@ -251,11 +251,29 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       );
       setSelectedPetugas(json.data);
       setIsEditMode(false);
-      setFeedbackMsg({
-        type: "success",
-        text: `Data pendaftar ${json.data.namaLengkap} berhasil disimpan ke database.`,
-      });
-      toast.success("Berhasil Disimpan", `Data ${json.data.namaLengkap} berhasil diperbarui.`);
+
+      if (json.account?.isNew) {
+        toast.success(
+          "Akun Petugas Berhasil Dibuat!",
+          `Username: '${json.account.username}' | Sandi: '${json.account.defaultPassword || "p2kd2026"}'. Masuk ke Struktur Anggota P2KD.`
+        );
+        setFeedbackMsg({
+          type: "success",
+          text: `Pendaftar ${json.data.namaLengkap} (${json.data.status}) telah otomatis dimasukkan ke Struktur Anggota P2KD & dibuatkan akun portal dengan username '${json.account.username}' (Sandi default: '${json.account.defaultPassword || "p2kd2026"}').`,
+        });
+      } else if (json.account) {
+        toast.success("Berhasil Disimpan", `Data ${json.data.namaLengkap} diperbarui. Akun terhubung: ${json.account.username}`);
+        setFeedbackMsg({
+          type: "success",
+          text: `Data ${json.data.namaLengkap} diperbarui. Terhubung dengan akun Anggota P2KD: '${json.account.username}'.`,
+        });
+      } else {
+        setFeedbackMsg({
+          type: "success",
+          text: `Data pendaftar ${json.data.namaLengkap} berhasil disimpan ke database.`,
+        });
+        toast.success("Berhasil Disimpan", `Data ${json.data.namaLengkap} berhasil diperbarui.`);
+      }
     } catch {
       setFeedbackMsg({ type: "error", text: "Terjadi kesalahan jaringan saat menyimpan data." });
     } finally {

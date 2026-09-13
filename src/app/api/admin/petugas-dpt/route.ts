@@ -84,10 +84,33 @@ export async function PUT(req: Request) {
       );
     }
 
+    // Sinkronkan ke Struktur Anggota P2KD & Akun Kredensial jika LOLOS atau DITETAPKAN
+    let accountInfo: { username: string; isNew: boolean; plainPassword?: string; role?: string } | null = null;
+    if (updated.status === "LOLOS" || updated.status === "DITETAPKAN") {
+      try {
+        const syncResult = await dataStore.syncPetugasToAnggota(updated, operatorName);
+        accountInfo = {
+          username: syncResult.anggota.username,
+          isNew: syncResult.isNew,
+          plainPassword: syncResult.plainPassword || "p2kd2026",
+          role: syncResult.anggota.role,
+        };
+      } catch (syncErr) {
+        console.warn("Auto-sync ke Anggota P2KD gagal:", syncErr);
+      }
+    }
+
+    const customMessage = accountInfo
+      ? accountInfo.isNew
+        ? `Pendaftar ${updated.namaLengkap} berstatus ${updated.status}. Otomatis dimasukkan ke Struktur Anggota P2KD & dibuatkan akun dengan username: '${accountInfo.username}' (Password: '${accountInfo.plainPassword}').`
+        : `Data pendaftar ${updated.namaLengkap} diperbarui (${updated.status}). Akun Anggota P2KD aktif: '${accountInfo.username}'.`
+      : `Data pendaftar ${updated.namaLengkap} berhasil diperbarui.`;
+
     return NextResponse.json({
       success: true,
-      message: `Data pendaftar ${updated.namaLengkap} berhasil diperbarui.`,
+      message: customMessage,
       data: updated,
+      account: accountInfo,
     });
   } catch (error) {
     console.error("Error in PUT /api/admin/petugas-dpt:", error);

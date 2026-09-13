@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { maskNIK, maskKK } from "./encryption";
+import { maskNIK, maskKK, hashPassword } from "./encryption";
 import { SupabaseDbService } from "./supabase-db";
 import { getAutoTabungByRtRw } from "./kalisalak-wilayah";
 
@@ -238,6 +238,46 @@ export interface SystemTahapan {
   lockHashSignature?: string;
   lockedBy?: string;
   nomorBeritaAcara?: string;
+}
+
+/**
+ * Helper untuk membuat username unik otomatis berdasarkan kata terakhir (nama akhir) pendaftar.
+ * Contoh:
+ * - "MAR'UFAH" -> "marufah"
+ * - "Linda farida" -> "farida"
+ * - "YANI YUSWANTI" -> "yuswanti"
+ * - "M. Lu'lu Khulaludin, S.F.U" -> "khulaludin"
+ */
+export function generateUsernameFromLastName(fullName: string, existingUsernames: string[]): string {
+  if (!fullName) return "petugas";
+
+  // Pisahkan gelar akademik di belakang koma (contoh: "Linda Farida, S.Pd" -> "Linda Farida")
+  const withoutTitle = fullName.split(",")[0].trim();
+  const words = withoutTitle.split(/\s+/).filter(Boolean);
+
+  // Ambil kata terakhir (nama akhir)
+  const lastWord = words.length > 0 ? words[words.length - 1] : withoutTitle;
+
+  // Bersihkan karakter non-alfanumerik (tanda petik, titik, spasi) dan jadikan huruf kecil
+  let clean = lastWord.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // Jika nama akhir terlalu pendek (< 3 karakter), gunakan nama lengkap yang dibersihkan
+  if (!clean || clean.length < 3) {
+    clean = withoutTitle.toLowerCase().replace(/[^a-z0-9]/g, "");
+  }
+  if (!clean || clean.length < 3) {
+    clean = "petugas" + Math.floor(100 + Math.random() * 900);
+  }
+
+  // Cek duplikasi terhadap username yang sudah ada di database/memory
+  const existingSet = new Set(existingUsernames.map((u) => u.toLowerCase().trim()));
+  let candidate = clean;
+  let counter = 2;
+  while (existingSet.has(candidate)) {
+    candidate = `${clean}${counter}`;
+    counter++;
+  }
+  return candidate;
 }
 
 // Runtime Dynamic Store (Exclusively Powered by Supabase Cloud Database)
@@ -1324,6 +1364,84 @@ class SystemDataStore {
     return { success: true, username: agt.username, defaultPassword: defaultPass };
   }
 
+  /**
+   * Otomatis mendaftarkan pendaftar petugas yang LOLOS atau DITETAPKAN ke dalam
+   * Struktur Anggota P2KD & Kredensial Akun dengan username sesuai nama akhirnya.
+   */
+  public async syncPetugasToAnggota(
+    petugas: MasterPetugasDpt,
+    user = "Panitia P2KD"
+  ): Promise<{ anggota: MasterAnggotaP2KD; isNew: boolean; plainPassword?: string }> {
+    const cleanNik = petugas.nik ? petugas.nik.replace(/\D/g, "") : "";
+    const cleanWa = petugas.nomorWa ? petugas.nomorWa.replace(/\D/g, "") : "";
+
+    // Cari apakah sudah pernah terdaftar di AnggotaP2KD berdasarkan NIK, WA, atau Nama
+    const existing = this.anggotaList.find((a) => {
+      const matchNik = cleanNik.length === 16 && a.nik && a.nik.replace(/\D/g, "") === cleanNik;
+      const matchWa = cleanWa.length >= 9 && a.kontakWa && a.kontakWa.replace(/\D/g, "") === cleanWa;
+      const matchName = a.namaLengkap.trim().toLowerCase() === petugas.namaLengkap.trim().toLowerCase();
+      return matchNik || matchWa || matchName;
+    });
+
+    const assignedWilayah = petugas.assignedWilayah || `RW ${petugas.rw}`;
+    const jabatanTitle = `Petugas Coklit Lapangan (${assignedWilayah})`;
+
+    if (existing) {
+      const updated = await this.updateAnggota(
+        existing.id,
+        {
+          namaLengkap: petugas.namaLengkap.trim(),
+          nik: cleanNik || existing.nik,
+          jabatan: jabatanTitle,
+          assignedTps: assignedWilayah,
+          status: "AKTIF",
+          kontakWa: cleanWa || existing.kontakWa,
+          alamatDusun: `${petugas.alamat || "Desa Kalisalak"}, RT ${petugas.rt || "01"} / RW ${petugas.rw || "01"}`,
+        },
+        user
+      );
+      return { anggota: updated || existing, isNew: false, plainPassword: "p2kd2026" };
+    }
+
+    // Buat akun baru dengan username dari nama akhir
+    const existingUsernames = this.anggotaList.map((a) => a.username);
+    const username = generateUsernameFromLastName(petugas.namaLengkap, existingUsernames);
+
+    const defaultPass = "p2kd2026";
+    const passwordHash = hashPassword(defaultPass);
+
+    const newAnggota = await this.addAnggota(
+      {
+        namaLengkap: petugas.namaLengkap.trim(),
+        nik: cleanNik || ("332801" + Math.floor(1000000000 + Math.random() * 9000000000)),
+        jabatan: jabatanTitle,
+        seksi: "PANTARLIH_LAPANGAN",
+        seksiLabel: "Koordinator / Petugas Lapangan Wilayah RW",
+        username,
+        role: "petugas",
+        kontakWa: cleanWa || "081200000000",
+        alamatDusun: `${petugas.alamat || "Desa Kalisalak"}, RT ${petugas.rt || "01"} / RW ${petugas.rw || "01"}`,
+        assignedTps: assignedWilayah,
+        status: "AKTIF",
+        skPenetapan: "Keputusan P2KD Desa Kalisalak No. 05/P2KD-KLS/IX/2026",
+        passwordHash,
+      },
+      user
+    );
+
+    this.addAuditLog({
+      user,
+      role: "SUPER_ADMIN",
+      aksi: "PETUGAS_TO_ANGGOTA",
+      entity: "ANGGOTA_P2KD",
+      target: `${newAnggota.namaLengkap} (${newAnggota.username})`,
+      detail: `Otomatis memasukkan Petugas DPT ${petugas.namaLengkap} ke Struktur Anggota P2KD & membuatkan akun portal dengan username '${username}' (nama akhir).`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return { anggota: newAnggota, isNew: true, plainPassword: defaultPass };
+  }
+
   // --- SEKSI PENJARINGAN METHODS ---
   public getBalonList() {
     return [...this.balonList];
@@ -1556,6 +1674,15 @@ class SystemDataStore {
       detail: `Pembaruan data pendaftar petugas ${updated.namaLengkap} (${updated.nomorRegistrasi}).`,
       ipAddress: "127.0.0.1",
     });
+
+    // Otomatis masukkan ke Struktur Anggota P2KD & buatkan akun jika LOLOS atau DITETAPKAN
+    if (updated.status === "LOLOS" || updated.status === "DITETAPKAN") {
+      try {
+        await this.syncPetugasToAnggota(updated, user);
+      } catch (syncErr) {
+        console.warn("Gagal auto-sync ke Anggota P2KD:", syncErr);
+      }
+    }
 
     return updated;
   }

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ShieldCheck, Vote, Search, FileText, ArrowRight, MapPin, CheckCircle2, Sparkles } from "lucide-react";
+import { ShieldCheck, Vote, Search, FileText, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { Badge, Logo, Button } from "@/components/ui";
 
 export const HeroSection: React.FC = () => {
@@ -57,13 +57,6 @@ export const HeroSection: React.FC = () => {
               <Search className="w-4 h-4 mr-2" />
               <span>Cek Hak Pilih Sekarang</span>
               <ArrowRight className="w-4 h-4 ml-1.5" />
-            </Button>
-          </Link>
-
-          <Link href="/tps">
-            <Button variant="outline" size="lg" className="border-slate-300 shadow-xs py-3 px-5 font-bold text-sm bg-white hover:bg-slate-50 text-slate-800 rounded-xl">
-              <MapPin className="w-4 h-4 mr-2 text-rose-600" />
-              <span>Lokasi Lapangan & Tabung Suara</span>
             </Button>
           </Link>
 

@@ -1026,10 +1026,10 @@ export class SupabaseDbService {
     }
   }
 
-  public static async insertPetugasDpt(data: MasterPetugasDpt) {
+  public static async insertPetugasDpt(data: MasterPetugasDpt): Promise<boolean> {
     try {
       this.invalidateCache();
-      await this.adminClient.from("pendaftaran_petugas_dpt").insert({
+      const payload = {
         id: data.id,
         nomor_registrasi: data.nomorRegistrasi,
         nik: data.nik,
@@ -1043,44 +1043,71 @@ export class SupabaseDbService {
         alamat: data.alamat,
         rt: data.rt,
         rw: data.rw,
-        dusun: data.dusun,
+        dusun: data.dusun || "Desa Kalisalak",
+        desa: data.dusun || "Desa Kalisalak",
         nomor_wa: data.nomorWa,
-        is_calon_kades: data.isCalonKades,
+        nomor_whatsapp: data.nomorWa,
+        is_calon_kades: Boolean(data.isCalonKades),
         keterangan_calon_kades: data.keteranganCalonKades || null,
-        is_tim_sukses: data.isTimSukses,
+        is_tim_sukses: Boolean(data.isTimSukses),
         keterangan_tim_sukses: data.keteranganTimSukses || null,
-        is_kepentingan_calon: data.isKepentinganCalon,
+        is_kepentingan_calon: Boolean(data.isKepentinganCalon),
+        is_memiliki_kepentingan: Boolean(data.isKepentinganCalon),
         keterangan_kepentingan: data.keteranganKepentingan || null,
-        persetujuan_pernyataan: data.persetujuanPernyataan,
-        tanda_tangan_url: data.tandaTanganUrl,
+        persetujuan_pernyataan: Boolean(data.persetujuanPernyataan),
+        surat_pernyataan_signed: Boolean(data.persetujuanPernyataan),
+        tanda_tangan_url: data.tandaTanganUrl || null,
+        surat_pernyataan_url: data.tandaTanganUrl || null,
         status: data.status,
+        status_verifikasi: data.status,
         catatan_panitia: data.catatanPanitia || null,
+        catatan_verifikasi: data.catatanPanitia || null,
         assigned_wilayah: data.assignedWilayah || null,
         tanggal_pendaftaran: data.tanggalPendaftaran,
-        updated_at: data.updatedAt,
-      });
+        created_at: new Date().toISOString(),
+        updated_at: data.updatedAt || new Date().toISOString(),
+      };
+
+      const { error } = await this.adminClient.from("pendaftaran_petugas_dpt").insert(payload);
+      if (error) {
+        console.error("Supabase insertPetugasDpt error:", error);
+        return false;
+      }
+      return true;
     } catch (err) {
-      console.warn("Supabase insertPetugasDpt sync failed:", err);
+      console.error("Supabase insertPetugasDpt exception:", err);
+      return false;
     }
   }
 
-  public static async updatePetugasDpt(id: string, data: Partial<MasterPetugasDpt>) {
+  public static async updatePetugasDpt(id: string, data: Partial<MasterPetugasDpt>): Promise<boolean> {
     try {
       this.invalidateCache();
-      const payload: Record<string, unknown> = {};
+      const payload: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
       if (data.status) {
         payload.status_verifikasi = data.status;
+        payload.status = data.status;
       }
       if (data.catatanPanitia !== undefined) {
         payload.catatan_verifikasi = data.catatanPanitia;
+        payload.catatan_panitia = data.catatanPanitia;
       }
       if (data.assignedWilayah !== undefined) {
         payload.desa = data.assignedWilayah;
+        payload.assigned_wilayah = data.assignedWilayah;
       }
 
-      await this.adminClient.from("pendaftaran_petugas_dpt").update(payload).eq("id", id);
+      const { error } = await this.adminClient.from("pendaftaran_petugas_dpt").update(payload).eq("id", id);
+      if (error) {
+        console.error("Supabase updatePetugasDpt error:", error);
+        return false;
+      }
+      return true;
     } catch (err) {
-      console.warn("Supabase updatePetugasDpt sync failed:", err);
+      console.error("Supabase updatePetugasDpt sync failed:", err);
+      return false;
     }
   }
 

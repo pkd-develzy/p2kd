@@ -1434,10 +1434,10 @@ class SystemDataStore {
     return `${prefix}${String(nextSeq).padStart(5, "0")}`;
   }
 
-  public addPetugasDpt(
+  public async addPetugasDpt(
     data: Omit<MasterPetugasDpt, "id" | "nomorRegistrasi" | "updatedAt" | "nikMasked" | "noKkMasked">,
     user = "Masyarakat"
-  ): MasterPetugasDpt {
+  ): Promise<MasterPetugasDpt> {
     const id = `ptg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const nomorRegistrasi = this.generateNomorRegistrasiPetugas();
     const now = new Date().toISOString();
@@ -1454,7 +1454,7 @@ class SystemDataStore {
     this.petugasDptList.unshift(newPetugas);
 
     // Sync to Supabase Cloud
-    SupabaseDbService.insertPetugasDpt(newPetugas);
+    await SupabaseDbService.insertPetugasDpt(newPetugas);
 
     this.addAuditLog({
       user,
@@ -1469,7 +1469,7 @@ class SystemDataStore {
     return newPetugas;
   }
 
-  public updateStatusPetugasDpt(
+  public async updateStatusPetugasDpt(
     id: string,
     updateData: {
       status?: PetugasStatus;
@@ -1477,7 +1477,7 @@ class SystemDataStore {
       assignedWilayah?: string;
     },
     user = "Panitia P2KD"
-  ): MasterPetugasDpt | null {
+  ): Promise<MasterPetugasDpt | null> {
     const idx = this.petugasDptList.findIndex((p) => p.id === id);
     if (idx === -1) return null;
 
@@ -1496,7 +1496,7 @@ class SystemDataStore {
     this.petugasDptList[idx] = updated;
 
     // Sync to Supabase Cloud
-    SupabaseDbService.updatePetugasDpt(id, {
+    await SupabaseDbService.updatePetugasDpt(id, {
       status: updated.status,
       catatanPanitia: updated.catatanPanitia,
       assignedWilayah: updated.assignedWilayah,

@@ -124,7 +124,7 @@ export async function POST(req: Request) {
       timeStyle: "short",
     });
 
-    const newPetugas = dataStore.addPetugasDpt(
+    const newPetugas = await dataStore.addPetugasDpt(
       {
         nik: cleanNik,
         namaLengkap: String(namaLengkap).trim(),

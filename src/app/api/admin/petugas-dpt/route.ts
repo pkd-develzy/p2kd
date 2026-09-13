@@ -62,7 +62,7 @@ export async function PUT(req: Request) {
 
     const operatorName = session.user.nama || session.user.username;
 
-    const updated = dataStore.updateStatusPetugasDpt(
+    const updated = await dataStore.updateStatusPetugasDpt(
       id,
       {
         status: status as PetugasStatus,

@@ -115,7 +115,7 @@ export const QuickCheckCard: React.FC = () => {
               <tr><td class="label">Nama Lengkap</td><td class="val">${result.nama}</td></tr>
               <tr><td class="label">Nomor Induk Kependudukan (NIK)</td><td class="val">${result.nik}</td></tr>
               <tr><td class="label">Status Penetapan</td><td class="val">${result.status}</td></tr>
-              <tr><td class="label">Nomor TPS Terdaftar</td><td class="val" style="color: #1e3a8a; font-size: 15px;">${result.tps}</td></tr>
+              <tr><td class="label">Nomor Tabung Terdaftar</td><td class="val" style="color: #1e3a8a; font-size: 15px;">${(result.tps || "").replace(/TPS/gi, "Tabung")}</td></tr>
               <tr><td class="label">Lokasi Pemungutan Suara</td><td class="val">${result.lokasi}</td></tr>
               <tr><td class="label">Wilayah Domisili</td><td class="val">${result.wilayah}</td></tr>
               <tr><td class="label">Waktu Pengecekan</td><td class="val">${todayFormatted}</td></tr>

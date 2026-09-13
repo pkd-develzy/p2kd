@@ -193,7 +193,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
         <Card className="p-3 bg-white border-slate-200 shadow-2xs">
           <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total DPS</div>
           <div className="text-lg font-black text-slate-900 mt-0.5">{total}</div>
-          <div className="text-[10px] text-slate-400">Target TPS</div>
+          <div className="text-[10px] text-slate-400">Target Tabung</div>
         </Card>
 
         <Card className="p-3 bg-amber-50/50 border-amber-200 shadow-2xs">
@@ -484,7 +484,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
                   <th className="py-2.5 px-3">No</th>
                   <th className="py-2.5 px-3">Nama Pemilih</th>
                   <th className="py-2.5 px-3">NIK & Identitas</th>
-                  <th className="py-2.5 px-3">Alamat & TPS</th>
+                  <th className="py-2.5 px-3">Alamat & Tabung</th>
                   <th className="py-2.5 px-3">Status Coklit</th>
                   <th className="py-2.5 px-3 text-center">Aksi Cepat</th>
                 </tr>

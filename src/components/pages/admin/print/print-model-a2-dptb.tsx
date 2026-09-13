@@ -51,17 +51,17 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-            <span>Wilayah TPS:</span>
+            <span>Tabung:</span>
             <select
               value={selectedTps}
               disabled={!isAdmin}
               onChange={(e) => setSelectedTps(e.target.value)}
               className="h-8 px-2.5 text-xs rounded-lg border border-slate-300 bg-white font-bold text-blue-700"
             >
-              <option value="SEMUA">Semua TPS (Desa Kalisalak)</option>
+              <option value="SEMUA">Semua Tabung (Desa Kalisalak)</option>
               {tpsList.map((t) => (
                 <option key={t.id} value={t.namaTps}>
-                  {t.namaTps} ({t.lokasi})
+                  {t.namaTabung || t.namaTps.replace(/TPS/gi, "Tabung")} ({t.lokasi})
                 </option>
               ))}
             </select>
@@ -110,7 +110,7 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
             DAFTAR PEMILIH TAMBAHAN (DPTb) PEMILIHAN KEPALA DESA KALISALAK 2026/2027
           </h3>
           <h2 className="text-base font-black uppercase tracking-wide mt-0.5">
-            WILAYAH: {selectedTps}
+            WILAYAH: {selectedTps.replace(/TPS/gi, "TABUNG")}
           </h2>
           <p className="text-[11px] text-slate-600 mt-0.5">
             Daftar Pemilih yang Menggunakan Hak Pilih Tambahan dengan KTP-el / Surat Pindah Domisili
@@ -141,7 +141,7 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
                 <th className="border border-black p-1.5 text-left">ALAMAT DOMISILI</th>
                 <th className="border border-black p-1.5 w-10">RT</th>
                 <th className="border border-black p-1.5 w-10">RW</th>
-                <th className="border border-black p-1.5 w-20">TPS ASAL/TUJUAN</th>
+                <th className="border border-black p-1.5 w-24">TABUNG TUJUAN</th>
                 <th className="border border-black p-1.5 text-left">DOKUMEN DASAR</th>
               </tr>
             </thead>
@@ -166,7 +166,7 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
                     <td className="border border-black p-1 text-left truncate max-w-xs">{v.alamat}</td>
                     <td className="border border-black p-1">{v.rt}</td>
                     <td className="border border-black p-1">{v.rw}</td>
-                    <td className="border border-black p-1 font-bold text-blue-900">{v.tps}</td>
+                    <td className="border border-black p-1 font-bold text-blue-900">{v.tps.replace(/TPS/gi, "Tabung")}</td>
                     <td className="border border-black p-1 text-left text-[10px]">
                       KTP-el Kalisalak / Surat Pindah Masuk
                     </td>

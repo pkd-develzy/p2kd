@@ -194,7 +194,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
               Pusat Cetak & Unduh Dokumen Resmi Model A
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Unduh data Excel (.xlsx) dan dokumen PDF resmi untuk Model A.1 (DPS), Model A.2 (DPTb), Model A.3 (DPT Desa), dan Model A.4 (Salinan TPS) sesuai standar regulasi pemilihan.
+              Unduh data Excel (.xlsx) dan dokumen PDF resmi untuk Model A.1 (DPS), Model A.2 (DPTb), Model A.3 (DPT Desa), dan Model A.4 (Salinan Tabung) sesuai standar regulasi pemilihan.
             </p>
           </div>
 
@@ -358,7 +358,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                   Model A.3: Daftar Pemilih Tetap (DPT) Pilkades
                 </h4>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Buku Induk Resmi DPT Tingkat Desa Kalisalak hasil penetapan Rapat Pleno Terbuka P2KD. Memuat rekapitulasi 13 TPS (L/P) dan pengesahan Ketua P2KD, Sekretaris, serta BPD.
+                  Buku Induk Resmi DPT Tingkat Desa Kalisalak hasil penetapan Rapat Pleno Terbuka P2KD. Memuat rekapitulasi 13 Tabung (L/P) dan pengesahan Ketua P2KD, Sekretaris, serta BPD.
                 </p>
               </div>
             </div>
@@ -397,7 +397,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
             </div>
           </Card>
 
-          {/* 4. MODEL A.4: SALINAN DAFTAR PEMILIH TETAP PER TPS */}
+          {/* 4. MODEL A.4: SALINAN DAFTAR PEMILIH TETAP PER TABUNG */}
           <Card className="p-5 bg-white border-slate-200 hover:shadow-md transition-shadow space-y-3 flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-start justify-between">
@@ -405,16 +405,16 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                   <FileText className="w-6 h-6" />
                 </div>
                 <Badge variant="primary" className="text-[10px] font-bold bg-cyan-100 text-cyan-800 border-cyan-300">
-                  MODEL A.4 • SALINAN TPS
+                  MODEL A.4 • SALINAN TABUNG
                 </Badge>
               </div>
 
               <div>
                 <h4 className="text-sm font-black text-slate-900">
-                  Model A.4: Salinan Daftar Pemilih Tetap per TPS
+                  Model A.4: Salinan Daftar Pemilih Tetap per Tabung
                 </h4>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Salinan resmi DPT per TPS untuk dibagikan kepada KPPS, Pengawas Pemilihan, dan masing-masing Saksi Calon Kepala Desa lengkap dengan lembar Berita Acara Serah Terima.
+                  Salinan resmi DPT per Tabung untuk dibagikan kepada Petugas Tabung, Pengawas Pemilihan, dan masing-masing Saksi Calon Kepala Desa lengkap dengan lembar Berita Acara Serah Terima.
                 </p>
               </div>
             </div>
@@ -483,7 +483,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                   Berita Acara Pleno DPT (Form BA-DPT)
                 </h4>
                 <p className="text-[11px] text-slate-500 leading-normal">
-                  Dokumen penetapan DPT memuat rekapitulasi 13 TPS, segel digital SHA-256, dan kolom TTD Ketua P2KD, Sekretaris, & BPD.
+                  Dokumen penetapan DPT memuat rekapitulasi 13 Tabung, segel digital SHA-256, dan kolom TTD Ketua P2KD, Sekretaris, & BPD.
                 </p>
               </div>
 
@@ -519,7 +519,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                 Surat Undangan Nyoblos (Form C6)
               </h4>
               <p className="text-[11px] text-slate-500 leading-normal">
-                Cetak massal surat pemberitahuan pemilih ber-QR Code untuk 13 TPS. Format 6 kartu undangan per lembar A4.
+                Cetak massal surat pemberitahuan pemilih ber-QR Code untuk 13 Tabung. Format 6 kartu undangan per lembar A4.
               </p>
             </div>
 

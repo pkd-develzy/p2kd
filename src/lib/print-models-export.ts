@@ -46,7 +46,7 @@ export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA
       "ALAMAT DOMISILI",
       "RT",
       "RW",
-      "TPS",
+      "TABUNG PEMILIHAN",
     ]);
     rows.push([
       idx + 1,
@@ -59,7 +59,7 @@ export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA
       v.alamat,
       v.rt,
       v.rw,
-      v.tps,
+      v.tps.replace(/TPS/gi, "Tabung"),
     ]);
 
     // 2. SUB-TABEL VERIFIKASI DI BAWAHNYA
@@ -228,7 +228,7 @@ export function exportModelA2Excel(voters: Voter[], selectedTps: string = "SEMUA
     "ALAMAT DOMISILI",
     "RT",
     "RW",
-    "TPS TUJUAN",
+    "TABUNG TUJUAN",
     "DOKUMEN PENDUKUNG",
   ]);
 
@@ -244,7 +244,7 @@ export function exportModelA2Excel(voters: Voter[], selectedTps: string = "SEMUA
       v.alamat,
       v.rt,
       v.rw,
-      v.tps,
+      v.tps.replace(/TPS/gi, "Tabung"),
       "KTP-el / Surat Keterangan Pindah Masuk",
     ]);
   });
@@ -300,7 +300,7 @@ export function exportModelA2Pdf(voters: Voter[], selectedTps: string = "SEMUA")
   y += 4.5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`Wilayah: ${selectedTps} • Jumlah Pemilih Tambahan: ${dptbList.length} Orang`, 105, y, { align: "center" });
+  doc.text(`Wilayah: ${selectedTps.replace(/TPS/gi, "Tabung")} • Jumlah Pemilih Tambahan: ${dptbList.length} Orang`, 105, y, { align: "center" });
   y += 8;
 
   // Header Table
@@ -314,7 +314,7 @@ export function exportModelA2Pdf(voters: Voter[], selectedTps: string = "SEMUA")
   doc.text("NAMA LENGKAP", 60, y + 4.5);
   doc.text("JK", 110, y + 4.5);
   doc.text("ALAMAT (RT/RW)", 122, y + 4.5);
-  doc.text("TPS", 168, y + 4.5);
+  doc.text("TABUNG", 165, y + 4.5);
   y += 6.5;
 
   dptbList.slice(0, 40).forEach((v, idx) => {
@@ -334,7 +334,7 @@ export function exportModelA2Pdf(voters: Voter[], selectedTps: string = "SEMUA")
     doc.text(v.namaLengkap, 60, y + 4);
     doc.text(v.jenisKelamin, 110, y + 4);
     doc.text(`${v.alamat} (RT ${v.rt}/RW ${v.rw})`, 122, y + 4);
-    doc.text(v.tps, 168, y + 4);
+    doc.text(v.tps.replace(/TPS/gi, "Tabung"), 165, y + 4);
     y += 6;
   });
 
@@ -348,14 +348,14 @@ export function exportModelA2Pdf(voters: Voter[], selectedTps: string = "SEMUA")
 export function exportModelA3Excel(voters: Voter[], tpsList: TPSItem[]) {
   const dptVoters = voters.filter((v) => v.statusAktif === "AKTIF");
 
-  // Sheet 1: Rekapitulasi per TPS
+  // Sheet 1: Rekapitulasi per Tabung
   const rekapRows: (string | number)[][] = [];
   rekapRows.push(["MODEL A.3: BUKU INDUK DAFTAR PEMILIH TETAP (DPT) TINGKAT DESA"]);
   rekapRows.push(["REKAPITULASI DPT PEMILIHAN KEPALA DESA KALISALAK 2026/2027"]);
   rekapRows.push([`Total DPT Sah: ${dptVoters.length} Pemilih`, `Tanggal Pengesahan: ${new Date().toLocaleDateString("id-ID")}`]);
   rekapRows.push([]);
 
-  rekapRows.push(["NO", "NOMOR TPS", "NAMA TPS / TABUNG", "LOKASI TPS", "LAKI-LAKI (L)", "PEREMPUAN (P)", "TOTAL DPT"]);
+  rekapRows.push(["NO", "NOMOR TABUNG", "NAMA TABUNG PEMILIHAN", "LOKASI TABUNG", "LAKI-LAKI (L)", "PEREMPUAN (P)", "TOTAL DPT"]);
 
   let grandL = 0;
   let grandP = 0;
@@ -433,14 +433,14 @@ export function exportModelA3Pdf(voters: Voter[], tpsList: TPSItem[]) {
   doc.text(`Penetapan Rapat Pleno Terbuka P2KD Kalisalak • Total: ${dptVoters.length} Pemilih Sah`, 105, y, { align: "center" });
   y += 8;
 
-  // Tabel Rekapitulasi 13 TPS
+  // Tabel Rekapitulasi 13 Tabung Pemilihan
   doc.setFillColor(30, 58, 138);
   doc.rect(14, y, 182, 6.5, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7);
   doc.setTextColor(255, 255, 255);
   doc.text("NO", 17, y + 4.5);
-  doc.text("NOMOR & NAMA TPS", 30, y + 4.5);
+  doc.text("NOMOR & NAMA TABUNG PEMILIHAN", 30, y + 4.5);
   doc.text("LAKI-LAKI", 100, y + 4.5);
   doc.text("PEREMPUAN", 135, y + 4.5);
   doc.text("TOTAL DPT", 170, y + 4.5);
@@ -464,7 +464,7 @@ export function exportModelA3Pdf(voters: Voter[], tpsList: TPSItem[]) {
     doc.setFontSize(7.5);
     doc.setTextColor(15, 23, 42);
     doc.text(`${idx + 1}`, 17, y + 4);
-    doc.text(`${t.nomorTps} - ${t.namaTps}`, 30, y + 4);
+    doc.text(`${t.nomorTps} - ${t.namaTabung || t.namaTps.replace(/TPS/gi, "Tabung")}`, 30, y + 4);
     doc.text(`${l}`, 105, y + 4);
     doc.text(`${p}`, 140, y + 4);
     doc.text(`${l + p}`, 175, y + 4);
@@ -477,7 +477,7 @@ export function exportModelA3Pdf(voters: Voter[], tpsList: TPSItem[]) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
   doc.setTextColor(30, 58, 138);
-  doc.text("TOTAL DPT SE-DESA KALISALAK", 30, y + 4.5);
+  doc.text("TOTAL DPT SE-DESA KALISALAK (13 TABUNG)", 30, y + 4.5);
   doc.text(`${grandL}`, 105, y + 4.5);
   doc.text(`${grandP}`, 140, y + 4.5);
   doc.text(`${grandL + grandP}`, 175, y + 4.5);
@@ -504,16 +504,16 @@ export function exportModelA3Pdf(voters: Voter[], tpsList: TPSItem[]) {
 }
 
 // ==========================================
-// 4. MODEL A.4: SALINAN DPT PER TPS
+// 4. MODEL A.4: SALINAN DPT PER TABUNG
 // ==========================================
 
-export function exportModelA4Excel(voters: Voter[], selectedTps: string = "TPS 01", isMasked: boolean = false) {
+export function exportModelA4Excel(voters: Voter[], selectedTps: string = "Tabung 01", isMasked: boolean = false) {
   const filtered = voters.filter((v) => v.statusAktif === "AKTIF" && v.tps.toLowerCase().includes(selectedTps.toLowerCase()));
 
   const rows: (string | number)[][] = [];
-  rows.push(["MODEL A.4: SALINAN DAFTAR PEMILIH TETAP (DPT) PER TPS"]);
-  rows.push([`DOKUMEN RESMI UNTUK KPPS, PENGAWAS TPS, DAN SAKSI CALON KEPALA DESA`]);
-  rows.push([`Wilayah Penugasan: ${selectedTps}`, `Jumlah Pemilih TPS: ${filtered.length} Jiwa`, `Format: ${isMasked ? "Sensor NIK (Papan Informasi & Saksi)" : "NIK Lengkap (Arsip KPPS)"}`]);
+  rows.push(["MODEL A.4: SALINAN DAFTAR PEMILIH TETAP (DPT) PER TABUNG"]);
+  rows.push([`DOKUMEN RESMI UNTUK PETUGAS TABUNG, PENGAWAS, DAN SAKSI CALON KEPALA DESA`]);
+  rows.push([`Wilayah Penugasan: ${selectedTps.replace(/TPS/gi, "Tabung")}`, `Jumlah Pemilih: ${filtered.length} Jiwa`, `Format: ${isMasked ? "Sensor NIK (Papan Informasi & Saksi)" : "NIK Lengkap (Arsip Petugas Tabung)"}`]);
   rows.push([]);
 
   rows.push([
@@ -527,7 +527,7 @@ export function exportModelA4Excel(voters: Voter[], selectedTps: string = "TPS 0
     "ALAMAT",
     "RT",
     "RW",
-    "TPS",
+    "TABUNG",
     "PARAF KEHADIRAN",
   ]);
 
@@ -543,7 +543,7 @@ export function exportModelA4Excel(voters: Voter[], selectedTps: string = "TPS 0
       v.alamat,
       v.rt,
       v.rw,
-      v.tps,
+      v.tps.replace(/TPS/gi, "Tabung"),
       "[             ]",
     ]);
   });
@@ -565,11 +565,11 @@ export function exportModelA4Excel(voters: Voter[], selectedTps: string = "TPS 0
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Salinan DPT TPS");
-  XLSX.writeFile(wb, `MODEL_A4_SALINAN_DPT_${selectedTps.replace(/\s+/g, "_")}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, "Salinan DPT Tabung");
+  XLSX.writeFile(wb, `MODEL_A4_SALINAN_DPT_${selectedTps.replace(/TPS/gi, "TABUNG").replace(/\s+/g, "_")}.xlsx`);
 }
 
-export function exportModelA4Pdf(voters: Voter[], selectedTps: string = "TPS 01", isMasked: boolean = false) {
+export function exportModelA4Pdf(voters: Voter[], selectedTps: string = "Tabung 01", isMasked: boolean = false) {
   const filtered = voters.filter((v) => v.statusAktif === "AKTIF" && v.tps.toLowerCase().includes(selectedTps.toLowerCase()));
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   let y = 14;
@@ -591,11 +591,11 @@ export function exportModelA4Pdf(voters: Voter[], selectedTps: string = "TPS 01"
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text(`MODEL A.4: SALINAN DAFTAR PEMILIH TETAP (${selectedTps})`, 105, y, { align: "center" });
+  doc.text(`MODEL A.4: SALINAN DAFTAR PEMILIH TETAP (${selectedTps.replace(/TPS/gi, "Tabung")})`, 105, y, { align: "center" });
   y += 4.5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text(`Salinan Resmi Untuk KPPS, Saksi Calon, dan Pengawas • Total: ${filtered.length} Pemilih`, 105, y, { align: "center" });
+  doc.text(`Salinan Resmi Untuk Petugas Tabung, Saksi Calon, dan Pengawas • Total: ${filtered.length} Pemilih`, 105, y, { align: "center" });
   y += 8;
 
   // Header Table

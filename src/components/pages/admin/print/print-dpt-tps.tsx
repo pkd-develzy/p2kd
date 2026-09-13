@@ -66,9 +66,9 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* TPS Selector (disabled for pantarlih) */}
+          {/* Tabung Selector (disabled for pantarlih) */}
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-            <span>Pilih TPS:</span>
+            <span>Pilih Tabung:</span>
             <select
               value={selectedTps}
               disabled={!isAdmin}
@@ -77,7 +77,7 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
             >
               {tpsList.map((t) => (
                 <option key={t.id} value={t.namaTps}>
-                  {t.namaTps} ({t.lokasi})
+                  {t.namaTps.replace(/TPS/gi, "Tabung")} ({t.lokasi})
                 </option>
               ))}
             </select>
@@ -131,7 +131,7 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
               Lembar DPT Model A Belum Tersedia (Masih Tahap DPS)
             </h3>
             <p className="text-xs text-amber-900 leading-relaxed max-w-lg mx-auto">
-              Buku lembar DPT per TPS secara resmi hanya memuat warga yang telah ditetapkan menjadi <strong>Daftar Pemilih Tetap (DPT)</strong>.
+              Buku lembar DPT per Tabung secara resmi hanya memuat warga yang telah ditetapkan menjadi <strong>Daftar Pemilih Tetap (DPT)</strong>.
             </p>
             <p className="text-xs text-amber-800 leading-relaxed max-w-lg mx-auto">
               Saat ini seluruh <strong>{dpsVotersCount} pemilih aktif</strong> masih berada pada tahap <strong>Daftar Pemilih Sementara (DPS)</strong>.
@@ -146,7 +146,7 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
       ) : tpsVoters.length === 0 ? (
         <Card className="p-8 bg-slate-50 border border-slate-200 rounded-3xl text-center space-y-2 max-w-2xl mx-auto print:hidden">
           <p className="text-xs text-slate-500 font-medium">
-            Tidak ada pemilih DPT aktif pada {selectedTps}.
+            Tidak ada pemilih DPT aktif pada {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")}.
           </p>
         </Card>
       ) : (
@@ -161,20 +161,20 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
             DAFTAR PEMILIH TETAP (DPT) PEMILIHAN KEPALA DESA KALISALAK TAHUN 2026
           </h3>
           <h2 className="text-base font-black uppercase tracking-wide mt-0.5">
-            {tpsObj?.namaTps || selectedTps} — {tpsObj?.lokasi || "LOKASI TPS"}
+            {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")} — {tpsObj?.lokasi || "LOKASI TABUNG"}
           </h2>
           <p className="text-[11px] text-slate-600 mt-0.5">
             Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal • Cakupan Wilayah: RT {tpsObj?.rt || "01"} / RW {tpsObj?.rw || "01"}
           </p>
         </div>
 
-        {/* Info Ringkasan TPS */}
+        {/* Info Ringkasan Tabung */}
         <div className="flex items-center justify-between text-xs mb-3 pb-2 border-b border-slate-200">
           <div>
             Total Pemilih: <strong>{tpsVoters.length} Orang</strong> (Laki-laki: <strong>{lCount}</strong>, Perempuan: <strong>{pCount}</strong>)
           </div>
           <div className="text-[11px] text-slate-500">
-            Format: Siap Pasang di Papan Informasi TPS
+            Format: Siap Pasang di Papan Informasi Tabung
           </div>
         </div>
 
@@ -228,7 +228,7 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
           </table>
         </div>
 
-        {/* Tanda Tangan KPPS TPS */}
+        {/* Tanda Tangan Petugas Tabung */}
         <div className="mt-8 text-xs flex justify-between items-end">
           <div className="text-[10px] text-slate-500 max-w-xs">
             * Dokumen ini sah dan dicetak melalui Sistem Informasi Daftar Pemilih Pilkades Kalisalak 2026.
@@ -237,7 +237,7 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
           <div className="text-center space-y-12">
             <div>
               Kalisalak, 14 Agustus 2026
-              <div className="font-bold uppercase">Ketua KPPS {selectedTps}</div>
+              <div className="font-bold uppercase">Ketua Petugas {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")}</div>
             </div>
             <div>
               <strong className="underline block font-bold uppercase">

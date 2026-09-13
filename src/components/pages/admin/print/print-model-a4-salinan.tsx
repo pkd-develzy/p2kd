@@ -45,14 +45,14 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
             Kembali ke Pusat Cetak
           </Button>
           <Badge variant="primary" className="text-[10px] font-bold bg-cyan-500/10 text-cyan-800 border-cyan-300">
-            MODEL A.4 • SALINAN DPT PER TPS ({tpsVoters.length} Pemilih)
+            MODEL A.4 • SALINAN DPT PER TABUNG ({tpsVoters.length} Pemilih)
           </Badge>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* TPS Selector */}
+          {/* Tabung Selector */}
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-            <span>Pilih TPS:</span>
+            <span>Pilih Tabung:</span>
             <select
               value={selectedTps}
               disabled={!isAdmin}
@@ -61,7 +61,7 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
             >
               {tpsList.map((t) => (
                 <option key={t.id} value={t.namaTps}>
-                  {t.namaTps} ({t.lokasi})
+                  {t.namaTps.replace(/TPS/gi, "Tabung")} ({t.lokasi})
                 </option>
               ))}
             </select>
@@ -75,7 +75,7 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
               onChange={(e) => setMaskNikOption(e.target.value as "PLAIN" | "MASKED")}
               className="h-8 px-2 text-xs rounded-lg border border-slate-300 bg-white"
             >
-              <option value="PLAIN">NIK Lengkap (Arsip KPPS)</option>
+              <option value="PLAIN">NIK Lengkap (Arsip Petugas Tabung)</option>
               <option value="MASKED">Sensor NIK (Saksi & Pengumuman)</option>
             </select>
           </div>
@@ -117,16 +117,16 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
         {/* Kop */}
         <div className="text-center border-b-2 border-black pb-3 mb-4">
           <div className="text-[11px] font-bold uppercase tracking-widest text-slate-600">
-            MODEL A.4-PILKADES (SALINAN DPT PER TPS)
+            MODEL A.4-PILKADES (SALINAN DPT PER TABUNG)
           </div>
           <h3 className="text-sm font-bold uppercase">
             SALINAN DAFTAR PEMILIH TETAP (DPT) PEMILIHAN KEPALA DESA KALISALAK 2026/2027
           </h3>
           <h2 className="text-base font-black uppercase tracking-wide mt-0.5">
-            UNTUK KPPS, PENGAWAS TPS, DAN SAKSI CALON KEPALA DESA
+            UNTUK PETUGAS TABUNG, PENGAWAS TABUNG, DAN SAKSI CALON KEPALA DESA
           </h2>
           <p className="text-[11px] text-slate-600 mt-0.5">
-            {tpsObj?.namaTps || selectedTps} • Lokasi: {tpsObj?.lokasi || "Balai Pertemuan"} • Cakupan Wilayah: RT {tpsObj?.rt || "01"} / RW {tpsObj?.rw || "01"}
+            {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")} • Lokasi: {tpsObj?.lokasi || "Balai Pertemuan"} • Cakupan Wilayah: RT {tpsObj?.rt || "01"} / RW {tpsObj?.rw || "01"}
           </p>
         </div>
 
@@ -161,7 +161,7 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
               {tpsVoters.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="border border-black p-6 text-center text-slate-400">
-                    Tidak ada pemilih DPT aktif pada {selectedTps}.
+                    Tidak ada pemilih DPT aktif pada {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")}.
                   </td>
                 </tr>
               ) : (
@@ -190,14 +190,14 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
           </table>
         </div>
 
-        {/* Lembar Tanda Terima Saksi & KPPS */}
+        {/* Lembar Tanda Terima Saksi & Petugas */}
         <div className="mt-8 border-t border-black pt-4 text-xs">
           <div className="font-bold uppercase text-center mb-4">
             BERITA ACARA PENYERAHAN SALINAN DPT KEPADA SAKSI CALON KEPALA DESA
           </div>
 
           <p className="text-[11px] text-slate-700 leading-relaxed mb-4 text-center max-w-2xl mx-auto">
-            Pada hari ini telah diserahkan Salinan Daftar Pemilih Tetap (Model A.4) untuk {selectedTps} oleh Ketua KPPS kepada masing-masing Saksi Calon Kepala Desa Kalisalak yang sah:
+            Pada hari ini telah diserahkan Salinan Daftar Pemilih Tetap (Model A.4) untuk {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")} oleh Ketua Petugas Tabung kepada masing-masing Saksi Calon Kepala Desa Kalisalak yang sah:
           </p>
 
           <div className="grid grid-cols-3 gap-6 text-center text-xs pt-2">
@@ -218,7 +218,7 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
             </div>
 
             <div className="space-y-12">
-              <div className="font-bold">Ketua KPPS {selectedTps}</div>
+              <div className="font-bold">Ketua Petugas {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")}</div>
               <div>
                 <strong className="underline block font-bold uppercase">( ....................................... )</strong>
                 <span className="text-[10px] text-slate-600">Nama Terang</span>

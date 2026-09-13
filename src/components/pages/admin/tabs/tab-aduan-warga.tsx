@@ -69,7 +69,7 @@ export const TabAduanWarga: React.FC<TabAduanWargaProps> = ({
               Layanan Tanggapan & Aduan Masyarakat
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Verifikasi permohonan koreksi NIK, pemilih baru, mutasi TPS, maupun laporan pemilih Tidak Memenuhi Syarat (TMS) langsung dari warga.
+              Verifikasi permohonan koreksi NIK, pemilih baru, mutasi Tabung, maupun laporan pemilih Tidak Memenuhi Syarat (TMS) langsung dari warga.
             </p>
           </div>
 

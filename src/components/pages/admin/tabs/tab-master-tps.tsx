@@ -85,7 +85,7 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
                   <Badge variant="primary" className="text-[10px] font-bold">
                     {t.kodeTps.includes("RW") ? t.kodeTps : `RW-${t.nomorTps}`}
                   </Badge>
-                  <h4 className="text-sm font-bold text-slate-900 mt-1">{String(t.namaTabung || t.namaTps).replace(/Meja\s*(Pendaftaran\s*)?/gi, "")}</h4>
+                  <h4 className="text-sm font-bold text-slate-900 mt-1">{String(t.namaTabung || t.namaTps).replace(/Meja\s*(Pendaftaran\s*)?/gi, "").replace(/TPS/gi, "Tabung")}</h4>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button

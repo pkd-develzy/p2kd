@@ -48,7 +48,7 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
                 activeTab === "REKAP" ? "bg-white text-blue-700 shadow-xs" : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              1. Tabel Rekapitulasi 13 TPS
+              1. Tabel Rekapitulasi 13 Tabung
             </button>
             <button
               onClick={() => setActiveTab("BUKU_INDUK")}
@@ -106,7 +106,7 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
             PENETAPAN RAPAT PLENO TERBUKA P2KD DESA KALISALAK
           </h2>
           <p className="text-[11px] text-slate-600 mt-0.5">
-            Kecamatan Margasari, Kabupaten Tegal • Mencakup 13 TPS dan 13 Wilayah RW
+            Kecamatan Margasari, Kabupaten Tegal • Mencakup 13 Tabung Pemilihan dan 13 Wilayah RW
           </p>
         </div>
 
@@ -123,18 +123,18 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
           </span>
         </div>
 
-        {/* TAB 1: TABEL REKAPITULASI 13 TPS */}
+        {/* TAB 1: TABEL REKAPITULASI 13 TABUNG */}
         {activeTab === "REKAP" ? (
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase text-slate-800 border-b border-slate-300 pb-1">
-              A. Tabel Rekapitulasi Daftar Pemilih Tetap per TPS
+              A. Tabel Rekapitulasi Daftar Pemilih Tetap per Tabung
             </h4>
             <div className="overflow-x-auto">
               <table className="w-full text-xs border-collapse border border-black">
                 <thead>
                   <tr className="bg-slate-100 font-bold text-center">
                     <th className="border border-black p-2 w-10">NO</th>
-                    <th className="border border-black p-2 text-left">NOMOR & NAMA TPS</th>
+                    <th className="border border-black p-2 text-left">NOMOR & NAMA TABUNG PEMILIHAN</th>
                     <th className="border border-black p-2 text-left">LOKASI / WILAYAH</th>
                     <th className="border border-black p-2 w-24">LAKI-LAKI</th>
                     <th className="border border-black p-2 w-24">PEREMPUAN</th>
@@ -154,7 +154,7 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
                     return (
                       <tr key={t.id} className="text-center hover:bg-slate-50">
                         <td className="border border-black p-1.5 font-bold">{idx + 1}</td>
-                        <td className="border border-black p-1.5 text-left font-bold">{t.nomorTps} - {t.namaTps}</td>
+                        <td className="border border-black p-1.5 text-left font-bold">{t.nomorTps} - {t.namaTabung || t.namaTps.replace(/TPS/gi, "Tabung")}</td>
                         <td className="border border-black p-1.5 text-left">{t.lokasi}</td>
                         <td className="border border-black p-1.5 font-mono">{l}</td>
                         <td className="border border-black p-1.5 font-mono">{p}</td>
@@ -165,7 +165,7 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
                   {/* Total Row */}
                   <tr className="bg-slate-200 font-black text-center text-slate-900">
                     <td colSpan={3} className="border border-black p-2 text-left">
-                      TOTAL DPT SE-DESA KALISALAK (13 TPS)
+                      TOTAL DPT SE-DESA KALISALAK (13 TABUNG)
                     </td>
                     <td className="border border-black p-2 font-mono">{grandL}</td>
                     <td className="border border-black p-2 font-mono">{grandP}</td>
@@ -187,14 +187,14 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
                   <tr className="bg-slate-100 font-bold text-center">
                     <th className="border border-black p-1.5 w-8">NO</th>
                     <th className="border border-black p-1.5 w-36">NIK</th>
-                    <th className="border border-black p-1.5 w-36">NO KK</th>
+                    <th className="border border-black p-1.5 w-36">NOMOR KK</th>
                     <th className="border border-black p-1.5 text-left">NAMA LENGKAP</th>
                     <th className="border border-black p-1.5 w-10">JK</th>
                     <th className="border border-black p-1.5 w-24">TTL</th>
                     <th className="border border-black p-1.5 text-left">ALAMAT</th>
                     <th className="border border-black p-1.5 w-10">RT</th>
                     <th className="border border-black p-1.5 w-10">RW</th>
-                    <th className="border border-black p-1.5 w-16">TPS</th>
+                    <th className="border border-black p-1.5 w-20">TABUNG</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -209,7 +209,7 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
                       <td className="border border-black p-1 text-left truncate max-w-xs">{v.alamat}</td>
                       <td className="border border-black p-1">{v.rt}</td>
                       <td className="border border-black p-1">{v.rw}</td>
-                      <td className="border border-black p-1 font-bold">{v.tps}</td>
+                      <td className="border border-black p-1 font-bold">{v.tps.replace(/TPS/gi, "Tabung")}</td>
                     </tr>
                   ))}
                 </tbody>

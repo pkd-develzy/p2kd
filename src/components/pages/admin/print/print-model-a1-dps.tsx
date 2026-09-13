@@ -56,19 +56,19 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* TPS Selector */}
+          {/* Tabung Selector */}
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-            <span>Wilayah:</span>
+            <span>Tabung:</span>
             <select
               value={selectedTps}
               disabled={!isAdmin}
               onChange={(e) => setSelectedTps(e.target.value)}
               className="h-8 px-2.5 text-xs rounded-lg border border-slate-300 bg-white font-bold text-blue-700"
             >
-              <option value="SEMUA">Semua Wilayah (Desa Kalisalak)</option>
+              <option value="SEMUA">Semua Tabung (Desa Kalisalak)</option>
               {tpsList.map((t) => (
                 <option key={t.id} value={t.namaTps}>
-                  {t.namaTps} ({t.lokasi})
+                  {t.namaTabung || t.namaTps.replace(/TPS/gi, "Tabung")} ({t.lokasi})
                 </option>
               ))}
             </select>
@@ -136,7 +136,7 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
             DAFTAR PEMILIH SEMENTARA (DPS) PEMILIHAN KEPALA DESA KALISALAK 2026/2027
           </h3>
           <h2 className="text-base font-black uppercase tracking-wide mt-0.5">
-            LEMBAR KERJA COKLIT PANTARLIH • WILAYAH: {selectedTps}
+            LEMBAR KERJA COKLIT PANTARLIH • WILAYAH: {selectedTps.replace(/TPS/gi, "TABUNG")}
           </h2>
           <p className="text-[11px] text-slate-600 mt-0.5">
             Kecamatan Margasari, Kabupaten Tegal • Format Standar Berkas Faktual Lapangan
@@ -183,7 +183,7 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
                         <th className="p-1.5 w-16 text-center border-r border-black">KAWIN</th>
                         <th className="p-1.5 border-r border-black">ALAMAT DOMISILI</th>
                         <th className="p-1.5 w-12 text-center border-r border-black">RT/RW</th>
-                        <th className="p-1.5 w-20 text-center">TPS</th>
+                        <th className="p-1.5 w-20 text-center">TABUNG</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -205,7 +205,7 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
                         <td className="p-1.5 text-center border-r border-black">
                           {v.rt}/{v.rw}
                         </td>
-                        <td className="p-1.5 text-center font-bold text-blue-900">{v.tps}</td>
+                        <td className="p-1.5 text-center font-bold text-blue-900">{v.tps.replace(/TPS/gi, "Tabung")}</td>
                       </tr>
                     </tbody>
                   </table>

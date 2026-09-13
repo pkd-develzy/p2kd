@@ -508,7 +508,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
           </div>
           <div className="text-2xl font-black text-emerald-900 mt-1">{countPantarlih}</div>
           <div className="text-[10px] text-emerald-600 mt-0.5">
-            {tpsList.length > 0 ? `${tpsList.length} TPS Terdaftar` : "Belum Ada Master TPS"}
+            {tpsList.length > 0 ? `${tpsList.length} Tabung Terdaftar` : "Belum Ada Master Tabung"}
           </div>
         </Card>
       </div>
@@ -520,7 +520,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Cari nama anggota, NIK, username, jabatan, atau TPS..."
+              placeholder="Cari nama anggota, NIK, username, jabatan, atau Tabung..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full h-9 pl-9 pr-3 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50/50"
@@ -542,13 +542,13 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
                   <option value="SEKSI_PENYARINGAN">Seksi 3: Penyaringan & Uji Kompetensi</option>
                   <option value="SEKSI_PUNGUT_HITUNG">Seksi 4: Pemungutan Suara</option>
                   <option value="SEKSI_LOGISTIK_PUBLIKASI">Seksi 5: Perlengkapan & Publikasi</option>
-                  <option value="PANTARLIH_LAPANGAN">Pantarlih Lapangan TPS 1–7</option>
+                  <option value="PANTARLIH_LAPANGAN">Pantarlih Lapangan Tabung 1–13</option>
                 </>
               ) : userSectionCode === "SEKSI_PEMILIH" ? (
                 <>
                   <option value="SEMUA">Semua Tim Seksi 1</option>
                   <option value="SEKSI_PEMILIH">Seksi 1: Pendaftaran Pemilih</option>
-                  <option value="PANTARLIH_LAPANGAN">Pantarlih Lapangan TPS 1–7</option>
+                  <option value="PANTARLIH_LAPANGAN">Pantarlih Lapangan Tabung 1–13</option>
                 </>
               ) : (
                 <option value={userSectionCode || "SEMUA"}>

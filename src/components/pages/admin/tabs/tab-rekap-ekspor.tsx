@@ -35,7 +35,7 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
               Buku Induk & Rekapitulasi Ekspor Pilkades 2027
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Satu berkas Excel komprehensif memuat seluruh lembar kerja resmi: Lembar Ringkasan & Berita Acara Pleno, Rekapitulasi 7 Tabung TPS, Master DPT Final, Daftar TMS, dan Aduan Warga.
+              Satu berkas Excel komprehensif memuat seluruh lembar kerja resmi: Lembar Ringkasan & Berita Acara Pleno, Rekapitulasi 13 Tabung, Master DPT Final, Daftar TMS, dan Aduan Warga.
             </p>
           </div>
 
@@ -57,7 +57,7 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
             <FileSpreadsheet className="w-5 h-5" />
           </div>
           <h4 className="text-xs font-bold text-slate-900">Daftar DPT Final</h4>
-          <p className="text-[11px] text-slate-500">Seluruh pemilih aktif format Excel resmi (.xlsx) per TPS.</p>
+          <p className="text-[11px] text-slate-500">Seluruh pemilih aktif format Excel resmi (.xlsx) per Tabung.</p>
           <a href="/api/admin/export?type=DPT" download className="block pt-2">
             <Button variant="primary" size="sm" className="w-full text-xs font-bold">
               <Download className="w-3.5 h-3.5 mr-1.5" />
@@ -70,8 +70,8 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
           <div className="p-2 w-fit rounded-lg bg-emerald-50 text-emerald-700">
             <Layers className="w-5 h-5" />
           </div>
-          <h4 className="text-xs font-bold text-slate-900">Rekapitulasi TPS</h4>
-          <p className="text-[11px] text-slate-500">Tabel ringkasan jumlah pemilih L/P tiap TPS format Excel.</p>
+          <h4 className="text-xs font-bold text-slate-900">Rekapitulasi Tabung</h4>
+          <p className="text-[11px] text-slate-500">Tabel ringkasan jumlah pemilih L/P tiap Tabung format Excel.</p>
           <a href="/api/admin/export?type=REKAP" download className="block pt-2">
             <Button variant="outline" size="sm" className="w-full text-xs font-bold">
               <Download className="w-3.5 h-3.5 mr-1.5" />
@@ -116,7 +116,7 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
       {/* Rekap Table */}
       <Card className="p-4 bg-white border-slate-200 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h4 className="text-sm font-bold text-slate-900">Rekapitulasi Pemilih Per TPS Desa Kalisalak</h4>
+          <h4 className="text-sm font-bold text-slate-900">Rekapitulasi Pemilih Per Tabung Desa Kalisalak</h4>
           <a href="/api/admin/export?type=REKAP" download title="Unduh Tabel Rekapitulasi (.xlsx)">
             <Button
               variant="outline"
@@ -133,7 +133,7 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase">
                 <th className="py-2.5 px-3">No</th>
-                <th className="py-2.5 px-3">TPS</th>
+                <th className="py-2.5 px-3">TABUNG</th>
                 <th className="py-2.5 px-3">Lokasi Pemungutan</th>
                 <th className="py-2.5 px-3">Laki-laki</th>
                 <th className="py-2.5 px-3">Perempuan</th>
@@ -153,7 +153,7 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
                 return (
                   <tr key={t.id} className="hover:bg-slate-50">
                     <td className="py-2.5 px-3 text-slate-400">{idx + 1}</td>
-                    <td className="py-2.5 px-3 font-bold text-slate-900">{t.namaTps}</td>
+                    <td className="py-2.5 px-3 font-bold text-slate-900">{t.namaTps.replace(/TPS/gi, "Tabung")}</td>
                     <td className="py-2.5 px-3 text-slate-600">{t.lokasi}</td>
                     <td className="py-2.5 px-3 text-slate-800">{l}</td>
                     <td className="py-2.5 px-3 text-slate-800">{p}</td>

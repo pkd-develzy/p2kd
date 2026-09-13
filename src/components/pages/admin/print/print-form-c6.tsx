@@ -197,7 +197,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
                   <span className="col-span-2 font-mono font-bold">{maskedNik}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1">
-                  <span className="text-slate-600">Alamat TPS</span>
+                  <span className="text-slate-600">Lokasi Tabung</span>
                   <span className="col-span-2">{v.alamat} (RT {rtNum} / RW {rwNum})</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1">

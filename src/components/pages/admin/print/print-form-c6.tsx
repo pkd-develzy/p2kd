@@ -44,7 +44,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
 
   const displayedVoters = tpsVoters.slice(0, limitPrint);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://p2kdkalisalak.develzy.my.id";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://www.p2kdkalisalak.my.id";
 
   return (
     <div className="space-y-4">

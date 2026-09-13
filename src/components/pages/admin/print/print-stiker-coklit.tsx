@@ -51,7 +51,7 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
   }
 
   const displayedFamilies = uniqueFamilies.slice(0, limitStiker);
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://p2kdkalisalak.develzy.my.id";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://www.p2kdkalisalak.my.id";
 
   return (
     <div className="space-y-4">

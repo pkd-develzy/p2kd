@@ -326,7 +326,7 @@ export function generateBuktiPendaftaranPdf(data: MasterPetugasDpt): jsPDF {
 
   const steps = [
     "Simpan tanda bukti pendaftaran ini dan catat Nomor Registrasi Anda.",
-    "Periksa secara berkala status pendaftaran Anda melalui website: https://p2kdkalisalak.develzy.my.id/daftarpantarlih.",
+    "Periksa secara berkala status pendaftaran Anda melalui website: https://www.p2kdkalisalak.my.id/daftarpantarlih.",
     "Bagi pendaftar berstatus 'Perlu Klarifikasi', Panitia P2KD akan mengundang Anda melalui WhatsApp untuk klarifikasi berkas.",
     "Pendaftar yang ditetapkan wajib mengikuti Bimbingan Teknis (Bimtek) Pemutakhiran Data Pemilih yang diselenggarakan oleh P2KD Kalisalak.",
   ];

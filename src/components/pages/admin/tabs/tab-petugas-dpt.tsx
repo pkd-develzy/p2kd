@@ -272,10 +272,10 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
     let pesan = "";
     switch (item.status) {
       case "LOLOS":
-        pesan = `Halo Sdr/i *${item.namaLengkap}*,\n\nPanitia Pemilihan Kepala Desa (P2KD) Kalisalak 2026/2027 menginformasikan bahwa berkas pendaftaran Petugas Pendataan DPT Anda (No. Reg: *${item.nomorRegistrasi}*) dinyatakan *LOLOS VERIFIKASI ADMINISTRASI*.\n\nCatatan Panitia: ${item.catatanPanitia || "Berkas telah diverifikasi memenuhi syarat."}\nWilayah Penugasan: ${item.assignedWilayah || "RW " + item.rw}\n\nJadwal bimbingan teknis (Bimtek) akan diumumkan segera. Mohon pantau status resmi Anda di:\nhttps://p2kdkalisalak.develzy.my.id/daftarpantarlih\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
+        pesan = `Halo Sdr/i *${item.namaLengkap}*,\n\nPanitia Pemilihan Kepala Desa (P2KD) Kalisalak 2026/2027 menginformasikan bahwa berkas pendaftaran Petugas Pendataan DPT Anda (No. Reg: *${item.nomorRegistrasi}*) dinyatakan *LOLOS VERIFIKASI ADMINISTRASI*.\n\nCatatan Panitia: ${item.catatanPanitia || "Berkas telah diverifikasi memenuhi syarat."}\nWilayah Penugasan: ${item.assignedWilayah || "RW " + item.rw}\n\nJadwal bimbingan teknis (Bimtek) akan diumumkan segera. Mohon pantau status resmi Anda di:\nhttps://www.p2kdkalisalak.my.id/daftarpantarlih\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
         break;
       case "DITETAPKAN":
-        pesan = `Selamat Sdr/i *${item.namaLengkap}*!\n\nAnda telah resmi *DITETAPKAN* sebagai Petugas Pendataan DPT (Pantarlih) Pilkades Kalisalak 2026/2027 untuk wilayah penugasan: *${item.assignedWilayah || "RW " + item.rw}*.\n\nNo. Registrasi: *${item.nomorRegistrasi}*\nCatatan Panitia: ${item.catatanPanitia || "Selamat bertugas menjaga hak pilih warga."}\n\nSilakan unduh dokumen berkas resmi Anda di:\nhttps://p2kdkalisalak.develzy.my.id/daftarpantarlih\n\n_Panitia P2KD Desa Kalisalak_`;
+        pesan = `Selamat Sdr/i *${item.namaLengkap}*!\n\nAnda telah resmi *DITETAPKAN* sebagai Petugas Pendataan DPT (Pantarlih) Pilkades Kalisalak 2026/2027 untuk wilayah penugasan: *${item.assignedWilayah || "RW " + item.rw}*.\n\nNo. Registrasi: *${item.nomorRegistrasi}*\nCatatan Panitia: ${item.catatanPanitia || "Selamat bertugas menjaga hak pilih warga."}\n\nSilakan unduh dokumen berkas resmi Anda di:\nhttps://www.p2kdkalisalak.my.id/daftarpantarlih\n\n_Panitia P2KD Desa Kalisalak_`;
         break;
       case "PERLU_KLARIFIKASI":
         pesan = `Yth. Sdr/i *${item.namaLengkap}*,\n\nPanitia P2KD Desa Kalisalak mengundang Anda untuk memberikan klarifikasi berkas pendaftaran Petugas Pendataan DPT (No. Reg: *${item.nomorRegistrasi}*).\n\nCatatan Panitia: ${item.catatanPanitia || "Mohon konfirmasi terkait data pendaftaran Anda."}\n\nSilakan segera menghubungi Sekretariat P2KD di Balai Desa Kalisalak.\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
@@ -284,7 +284,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         pesan = `Yth. Sdr/i *${item.namaLengkap}*,\n\nTerima kasih atas partisipasi Anda dalam pendaftaran Petugas Pendataan DPT Pilkades Kalisalak (No. Reg: *${item.nomorRegistrasi}*). Berdasarkan verifikasi berkas, Anda dinyatakan *belum memenuhi syarat* untuk tahapan kali ini.\n\nCatatan: ${item.catatanPanitia || "-"}\n\nTerima kasih atas kepedulian Anda terhadap suksesnya Pilkades Kalisalak.\n_Panitia P2KD Desa Kalisalak_`;
         break;
       default:
-        pesan = `Halo Sdr/i *${item.namaLengkap}*,\n\nBerkas pendaftaran Petugas Pendataan DPT Pilkades Kalisalak Anda (No. Reg: *${item.nomorRegistrasi}*) telah kami terima dan saat ini berstatus: *MENUNGGU VERIFIKASI*.\n\nPantau status pendaftaran secara berkala di:\nhttps://p2kdkalisalak.develzy.my.id/daftarpantarlih\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
+        pesan = `Halo Sdr/i *${item.namaLengkap}*,\n\nBerkas pendaftaran Petugas Pendataan DPT Pilkades Kalisalak Anda (No. Reg: *${item.nomorRegistrasi}*) telah kami terima dan saat ini berstatus: *MENUNGGU VERIFIKASI*.\n\nPantau status pendaftaran secara berkala di:\nhttps://www.p2kdkalisalak.my.id/daftarpantarlih\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
     }
 
     return `https://wa.me/${waNumber}?text=${encodeURIComponent(pesan)}`;

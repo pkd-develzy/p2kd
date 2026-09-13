@@ -32,9 +32,16 @@ export const Footer: React.FC = () => {
                   <strong className="text-white font-bold">Sekretariat P2KD:</strong> Gedung Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01, Kec. Margasari, Kab. Tegal 52463
                 </span>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-blue-400 shrink-0" />
-                <span><strong className="text-white font-bold">Jam Layanan Posko:</strong> Senin – Sabtu (08:00 – 15:00 WIB)</span>
+              <div className="flex items-start gap-2.5">
+                <Clock className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+                <div>
+                  <strong className="text-white font-bold block mb-0.5">Jam Layanan:</strong>
+                  <div className="text-slate-200 text-xs space-y-0.5">
+                    <p>• Senin – Kamis (08:00 – 13:00 WIB)</p>
+                    <p>• Jum&apos;at (08.00 – 11.00 WIB)</p>
+                    <p>• Sabtu – Minggu (Libur)</p>
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-emerald-400 shrink-0" />

@@ -278,7 +278,7 @@ class SystemDataStore {
     isRealCountPublic: false,
     isAduanOpen: true,
     kontakWaP2kd: "087830188452",
-    jamLayanan: "08.00 - 15.00 WIB (Senin - Sabtu)",
+    jamLayanan: "Senin – Kamis (08:00 – 13:00 WIB), Jum'at (08.00 - 11.00 WIB), Sabtu - Minggu (Libur)",
     alamatSekretariat: "Kantor Balai Desa Kalisalak, Jl. Raya Kalisalak No. 01, Kec. Margasari, Kab. Tegal",
     totalRw: 13,
     totalRt: 39,

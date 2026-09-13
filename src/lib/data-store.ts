@@ -289,89 +289,7 @@ class SystemDataStore {
     perbupPilkades: "Perda No. 2/2015 & Perbup Tegal No. 27/2018 jo PP No. 16/2026",
   };
 
-  private petugasDptList: MasterPetugasDpt[] = [
-    {
-      id: "ptg-seed-01",
-      nomorRegistrasi: "PTG-KLS-2026-00001",
-      nik: "3328091205920001",
-      nikMasked: "3328************",
-      namaLengkap: "Tri Wahyudi, S.Pd",
-      tempatLahir: "Tegal",
-      tanggalLahir: "1992-05-12",
-      jenisKelamin: "L",
-      noKk: "3328092408100001",
-      noKkMasked: "3328************",
-      alamat: "RT 02 / RW 02, Desa Kalisalak",
-      rt: "02",
-      rw: "02",
-      dusun: "Desa Kalisalak",
-      nomorWa: "081234567890",
-      isCalonKades: false,
-      isTimSukses: false,
-      isKepentinganCalon: false,
-      persetujuanPernyataan: true,
-      tandaTanganUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M10 25 Q 30 10, 60 25 T 110 20' stroke='%230f172a' fill='none' stroke-width='2'/></svg>",
-      status: "MENUNGGU_VERIFIKASI",
-      assignedWilayah: "RW 02",
-      tanggalPendaftaran: "2026-09-08 09:30:00",
-      updatedAt: "2026-09-08 09:30:00",
-    },
-    {
-      id: "ptg-seed-02",
-      nomorRegistrasi: "PTG-KLS-2026-00002",
-      nik: "3328095503950002",
-      nikMasked: "3328************",
-      namaLengkap: "Siti Nurjanah",
-      tempatLahir: "Brebes",
-      tanggalLahir: "1995-03-15",
-      jenisKelamin: "P",
-      noKk: "3328091501120002",
-      noKkMasked: "3328************",
-      alamat: "RT 01 / RW 05, Desa Kalisalak",
-      rt: "01",
-      rw: "05",
-      dusun: "Desa Kalisalak",
-      nomorWa: "085712345678",
-      isCalonKades: false,
-      isTimSukses: true,
-      keteranganTimSukses: "Pernah membantu kegiatan konsolidasi keluarga bakal calon Kades.",
-      isKepentinganCalon: false,
-      persetujuanPernyataan: true,
-      tandaTanganUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M15 30 Q 40 5, 75 25 T 105 15' stroke='%230f172a' fill='none' stroke-width='2'/></svg>",
-      status: "PERLU_KLARIFIKASI",
-      catatanPanitia: "Perlu klarifikasi tertulis terkait komitmen pelepasan afiliasi tim sukses sebelum penetapan.",
-      assignedWilayah: "RW 05",
-      tanggalPendaftaran: "2026-09-09 14:15:00",
-      updatedAt: "2026-09-09 16:00:00",
-    },
-    {
-      id: "ptg-seed-03",
-      nomorRegistrasi: "PTG-KLS-2026-00003",
-      nik: "3328091807880003",
-      nikMasked: "3328************",
-      namaLengkap: "Budi Santoso",
-      tempatLahir: "Tegal",
-      tanggalLahir: "1988-07-18",
-      jenisKelamin: "L",
-      noKk: "3328090906080003",
-      noKkMasked: "3328************",
-      alamat: "RT 03 / RW 07, Desa Kalisalak",
-      rt: "03",
-      rw: "07",
-      dusun: "Desa Kalisalak",
-      nomorWa: "087812349988",
-      isCalonKades: false,
-      isTimSukses: false,
-      isKepentinganCalon: false,
-      persetujuanPernyataan: true,
-      tandaTanganUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='40'><path d='M10 20 Q 35 35, 70 15 T 110 25' stroke='%230f172a' fill='none' stroke-width='2'/></svg>",
-      status: "LOLOS",
-      catatanPanitia: "Berkas lengkap dan memenuhi syarat integritas.",
-      assignedWilayah: "RW 07",
-      tanggalPendaftaran: "2026-09-10 10:00:00",
-      updatedAt: "2026-09-10 11:30:00",
-    },
-  ];
+  private petugasDptList: MasterPetugasDpt[] = [];
 
   private constructor() {
     this.syncWithSupabase();
@@ -402,18 +320,18 @@ class SystemDataStore {
     try {
       const res = await SupabaseDbService.fetchAllData();
       if (res.success && res.data) {
-        if (res.data.tpsList && res.data.tpsList.length > 0) this.tpsList = res.data.tpsList;
-        if (res.data.pemilihList && res.data.pemilihList.length > 0) this.pemilihList = res.data.pemilihList;
-        if (res.data.anggotaList && res.data.anggotaList.length > 0) this.anggotaList = res.data.anggotaList;
-        if (res.data.balonList && res.data.balonList.length > 0) this.balonList = res.data.balonList;
-        if (res.data.kandidatList && res.data.kandidatList.length > 0) this.kandidatList = res.data.kandidatList;
-        if (res.data.tpsVoteCounts && res.data.tpsVoteCounts.length > 0) this.tpsVoteCounts = res.data.tpsVoteCounts;
+        if (res.data.tpsList) this.tpsList = res.data.tpsList;
+        if (res.data.pemilihList) this.pemilihList = res.data.pemilihList;
+        if (res.data.anggotaList) this.anggotaList = res.data.anggotaList;
+        if (res.data.balonList) this.balonList = res.data.balonList;
+        if (res.data.kandidatList) this.kandidatList = res.data.kandidatList;
+        if (res.data.tpsVoteCounts) this.tpsVoteCounts = res.data.tpsVoteCounts;
         if (res.data.aduanList) this.aduanList = res.data.aduanList;
-        if (res.data.pengumumanList && res.data.pengumumanList.length > 0) this.pengumumanList = res.data.pengumumanList;
+        if (res.data.pengumumanList) this.pengumumanList = res.data.pengumumanList;
         if (res.data.auditLogs) this.auditLogs = res.data.auditLogs;
         if (res.data.tahapanState) this.tahapanState = res.data.tahapanState;
         if (res.data.webConfig) this.webConfig = { ...this.webConfig, ...res.data.webConfig };
-        if (res.data.petugasDptList && res.data.petugasDptList.length > 0) this.petugasDptList = res.data.petugasDptList;
+        if (res.data.petugasDptList) this.petugasDptList = res.data.petugasDptList;
         this.isSupabaseSynced = true;
       }
     } catch (err) {

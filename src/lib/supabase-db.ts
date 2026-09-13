@@ -164,7 +164,7 @@ interface SupabasePengumumanRow {
 
 interface SupabasePetugasDptRow {
   id: string;
-  nomor_registrasi: string;
+  nomor_registrasi?: string;
   nik: string;
   nik_masked?: string | null;
   nama_lengkap: string;
@@ -176,21 +176,29 @@ interface SupabasePetugasDptRow {
   alamat: string;
   rt: string;
   rw: string;
-  dusun: string;
-  nomor_wa: string;
+  dusun?: string;
+  desa?: string;
+  nomor_wa?: string;
+  nomor_whatsapp?: string;
   is_calon_kades: boolean;
   keterangan_calon_kades?: string | null;
   is_tim_sukses: boolean;
   keterangan_tim_sukses?: string | null;
-  is_kepentingan_calon: boolean;
+  is_kepentingan_calon?: boolean;
+  is_memiliki_kepentingan?: boolean;
   keterangan_kepentingan?: string | null;
-  persetujuan_pernyataan: boolean;
-  tanda_tangan_url: string;
-  status: string;
+  persetujuan_pernyataan?: boolean;
+  surat_pernyataan_signed?: boolean;
+  tanda_tangan_url?: string;
+  surat_pernyataan_url?: string;
+  status?: string;
+  status_verifikasi?: string;
   catatan_panitia?: string | null;
+  catatan_verifikasi?: string | null;
   assigned_wilayah?: string | null;
   tanggal_pendaftaran: string;
   updated_at?: string | null;
+  created_at?: string | null;
 }
 
 interface SupabaseWebConfigRow {
@@ -518,7 +526,7 @@ export class SupabaseDbService {
 
       const petugasDptList: MasterPetugasDpt[] = ((petugasData as SupabasePetugasDptRow[]) || []).map((p) => ({
         id: p.id,
-        nomorRegistrasi: p.nomor_registrasi,
+        nomorRegistrasi: p.nomor_registrasi || `PTG-${p.id.slice(0, 8)}`,
         nik: p.nik,
         nikMasked: p.nik_masked || maskNIK(p.nik),
         namaLengkap: p.nama_lengkap,
@@ -530,21 +538,21 @@ export class SupabaseDbService {
         alamat: p.alamat,
         rt: p.rt,
         rw: p.rw,
-        dusun: p.dusun,
-        nomorWa: p.nomor_wa,
+        dusun: p.dusun || p.desa || "Kalisalak",
+        nomorWa: p.nomor_whatsapp || p.nomor_wa || "",
         isCalonKades: Boolean(p.is_calon_kades),
         keteranganCalonKades: p.keterangan_calon_kades || undefined,
         isTimSukses: Boolean(p.is_tim_sukses),
         keteranganTimSukses: p.keterangan_tim_sukses || undefined,
-        isKepentinganCalon: Boolean(p.is_kepentingan_calon),
+        isKepentinganCalon: Boolean(p.is_memiliki_kepentingan ?? p.is_kepentingan_calon),
         keteranganKepentingan: p.keterangan_kepentingan || undefined,
-        persetujuanPernyataan: Boolean(p.persetujuan_pernyataan),
-        tandaTanganUrl: p.tanda_tangan_url,
-        status: (p.status as MasterPetugasDpt["status"]) || "MENUNGGU_VERIFIKASI",
-        catatanPanitia: p.catatan_panitia || undefined,
-        assignedWilayah: p.assigned_wilayah || undefined,
+        persetujuanPernyataan: Boolean(p.surat_pernyataan_signed ?? p.persetujuan_pernyataan),
+        tandaTanganUrl: p.surat_pernyataan_url || p.tanda_tangan_url || "",
+        status: ((p.status_verifikasi || p.status || "MENUNGGU_VERIFIKASI") as MasterPetugasDpt["status"]),
+        catatanPanitia: p.catatan_verifikasi || p.catatan_panitia || undefined,
+        assignedWilayah: p.desa || p.assigned_wilayah || undefined,
         tanggalPendaftaran: p.tanggal_pendaftaran,
-        updatedAt: p.updated_at || p.tanggal_pendaftaran,
+        updatedAt: p.created_at || p.updated_at || p.tanggal_pendaftaran,
       }));
 
       const resultObj = {
@@ -1060,10 +1068,15 @@ export class SupabaseDbService {
     try {
       this.invalidateCache();
       const payload: Record<string, unknown> = {};
-      if (data.status) payload.status = data.status;
-      if (data.catatanPanitia !== undefined) payload.catatan_panitia = data.catatanPanitia;
-      if (data.assignedWilayah !== undefined) payload.assigned_wilayah = data.assignedWilayah;
-      if (data.updatedAt) payload.updated_at = data.updatedAt;
+      if (data.status) {
+        payload.status_verifikasi = data.status;
+      }
+      if (data.catatanPanitia !== undefined) {
+        payload.catatan_verifikasi = data.catatanPanitia;
+      }
+      if (data.assignedWilayah !== undefined) {
+        payload.desa = data.assignedWilayah;
+      }
 
       await this.adminClient.from("pendaftaran_petugas_dpt").update(payload).eq("id", id);
     } catch (err) {

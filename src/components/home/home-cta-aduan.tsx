@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 export const HomeCtaAduan: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4">
-      <Card className="border-blue-900/40 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 text-white p-8 sm:p-12 rounded-3xl shadow-2xl overflow-hidden relative">
+      <Card className="border-blue-900/40 bg-linear-to-br from-slate-950 via-blue-950 to-indigo-950 text-white p-8 sm:p-12 rounded-3xl shadow-2xl overflow-hidden relative">
         <div className="absolute -right-16 -bottom-16 w-80 h-80 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -left-16 -top-16 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 

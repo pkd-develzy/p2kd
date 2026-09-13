@@ -181,7 +181,7 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
     return (
       <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs">
         {/* Cloudflare Widget Render Target */}
-        <div ref={containerRef} className="flex justify-center min-h-[65px]" />
+        <div ref={containerRef} className="flex justify-center min-h-16.25" />
 
         {loading && !isVerified && (
           <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-500">

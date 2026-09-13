@@ -977,7 +977,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-700">Dusun / Wilayah:</label>
+                        <label className="text-[11px] font-bold text-slate-700">Wilayah Domisili:</label>
                         <input
                           type="text"
                           value={editFormData.dusun}

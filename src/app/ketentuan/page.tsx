@@ -93,7 +93,7 @@ export default function KetentuanPage() {
                   <li><strong>Koreksi Data:</strong> Pembenahan kesalahan penulisan nama, tanggal lahir, jenis kelamin, atau alamat domisili.</li>
                   <li><strong>Pendaftaran Pemilih Baru:</strong> Bagi pemilih pemula atau warga yang belum terdata di DPS.</li>
                   <li><strong>Laporan TMS (Tidak Memenuhi Syarat):</strong> Pelaporan pemilih yang telah meninggal dunia, pindah domisili ke luar daerah, atau menjadi anggota TNI/Polri.</li>
-                  <li><strong>Mutasi TPS:</strong> Permohonan penyesuaian lokasi TPS sesuai kedekatan tempat tinggal terkini.</li>
+                  <li><strong>Mutasi Tabung:</strong> Permohonan penyesuaian lokasi Tabung Pemilihan sesuai kedekatan tempat tinggal terkini.</li>
                 </ul>
               </div>
             </div>

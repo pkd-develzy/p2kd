@@ -100,21 +100,21 @@ export default function BimtekMateriPage() {
     },
   ];
 
-  // Pemetaan 13 TPS & 13 RW
+  // Pemetaan 13 Tabung & 13 RW
   const pemetaanTps = [
-    { tps: "TPS 01", rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 02", rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 03", rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 04", rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 05", rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 06", rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 07", rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 08", rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 09", rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 10", rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 11", rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 12", rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03" },
-    { tps: "TPS 13", rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 01", rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 02", rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 03", rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 04", rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 05", rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 06", rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 07", rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 08", rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 09", rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 10", rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 11", rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 12", rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03" },
+    { tps: "Tabung 13", rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03" },
   ];
 
   // FAQ Penanganan Lapangan
@@ -137,7 +137,7 @@ export default function BimtekMateriPage() {
     },
     {
       q: "Bagaimana jika saya menemukan warga baru usia 17 tahun yang belum ada di daftar pemilih sistem?",
-      a: "Klik tombol biru '+ Temuan Baru' di kanan atas layar ponsel Anda. Masukkan 16 digit NIK, No KK, Nama Lengkap, Tempat & Tanggal Lahir, Jenis Kelamin, serta alamat RT/RW. Sistem otomatis menetapkan TPS dan memasukkannya ke dalam daftar pemilih RW Anda.",
+      a: "Klik tombol biru '+ Temuan Baru' di kanan atas layar ponsel Anda. Masukkan 16 digit NIK, No KK, Nama Lengkap, Tempat & Tanggal Lahir, Jenis Kelamin, serta alamat RT/RW. Sistem otomatis menetapkan Tabung Pemilihan dan memasukkannya ke dalam daftar pemilih RW Anda.",
     },
     {
       q: "Bagaimana jika ada warga yang protes di portal publik bahwa dirinya belum terdaftar?",
@@ -705,28 +705,28 @@ export default function BimtekMateriPage() {
           </div>
         </section>
 
-        {/* MODUL 5: PEMETAAN 13 TPS TERHADAP 13 RW */}
+        {/* MODUL 5: PEMETAAN 13 TABUNG TERHADAP 13 RW */}
         <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
           <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
             <MapPin className="w-4 h-4 text-blue-400" />
-            Wilayah Tugas: Pemetaan 13 TPS & 13 RW Desa Kalisalak
+            Wilayah Tugas: Pemetaan 13 Tabung & 13 RW Desa Kalisalak
           </div>
 
           <h2 className="text-lg sm:text-xl font-black text-white">
-            Penugasan Presisi 1 TPS Melayani 1 Wilayah RW
+            Penugasan Presisi 1 Tabung Melayani 1 Wilayah RW
           </h2>
 
           <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
-            P2KD Kalisalak menetapkan pemetaan wilayah TPS berbasis RW secara 1-to-1 mapping. Petugas
+            P2KD Kalisalak menetapkan pemetaan wilayah Tabung Pemilihan berbasis RW secara 1-to-1 mapping. Petugas
             yang ditugaskan di RW tertentu otomatis bertanggung jawab memverifikasi calon pemilih di
-            TPS tersebut:
+            Tabung tersebut:
           </p>
 
           <div className="overflow-x-auto rounded-2xl border border-slate-800">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 text-[11px] uppercase tracking-wider font-bold">
-                  <th className="p-3">TPS Resmi</th>
+                  <th className="p-3">Tabung Pemilihan</th>
                   <th className="p-3">Wilayah RW Penugasan</th>
                   <th className="p-3">Cakupan Lingkungan RT</th>
                 </tr>

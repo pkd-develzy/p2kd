@@ -401,7 +401,7 @@ export function generateMateriBimtekPdf(): jsPDF {
   doc.setFontSize(8.5);
   doc.setTextColor(51, 65, 85);
   const pWil =
-    "Di Desa Kalisalak, penugasan Coklit Pantarlih berbasis wilayah Rukun Warga (RW). Terdapat 13 RW yang terhubung ke TPS masing-masing secara presisi:";
+    "Di Desa Kalisalak, penugasan Coklit Pantarlih berbasis wilayah Rukun Warga (RW). Terdapat 13 RW yang terhubung ke Tabung Pemilihan masing-masing secara presisi:";
   doc.text(doc.splitTextToSize(pWil, 174), 18, y);
   y += 10;
 
@@ -413,24 +413,24 @@ export function generateMateriBimtekPdf(): jsPDF {
   doc.setTextColor(255, 255, 255);
   doc.text("WILAYAH PENUGASAN", 22, y + 4.5);
   doc.text("CAKUPAN LINGKUNGAN RT", 80, y + 4.5);
-  doc.text("PEMETAAN TABUNG / TPS", 140, y + 4.5);
+  doc.text("PEMETAAN TABUNG PEMILIHAN", 136, y + 4.5);
 
   y += 6.5;
 
   const tpsTable = [
-    { rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03", tps: "TPS 01" },
-    { rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03", tps: "TPS 02" },
-    { rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03", tps: "TPS 03" },
-    { rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03", tps: "TPS 04" },
-    { rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03", tps: "TPS 05" },
-    { rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03", tps: "TPS 06" },
-    { rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03", tps: "TPS 07" },
-    { rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03", tps: "TPS 08" },
-    { rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03", tps: "TPS 09" },
-    { rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03", tps: "TPS 10" },
-    { rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03", tps: "TPS 11" },
-    { rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03", tps: "TPS 12" },
-    { rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03", tps: "TPS 13" },
+    { rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03", tps: "Tabung 01" },
+    { rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03", tps: "Tabung 02" },
+    { rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03", tps: "Tabung 03" },
+    { rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03", tps: "Tabung 04" },
+    { rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03", tps: "Tabung 05" },
+    { rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03", tps: "Tabung 06" },
+    { rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03", tps: "Tabung 07" },
+    { rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03", tps: "Tabung 08" },
+    { rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03", tps: "Tabung 09" },
+    { rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03", tps: "Tabung 10" },
+    { rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03", tps: "Tabung 11" },
+    { rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03", tps: "Tabung 12" },
+    { rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03", tps: "Tabung 13" },
   ];
 
   tpsTable.forEach((row, idx) => {

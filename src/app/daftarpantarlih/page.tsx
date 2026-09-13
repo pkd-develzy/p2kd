@@ -1414,7 +1414,7 @@ export default function PendaftaranPetugasPage() {
                         </div>
 
                         <div className="space-y-1">
-                          <label className="font-bold text-slate-700 text-xs">Dusun:</label>
+                          <label className="font-bold text-slate-700 text-xs">Wilayah Domisili:</label>
                           <input
                             type="text"
                             value={publicEditData.dusun}

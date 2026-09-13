@@ -25,11 +25,11 @@ const faqData = [
   },
   {
     q: "Kapan hari pemungutan suara (pencoblosan) Pilkades Kalisalak dilaksanakan?",
-    a: "Berdasarkan Keputusan Bupati Tegal Nomor 100.3.3.2/713 Tahun 2026, hari pemungutan dan penghitungan suara Pilkades Serentak Gelombang I dilaksanakan serentak pada hari Rabu, 3 Februari 2027 mulai pukul 07.00 s/d 13.00 WIB di masing-masing TPS.",
+    a: "Berdasarkan Keputusan Bupati Tegal Nomor 100.3.3.2/713 Tahun 2026, hari pemungutan dan penghitungan suara Pilkades Serentak Gelombang I dilaksanakan serentak pada hari Rabu, 3 Februari 2027 mulai pukul 07.00 s/d 13.00 WIB di masing-masing Tabung Pemilihan.",
   },
   {
     q: "Apakah data NIK saya aman saat mengecek di portal publik?",
-    a: "Sangat aman. Sistem kami menerapkan perlindungan keamanan server dan database tingkat lanjut serta tidak pernah mengekspos NIK lengkap ke internet. Respon hasil pencarian hanya menampilkan nama dan alokasi TPS dengan proteksi server aman.",
+    a: "Sangat aman. Sistem kami menerapkan perlindungan keamanan server dan database tingkat lanjut serta tidak pernah mengekspos NIK lengkap ke internet. Respon hasil pencarian hanya menampilkan nama dan alokasi Tabung Pemilihan dengan proteksi server aman.",
   },
   {
     q: "Kapan batas akhir perbaikan data sebelum DPT dikunci?",

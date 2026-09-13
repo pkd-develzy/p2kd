@@ -232,7 +232,7 @@ export const AduanForm: React.FC = () => {
               >
                 <option value="BELUM_TERDAFTAR">Belum Terdaftar di DPS Pilkades (Pemilih Baru)</option>
                 <option value="KOREKSI_DATA">Koreksi Penulisan Nama / NIK / Tanggal Lahir / RT-RW</option>
-                <option value="MUTASI_TPS">Permohonan Pindah Lokasi TPS di Kalisalak</option>
+                <option value="MUTASI_TPS">Permohonan Pindah Lokasi Tabung di Kalisalak</option>
                 <option value="LAPOR_TMS">Lapor Pemilih TMS (Meninggal Dunia / Pindah Keluar / TNI-Polri)</option>
                 <option value="LAINNYA">Lain-lain</option>
               </select>

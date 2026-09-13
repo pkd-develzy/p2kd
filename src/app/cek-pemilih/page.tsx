@@ -26,7 +26,7 @@ export default function CekPemilihPage() {
             Pengecekan Daftar Pemilih Mandiri
           </h1>
           <p className="text-sm text-slate-500 mt-2 max-w-xl mx-auto">
-            Masukkan Nomor Induk Kependudukan (NIK) dan tanggal lahir Anda untuk mengecek status keterdaftaran dan lokasi TPS Anda di Pilkades Desa Kalisalak.
+            Masukkan Nomor Induk Kependudukan (NIK) dan tanggal lahir Anda untuk mengecek status keterdaftaran dan lokasi Tabung Pemilihan Anda di Pilkades Desa Kalisalak.
           </p>
         </div>
 

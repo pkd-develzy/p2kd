@@ -76,7 +76,7 @@ export async function GET(req: Request) {
         "RW": p.rw,
         "Desa": p.desa,
         "Kecamatan": p.kecamatan,
-        "Penetapan TPS": p.tps,
+        "Penetapan Tabung": p.tps.replace(/TPS/gi, "Tabung"),
         "Status Pemilih": p.statusAktif,
       }));
 
@@ -95,7 +95,7 @@ export async function GET(req: Request) {
         { wch: 6 },  // RW
         { wch: 14 }, // Desa
         { wch: 14 }, // Kecamatan
-        { wch: 14 }, // TPS
+        { wch: 16 }, // Tabung
         { wch: 14 }, // Status
       ];
 
@@ -140,22 +140,22 @@ export async function GET(req: Request) {
       filename = `DAFTAR_PEMILIH_TMS_KALISALAK_${timestamp}.xlsx`;
     }
 
-    // 3. REKAPITULASI TPS
+    // 3. REKAPITULASI TABUNG
     else if (type === "REKAP") {
       const dataRows = tpsList.map((t, idx) => {
         const votersInTps = pemilih.filter(
-          (p) => p.statusAktif === "AKTIF" && p.tps.toLowerCase().includes(t.nomorTps.toLowerCase())
+          (p) => p.statusAktif === "AKTIF" && (p.tps.toLowerCase().includes(t.nomorTps.toLowerCase()) || p.tps.toLowerCase().includes(t.namaTps.toLowerCase()))
         );
         const l = votersInTps.filter((p) => p.jenisKelamin === "L").length;
         const p = votersInTps.filter((p) => p.jenisKelamin === "P").length;
         const tmsCount = pemilih.filter(
-          (v) => v.statusAktif === "TMS" && v.tps.toLowerCase().includes(t.nomorTps.toLowerCase())
+          (v) => v.statusAktif === "TMS" && (v.tps.toLowerCase().includes(t.nomorTps.toLowerCase()) || v.tps.toLowerCase().includes(t.namaTps.toLowerCase()))
         ).length;
 
         return {
           "No": idx + 1,
-          "Kode TPS": t.kodeTps,
-          "Nama TPS": t.namaTps,
+          "Kode Tabung": t.kodeTps,
+          "Nama Tabung": (t.namaTabung || t.namaTps).replace(/TPS/gi, "Tabung"),
           "Lokasi Pemungutan": t.lokasi,
           "Alamat": t.alamat,
           "Cakupan RT/RW": `RT ${t.rt} / RW ${t.rw}`,
@@ -163,7 +163,7 @@ export async function GET(req: Request) {
           "Pemilih Perempuan": p,
           "Total DPT Aktif": votersInTps.length,
           "Pemilih TMS": tmsCount,
-          "Kuota Maksimal TPS": t.kuotaMaksimal,
+          "Kuota Maksimal Tabung": t.kuotaMaksimal,
           "Sisa Kuota": Math.max(0, t.kuotaMaksimal - votersInTps.length),
         };
       });
@@ -180,27 +180,27 @@ export async function GET(req: Request) {
         { wch: 18 },
         { wch: 18 },
         { wch: 14 },
-        { wch: 18 },
+        { wch: 20 },
         { wch: 14 },
       ];
 
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Rekapitulasi TPS");
-      filename = `REKAPITULASI_TPS_KALISALAK_${timestamp}.xlsx`;
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Rekapitulasi Tabung");
+      filename = `REKAPITULASI_TABUNG_KALISALAK_${timestamp}.xlsx`;
     }
 
-    // 4. MASTER TPS
+    // 4. MASTER TABUNG
     else if (type === "TPS") {
       const dataRows = tpsList.map((t, idx) => ({
         "No": idx + 1,
-        "Kode TPS": t.kodeTps,
+        "Kode Tabung": t.kodeTps,
         "Nomor": t.nomorTps,
-        "Nama TPS": t.namaTps,
+        "Nama Tabung": (t.namaTabung || t.namaTps).replace(/TPS/gi, "Tabung"),
         "Lokasi": t.lokasi,
         "Alamat": t.alamat,
         "Wilayah RT": t.rt,
         "Wilayah RW": t.rw,
         "Kuota Maksimal": t.kuotaMaksimal,
-        "Status TPS": t.status,
+        "Status Tabung": t.status,
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(dataRows);
@@ -214,11 +214,11 @@ export async function GET(req: Request) {
         { wch: 14 },
         { wch: 14 },
         { wch: 16 },
-        { wch: 12 },
+        { wch: 14 },
       ];
 
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Master Data TPS");
-      filename = `MASTER_TPS_KALISALAK_${timestamp}.xlsx`;
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Master Data Tabung");
+      filename = `MASTER_TABUNG_KALISALAK_${timestamp}.xlsx`;
     }
 
     // 5. ADUAN MASYARAKAT
@@ -300,24 +300,24 @@ export async function GET(req: Request) {
         { "Parameter": "Pemilih Laki-laki", "Keterangan": stats.totalLaki },
         { "Parameter": "Pemilih Perempuan", "Keterangan": stats.totalPerempuan },
         { "Parameter": "Total Pemilih TMS", "Keterangan": stats.totalTms },
-        { "Parameter": "Jumlah TPS", "Keterangan": tpsList.length },
+        { "Parameter": "Jumlah Tabung Pemilihan", "Keterangan": tpsList.length },
         { "Parameter": "Waktu Ekspor Berkas", "Keterangan": new Date().toLocaleString("id-ID") },
       ];
       const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
       wsSummary["!cols"] = [{ wch: 25 }, { wch: 60 }];
       XLSX.utils.book_append_sheet(workbook, wsSummary, "Ringkasan Pleno DPT");
 
-      // Sheet 2: Rekapitulasi TPS
+      // Sheet 2: Rekapitulasi 13 Tabung
       const rekapRows = tpsList.map((t, idx) => {
         const votersInTps = pemilih.filter(
-          (p) => p.statusAktif === "AKTIF" && p.tps.toLowerCase().includes(t.nomorTps.toLowerCase())
+          (p) => p.statusAktif === "AKTIF" && (p.tps.toLowerCase().includes(t.nomorTps.toLowerCase()) || p.tps.toLowerCase().includes(t.namaTps.toLowerCase()))
         );
         const l = votersInTps.filter((p) => p.jenisKelamin === "L").length;
         const p = votersInTps.filter((p) => p.jenisKelamin === "P").length;
         return {
           "No": idx + 1,
-          "Kode TPS": t.kodeTps,
-          "Nama TPS": t.namaTps,
+          "Kode Tabung": t.kodeTps,
+          "Nama Tabung": (t.namaTabung || t.namaTps).replace(/TPS/gi, "Tabung"),
           "Lokasi": t.lokasi,
           "Cakupan RT/RW": `RT ${t.rt} / RW ${t.rw}`,
           "Laki-laki": l,
@@ -328,7 +328,7 @@ export async function GET(req: Request) {
       });
       const wsRekap = XLSX.utils.json_to_sheet(rekapRows);
       wsRekap["!cols"] = [{ wch: 5 }, { wch: 15 }, { wch: 25 }, { wch: 30 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 15 }];
-      XLSX.utils.book_append_sheet(workbook, wsRekap, "Rekapitulasi 7 TPS");
+      XLSX.utils.book_append_sheet(workbook, wsRekap, "Rekapitulasi 13 Tabung");
 
       // Sheet 3: DPT Final
       const dptRows = pemilih.filter((p) => p.statusAktif === "AKTIF").map((p, idx) => ({
@@ -343,10 +343,10 @@ export async function GET(req: Request) {
         "Alamat": p.alamat,
         "RT": p.rt,
         "RW": p.rw,
-        "TPS": p.tps,
+        "Tabung": p.tps.replace(/TPS/gi, "Tabung"),
       }));
       const wsDpt = XLSX.utils.json_to_sheet(dptRows);
-      wsDpt["!cols"] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 6 }, { wch: 15 }, { wch: 14 }, { wch: 8 }, { wch: 30 }, { wch: 6 }, { wch: 6 }, { wch: 12 }];
+      wsDpt["!cols"] = [{ wch: 5 }, { wch: 20 }, { wch: 20 }, { wch: 25 }, { wch: 6 }, { wch: 15 }, { wch: 14 }, { wch: 8 }, { wch: 30 }, { wch: 6 }, { wch: 6 }, { wch: 14 }];
       XLSX.utils.book_append_sheet(workbook, wsDpt, "Daftar DPT Final");
 
       // Sheet 4: TMS
@@ -354,7 +354,7 @@ export async function GET(req: Request) {
         "No": idx + 1,
         "NIK": `'${p.nik}`,
         "Nama": p.namaLengkap,
-        "TPS": p.tps,
+        "Tabung": p.tps.replace(/TPS/gi, "Tabung"),
         "Alasan TMS": p.alasanTms || "Meninggal",
       }));
       const wsTms = XLSX.utils.json_to_sheet(tmsRows);

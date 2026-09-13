@@ -115,7 +115,7 @@ export const DpsTable: React.FC = () => {
           <div className="w-full sm:max-w-md">
             <Input
               icon={<Search className="w-4 h-4 text-slate-400" />}
-              placeholder="Cari TPS atau RW..."
+              placeholder="Cari Tabung atau RW..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);

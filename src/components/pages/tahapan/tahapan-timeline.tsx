@@ -75,7 +75,7 @@ const rawTahapanList: RawTahapanDef[] = [
     subKegiatan: [
       { nomor: "1", nama: "Pendataan penduduk desa yang memenuhi syarat dan berhak memilih", jadwal: "3 – 11 Desember 2026", startDate: "2026-12-03", endDate: "2026-12-11" },
       { nomor: "2", nama: "Penetapan Daftar Pemilih Sementara (DPS)", jadwal: "11 Desember 2026", startDate: "2026-12-11", endDate: "2026-12-11" },
-      { nomor: "3", nama: "Pengumuman DPS kepada masyarakat di Balai Desa dan posko TPS", jadwal: "14 – 16 Desember 2026", startDate: "2026-12-14", endDate: "2026-12-16" },
+      { nomor: "3", nama: "Pengumuman DPS kepada masyarakat di Balai Desa dan posko Tabung Pemilihan", jadwal: "14 – 16 Desember 2026", startDate: "2026-12-14", endDate: "2026-12-16" },
     ],
   },
   {
@@ -148,10 +148,10 @@ const rawTahapanList: RawTahapanDef[] = [
     startDate: "2027-02-03",
     endDate: "2027-02-03",
     icon: <Vote className="w-5 h-5 text-indigo-700" />,
-    ringkasan: "Pencoblosan surat suara di seluruh TPS Desa Kalisalak, penghitungan suara, dan penetapan Calon Kades Terpilih.",
+    ringkasan: "Pencoblosan surat suara di seluruh Tabung Pemilihan Desa Kalisalak, penghitungan suara, dan penetapan Calon Kades Terpilih.",
     subKegiatan: [
-      { nomor: "1", nama: "Pemungutan suara serentak di seluruh TPS Desa Kalisalak", jadwal: "Rabu, 3 Februari 2027 (07.00 - 13.00 WIB)", startDate: "2027-02-03", endDate: "2027-02-03" },
-      { nomor: "2", nama: "Penghitungan dan rekapitulasi perolehan suara di tiap TPS dan Pleno Desa", jadwal: "Rabu, 3 Februari 2027 (Mulai 13.30 WIB)", startDate: "2027-02-03", endDate: "2027-02-03" },
+      { nomor: "1", nama: "Pemungutan suara serentak di seluruh Tabung Pemilihan Desa Kalisalak", jadwal: "Rabu, 3 Februari 2027 (07.00 - 13.00 WIB)", startDate: "2027-02-03", endDate: "2027-02-03" },
+      { nomor: "2", nama: "Penghitungan dan rekapitulasi perolehan suara di tiap Tabung Pemilihan dan Pleno Desa", jadwal: "Rabu, 3 Februari 2027 (Mulai 13.30 WIB)", startDate: "2027-02-03", endDate: "2027-02-03" },
       { nomor: "3", nama: "Penetapan Calon Kepala Desa Terpilih dengan Surat Keputusan Panitia", jadwal: "Rabu, 3 Februari 2027", startDate: "2027-02-03", endDate: "2027-02-03" },
     ],
   },

@@ -3,8 +3,8 @@ import { Navbar, Footer } from "@/components/layout";
 import { TpsList } from "@/components/pages/tps/tps-list";
 
 export const metadata = {
-  title: "Daftar TPS | Kabupaten Tegal",
-  description: "Daftar lokasi dan sebaran TPS Pemilihan Kabupaten Tegal.",
+  title: "Daftar Tabung Pemilihan | Pilkades Desa Kalisalak",
+  description: "Daftar lokasi dan sebaran 13 Tabung Pemilihan Pilkades Desa Kalisalak.",
 };
 
 export default function TpsPage() {

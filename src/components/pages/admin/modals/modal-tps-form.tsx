@@ -26,7 +26,7 @@ export const ModalTpsForm: React.FC<ModalTpsFormProps> = ({
       <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 className="text-base font-bold text-slate-900">
-            {activeTps.id ? `Pengaturan Master ${activeTps.namaTps}` : "Tambah TPS Baru"}
+            {activeTps.id ? `Pengaturan Master ${(activeTps.namaTabung || activeTps.namaTps).replace(/TPS/gi, "Tabung")}` : "Tambah Tabung Baru"}
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
             ✕
@@ -35,7 +35,7 @@ export const ModalTpsForm: React.FC<ModalTpsFormProps> = ({
 
         <form onSubmit={onSubmit} className="space-y-3 text-xs">
           <div>
-            <label className="block font-bold text-slate-700 mb-1">Nama TPS</label>
+            <label className="block font-bold text-slate-700 mb-1">Nama Tabung Pemilihan</label>
             <Input
               value={activeTps.namaTps}
               onChange={(e) => setActiveTps({ ...activeTps, namaTps: e.target.value })}
@@ -83,7 +83,7 @@ export const ModalTpsForm: React.FC<ModalTpsFormProps> = ({
               Batal
             </Button>
             <Button type="submit" variant="primary" size="sm" className="font-bold">
-              Simpan Pengaturan TPS
+              Simpan Pengaturan Tabung
             </Button>
           </div>
         </form>

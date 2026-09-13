@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import {
   UserCheck,
+  Users,
   Search,
   Eye,
   CheckCircle2,
@@ -29,8 +30,7 @@ import { downloadPetugasPdf } from "@/lib/petugas-pdf-generator";
 import { DAFTAR_RW_KALISALAK } from "@/lib/kalisalak-wilayah";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
-import { ConfirmDialog } from "@/components/ui/dialog";
-import { Card, Badge } from "@/components/ui";
+import { Card, Badge, PaginationControl, ConfirmDialog } from "@/components/ui";
 
 interface TabPetugasDptProps {
   isAdmin?: boolean;
@@ -50,6 +50,8 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [rwFilter, setRwFilter] = useState<string>("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   // Selected for Modal
   const [selectedPetugas, setSelectedPetugas] = useState<MasterPetugasDpt | null>(null);
@@ -114,6 +116,12 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       return matchSearch && matchStatus && matchRw;
     });
   }, [petugasList, searchTerm, statusFilter, rwFilter]);
+
+  // Pagination Calculations
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / pageSize));
+  const activePage = Math.min(currentPage, totalPages);
+  const startIdx = (activePage - 1) * pageSize;
+  const pagedList = filteredList.slice(startIdx, startIdx + pageSize);
 
   // Metrics Count
   const metrics = useMemo(() => {
@@ -407,48 +415,111 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 
       {/* Metrics Overview Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-slate-500 uppercase">Total Pendaftar</span>
-          <div className="text-2xl font-black text-slate-900">{metrics.total}</div>
-          <span className="text-[10px] text-slate-400">Seluruh Berkas Masuk</span>
-        </div>
+        <Card
+          onClick={() => { setStatusFilter("ALL"); setCurrentPage(1); }}
+          className={`p-4 bg-white border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 ${
+            statusFilter === "ALL" ? "ring-2 ring-blue-500/30 border-blue-400" : ""
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+              <Users className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</span>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-slate-900">{metrics.total}</div>
+            <span className="text-[10px] text-slate-500">Seluruh Berkas Masuk</span>
+          </div>
+        </Card>
 
-        <div className="p-4 rounded-xl border border-amber-200 bg-amber-50/50 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-amber-800 uppercase">Menunggu</span>
-          <div className="text-2xl font-black text-amber-700">{metrics.menunggu}</div>
-          <span className="text-[10px] text-amber-600">Perlu Verifikasi Berkas</span>
-        </div>
+        <Card
+          onClick={() => { setStatusFilter("MENUNGGU_VERIFIKASI"); setCurrentPage(1); }}
+          className={`p-4 bg-white border-amber-200 hover:border-amber-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 ${
+            statusFilter === "MENUNGGU_VERIFIKASI" ? "ring-2 ring-amber-500/30 border-amber-400 bg-amber-50/20" : ""
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+              <Clock className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-bold text-amber-800 uppercase tracking-wider">Menunggu</span>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-amber-700">{metrics.menunggu}</div>
+            <span className="text-[10px] text-amber-600">Perlu Verifikasi</span>
+          </div>
+        </Card>
 
-        <div className="p-4 rounded-xl border border-orange-200 bg-orange-50/50 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-orange-800 uppercase">Klarifikasi</span>
-          <div className="text-2xl font-black text-orange-700">{metrics.klarifikasi}</div>
-          <span className="text-[10px] text-orange-600">Indikasi Afiliasi/Timses</span>
-        </div>
+        <Card
+          onClick={() => { setStatusFilter("PERLU_KLARIFIKASI"); setCurrentPage(1); }}
+          className={`p-4 bg-white border-orange-200 hover:border-orange-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 ${
+            statusFilter === "PERLU_KLARIFIKASI" ? "ring-2 ring-orange-500/30 border-orange-400 bg-orange-50/20" : ""
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-orange-50 text-orange-700">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-bold text-orange-800 uppercase tracking-wider">Klarifikasi</span>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-orange-700">{metrics.klarifikasi}</div>
+            <span className="text-[10px] text-orange-600">Indikasi Afiliasi</span>
+          </div>
+        </Card>
 
-        <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 shadow-sm space-y-1">
-          <span className="text-[11px] font-bold text-blue-800 uppercase">Lolos Seleksi</span>
-          <div className="text-2xl font-black text-blue-700">{metrics.lolos}</div>
-          <span className="text-[10px] text-blue-600">Administrasi Lengkap</span>
-        </div>
+        <Card
+          onClick={() => { setStatusFilter("LOLOS"); setCurrentPage(1); }}
+          className={`p-4 bg-white border-blue-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 ${
+            statusFilter === "LOLOS" ? "ring-2 ring-blue-500/30 border-blue-400 bg-blue-50/20" : ""
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
+              <FileCheck2 className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider">Lolos</span>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-blue-700">{metrics.lolos}</div>
+            <span className="text-[10px] text-blue-600">Administrasi Lengkap</span>
+          </div>
+        </Card>
 
-        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 shadow-sm space-y-1 col-span-2 sm:col-span-1">
-          <span className="text-[11px] font-bold text-emerald-800 uppercase">Ditetapkan</span>
-          <div className="text-2xl font-black text-emerald-700">{metrics.ditetapkan}</div>
-          <span className="text-[10px] text-emerald-600">Siap Bimtek & Bertugas</span>
-        </div>
+        <Card
+          onClick={() => { setStatusFilter("DITETAPKAN"); setCurrentPage(1); }}
+          className={`p-4 bg-white border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 col-span-2 sm:col-span-1 ${
+            statusFilter === "DITETAPKAN" ? "ring-2 ring-emerald-500/30 border-emerald-400 bg-emerald-50/20" : ""
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-700">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Ditetapkan</span>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-emerald-700">{metrics.ditetapkan}</div>
+            <span className="text-[10px] text-emerald-600">Siap Bimtek & Tugas</span>
+          </div>
+        </Card>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
+      <Card className="p-4 bg-white border-slate-200 shadow-xs rounded-2xl space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
         {/* Search */}
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Cari nama, NIK, No. Registrasi, atau RW..."
-            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm"
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none text-xs sm:text-sm transition-all"
           />
         </div>
 
@@ -456,8 +527,11 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500"
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500 transition-all"
           >
             <option value="ALL">Semua Status</option>
             <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
@@ -470,8 +544,11 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
           {/* RW Filter */}
           <select
             value={rwFilter}
-            onChange={(e) => setRwFilter(e.target.value)}
-            className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500"
+            onChange={(e) => {
+              setRwFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500 transition-all"
           >
             <option value="ALL">Semua Wilayah RW</option>
             {DAFTAR_RW_KALISALAK.map((rw) => (
@@ -481,10 +558,10 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
             ))}
           </select>
         </div>
-      </div>
+      </Card>
 
       {/* Table of Applicants */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <Card className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
@@ -514,7 +591,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredList.map((item, idx) => {
+                pagedList.map((item, idx) => {
                   const hasConflict = item.isCalonKades || item.isTimSukses || item.isKepentinganCalon;
                   const waNumberClean = item.nomorWa.replace(/\D/g, "");
                   const waLink = waNumberClean.startsWith("0")
@@ -523,7 +600,9 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-3.5 text-center font-mono text-slate-400">{idx + 1}</td>
+                      <td className="py-3 px-3.5 text-center font-mono text-slate-400">
+                        {startIdx + idx + 1}
+                      </td>
                       <td className="py-3 px-3.5 font-mono font-bold text-blue-900">
                         {item.nomorRegistrasi}
                       </td>
@@ -611,7 +690,21 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
             </tbody>
           </table>
         </div>
-      </div>
+        {filteredList.length > 0 && (
+          <div className="p-4 border-t border-slate-100">
+            <PaginationControl
+              currentPage={activePage}
+              totalItems={filteredList.length}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(sz) => {
+                setPageSize(sz);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+        )}
+      </Card>
 
       {/* DETAIL & VERIFICATION MODAL */}
       {selectedPetugas && (

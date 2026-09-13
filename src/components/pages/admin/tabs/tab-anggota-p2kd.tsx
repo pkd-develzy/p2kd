@@ -434,7 +434,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   return (
     <div className="space-y-5">
       {/* Hero Header */}
-      <Card className="p-6 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-lg rounded-3xl">
+      <Card className="p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-lg rounded-3xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -485,7 +485,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
           </div>
         </Card>
 
-        <Card className="p-3.5 bg-white border-blue-200 bg-blue-50/30 shadow-sm">
+        <Card className="p-3.5 border-blue-200 bg-blue-50/30 shadow-sm">
           <div className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
             Pimpinan P2KD
           </div>
@@ -493,7 +493,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
           <div className="text-[10px] text-blue-600 mt-0.5">Ketua, Sekretaris, Bendahara</div>
         </Card>
 
-        <Card className="p-3.5 bg-white border-amber-200 bg-amber-50/30 shadow-sm">
+        <Card className="p-3.5 border-amber-200 bg-amber-50/30 shadow-sm">
           <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
             Koordinator 5 Seksi
           </div>
@@ -501,7 +501,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
           <div className="text-[10px] text-amber-600 mt-0.5">5 Divisi Bidang Tugas</div>
         </Card>
 
-        <Card className="p-3.5 bg-white border-emerald-200 bg-emerald-50/30 shadow-sm">
+        <Card className="p-3.5 border-emerald-200 bg-emerald-50/30 shadow-sm">
           <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
             Pantarlih Lapangan
           </div>
@@ -1198,7 +1198,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
             </div>
 
             {/* Official ID Card Preview */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white shadow-xl border border-slate-800 space-y-3.5 relative overflow-hidden">
+            <div className="p-4 rounded-2xl bg-linear-to-br from-slate-900 via-slate-900 to-blue-950 text-white shadow-xl border border-slate-800 space-y-3.5 relative overflow-hidden">
               <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
 
               {/* Card Header */}

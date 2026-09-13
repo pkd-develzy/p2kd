@@ -15,14 +15,15 @@ export const Footer: React.FC = () => {
                 size="sm"
                 showText
                 theme="dark"
-                subtitle="Panitia Pemilihan Kepala Desa"
+                title="PANITIA PILKADES"
+                subtitle="DESA KALISALAK"
                 titleClassName="text-white font-black"
                 subtitleClassName="text-blue-300 font-bold"
               />
             </div>
             
             <p className="text-slate-200 leading-relaxed text-xs max-w-sm pt-1 font-normal">
-              Portal resmi pendaftaran pemilih dan publikasi data Pilkades Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal. Menjamin transparansi dan hak pilih warga terdaftar secara sah.
+              Portal resmi Panitia Pemilihan Kepala Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal. Menjamin transparansi dan hak pilih warga terdaftar secara sah.
             </p>
 
             <div className="space-y-3 pt-2 text-xs text-slate-200">

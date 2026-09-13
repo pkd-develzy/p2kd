@@ -80,7 +80,7 @@ function VerifikasiC6Content() {
         {/* Header Institution */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-md">
-            <Logo size="md" showText subtitle="Pilkades Desa Kalisalak" />
+            <Logo size="md" showText title="PANITIA PILKADES" subtitle="DESA KALISALAK" />
           </div>
           <div>
             <span className="text-[10px] font-bold tracking-widest uppercase bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full border border-blue-400/30">

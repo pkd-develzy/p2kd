@@ -6,6 +6,7 @@ export interface LogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   showText?: boolean;
+  title?: string;
   subtitle?: string;
   theme?: "light" | "dark";
   titleClassName?: string;
@@ -24,7 +25,8 @@ export const Logo: React.FC<LogoProps> = ({
   size = "md",
   className,
   showText = false,
-  subtitle = "Kabupaten Tegal",
+  title = "PANITIA PILKADES",
+  subtitle = "DESA KALISALAK",
   theme = "light",
   titleClassName,
   subtitleClassName,
@@ -54,7 +56,7 @@ export const Logo: React.FC<LogoProps> = ({
               titleClassName
             )}
           >
-            Daftar Pemilih
+            {title}
           </span>
           <span
             className={cn(

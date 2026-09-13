@@ -98,7 +98,7 @@ function StikerCoklitContent() {
         {/* Header Institution */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center justify-center p-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-md">
-            <Logo size="md" showText subtitle="P2KD Desa Kalisalak" />
+            <Logo size="md" showText title="PANITIA PILKADES" subtitle="DESA KALISALAK" />
           </div>
           <div>
             <span className="text-[10px] font-bold tracking-widest uppercase bg-amber-500/20 text-amber-300 px-3.5 py-1 rounded-full border border-amber-400/40 inline-flex items-center gap-1.5">

@@ -230,7 +230,7 @@ export const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 shrink-0 group">
-            <Logo size="sm" showText subtitle="Pilkades Desa Kalisalak" />
+            <Logo size="sm" showText title="PANITIA PILKADES" subtitle="DESA KALISALAK" />
           </Link>
 
           {/* Desktop Navigation Groups with Professional Dropdowns */}

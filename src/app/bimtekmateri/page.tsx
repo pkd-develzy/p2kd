@@ -1,812 +1,897 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
-  BookOpen,
+  Smartphone,
+  CheckCircle,
+  XCircle,
+  Edit,
+  Plus,
+  Search,
+  Check,
+  MapPin,
+  Clock,
+  Sparkles,
+  Camera,
   Download,
   Printer,
   ShieldCheck,
-  CheckCircle2,
-  Search,
-  HelpCircle,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
+  FileSpreadsheet,
+  Users,
+  RotateCcw,
+  AlertTriangle,
+  Lock,
+  ExternalLink,
+  HelpCircle,
   CheckSquare,
-  Home,
-  FileCheck2,
+  KeyRound,
 } from "lucide-react";
 import { downloadBimtekPdf } from "@/lib/bimtek-pdf-generator";
 
 export default function BimtekMateriPage() {
+  const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeModuleTab, setActiveModuleTab] = useState<string>("all");
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({
-    kit_rompi: true,
-    kit_buku: true,
-    kit_stiker: true,
-    kit_tanda_bukti: true,
-    kit_pulpen: true,
-    kit_smartphone: true,
-    kit_map: true,
-  });
 
-  // State Accordion FAQ
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  // Demo Interactive State untuk Simulasi Coklit Langsung di Materi Bimtek
+  const [demoStatus, setDemoStatus] = useState<"BELUM" | "SESUAI" | "UBAH_DATA" | "TMS">("BELUM");
+  const [demoTmsReason, setDemoTmsReason] = useState<string>("MENINGGAL");
+  const [showTmsModal, setShowTmsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [demoName, setDemoName] = useState("SLAMET RIYADI");
+  const [demoNik, setDemoNik] = useState("3328011508920003");
+  const [demoAlamat, setDemoAlamat] = useState("RT 02 / RW 03");
+
+  // State Checklist Persiapan Lapangan
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({
+    hp_baterai: true,
+    kuota_internet: true,
+    login_berhasil: true,
+    cek_dps_rw: true,
+    ballpoint_cadangan: true,
+    tanda_pengenal: true,
+  });
 
   const toggleChecklist = (key: string) => {
     setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const allChecklistDone = useMemo(() => {
-    return Object.values(checklist).every(Boolean);
-  }, [checklist]);
+  // State Accordion FAQ
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  // Matrix Status Coklit
-  const matrixStatus = [
+  // 6 Alasan Resmi TMS di Sistem Database P2KD
+  const tmsCategories = [
     {
-      kode: "S",
-      label: "SESUAI",
-      color: "bg-emerald-100 text-emerald-800 border-emerald-300",
-      desc: "Seluruh elemen data pemilih pada Model A identik dengan fisik KTP-el dan Kartu Keluarga asli warga.",
+      id: "MENINGGAL",
+      title: "1. Meninggal Dunia",
+      desc: "Warga telah meninggal dunia. Wajib dikonfirmasi oleh keluarga atau Ketua RT setempat / Surat Kematian Desa.",
+      bukti: "Surat Kematian Desa / Surat Rumah Sakit / Keterangan Ahli Waris",
+      badge: "TMS-1",
     },
     {
-      kode: "U",
-      label: "UBAH DATA",
-      color: "bg-amber-100 text-amber-800 border-amber-300",
-      desc: "Terdapat perbedaan data nama, tanggal lahir, status perkawinan, atau perbaikan RT/RW. Coret data lama, tulis perbaikan.",
+      id: "GANDA",
+      title: "2. Data Ganda",
+      desc: "NIK atau Nama warga terdaftar lebih dari satu kali di dalam database pemilih desa Kalisalak.",
+      bukti: "Pengecekan NIK kembar pada sistem DPS",
+      badge: "TMS-2",
     },
     {
-      kode: "B",
-      label: "PEMILIH BARU",
-      color: "bg-blue-100 text-blue-800 border-blue-300",
-      desc: "Warga yang genap 17 tahun pada hari-H pemungutan suara, pemilih pemula, atau warga baru ber-KTP Kalisalak yang belum ada di daftar.",
+      id: "PINDAH_DOMISILI",
+      title: "3. Pindah Domisili Keluar Desa",
+      desc: "Warga telah resmi pindah kependudukan ke luar Desa Kalisalak dan telah diterbitkan surat pindah (SKPWNI).",
+      bukti: "Surat Keterangan Pindah WNI / KTP & KK baru luar desa",
+      badge: "TMS-3",
     },
     {
-      kode: "TMS-1",
-      label: "MENINGGAL",
-      color: "bg-rose-100 text-rose-800 border-rose-300",
-      desc: "Pemilih telah meninggal dunia. Wajib dikonfirmasi oleh keluarga atau Ketua RT setempat / Surat Keterangan Kematian.",
+      id: "DI_BAWAH_UMUR",
+      title: "4. Di Bawah Umur / Bukan Pemilih",
+      desc: "Belum genap berusia 17 tahun pada hari pemungutan suara dan belum pernah melangsungkan perkawinan.",
+      bukti: "Tanggal lahir pada Akta Kelahiran / Kartu Keluarga",
+      badge: "TMS-4",
     },
     {
-      kode: "TMS-2",
-      label: "DATA GANDA",
-      color: "bg-rose-100 text-rose-800 border-rose-300",
-      desc: "Nama pemilih terdata lebih dari 1 kali di TPS yang sama atau antar TPS lain dalam Desa Kalisalak.",
+      id: "TNI_POLRI",
+      title: "5. Menjadi Anggota TNI / POLRI",
+      desc: "Warga telah diangkat menjadi prajurit aktif Tentara Nasional Indonesia atau anggota Kepolisian RI.",
+      bukti: "Kartu Tanda Anggota (KTA) TNI/Polri / Keterangan Keluarga",
+      badge: "TMS-5",
     },
     {
-      kode: "TMS-3",
-      label: "DI BAWAH UMUR",
-      color: "bg-rose-100 text-rose-800 border-rose-300",
-      desc: "Belum genap berusia 17 tahun pada hari pemungutan suara dan belum pernah menikah secara sah.",
-    },
-    {
-      kode: "TMS-4",
-      label: "PINDAH DOMISILI",
-      color: "bg-rose-100 text-rose-800 border-rose-300",
-      desc: "Telah resmi pindah kependudukan ke luar Desa Kalisalak dan telah diterbitkan Surat Keterangan Pindah (SKPWNI).",
-    },
-    {
-      kode: "TMS-5",
-      label: "TNI / POLRI",
-      color: "bg-rose-100 text-rose-800 border-rose-300",
-      desc: "Telah diangkat menjadi anggota aktif Tentara Nasional Indonesia (TNI) atau Kepolisian Negara Republik Indonesia (Polri).",
-    },
-    {
-      kode: "TMS-6",
-      label: "BUKAN WARGA",
-      color: "bg-rose-100 text-rose-800 border-rose-300",
-      desc: "Tinggal berdomisili fisik di Kalisalak namun secara sah ber-KTP luar desa dan tidak memiliki dokumen mutasi kependudukan.",
+      id: "BUKAN_WARGA",
+      title: "6. Bukan Warga Desa Kalisalak",
+      desc: "Tinggal fisik di desa namun secara administrasi kependudukan ber-KTP luar desa tanpa mutasi resmi.",
+      bukti: "KTP-el beralamat luar wilayah administratif Desa Kalisalak",
+      badge: "TMS-6",
     },
   ];
 
-  // 13 TPS Table Data
-  const tpsList = [
-    { no: "01", rw: "RW 01", dusun: "Krajan", rt: "RT 01, RT 02, RT 03", lokasi: "Balai Desa Kalisalak (Halaman Utama)" },
-    { no: "02", rw: "RW 02", dusun: "Kalisalak Tengah", rt: "RT 01, RT 02, RT 03", lokasi: "Area Terbuka Rumah Warga RT 02/02" },
-    { no: "03", rw: "RW 03", dusun: "Karanganyar", rt: "RT 01, RT 02, RT 03", lokasi: "Halaman Madrasah / Pos RW 03" },
-    { no: "04", rw: "RW 04", dusun: "Kalisalak Timur", rt: "RT 01, RT 02, RT 03", lokasi: "Gedung TPQ / Area Terbuka RW 04" },
-    { no: "05", rw: "RW 05", dusun: "Kalisalak Barat", rt: "RT 01, RT 02, RT 03", lokasi: "Halaman Musholla RW 05" },
-    { no: "06", rw: "RW 06", dusun: "Kalisalak Selatan", rt: "RT 01, RT 02, RT 03", lokasi: "Gedung Serbaguna RW 06" },
-    { no: "07", rw: "RW 07", dusun: "Dukuh Anyar", rt: "RT 01, RT 02, RT 03", lokasi: "Halaman Rumah Kadus 07" },
-    { no: "08", rw: "RW 08", dusun: "Kebonromo", rt: "RT 01, RT 02, RT 03", lokasi: "Balai Pertemuan / Pos Ronda RW 08" },
-    { no: "09", rw: "RW 09", dusun: "Lemah Neundeut", rt: "RT 01, RT 02, RT 03", lokasi: "Area Lapangan Voli RW 09" },
-    { no: "10", rw: "RW 10", dusun: "Karangdawa", rt: "RT 01, RT 02, RT 03", lokasi: "Gedung PAUD / Balai Warga RW 10" },
-    { no: "11", rw: "RW 11", dusun: "Kalisalak Permai", rt: "RT 01, RT 02, RT 03", lokasi: "Gedung Pertemuan RW 11" },
-    { no: "12", rw: "RW 12", dusun: "Wadasmalang", rt: "RT 01, RT 02, RT 03", lokasi: "Area Terbuka Pos RW 12" },
-    { no: "13", rw: "RW 13", dusun: "Curugmas", rt: "RT 01, RT 02, RT 03", lokasi: "Balai Dusun Curugmas RW 13" },
+  // Pemetaan 13 TPS & 13 RW
+  const pemetaanTps = [
+    { tps: "TPS 01", rw: "Wilayah RW 01", rt: "RT 01, RT 02, RT 03", dusun: "Dusun I" },
+    { tps: "TPS 02", rw: "Wilayah RW 02", rt: "RT 01, RT 02, RT 03", dusun: "Dusun I" },
+    { tps: "TPS 03", rw: "Wilayah RW 03", rt: "RT 01, RT 02, RT 03", dusun: "Dusun I" },
+    { tps: "TPS 04", rw: "Wilayah RW 04", rt: "RT 01, RT 02, RT 03", dusun: "Dusun II" },
+    { tps: "TPS 05", rw: "Wilayah RW 05", rt: "RT 01, RT 02, RT 03", dusun: "Dusun II" },
+    { tps: "TPS 06", rw: "Wilayah RW 06", rt: "RT 01, RT 02, RT 03", dusun: "Dusun II" },
+    { tps: "TPS 07", rw: "Wilayah RW 07", rt: "RT 01, RT 02, RT 03", dusun: "Dusun III" },
+    { tps: "TPS 08", rw: "Wilayah RW 08", rt: "RT 01, RT 02, RT 03", dusun: "Dusun III" },
+    { tps: "TPS 09", rw: "Wilayah RW 09", rt: "RT 01, RT 02, RT 03", dusun: "Dusun III" },
+    { tps: "TPS 10", rw: "Wilayah RW 10", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
+    { tps: "TPS 11", rw: "Wilayah RW 11", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
+    { tps: "TPS 12", rw: "Wilayah RW 12", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
+    { tps: "TPS 13", rw: "Wilayah RW 13", rt: "RT 01, RT 02, RT 03", dusun: "Dusun IV" },
   ];
 
-  // FAQ List
-  const faqList = [
+  // FAQ Penanganan Lapangan
+  const faqs = [
     {
-      q: "Bagaimana jika saat dikunjungi rumah dalam keadaan kosong / seluruh anggota keluarga bekerja?",
-      a: "Jangan langsung mencoret atau mengisi status tanpa verifikasi. Tanyakan kepada tetangga atau Ketua RT jadwal warga berada di rumah. Lakukan kunjungan ulang minimal 3 kali pada jam yang berbeda (pagi, sore, atau akhir pekan).",
+      q: "Apa fungsi utama dibuatkannya sistem website DPS/DPT ini bagi saya sebagai petugas?",
+      a: "Sistem website ini diciptakan sebagai ALAT KERJA UTAMA Anda di smartphone. Anda tidak perlu lagi membawa tumpukan map tebal berisi lembaran kertas Model A yang merepotkan dan rawan tercecer. Cukup bawa HP, buka website di depan rumah warga, verifikasi dengan 1 kali sentuhan (1-Tap), dan data langsung tersimpan aman ke cloud server P2KD secara otomatis.",
     },
     {
-      q: "Warga ber-KTP Desa Kalisalak tetapi merantau ke Jakarta/luar kota, apakah tetap dicoklit?",
-      a: "Ya, selama administrasi kependudukan (KTP dan KK) masih Desa Kalisalak dan tidak memiliki surat pindah resmi, warga tersebut TETAP MEMENUHI SYARAT (MS) dan dicatat melalui anggota keluarga serumah yang dapat ditemui.",
+      q: "Bagaimana jika sinyal internet di rumah warga yang saya datangi sangat lambat atau hilang?",
+      a: "Tenang, jangan panik! Halaman Tab Coklit RW yang sudah Anda buka di browser HP tetap menyimpan daftar nama warga. Catat sementara nama-nama yang telah Anda temui di buku saku. Begitu Anda sampai di area yang memiliki sinyal baik (atau saat kembali ke rumah), Anda tinggal membuka kembali website dan menekan tombol 'Sesuai' atau 'Ubah Data' untuk warga-warga tersebut.",
     },
     {
-      q: "Ada anak yang saat dicoklit baru berusia 16 tahun, namun saat pemungutan suara sudah genap 17 tahun?",
-      a: "Wajib dimasukkan sebagai PEMILIH BARU. Batas penentuan usia 17 tahun adalah tepat pada Hari Pemungutan Suara (Hari-H Pilkades).",
+      q: "Bagaimana jika saya tidak sengaja salah menekan tombol 'Sesuai' padahal orangnya sudah meninggal (TMS)?",
+      a: "Sistem P2KD sangat fleksibel dan aman. Pada kartu pemilih yang sudah diberi status, akan muncul tombol 'Reset / Batal' dengan ikon putar balik. Cukup tekan tombol tersebut, maka status pemilih akan kembali menjadi 'Belum Coklit', lalu Anda bisa menekan tombol 'TMS' yang benar.",
     },
     {
-      q: "Ada warga tinggal di Kalisalak puluhan tahun tapi KTP masih desa/kabupaten lain?",
-      a: "Sesuai regulasi Pilkades, hak pilih hanya diberikan kepada warga yang sah berdokumen KTP/KK Desa Kalisalak. Warga tersebut berstatus TMS-6 (Bukan Warga) untuk Pilkades Kalisalak, kecuali segera mengurus mutasi masuk ke Disdukcapil sebelum penetapan DPSHP.",
+      q: "Apakah warga yang sedang merantau ke luar kota (Jakarta/Surabaya) harus ditandai TMS?",
+      a: "TIDAK. Selama warga tersebut masih ber-KTP atau ber-Kartu Keluarga Desa Kalisalak dan belum menerbitkan surat pindah resmi (SKPWNI), hak pilihnya tetap SAH. Tanyakan dan cocokkan dokumen KTP/KK kepada anggota keluarga yang berada di rumah saat Anda berkunjung, lalu tandai 'SESUAI'.",
     },
     {
-      q: "Bagaimana cara menempelkan stiker jika 1 rumah dihuni oleh 2 atau 3 Kepala Keluarga (KK)?",
-      a: "Tempelkan stiker coklit secara terpisah untuk masing-masing KK, atau gunakan 1 stiker dengan mencantumkan seluruh rincian pemilih yang berhak di rumah tersebut.",
+      q: "Bagaimana jika saya menemukan warga baru usia 17 tahun yang belum ada di daftar pemilih sistem?",
+      a: "Klik tombol biru '+ Temuan Baru' di kanan atas layar ponsel Anda. Masukkan 16 digit NIK, No KK, Nama Lengkap, Tempat & Tanggal Lahir, Jenis Kelamin, serta alamat RT/RW. Sistem otomatis menetapkan TPS dan memasukkannya ke dalam daftar pemilih RW Anda.",
     },
     {
-      q: "Bagaimana cara login ke portal digital untuk pantarlih?",
-      a: "Kunjungi https://www.p2kdkalisalak.my.id/admin. Username adalah nama akhir Anda huruf kecil tanpa spasi (contoh: marufah, farida, yuswanti). Password default adalah 'p2kd2026'.",
+      q: "Bagaimana jika ada warga yang protes di portal publik bahwa dirinya belum terdaftar?",
+      a: "Portal publik www.p2kdkalisalak.my.id/cekdpt menyediakan fitur aduan warga. Semua laporan warga Kalisalak akan masuk ke tab 'Aduan Warga' di sistem admin. Anda sebagai koordinator RW terkait dapat memantau aduan tersebut dan langsung mendatangi alamat warga untuk melakukan coklit faktual.",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-900 via-slate-950 to-slate-900 text-slate-100 selection:bg-blue-600 selection:text-white pb-20">
-      {/* Top Header Bar */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center font-black text-white shadow-lg shadow-blue-500/20 text-sm">
-              P2KD
-            </div>
-            <div>
-              <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                Portal Materi Bimbingan Teknis (Bimtek)
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
-                  Resmi Pantarlih
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-400">
-                Pilkades Desa Kalisalak 2026/2027 • 13 Wilayah RW
-              </div>
-            </div>
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-20 selection:bg-blue-600 selection:text-white">
+      {/* Top Banner / Breadcrumb Bar */}
+      <div className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 font-bold border border-blue-500/30">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Portal Bimbingan Teknis Resmi P2KD
+            </span>
+            <span className="text-slate-500 hidden sm:inline">•</span>
+            <span className="text-slate-300 font-semibold hidden sm:inline">
+              Pilkades Desa Kalisalak 2026/2027
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
             <button
-              type="button"
               onClick={() => downloadBimtekPdf("lengkap")}
-              className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/30 transition-all cursor-pointer"
-              title="Unduh Buku Panduan Bimtek Lengkap (PDF 5 Halaman)"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition-all shadow-md active:scale-95 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Unduh PDF Lengkap</span>
-              <span className="sm:hidden">PDF</span>
+              Download Buku Panduan PDF (5 Hal)
             </button>
-
             <button
-              type="button"
+              onClick={() => downloadBimtekPdf("lembar-saku")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 transition-all active:scale-95 cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Lembar Saku PDF (2 Hal)
+            </button>
+            <button
               onClick={() => window.print()}
-              className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+              className="hidden md:inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-all cursor-pointer"
               title="Cetak Halaman"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cetak</span>
             </button>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-6xl mx-auto px-4 pt-8 space-y-8">
-        {/* HERO BANNER */}
-        <section className="relative overflow-hidden rounded-3xl bg-linear-to-r from-blue-950 via-indigo-950 to-slate-900 border border-blue-800/40 p-6 sm:p-10 shadow-2xl space-y-6">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+      <div className="max-w-6xl mx-auto px-4 pt-8 space-y-8">
+        {/* Header Section */}
+        <header className="space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5" />
+            Khusus Petugas Pemutakhiran Data Pemilih (Pantarlih & Koordinator RW)
+          </div>
 
-          <div className="relative space-y-3 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold">
-              <ShieldCheck className="w-4 h-4 text-blue-400" />
-              Dokumen Panduan Teknis Petugas Coklit Lapangan
+          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+            Panduan Operasional Sistem Digital DPS / DPT & Aplikasi Lapangan Coklit
+          </h1>
+
+          <p className="text-sm sm:text-base text-slate-300 max-w-3xl leading-relaxed">
+            Materi resmi Bimbingan Teknis (Bimtek) tata cara penggunaan portal sistem{" "}
+            <strong className="text-white font-bold">www.p2kdkalisalak.my.id/admin</strong> melalui
+            smartphone saat verifikasi faktual pemilih door-to-door di lingkungan RW masing-masing.
+          </p>
+        </header>
+
+        {/* HERO CARD: FUNGSI DIBUATKANNYA SISTEM WEBSITE */}
+        <section className="p-6 sm:p-8 rounded-3xl bg-linear-to-br from-blue-950 via-slate-900 to-slate-900 border border-blue-800/50 shadow-2xl relative overflow-hidden">
+          <div className="relative z-10 space-y-5">
+            <div className="flex items-center gap-2 text-xs font-black text-blue-400 uppercase tracking-wider">
+              <Smartphone className="w-4 h-4 text-emerald-400" />
+              Mengapa Sistem Ini Dibuatkan Untuk Membantu Anda?
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight">
-              Bimbingan Teknis (Bimtek) & Pembekalan Lapangan Pantarlih
-            </h1>
+            <h2 className="text-xl sm:text-2xl font-black text-white">
+              Bukan Coklit Kertas Manual Biasa — Ini Adalah Revolusi Digital Kerja Lapangan P2KD!
+            </h2>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Panduan lengkap tata cara pencocokan dan penelitian (Coklit) pemilih door-to-door,
-              pengisian & penempelan stiker coklit, penomoran kode TMS, pemetaan 13 TPS, serta
-              penggunaan portal digital P2KD Desa Kalisalak 2026/2027.
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl">
+              P2KD Desa Kalisalak membangun sistem website ini secara khusus agar petugas lapangan
+              tidak lagi dipusingkan oleh tumpukan formulir kertas Model A, coret-mencoret berkas yang
+              kotor, atau menghitung manual persentase di malam hari. Semua proses verifikasi, koreksi,
+              penyaringan data ganda, hingga rekapitulasi diselesaikan secara instan dari genggaman
+              smartphone Anda.
+            </p>
+
+            {/* 4 Pilar Keunggulan Sistem */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-sm">
+                  1
+                </div>
+                <h3 className="text-sm font-bold text-white">Bebas Kertas Manual</h3>
+                <p className="text-xs text-slate-400 leading-normal">
+                  Cukup bawa smartphone. Seluruh daftar nama warga di RW Anda sudah otomatis termuat
+                  di layar.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm">
+                  2
+                </div>
+                <h3 className="text-sm font-bold text-white">Verifikasi 1-Sentuhan</h3>
+                <p className="text-xs text-slate-400 leading-normal">
+                  Jika data KTP/KK warga cocok, tekan tombol hijau 'Sesuai'. Sistem seketika mencatat
+                  nama Anda & jam verifikasi.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-sm">
+                  3
+                </div>
+                <h3 className="text-sm font-bold text-white">Koreksi Cepat di Tempat</h3>
+                <p className="text-xs text-slate-400 leading-normal">
+                  Ada salah ketik nama atau NIK? Langsung perbaiki dari formulir digital di HP Anda
+                  dalam 10 detik.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-black text-sm">
+                  4
+                </div>
+                <h3 className="text-sm font-bold text-white">Rekap Real-Time Cloud</h3>
+                <p className="text-xs text-slate-400 leading-normal">
+                  Setiap kali Anda menekan tombol di jalan, kantor Sekretariat P2KD langsung melihat
+                  bar progres Anda bertambah!
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* MODUL 1: CARA LOGIN AKUN RESMI PETUGAS */}
+        <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
+            <KeyRound className="w-4 h-4 text-blue-400" />
+            Langkah 1: Masuk ke Portal Akun Anda
+          </div>
+
+          <h2 className="text-lg sm:text-xl font-black text-white">
+            Kredensial Login Resmi & Penguncian Otomatis Wilayah RW
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-3 text-xs text-slate-300">
+              <p className="leading-relaxed">
+                Setiap pendaftar yang dinyatakan lolos administrasi telah dibuatkan akun resmi oleh
+                Sistem P2KD. Gunakan browser di smartphone Anda (Google Chrome / Safari) dan buka
+                tautan berikut:
+              </p>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Alamat Portal:</span>
+                  <Link
+                    href="/admin"
+                    target="_blank"
+                    className="text-blue-400 font-bold hover:underline flex items-center gap-1"
+                  >
+                    p2kdkalisalak.my.id/admin <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Username Petugas:</span>
+                  <span className="text-amber-400 font-bold">
+                    Nama akhir pendaftar (huruf kecil)
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Password Bawaan:</span>
+                  <span className="text-emerald-400 font-bold">p2kd2026</span>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] leading-relaxed">
+                <strong>Contoh Username:</strong>
+                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                  <li>Ibu MAR&apos;UFAH &rarr; username: <code className="bg-amber-950/60 px-1 py-0.5 rounded text-amber-200 font-bold">marufah</code></li>
+                  <li>Ibu LINDA FARIDA &rarr; username: <code className="bg-amber-950/60 px-1 py-0.5 rounded text-amber-200 font-bold">farida</code></li>
+                  <li>Ibu YANI YUSWANTI &rarr; username: <code className="bg-amber-950/60 px-1 py-0.5 rounded text-amber-200 font-bold">yuswanti</code></li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Smart Wilayah Feature Info */}
+            <div className="p-5 rounded-2xl bg-linear-to-br from-slate-950 to-blue-950/40 border border-blue-900/40 space-y-3">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-bold text-white">
+                  Fitur Smart Locking: Anda Hanya Melihat RW Anda
+                </h3>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Anda tidak perlu khawatir tertukar data dengan RW lain. Ketika Anda berhasil login
+                menggunakan akun petugas RW Anda (contoh: Petugas RW 03), sistem secara otomatis
+                mengunci filter ke <strong>&quot;Wilayah RW 03&quot;</strong>.
+              </p>
+              <div className="flex items-center gap-2 text-xs text-emerald-300 bg-emerald-950/30 border border-emerald-800/40 p-2.5 rounded-xl font-medium">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Data pemilih yang tampil 100% tepat sasaran untuk wilayah kerja Anda.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* MODUL 2: SIMULASI INTERAKTIF & CARA KERJA 4 TOMBOL AKSI */}
+        <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              Langkah 2: Operasional Tab &quot;Coklit RW&quot; di Depan Rumah Warga
+            </div>
+            <span className="text-[11px] font-bold text-slate-400 bg-slate-800 px-3 py-1 rounded-full">
+              Coba Klik Tombol di Bawah Untuk Simulasi
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-lg sm:text-xl font-black text-white">
+              Simulasi Nyata: Apa yang Anda Tekan Saat Memeriksa KTP/KK Warga
+            </h2>
+            <p className="text-xs text-slate-300">
+              Berikut adalah tampilan persis kartu pemilih yang akan muncul di layar smartphone Anda.
+              Pelajari fungsi 4 tombol aksinya:
             </p>
           </div>
 
-          {/* Direct Download Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => downloadBimtekPdf("lengkap")}
-              className="p-4 rounded-2xl bg-blue-600/90 hover:bg-blue-600 border border-blue-400/40 text-left space-y-1 transition-all hover:scale-[1.01] shadow-lg shadow-blue-600/25 group cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-white">
-                <span className="text-xs font-bold uppercase tracking-wider">Modul Resmi Lengkap</span>
-                <Download className="w-4 h-4 text-blue-200 group-hover:translate-y-0.5 transition-transform" />
+          {/* SIMULASI INTERAKTIF KARTU PEMILIH */}
+          <div className="p-5 rounded-2xl bg-white text-slate-900 shadow-xl border-2 border-blue-400 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono text-xs font-black text-slate-900">{demoNik}</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black">
+                    Wilayah RW 03 (TPS 03)
+                  </span>
+
+                  {/* Badges Status */}
+                  {demoStatus === "SESUAI" && (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-black flex items-center gap-1">
+                      <Check className="w-3 h-3 text-emerald-600" /> SESUAI
+                    </span>
+                  )}
+                  {demoStatus === "UBAH_DATA" && (
+                    <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black flex items-center gap-1">
+                      <Edit className="w-3 h-3 text-blue-600" /> DIPERBAIKI
+                    </span>
+                  )}
+                  {demoStatus === "TMS" && (
+                    <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 text-[10px] font-black flex items-center gap-1">
+                      <XCircle className="w-3 h-3 text-rose-600" /> TMS ({demoTmsReason})
+                    </span>
+                  )}
+                  {demoStatus === "BELUM" && (
+                    <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[10px] font-black flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-amber-600" /> BELUM COKLIT
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-base font-black text-slate-900">{demoName}</h3>
+
+                <div className="text-xs text-slate-600 flex flex-wrap gap-x-4 gap-y-1">
+                  <span>JK: <strong>Laki-laki</strong></span>
+                  <span>Lahir: <strong>Tegal, 15-08-1992</strong></span>
+                  <span>Status: <strong>Kawin</strong></span>
+                  <span>Alamat: <strong>{demoAlamat}, Kalisalak</strong></span>
+                </div>
               </div>
-              <strong className="block text-sm sm:text-base text-white font-extrabold">
-                Buku Panduan Bimtek (PDF 5 Hal)
-              </strong>
-              <span className="text-[11px] text-blue-200 block">
-                Format resmi A4 lengkap kop surat & tanda tangan panitia
-              </span>
-            </button>
 
-            <button
-              type="button"
-              onClick={() => downloadBimtekPdf("lembar-saku")}
-              className="p-4 rounded-2xl bg-emerald-600/90 hover:bg-emerald-600 border border-emerald-400/40 text-left space-y-1 transition-all hover:scale-[1.01] shadow-lg shadow-emerald-600/25 group cursor-pointer"
-            >
-              <div className="flex items-center justify-between text-white">
-                <span className="text-xs font-bold uppercase tracking-wider">Versi Lapangan</span>
-                <Download className="w-4 h-4 text-emerald-200 group-hover:translate-y-0.5 transition-transform" />
+              {/* Timestamp & Verifikator jika sudah dicoklit */}
+              {demoStatus !== "BELUM" && (
+                <div className="bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl text-left sm:text-right space-y-0.5">
+                  <div className="text-[10px] text-emerald-800 font-bold flex items-center sm:justify-end gap-1">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                    Tervalidasi di Sistem Cloud:
+                  </div>
+                  <div className="text-xs font-black text-emerald-950">Petugas Pantarlih RW 03</div>
+                  <div className="text-[10px] text-slate-500 font-mono">14-09-2026 • 09:42 WIB</div>
+                </div>
+              )}
+            </div>
+
+            {/* ACTION BUTTONS SIMULATION */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="text-xs font-bold text-slate-500">
+                Tekan tombol aksi untuk mencoba simulasi:
               </div>
-              <strong className="block text-sm sm:text-base text-white font-extrabold">
-                Lembar Saku & Matrix Kode Coklit
-              </strong>
-              <span className="text-[11px] text-emerald-200 block">
-                Ringkasan praktis 2 halaman untuk dibawa saat keliling RT
-              </span>
-            </button>
 
-            <Link
-              href="/admin"
-              className="p-4 rounded-2xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700 text-left space-y-1 transition-all hover:scale-[1.01] group cursor-pointer sm:col-span-2 lg:col-span-1"
-            >
-              <div className="flex items-center justify-between text-slate-300">
-                <span className="text-xs font-bold uppercase tracking-wider">Portal Digital</span>
-                <ExternalLink className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* 1. Tombol Sesuai */}
+                <button
+                  type="button"
+                  onClick={() => setDemoStatus("SESUAI")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-sm ${
+                    demoStatus === "SESUAI"
+                      ? "bg-emerald-700 text-white ring-2 ring-emerald-400 scale-105"
+                      : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                  }`}
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  {demoStatus === "SESUAI" ? "Sesuai ✓" : "Sesuai"}
+                </button>
+
+                {/* 2. Tombol Ubah Data */}
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(true)}
+                  className="px-3 py-2 rounded-xl text-xs font-bold border border-blue-300 text-blue-700 bg-white hover:bg-blue-50 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  Ubah Data
+                </button>
+
+                {/* 3. Tombol TMS */}
+                <button
+                  type="button"
+                  onClick={() => setShowTmsModal(true)}
+                  className="px-3 py-2 rounded-xl text-xs font-bold border border-rose-300 text-rose-700 bg-white hover:bg-rose-50 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                >
+                  <XCircle className="w-3.5 h-3.5" />
+                  TMS
+                </button>
+
+                {/* 4. Reset Button */}
+                {demoStatus !== "BELUM" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDemoStatus("BELUM");
+                      setDemoName("SLAMET RIYADI");
+                      setDemoAlamat("RT 02 / RW 03");
+                    }}
+                    className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 flex items-center gap-1 transition-all cursor-pointer"
+                    title="Batal / Reset Status"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Reset
+                  </button>
+                )}
               </div>
-              <strong className="block text-sm sm:text-base text-white font-extrabold">
-                Login Akun Petugas Coklit
-              </strong>
-              <span className="text-[11px] text-slate-400 block">
-                Gunakan username nama akhir & sandi &apos;p2kd2026&apos;
-              </span>
-            </Link>
-          </div>
-        </section>
-
-        {/* SEARCH & FILTER BAR */}
-        <section className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700/80 backdrop-blur-sm space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari kata kunci materi: 'meninggal', 'stiker', 'pindah', 'tps 03', 'usia 17'..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-all"
-            />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-            <button
-              type="button"
-              onClick={() => setActiveModuleTab("all")}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeModuleTab === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-white"
-              }`}
-            >
-              Semua Modul
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveModuleTab("sop")}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeModuleTab === "sop"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-white"
-              }`}
-            >
-              SOP Coklit
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveModuleTab("kode")}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeModuleTab === "kode"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-white"
-              }`}
-            >
-              Matrix Kode TMS
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveModuleTab("stiker")}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeModuleTab === "stiker"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-white"
-              }`}
-            >
-              Stiker Coklit
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveModuleTab("tps")}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeModuleTab === "tps"
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-800 text-slate-400 hover:text-white"
-              }`}
-            >
-              Tabel 13 TPS
-            </button>
-          </div>
-        </section>
+          {/* Dialog Modal Simulasi Edit */}
+          {showEditModal && (
+            <div className="p-4 rounded-2xl bg-blue-950/80 border border-blue-800 space-y-3">
+              <div className="flex items-center justify-between text-xs text-blue-300 font-bold border-b border-blue-900 pb-2">
+                <span>Simulasi Modal: Koreksi Data Pemilih</span>
+                <button onClick={() => setShowEditModal(false)} className="text-white hover:text-red-400">
+                  ✕ Tutup
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Nama Pemilih</label>
+                  <input
+                    type="text"
+                    value={demoName}
+                    onChange={(e) => setDemoName(e.target.value)}
+                    className="w-full h-8 px-2 rounded-lg bg-slate-900 text-white border border-slate-700 font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">Alamat RT/RW</label>
+                  <input
+                    type="text"
+                    value={demoAlamat}
+                    onChange={(e) => setDemoAlamat(e.target.value)}
+                    className="w-full h-8 px-2 rounded-lg bg-slate-900 text-white border border-slate-700 font-bold"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    setDemoStatus("UBAH_DATA");
+                    setShowEditModal(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-xs"
+                >
+                  Simpan Perubahan & Tandai &apos;Diperbaiki&apos;
+                </button>
+              </div>
+            </div>
+          )}
 
-        {/* KELENGKAPAN KIT KERJA PANTARLIH (INTERACTIVE CHECKLIST) */}
-        <section className="p-6 rounded-3xl bg-linear-to-br from-slate-900 to-indigo-950/50 border border-slate-800 space-y-4 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-800">
-            <div className="space-y-1">
-              <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-emerald-400" />
-                Checklist Perlengkapan Kerja Pantarlih Sebelum Berangkat
-              </h2>
-              <p className="text-xs text-slate-400">
-                Pastikan seluruh perlengkapan berikut telah lengkap di dalam tas/map kerja Anda setiap hari sebelum turun ke lapangan.
+          {/* Dialog Modal Simulasi TMS */}
+          {showTmsModal && (
+            <div className="p-4 rounded-2xl bg-rose-950/80 border border-rose-800 space-y-3">
+              <div className="flex items-center justify-between text-xs text-rose-300 font-bold border-b border-rose-900 pb-2">
+                <span>Simulasi Modal: Pilih Alasan TMS</span>
+                <button onClick={() => setShowTmsModal(false)} className="text-white hover:text-red-400">
+                  ✕ Tutup
+                </button>
+              </div>
+              <div className="space-y-2 text-xs">
+                <label className="block text-slate-300 font-bold">Pilih Kategori TMS Resmi:</label>
+                <select
+                  value={demoTmsReason}
+                  onChange={(e) => setDemoTmsReason(e.target.value)}
+                  className="w-full h-8 px-2 rounded-lg bg-slate-900 text-white border border-slate-700 font-bold"
+                >
+                  <option value="MENINGGAL">1. Meninggal Dunia</option>
+                  <option value="GANDA">2. Data Ganda</option>
+                  <option value="PINDAH_DOMISILI">3. Pindah Domisili Keluar Desa</option>
+                  <option value="DI_BAWAH_UMUR">4. Di Bawah Umur</option>
+                  <option value="TNI_POLRI">5. Menjadi Anggota TNI / POLRI</option>
+                  <option value="BUKAN_WARGA">6. Bukan Warga Desa Kalisalak</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    setDemoStatus("TMS");
+                    setShowTmsModal(false);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-bold text-xs"
+                >
+                  Tetapkan Status TMS
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Rincian Penjelasan 4 Tombol */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-800/40 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                <CheckCircle className="w-4 h-4" /> 1. Tombol &apos;Sesuai&apos; (Hijau)
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Tekan jika KTP-el / KK asli warga 100% identik dengan layar. Cukup 1 sentuhan, data
+                langsung sah dan tidak perlu mengetik apapun!
               </p>
             </div>
 
-            <div className="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 w-fit">
-              {allChecklistDone ? (
-                <span className="text-emerald-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Siap Turun Lapangan
-                </span>
-              ) : (
-                <span className="text-amber-400">Lengkapi Perlengkapan</span>
-              )}
+            <div className="p-4 rounded-2xl bg-blue-950/30 border border-blue-800/40 space-y-2">
+              <div className="flex items-center gap-2 text-blue-400 font-bold text-sm">
+                <Edit className="w-4 h-4" /> 2. Tombol &apos;Ubah Data&apos; (Biru)
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Tekan jika ada salah ketik nama, tanggal lahir, NIK, atau status perkawinan baru.
+                Formulir digital akan muncul untuk Anda edit di tempat.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-950/30 border border-rose-800/40 space-y-2">
+              <div className="flex items-center gap-2 text-rose-400 font-bold text-sm">
+                <XCircle className="w-4 h-4" /> 3. Tombol &apos;TMS&apos; (Merah)
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Tekan jika pemilih telah meninggal dunia, pindah domisili, data ganda, atau menjadi
+                TNI/Polri. Pilih alasannya dan simpan.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-800/40 space-y-2">
+              <div className="flex items-center gap-2 text-purple-400 font-bold text-sm">
+                <Plus className="w-4 h-4" /> 4. Tombol &apos;+ Temuan Baru&apos;
+              </div>
+              <p className="text-slate-300 leading-relaxed">
+                Terletak di kanan atas. Tekan jika menemukan warga Kalisalak berusia 17 tahun atau
+                warga baru yang belum terdaftar sama sekali di DPS.
+              </p>
             </div>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {/* MODUL 3: FITUR SCAN KAMERA QR CODE (SCAN STIKER) */}
+        <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div className="flex items-center gap-2 text-xs font-bold text-teal-400 uppercase tracking-wider">
+            <Camera className="w-4 h-4 text-teal-400" />
+            Langkah 3: Pemindai Kamera Instan (Scan Stiker)
+          </div>
+
+          <h2 className="text-lg sm:text-xl font-black text-white">
+            Pencarian Kilat Tanpa Ketik NIK Menggunakan Kamera Smartphone
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
+            <div className="md:col-span-2 space-y-3">
+              <p className="leading-relaxed">
+                Untuk mempercepat kerja lapangan dan menghindari kesalahan pengetikan 16 digit NIK,
+                sistem web dilengkapi fitur pemindai kamera (QR Code Scanner) yang terpasang di menu
+                bawah ponsel Anda:
+              </p>
+
+              <ol className="list-decimal list-inside space-y-2 font-medium">
+                <li>
+                  Tekan <strong className="text-teal-400 font-bold">tombol bulat hijau kamera</strong> yang
+                  melayang di bagian tengah bawah layar ponsel.
+                </li>
+                <li>
+                  Saat pertama kali membuka, browser akan meminta izin akses kamera. Tekan{" "}
+                  <strong className="text-white bg-slate-800 px-1.5 py-0.5 rounded font-bold">
+                    &apos;Izinkan / Allow&apos;
+                  </strong>.
+                </li>
+                <li>
+                  Arahkan kamera belakang ke QR Code pada dokumen warga atau stiker Coklit.
+                </li>
+                <li>
+                  Sistem seketika memproses dan langsung membuka kartu pemilih bersangkutan untuk Anda
+                  berikan status!
+                </li>
+              </ol>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-teal-950/30 border border-teal-800/40 flex flex-col items-center justify-center text-center space-y-2">
+              <div className="w-14 h-14 rounded-full bg-linear-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-lg shadow-teal-500/30">
+                <Camera className="w-7 h-7 text-white" />
+              </div>
+              <div className="text-xs font-black text-teal-300 uppercase tracking-tight">
+                Tombol Tengah Melayang
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Dapat digunakan kapan saja di lapangan tanpa instalasi aplikasi dari luar browser!
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* MODUL 4: 6 ALASAN TMS DI SISTEM DATABASE */}
+        <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div className="flex items-center gap-2 text-xs font-bold text-rose-400 uppercase tracking-wider">
+            <XCircle className="w-4 h-4 text-rose-400" />
+            Standar Database: 6 Kategori Resmi TMS
+          </div>
+
+          <h2 className="text-lg sm:text-xl font-black text-white">
+            Matriks Penetapan Tidak Memenuhi Syarat (TMS) di Sistem
+          </h2>
+
+          <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
+            Saat Anda menekan tombol merah &apos;TMS&apos;, pilihlah satu alasan yang sesuai dari 6
+            kategori resmi berikut. Pemilih bertanda TMS akan secara otomatis disaring keluar dari
+            penetapan DPT Bersih desa:
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {tmsCategories.map((tms) => (
+              <div
+                key={tms.id}
+                className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 hover:border-slate-700 transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-rose-400">{tms.title}</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 font-bold border border-rose-900/60">
+                    {tms.badge}
+                  </span>
+                </div>
+                <p className="text-[11.5px] text-slate-300 leading-relaxed">{tms.desc}</p>
+                <div className="text-[10.5px] text-slate-400 pt-1 border-t border-slate-900 font-medium">
+                  <span className="text-amber-400 font-bold">Bukti Faktual:</span> {tms.bukti}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* MODUL 5: PEMETAAN 13 TPS TERHADAP 13 RW */}
+        <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
+            <MapPin className="w-4 h-4 text-blue-400" />
+            Wilayah Tugas: Pemetaan 13 TPS & 13 RW Desa Kalisalak
+          </div>
+
+          <h2 className="text-lg sm:text-xl font-black text-white">
+            Penugasan Presisi 1 TPS Melayani 1 Wilayah RW
+          </h2>
+
+          <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
+            P2KD Kalisalak menetapkan pemetaan wilayah TPS berbasis RW secara 1-to-1 mapping. Petugas
+            yang ditugaskan di RW tertentu otomatis bertanggung jawab memverifikasi calon pemilih di
+            TPS tersebut:
+          </p>
+
+          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-950 text-slate-400 border-b border-slate-800 text-[11px] uppercase tracking-wider font-bold">
+                  <th className="p-3">TPS Resmi</th>
+                  <th className="p-3">Wilayah RW Penugasan</th>
+                  <th className="p-3">Cakupan Lingkungan RT</th>
+                  <th className="p-3">Wilayah Dusun</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 font-medium">
+                {pemetaanTps.map((row) => (
+                  <tr key={row.tps} className="hover:bg-slate-800/30 transition-colors">
+                    <td className="p-3 font-black text-white font-mono">{row.tps}</td>
+                    <td className="p-3 font-bold text-blue-300">{row.rw}</td>
+                    <td className="p-3 text-slate-300">{row.rt}</td>
+                    <td className="p-3 text-slate-400">{row.dusun}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {/* MODUL 6: CHECKLIST KESIAPAN SEBELUM JALAN */}
+        <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider">
+              <CheckSquare className="w-4 h-4 text-amber-400" />
+              Checklist Kesiapan Petugas Sebelum Turun ke Lapangan
+            </div>
+            <span className="text-[11px] text-slate-400">
+              Centang untuk memeriksa kelengkapan Anda
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
             {[
-              { id: "kit_rompi", label: "Rompi & Tanda Pengenal Resmi P2KD (Wajib Dikenakan)" },
-              { id: "kit_buku", label: "Buku Model A-Daftar Pemilih Wilayah RW Tugas" },
-              { id: "kit_stiker", label: "Bundel Stiker Coklit Berstempel P2KD" },
-              { id: "kit_tanda_bukti", label: "Lembar Formulir Tanda Bukti Pendaftaran Pemilih" },
-              { id: "kit_pulpen", label: "Alat Tulis (Ballpoint Tahan Air & Penggaris)" },
-              { id: "kit_smartphone", label: "Smartphone Aktif (Koneksi Internet & Baterai Penuh)" },
-              { id: "kit_map", label: "Map Plastik Tahan Air Pelindung Berkas" },
+              { id: "hp_baterai", label: "Smartphone dengan Baterai Penuh (Min 80%)" },
+              { id: "kuota_internet", label: "Paket Data Internet Aktif & Cukup" },
+              { id: "login_berhasil", label: "Sudah Coba Login di p2kdkalisalak.my.id/admin" },
+              { id: "cek_dps_rw", label: "Daftar Pemilih RW Anda Sudah Terlihat di Tab Coklit" },
+              { id: "tanda_pengenal", label: "Mengenakan Tanda Pengenal / ID Card Resmi P2KD" },
+              { id: "ballpoint_cadangan", label: "Membawa Buku Catatan Kecil & Ballpoint Cadangan" },
             ].map((item) => (
               <label
                 key={item.id}
-                className={`p-3 rounded-2xl border flex items-start gap-3 cursor-pointer select-none transition-all ${
+                onClick={() => toggleChecklist(item.id)}
+                className={`p-3.5 rounded-2xl border flex items-start gap-3 cursor-pointer transition-all ${
                   checklist[item.id]
-                    ? "bg-emerald-950/30 border-emerald-500/40 text-emerald-200"
-                    : "bg-slate-800/40 border-slate-700 text-slate-400 hover:border-slate-600"
+                    ? "bg-emerald-950/30 border-emerald-800/50 text-emerald-200"
+                    : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
                 }`}
               >
                 <input
                   type="checkbox"
-                  checked={Boolean(checklist[item.id])}
-                  onChange={() => toggleChecklist(item.id)}
-                  className="mt-0.5 w-4 h-4 rounded text-emerald-500 focus:ring-emerald-400 border-slate-600"
+                  checked={checklist[item.id] || false}
+                  onChange={() => {}}
+                  className="mt-0.5 rounded border-slate-700 text-emerald-500 focus:ring-0"
                 />
-                <span className="text-xs font-semibold leading-snug">{item.label}</span>
+                <span className="font-bold leading-tight">{item.label}</span>
               </label>
             ))}
           </div>
         </section>
 
-        {/* MODUL 1: LANDASAN HUKUM & KODE ETIK */}
-        {(activeModuleTab === "all" || activeModuleTab === "sop") && (
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-              <div className="w-10 h-10 rounded-2xl bg-blue-500/20 border border-blue-500/30 text-blue-400 flex items-center justify-center font-black">
-                01
-              </div>
-              <div>
-                <h3 className="text-base sm:text-xl font-bold text-white">
-                  Landasan Regulasi, Tugas Pokok, & Kode Etik Pantarlih
-                </h3>
-                <span className="text-xs text-slate-400">
-                  Keputusan BPD & Peraturan Perbup Pemilihan Kepala Desa Kabupaten Tegal
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs sm:text-sm">
-              <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/70 space-y-2">
-                <strong className="text-blue-300 font-bold block">
-                  3 Kewajiban Utama Pantarlih:
-                </strong>
-                <ul className="space-y-1.5 text-slate-300 list-disc list-inside">
-                  <li>Melakukan pencocokan data pemilih secara langsung door-to-door (dari rumah ke rumah).</li>
-                  <li>Mencatat pemilih baru dan memverifikasi dokumen KTP-el / KK asli.</li>
-                  <li>Melaporkan progres rekapitulasi data coklit secara berkala kepada P2KD.</li>
-                </ul>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-800/50 border border-slate-700/70 space-y-2">
-                <strong className="text-rose-300 font-bold block">
-                  Larangan Keras Pantarlih (Pakta Integritas):
-                </strong>
-                <ul className="space-y-1.5 text-slate-300 list-disc list-inside">
-                  <li>Dilarang menjadi tim sukses, relawan, atau partisan calon Kepala Desa.</li>
-                  <li>Dilarang menerima uang, bingkisan, atau fasilitas apapun dari pihak calon.</li>
-                  <li>Dilarang membocorkan Nomor Induk Kependudukan (NIK) warga ke pihak ketiga.</li>
-                </ul>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* MODUL 2: SOP LANGKAH KERJA COKLIT LAPANGAN */}
-        {(activeModuleTab === "all" || activeModuleTab === "sop") && (
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-xl">
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 flex items-center justify-center font-black">
-                02
-              </div>
-              <div>
-                <h3 className="text-base sm:text-xl font-bold text-white">
-                  SOP Standar Kunjungan Rumah ke Rumah (Door-to-Door)
-                </h3>
-                <span className="text-xs text-slate-400">
-                  Tahapan sistematis saat bertemu Kepala Keluarga dan anggota keluarga pemilih
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {[
-                {
-                  step: "Langkah 1",
-                  title: "Salam & Identitas",
-                  desc: "Ucapkan salam dengan sopan, kenakan rompi & tanda pengenal. Jelaskan maksud kedatangan pemutakhiran data Pilkades Kalisalak.",
-                  color: "border-blue-500/40 bg-blue-950/20 text-blue-300",
-                },
-                {
-                  step: "Langkah 2",
-                  title: "Pemeriksaan KTP & KK",
-                  desc: "Mohon izin memeriksa fisik KTP-el dan Kartu Keluarga (KK) asli. Teliti NIK, nama lengkap, dan status perkawinan setiap warga.",
-                  color: "border-indigo-500/40 bg-indigo-950/20 text-indigo-300",
-                },
-                {
-                  step: "Langkah 3",
-                  title: "Tandai Form Model A",
-                  desc: "Beri kode S (Sesuai), U (Ubah Data), B (Pemilih Baru), atau TMS 1-6 (Tidak Memenuhi Syarat) pada kolom yang disediakan.",
-                  color: "border-purple-500/40 bg-purple-950/20 text-purple-300",
-                },
-                {
-                  step: "Langkah 4",
-                  title: "Stiker & Bukti Coklit",
-                  desc: "Isi stiker coklit lengkap, minta tanda tangan kepala keluarga, tempel di depan rumah, dan serahkan lembar Tanda Bukti Pemilih.",
-                  color: "border-emerald-500/40 bg-emerald-950/20 text-emerald-300",
-                },
-              ].map((s) => (
-                <div key={s.step} className={`p-4 rounded-2xl border ${s.color} space-y-1.5`}>
-                  <span className="text-[10px] font-black uppercase tracking-wider block opacity-80">
-                    {s.step}
-                  </span>
-                  <strong className="block text-sm font-bold text-white">{s.title}</strong>
-                  <p className="text-xs text-slate-300 leading-relaxed">{s.desc}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* MODUL 3: MATRIX 9 KODE STATUS COKLIT */}
-        {(activeModuleTab === "all" || activeModuleTab === "kode") && (
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-black">
-                03
-              </div>
-              <div>
-                <h3 className="text-base sm:text-xl font-bold text-white">
-                  Matrix Kode Status Pemilih & Kriteria TMS
-                </h3>
-                <span className="text-xs text-slate-400">
-                  Gunakan kode resmi ini saat mencatat di lembar kerja fisik maupun portal sistem
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {matrixStatus.map((item) => (
-                <div
-                  key={item.kode}
-                  className="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/80 space-y-2 hover:border-slate-600 transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-black text-white">{item.kode}</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${item.color}`}>
-                      {item.label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* MODUL 4: MOCKUP & PANDUAN STIKER COKLIT */}
-        {(activeModuleTab === "all" || activeModuleTab === "stiker") && (
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-xl">
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center font-black">
-                04
-              </div>
-              <div>
-                <h3 className="text-base sm:text-xl font-bold text-white">
-                  Format Resmi & Tata Letak Penempelan Stiker Coklit
-                </h3>
-                <span className="text-xs text-slate-400">
-                  Stiker tanda bukti fisik bahwa rumah warga telah diverifikasi sah oleh Pantarlih
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              {/* Visual Mockup Stiker */}
-              <div className="lg:col-span-6 bg-linear-to-br from-amber-50 to-orange-50 text-slate-900 p-6 rounded-2xl border-2 border-dashed border-amber-400 shadow-2xl space-y-4 font-sans">
-                <div className="text-center pb-2 border-b-2 border-amber-800/30 space-y-0.5">
-                  <span className="text-[10px] font-bold text-amber-800 tracking-wider uppercase block">
-                    PANITIA PILKADES (P2KD) DESA KALISALAK
-                  </span>
-                  <strong className="text-sm font-black text-slate-900 block">
-                    TANDA BUKTI PENCOCOKAN & PENELITIAN PEMILIH (COKLIT)
-                  </strong>
-                  <span className="text-[10px] text-slate-600 block">
-                    Pemilihan Kepala Desa Kalisalak Periode 2026/2027
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase font-bold">Wilayah Penugasan:</span>
-                    <strong>RW 03 / TPS 03</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-500 block uppercase font-bold">Rukun Tetangga:</span>
-                    <strong>RT 01 / Desa Kalisalak</strong>
-                  </div>
-                  <div className="col-span-2 pt-1 border-t border-amber-200">
-                    <span className="text-[10px] text-slate-500 block uppercase font-bold">Nama Kepala Keluarga:</span>
-                    <strong className="text-sm text-blue-950">BAPAK AHMAD SUBARKAH</strong>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-[10px] text-slate-500 block uppercase font-bold">Jumlah Pemilih Terdaftar:</span>
-                    <div className="flex items-center gap-3 text-xs font-bold pt-0.5">
-                      <span>L: 2 Orang</span>
-                      <span>•</span>
-                      <span>P: 2 Orang</span>
-                      <span>•</span>
-                      <span className="text-emerald-700 font-extrabold">Total: 4 Pemilih</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t-2 border-amber-800/30 flex items-center justify-between text-[11px] text-slate-700">
-                  <div className="text-center">
-                    <span className="block text-[9px]">Kepala Keluarga,</span>
-                    <div className="h-7 flex items-center justify-center font-serif italic text-xs font-bold text-slate-800">
-                      [Ttd Warga]
-                    </div>
-                    <span className="block text-[9px] border-t border-slate-400 px-2">( Ahmad S. )</span>
-                  </div>
-
-                  <div className="text-center">
-                    <span className="block text-[9px]">Petugas Pantarlih,</span>
-                    <div className="h-7 flex items-center justify-center font-serif italic text-xs font-bold text-blue-900">
-                      [Ttd Pantarlih]
-                    </div>
-                    <span className="block text-[9px] border-t border-slate-400 px-2">( Mar&apos;ufah )</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Ketentuan Penempelan */}
-              <div className="lg:col-span-6 space-y-3 text-xs sm:text-sm text-slate-300">
-                <h4 className="font-bold text-white text-sm sm:text-base flex items-center gap-2">
-                  <Home className="w-4 h-4 text-amber-400" />
-                  Aturan Penempelan Stiker di Rumah:
-                </h4>
-                <ul className="space-y-2 list-disc list-inside leading-relaxed text-slate-300">
-                  <li>
-                    <strong className="text-white">Lokasi Penempelan:</strong> Tempelkan pada daun pintu utama, kusen pintu, atau jendela depan rumah yang mudah terlihat dari luar tanpa merusak cat pemilik rumah.
-                  </li>
-                  <li>
-                    <strong className="text-white">Izin Pemilik Rumah:</strong> Selalu minta izin terlebih dahulu dengan sopan sebelum menempelkan stiker.
-                  </li>
-                  <li>
-                    <strong className="text-white">Kebersihan Permukaan:</strong> Usap debu atau kelembapan pada permukaan sebelum ditempel agar lem stiker merekat kuat dan bertahan hingga hari pencoblosan.
-                  </li>
-                  <li>
-                    <strong className="text-white">Rumah Multi-KK:</strong> Apabila dalam satu rumah terdapat lebih dari satu KK, pasang stiker untuk masing-masing KK secara berjejer rapi.
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* MODUL 5: TABEL PEMETAAN 13 RW & 13 TPS */}
-        {(activeModuleTab === "all" || activeModuleTab === "tps") && (
-          <section className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-              <div className="w-10 h-10 rounded-2xl bg-teal-500/20 border border-teal-500/30 text-teal-400 flex items-center justify-center font-black">
-                05
-              </div>
-              <div>
-                <h3 className="text-base sm:text-xl font-bold text-white">
-                  Tabel Pemetaan Wilayah 13 RW & Tabung TPS Desa Kalisalak
-                </h3>
-                <span className="text-xs text-slate-400">
-                  Setiap RW melayani satu TPS resmi untuk memudahkan akses pencoblosan warga
-                </span>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-slate-800">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-slate-800/80 text-slate-300 font-bold border-b border-slate-700">
-                  <tr>
-                    <th className="p-3">Tabung TPS</th>
-                    <th className="p-3">Wilayah Rukun Warga (RW)</th>
-                    <th className="p-3">Dusun / Wilayah</th>
-                    <th className="p-3">Rencana Lokasi TPS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {tpsList.map((t) => (
-                    <tr key={t.no} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3 font-mono font-bold text-blue-400">TPS {t.no}</td>
-                      <td className="p-3 font-bold text-white">{t.rw}</td>
-                      <td className="p-3 text-slate-300">{t.dusun}</td>
-                      <td className="p-3 text-slate-400">{t.lokasi}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )}
-
-        {/* MODUL 6: PENGGUNAAN PORTAL DIGITAL & KREDENSIAL */}
-        <section className="p-6 sm:p-8 rounded-3xl bg-linear-to-br from-blue-950/40 via-slate-900 to-slate-900 border border-blue-900/50 space-y-5 shadow-xl">
-          <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-            <div className="w-10 h-10 rounded-2xl bg-sky-500/20 border border-sky-500/30 text-sky-400 flex items-center justify-center font-black">
-              06
-            </div>
-            <div>
-              <h3 className="text-base sm:text-xl font-bold text-white">
-                Penggunaan Portal Digital & Kredensial Akun Petugas
-              </h3>
-              <span className="text-xs text-slate-400">
-                Cara login dan sinkronisasi hasil coklit ke server pusat P2KD Kalisalak
-              </span>
-            </div>
+        {/* MODUL 7: FAQ & PENANGANAN KENDALA TEKNIS */}
+        <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5">
+          <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
+            <HelpCircle className="w-4 h-4 text-blue-400" />
+            Tanya Jawab & Solusi Kendala Lapangan (FAQ)
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs sm:text-sm">
-            <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
-              <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">Kredensial Akun</span>
-              <strong className="text-white block font-bold text-sm">Username Nama Akhir Anda</strong>
-              <p className="text-slate-300 leading-relaxed">
-                Username otomatis dibuat dari nama akhir Anda (huruf kecil). Contoh pendaftar MAR&apos;UFAH username adalah <code className="text-sky-300 font-mono font-bold">marufah</code>. Kata sandi awal: <code className="text-sky-300 font-mono font-bold">p2kd2026</code>.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
-              <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">Akses Portal</span>
-              <strong className="text-white block font-bold text-sm">Dashboard Pantarlih RW</strong>
-              <p className="text-slate-300 leading-relaxed">
-                Login melalui <Link href="/admin" className="text-blue-400 underline font-bold">/admin</Link> untuk melihat seluruh daftar pemilih di RW tugas Anda, memeriksa status TPS, dan mencari nama pemilih secara instan.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-800/60 border border-slate-700 space-y-1.5">
-              <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">Sinkronisasi Realtime</span>
-              <strong className="text-white block font-bold text-sm">Update Progres Harian</strong>
-              <p className="text-slate-300 leading-relaxed">
-                Hasil kunjungan harian langsung diinput ke portal agar progres rekapitulasi desa terupdate realtime di monitor utama P2KD Kalisalak.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* MODUL 7: FAQ & PENANGANAN KASUS KHUSUS */}
-        <section className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-          <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-            <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/30 text-purple-400 flex items-center justify-center font-black">
-              07
-            </div>
-            <div>
-              <h3 className="text-base sm:text-xl font-bold text-white">
-                Tanya Jawab (FAQ) & Penanganan Masalah Lapangan
-              </h3>
-              <span className="text-xs text-slate-400">
-                Solusi praktis terhadap situasi tidak terduga saat bertugas di tengah masyarakat
-              </span>
-            </div>
-          </div>
+          <h2 className="text-lg sm:text-xl font-black text-white">
+            Hal-Hal yang Sering Ditanyakan oleh Petugas Coklit
+          </h2>
 
           <div className="space-y-3">
-            {faqList.map((f, idx) => (
-              <div
-                key={f.q}
-                className="rounded-2xl border border-slate-800 bg-slate-800/40 overflow-hidden transition-all"
-              >
-                <button
-                  type="button"
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full p-4 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-bold text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+            {faqs.map((faq, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden transition-all"
                 >
-                  <span className="flex items-center gap-2">
-                    <HelpCircle className="w-4 h-4 text-purple-400 shrink-0" />
-                    {f.q}
-                  </span>
-                  {openFaq === idx ? (
-                    <ChevronUp className="w-4 h-4 text-slate-400 shrink-0" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" />
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full p-4 text-left flex items-center justify-between gap-4 hover:bg-slate-900/50 transition-colors cursor-pointer"
+                  >
+                    <span className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 text-xs flex items-center justify-center shrink-0 font-black">
+                        {idx + 1}
+                      </span>
+                      {faq.q}
+                    </span>
+                    {isOpen ? (
+                      <ChevronUp className="w-4 h-4 text-blue-400 shrink-0" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-1 text-xs text-slate-300 leading-relaxed border-t border-slate-900 pl-11">
+                      {faq.a}
+                    </div>
                   )}
-                </button>
-                {openFaq === idx && (
-                  <div className="p-4 pt-0 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-slate-800/60 bg-slate-900/40">
-                    <p>{f.a}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
         </section>
 
-        {/* BOTTOM DOWNLOAD CTA BANNER */}
-        <section className="p-8 rounded-3xl bg-linear-to-r from-blue-900 via-indigo-900 to-slate-900 border border-blue-700/50 text-center space-y-4 shadow-2xl">
-          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mx-auto text-blue-300">
-            <BookOpen className="w-6 h-6" />
-          </div>
-
-          <div className="space-y-1 max-w-lg mx-auto">
-            <h3 className="text-xl sm:text-2xl font-black text-white">
-              Siap Menjalankan Tugas Mulia Pantarlih?
-            </h3>
-            <p className="text-xs sm:text-sm text-blue-200">
-              Unduh salinan PDF buku panduan bimtek dan simpan di ponsel Anda agar dapat dibaca kapan saja saat bertugas di lapangan.
-            </p>
-          </div>
+        {/* CALL TO ACTION DUA TOMBOL PDF */}
+        <section className="p-6 sm:p-8 rounded-3xl bg-linear-to-r from-blue-900 via-indigo-950 to-slate-950 border border-blue-800 text-center space-y-4">
+          <h2 className="text-lg sm:text-2xl font-black text-white">
+            Unduh Buku Pedoman Resmi Sekarang & Simpan di Ponsel Anda
+          </h2>
+          <p className="text-xs sm:text-sm text-blue-200 max-w-2xl mx-auto leading-relaxed">
+            Kedua dokumen PDF di bawah telah disusun secara komprehensif lengkap dengan stempel dan
+            pengesahan resmi Panitia Pilkades Kalisalak 2026/2027.
+          </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
-              type="button"
               onClick={() => downloadBimtekPdf("lengkap")}
-              className="px-6 py-3 rounded-xl bg-white text-blue-950 font-black text-xs sm:text-sm shadow-xl hover:bg-blue-50 flex items-center gap-2 transition-all cursor-pointer"
+              className="px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all active:scale-95 cursor-pointer"
             >
-              <Download className="w-4 h-4 text-blue-900" />
-              Unduh Buku Panduan Bimtek (PDF)
+              <Download className="w-4 h-4" />
+              Download Buku Panduan Sistem (PDF 5 Halaman)
             </button>
-
             <button
-              type="button"
               onClick={() => downloadBimtekPdf("lembar-saku")}
-              className="px-6 py-3 rounded-xl bg-blue-950/60 hover:bg-blue-950 text-white font-bold text-xs sm:text-sm border border-blue-400/40 flex items-center gap-2 transition-all cursor-pointer"
+              className="px-5 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm border border-slate-700 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
             >
-              <FileCheck2 className="w-4 h-4 text-emerald-400" />
-              Unduh Lembar Saku & Checklist
+              <Download className="w-4 h-4" />
+              Download Lembar Saku Coklit (PDF 2 Halaman)
             </button>
           </div>
         </section>
-      </main>
 
-      {/* FOOTER */}
-      <footer className="mt-16 border-t border-slate-800 text-center py-6 text-xs text-slate-500">
-        <p>© 2026/2027 Panitia Pemilihan Kepala Desa (P2KD) Desa Kalisalak • Kecamatan Margasari • Kabupaten Tegal</p>
-        <p className="text-[11px] text-slate-600 mt-1">
-          Halaman Materi Pelatihan & Bimbingan Teknis Khusus Internal Petugas Pantarlih Terpilih
-        </p>
-      </footer>
+        {/* FOOTER HELPDESK & P2KD CONTACT */}
+        <footer className="pt-6 border-t border-slate-800 text-center text-xs text-slate-400 space-y-2">
+          <p>
+            Memerlukan bantuan teknis atau pendampingan operasional saat bertugas di lapangan?
+          </p>
+          <p className="font-bold text-slate-300">
+            Hubungi Helpdesk Teknis P2KD via WhatsApp:{" "}
+            <a
+              href="https://wa.me/6285879584257?text=Halo%20Admin%20P2KD%2C%20saya%20petugas%20Pantarlih%20ingin%20konsultasi%20sistem"
+              target="_blank"
+              rel="noreferrer"
+              className="text-emerald-400 hover:underline"
+            >
+              0858-7958-4257
+            </a>{" "}
+            • Balai Desa Kalisalak, Margasari
+          </p>
+          <p className="text-[11px] text-slate-600 pt-2">
+            Dokumen Rahasia & Internal • Hanya Untuk Petugas Pantarlih Terpilih P2KD Desa Kalisalak
+          </p>
+        </footer>
+      </div>
     </div>
   );
 }

@@ -393,7 +393,8 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
 
   const getWaInvitationText = (agt: AnggotaP2KD, pass?: string) => {
     const passwordUsed = pass || (agt.seksi === "PANTARLIH_LAPANGAN" ? "pantarlih123" : "p2kd2026");
-    return `*AKUN RESMI PANITIA P2KD DESA KALISALAK 2026*\n\nYth. Bpk/Ibu *${agt.namaLengkap}*\nJabatan: *${agt.jabatan}*\nSeksi: *${agt.seksiLabel}*\nPenugasan: *${agt.assignedTps || "Semua Wilayah Desa"}*\n\nBerikut kredensial login portal administrasi Pilkades:\n🌐 *Link Portal*: http://localhost:3000/admin\n👤 *Username*: \`${agt.username}\`\n🔑 *Kata Sandi*: \`${passwordUsed}\`\n\n_Mohon jaga kerahasiaan kredensial ini sesuai pakta integritas panitia._`;
+    const portalUrl = typeof window !== "undefined" ? `${window.location.origin}/admin` : "https://www.p2kdkalisalak.my.id/admin";
+    return `*AKUN RESMI PANITIA P2KD DESA KALISALAK 2026*\n\nYth. Bpk/Ibu *${agt.namaLengkap}*\nJabatan: *${agt.jabatan}*\nSeksi: *${agt.seksiLabel}*\nPenugasan: *${agt.assignedTps || "Semua Wilayah Desa"}*\n\nBerikut kredensial login portal administrasi Pilkades:\n🌐 *Link Portal*: ${portalUrl}\n👤 *Username*: \`${agt.username}\`\n🔑 *Kata Sandi*: \`${passwordUsed}\`\n\n_Mohon jaga kerahasiaan kredensial ini sesuai pakta integritas panitia._`;
   };
 
   const handleCopyCredentials = (agt: AnggotaP2KD) => {

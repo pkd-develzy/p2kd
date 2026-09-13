@@ -5,7 +5,7 @@ import { Logo } from "@/components/ui";
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="w-full border-t border-slate-800 bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 text-slate-100 pt-14 pb-10 mt-auto">
+    <footer className="w-full border-t border-slate-800 bg-linear-to-b from-slate-900 via-slate-900 to-slate-950 text-slate-100 pt-14 pb-10 mt-auto">
       <div className="max-w-7xl mx-auto px-4 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-slate-800 text-xs">
           {/* Col 1 & 2: Identitas Resmi & Kontak */}

@@ -227,7 +227,9 @@ export async function GET(req: Request) {
         id: matched.id,
         nomorRegistrasi: matched.nomorRegistrasi,
         namaLengkap: matched.namaLengkap,
+        nik: matched.nik,
         nikMasked: matched.nikMasked,
+        noKk: matched.noKk,
         noKkMasked: matched.noKkMasked,
         tempatLahir: matched.tempatLahir,
         tanggalLahir: matched.tanggalLahir,
@@ -255,6 +257,122 @@ export async function GET(req: Request) {
     console.error("Error in GET /api/petugas-dpt:", error);
     return NextResponse.json(
       { success: false, message: "Gagal memuat status pendaftaran." },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/petugas-dpt - Edit / Koreksi Data Pendaftaran oleh Warga Pendaftar
+export async function PUT(req: Request) {
+  try {
+    const clientIp = getClientIp(req);
+    const rateLimit = checkRateLimit(`petugas-edit:${clientIp}`, 10, 300); // 10 updates per 5 minutes
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Terlalu banyak permintaan pembaruan data. Silakan tunggu ${rateLimit.resetSeconds} detik.`,
+        },
+        { status: 429 }
+      );
+    }
+
+    await dataStore.ensureSynced();
+    const body = await req.json();
+    const { nomorRegistrasi, noWaAuth, id, ...updatePayload } = body;
+
+    if (!nomorRegistrasi && !id) {
+      return NextResponse.json(
+        { success: false, message: "Nomor Registrasi atau ID pendaftaran wajib disertakan." },
+        { status: 400 }
+      );
+    }
+
+    // Authenticate applicant ownership
+    const matched = nomorRegistrasi && noWaAuth
+      ? dataStore.getPetugasDptByRegAndWa(nomorRegistrasi, noWaAuth)
+      : (id ? dataStore.getPetugasDptList().find((p) => p.id === id && (!noWaAuth || p.nomorWa.replace(/\D/g, "") === noWaAuth.replace(/\D/g, ""))) : null);
+
+    if (!matched) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Otorisasi gagal: Kombinasi Nomor Registrasi dan Nomor WhatsApp tidak cocok.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Protection: Disallow editing if already DITETAPKAN
+    if (matched.status === "DITETAPKAN") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Data Anda telah Ditetapkan secara resmi oleh Panitia P2KD dan tidak dapat diubah lagi secara mandiri. Silakan hubungi Sekretariat P2KD jika terdapat perubahan.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Prepare clean fields
+    const safeUpdates: Record<string, unknown> = {};
+    if (updatePayload.namaLengkap) safeUpdates.namaLengkap = String(updatePayload.namaLengkap).trim();
+    if (updatePayload.nik) {
+      const cleanNik = String(updatePayload.nik).replace(/\D/g, "");
+      if (cleanNik.length === 16) safeUpdates.nik = cleanNik;
+    }
+    if (updatePayload.tempatLahir) safeUpdates.tempatLahir = String(updatePayload.tempatLahir).trim();
+    if (updatePayload.tanggalLahir) safeUpdates.tanggalLahir = String(updatePayload.tanggalLahir).trim();
+    if (updatePayload.jenisKelamin) safeUpdates.jenisKelamin = updatePayload.jenisKelamin;
+    if (updatePayload.noKk) {
+      const cleanKk = String(updatePayload.noKk).replace(/\D/g, "");
+      if (cleanKk.length === 16) safeUpdates.noKk = cleanKk;
+    }
+    if (updatePayload.alamat) safeUpdates.alamat = String(updatePayload.alamat).trim();
+    if (updatePayload.rt) safeUpdates.rt = String(updatePayload.rt);
+    if (updatePayload.rw) {
+      safeUpdates.rw = String(updatePayload.rw);
+      if (!matched.assignedWilayah || matched.assignedWilayah.startsWith("RW ")) {
+        safeUpdates.assignedWilayah = `RW ${updatePayload.rw}`;
+      }
+    }
+    if (updatePayload.dusun) safeUpdates.dusun = String(updatePayload.dusun).trim();
+    if (updatePayload.nomorWa) safeUpdates.nomorWa = String(updatePayload.nomorWa).replace(/\D/g, "");
+    if (updatePayload.isCalonKades !== undefined) safeUpdates.isCalonKades = Boolean(updatePayload.isCalonKades);
+    if (updatePayload.keteranganCalonKades !== undefined) safeUpdates.keteranganCalonKades = String(updatePayload.keteranganCalonKades);
+    if (updatePayload.isTimSukses !== undefined) safeUpdates.isTimSukses = Boolean(updatePayload.isTimSukses);
+    if (updatePayload.keteranganTimSukses !== undefined) safeUpdates.keteranganTimSukses = String(updatePayload.keteranganTimSukses);
+    if (updatePayload.isKepentinganCalon !== undefined) safeUpdates.isKepentinganCalon = Boolean(updatePayload.isKepentinganCalon);
+    if (updatePayload.keteranganKepentingan !== undefined) safeUpdates.keteranganKepentingan = String(updatePayload.keteranganKepentingan);
+    if (updatePayload.tandaTanganUrl) safeUpdates.tandaTanganUrl = String(updatePayload.tandaTanganUrl);
+
+    // If applicant was asked for clarification, reset to MENUNGGU_VERIFIKASI
+    if (matched.status === "PERLU_KLARIFIKASI") {
+      safeUpdates.status = "MENUNGGU_VERIFIKASI";
+    }
+
+    const updated = await dataStore.updatePetugasDpt(
+      matched.id,
+      safeUpdates,
+      `Pendaftar (${matched.namaLengkap})`
+    );
+
+    if (!updated) {
+      return NextResponse.json(
+        { success: false, message: "Gagal menyimpan perubahan data pendaftaran." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Data pendaftaran Anda berhasil diperbarui.",
+      data: updated,
+    });
+  } catch (error) {
+    console.error("Error in PUT /api/petugas-dpt:", error);
+    return NextResponse.json(
+      { success: false, message: "Terjadi kesalahan saat memperbarui data." },
       { status: 500 }
     );
   }

@@ -1135,7 +1135,44 @@ export class SupabaseDbService {
       const payload: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
       };
-      if (data.status) {
+      if (data.namaLengkap !== undefined) payload.nama_lengkap = data.namaLengkap;
+      if (data.nik !== undefined) {
+        payload.nik = data.nik;
+        payload.nik_masked = data.nik.length >= 16 ? `${data.nik.slice(0, 1)}*************${data.nik.slice(-2)}` : data.nik;
+      }
+      if (data.noKk !== undefined) {
+        payload.no_kk = data.noKk;
+        payload.no_kk_masked = data.noKk.length >= 16 ? `${data.noKk.slice(0, 1)}*************${data.noKk.slice(-2)}` : data.noKk;
+      }
+      if (data.tempatLahir !== undefined) payload.tempat_lahir = data.tempatLahir;
+      if (data.tanggalLahir !== undefined) payload.tanggal_lahir = data.tanggalLahir;
+      if (data.jenisKelamin !== undefined) payload.jenis_kelamin = data.jenisKelamin;
+      if (data.alamat !== undefined) payload.alamat = data.alamat;
+      if (data.rt !== undefined) payload.rt = data.rt;
+      if (data.rw !== undefined) payload.rw = data.rw;
+      if (data.dusun !== undefined) payload.dusun = data.dusun;
+      if (data.nomorWa !== undefined) {
+        payload.nomor_wa = data.nomorWa;
+        payload.nomor_whatsapp = data.nomorWa;
+      }
+      if (data.isCalonKades !== undefined) payload.is_calon_kades = data.isCalonKades;
+      if (data.keteranganCalonKades !== undefined) payload.keterangan_calon_kades = data.keteranganCalonKades;
+      if (data.isTimSukses !== undefined) payload.is_tim_sukses = data.isTimSukses;
+      if (data.keteranganTimSukses !== undefined) payload.keterangan_tim_sukses = data.keteranganTimSukses;
+      if (data.isKepentinganCalon !== undefined) {
+        payload.is_kepentingan_calon = data.isKepentinganCalon;
+        payload.is_memiliki_kepentingan = data.isKepentinganCalon;
+      }
+      if (data.keteranganKepentingan !== undefined) payload.keterangan_kepentingan = data.keteranganKepentingan;
+      if (data.persetujuanPernyataan !== undefined) {
+        payload.persetujuan_pernyataan = data.persetujuanPernyataan;
+        payload.surat_pernyataan_signed = data.persetujuanPernyataan;
+      }
+      if (data.tandaTanganUrl !== undefined) {
+        payload.tanda_tangan_url = data.tandaTanganUrl;
+        payload.surat_pernyataan_url = data.tandaTanganUrl;
+      }
+      if (data.status !== undefined) {
         payload.status_verifikasi = data.status;
         payload.status = data.status;
       }
@@ -1144,7 +1181,6 @@ export class SupabaseDbService {
         payload.catatan_panitia = data.catatanPanitia;
       }
       if (data.assignedWilayah !== undefined) {
-        payload.desa = data.assignedWilayah;
         payload.assigned_wilayah = data.assignedWilayah;
       }
 

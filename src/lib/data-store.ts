@@ -1523,6 +1523,43 @@ class SystemDataStore {
     return newPetugas;
   }
 
+  public async updatePetugasDpt(
+    id: string,
+    updateData: Partial<MasterPetugasDpt>,
+    user = "Panitia P2KD"
+  ): Promise<MasterPetugasDpt | null> {
+    const idx = this.petugasDptList.findIndex((p) => p.id === id);
+    if (idx === -1) return null;
+
+    const existing = this.petugasDptList[idx];
+    const now = new Date().toISOString();
+
+    const updated: MasterPetugasDpt = {
+      ...existing,
+      ...updateData,
+      nikMasked: updateData.nik ? (updateData.nik.length >= 16 ? `${updateData.nik.slice(0, 1)}*************${updateData.nik.slice(-2)}` : updateData.nik) : existing.nikMasked,
+      noKkMasked: updateData.noKk ? (updateData.noKk.length >= 16 ? `${updateData.noKk.slice(0, 1)}*************${updateData.noKk.slice(-2)}` : updateData.noKk) : existing.noKkMasked,
+      updatedAt: now,
+    };
+
+    this.petugasDptList[idx] = updated;
+
+    // Sync to Supabase Cloud
+    await SupabaseDbService.updatePetugasDpt(id, updated);
+
+    this.addAuditLog({
+      user,
+      role: user.includes("Pendaftar") || user.includes("WARGA") ? "WARGA_PENDAFTAR" : "PANITIA_P2KD",
+      aksi: "PETUGAS_DPT_UPDATE",
+      entity: "PETUGAS_DPT",
+      target: `${updated.namaLengkap} (${updated.nomorRegistrasi})`,
+      detail: `Pembaruan data pendaftar petugas ${updated.namaLengkap} (${updated.nomorRegistrasi}).`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return updated;
+  }
+
   public async updateStatusPetugasDpt(
     id: string,
     updateData: {
@@ -1532,42 +1569,7 @@ class SystemDataStore {
     },
     user = "Panitia P2KD"
   ): Promise<MasterPetugasDpt | null> {
-    const idx = this.petugasDptList.findIndex((p) => p.id === id);
-    if (idx === -1) return null;
-
-    const existing = this.petugasDptList[idx];
-    const prevStatus = existing.status;
-    const now = new Date().toISOString();
-
-    const updated: MasterPetugasDpt = {
-      ...existing,
-      status: updateData.status !== undefined ? updateData.status : existing.status,
-      catatanPanitia: updateData.catatanPanitia !== undefined ? updateData.catatanPanitia : existing.catatanPanitia,
-      assignedWilayah: updateData.assignedWilayah !== undefined ? updateData.assignedWilayah : existing.assignedWilayah,
-      updatedAt: now,
-    };
-
-    this.petugasDptList[idx] = updated;
-
-    // Sync to Supabase Cloud
-    await SupabaseDbService.updatePetugasDpt(id, {
-      status: updated.status,
-      catatanPanitia: updated.catatanPanitia,
-      assignedWilayah: updated.assignedWilayah,
-      updatedAt: now,
-    });
-
-    this.addAuditLog({
-      user,
-      role: "PANITIA_P2KD",
-      aksi: "PETUGAS_DPT_VERIFIKASI",
-      entity: "PETUGAS_DPT",
-      target: `${updated.namaLengkap} (${updated.nomorRegistrasi})`,
-      detail: `Memperbarui status pendaftar petugas ${updated.namaLengkap}: ${prevStatus} -> ${updated.status}${updateData.assignedWilayah ? `, Penugasan: ${updateData.assignedWilayah}` : ""}.`,
-      ipAddress: "127.0.0.1",
-    });
-
-    return updated;
+    return this.updatePetugasDpt(id, updateData, user);
   }
 
   public async deletePetugasDpt(id: string, user = "Panitia P2KD"): Promise<boolean> {

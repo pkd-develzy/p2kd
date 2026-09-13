@@ -45,7 +45,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, status, catatanPanitia, assignedWilayah } = body;
+    const { id, ...updateFields } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -62,7 +62,7 @@ export async function PUT(req: Request) {
       "DITETAPKAN",
     ];
 
-    if (status && !validStatuses.includes(status as PetugasStatus)) {
+    if (updateFields.status && !validStatuses.includes(updateFields.status as PetugasStatus)) {
       return NextResponse.json(
         { success: false, message: "Format status verifikasi tidak valid." },
         { status: 400 }
@@ -71,13 +71,9 @@ export async function PUT(req: Request) {
 
     const operatorName = session.user.nama || session.user.username;
 
-    const updated = await dataStore.updateStatusPetugasDpt(
+    const updated = await dataStore.updatePetugasDpt(
       id,
-      {
-        status: status as PetugasStatus,
-        catatanPanitia,
-        assignedWilayah,
-      },
+      updateFields,
       operatorName
     );
 
@@ -90,13 +86,13 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Status pendaftar ${updated.namaLengkap} berhasil diperbarui menjadi ${updated.status}.`,
+      message: `Data pendaftar ${updated.namaLengkap} berhasil diperbarui.`,
       data: updated,
     });
   } catch (error) {
     console.error("Error in PUT /api/admin/petugas-dpt:", error);
     return NextResponse.json(
-      { success: false, message: "Gagal memperbarui status pendaftar petugas DPT." },
+      { success: false, message: "Gagal memperbarui data pendaftar petugas DPT." },
       { status: 500 }
     );
   }

@@ -24,10 +24,13 @@ import {
   Check,
   FileSpreadsheet,
   MessageSquare,
+  Edit3,
+  Save,
+  Info,
 } from "lucide-react";
 import { MasterPetugasDpt, PetugasStatus } from "@/lib/data-store";
 import { downloadPetugasPdf } from "@/lib/petugas-pdf-generator";
-import { DAFTAR_RW_KALISALAK } from "@/lib/kalisalak-wilayah";
+import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK } from "@/lib/kalisalak-wilayah";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Card, Badge, PaginationControl, ConfirmDialog } from "@/components/ui";
@@ -53,13 +56,36 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  // Selected for Modal
+  // Selected for Modal & Edit Mode
   const [selectedPetugas, setSelectedPetugas] = useState<MasterPetugasDpt | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [editStatus, setEditStatus] = useState<PetugasStatus>("MENUNGGU_VERIFIKASI");
   const [editCatatan, setEditCatatan] = useState("");
   const [editWilayah, setEditWilayah] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Edit Form Fields
+  const [editFormData, setEditFormData] = useState({
+    namaLengkap: "",
+    nik: "",
+    noKk: "",
+    tempatLahir: "",
+    tanggalLahir: "",
+    jenisKelamin: "L" as "L" | "P",
+    nomorWa: "",
+    alamat: "",
+    rt: "01",
+    rw: "01",
+    dusun: "Desa Kalisalak",
+    assignedWilayah: "RW 01",
+    isCalonKades: false,
+    keteranganCalonKades: "",
+    isTimSukses: false,
+    keteranganTimSukses: "",
+    isKepentinganCalon: false,
+    keteranganKepentingan: "",
+  });
 
   // Format helper for timestamps
   const formatTanggalWaktu = (val?: string) => {
@@ -148,41 +174,73 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   }, [petugasList]);
 
   // Open Detail Modal
-  const handleOpenDetail = (p: MasterPetugasDpt) => {
+  const handleOpenDetail = (p: MasterPetugasDpt, startInEdit = false) => {
     setSelectedPetugas(p);
+    setIsEditMode(startInEdit);
     setEditStatus(p.status);
     setEditCatatan(p.catatanPanitia || "");
     setEditWilayah(p.assignedWilayah || `RW ${p.rw}`);
+    setEditFormData({
+      namaLengkap: p.namaLengkap || "",
+      nik: p.nik || "",
+      noKk: p.noKk || "",
+      tempatLahir: p.tempatLahir || "",
+      tanggalLahir: p.tanggalLahir || "",
+      jenisKelamin: p.jenisKelamin || "L",
+      nomorWa: p.nomorWa || "",
+      alamat: p.alamat || "",
+      rt: p.rt || "01",
+      rw: p.rw || "01",
+      dusun: p.dusun || "Desa Kalisalak",
+      assignedWilayah: p.assignedWilayah || `RW ${p.rw}`,
+      isCalonKades: Boolean(p.isCalonKades),
+      keteranganCalonKades: p.keteranganCalonKades || "",
+      isTimSukses: Boolean(p.isTimSukses),
+      keteranganTimSukses: p.keteranganTimSukses || "",
+      isKepentinganCalon: Boolean(p.isKepentinganCalon),
+      keteranganKepentingan: p.keteranganKepentingan || "",
+    });
     setFeedbackMsg(null);
   };
 
   // Close Modal
   const handleCloseDetail = () => {
     setSelectedPetugas(null);
+    setIsEditMode(false);
     setFeedbackMsg(null);
   };
 
-  // Save Verification
+  // Save Verification / Full Edit
   const handleSaveVerification = async () => {
     if (!selectedPetugas) return;
     setIsSaving(true);
     setFeedbackMsg(null);
 
     try {
+      const payload = isEditMode
+        ? {
+            id: selectedPetugas.id,
+            ...editFormData,
+            status: editStatus,
+            catatanPanitia: editCatatan.trim(),
+            assignedWilayah: editFormData.assignedWilayah || editWilayah.trim(),
+          }
+        : {
+            id: selectedPetugas.id,
+            status: editStatus,
+            catatanPanitia: editCatatan.trim(),
+            assignedWilayah: editWilayah.trim(),
+          };
+
       const res = await fetch("/api/admin/petugas-dpt", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: selectedPetugas.id,
-          status: editStatus,
-          catatanPanitia: editCatatan.trim(),
-          assignedWilayah: editWilayah.trim(),
-        }),
+        body: JSON.stringify(payload),
       });
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setFeedbackMsg({ type: "error", text: json.message || "Gagal menyimpan verifikasi." });
+        setFeedbackMsg({ type: "error", text: json.message || "Gagal menyimpan data pendaftar." });
         setIsSaving(false);
         return;
       }
@@ -192,10 +250,12 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         prev.map((item) => (item.id === selectedPetugas.id ? json.data : item))
       );
       setSelectedPetugas(json.data);
+      setIsEditMode(false);
       setFeedbackMsg({
         type: "success",
-        text: `Status berhasil diperbarui menjadi ${json.data.status}. Log audit telah dicatat.`,
+        text: `Data pendaftar ${json.data.namaLengkap} berhasil disimpan ke database.`,
       });
+      toast.success("Berhasil Disimpan", `Data ${json.data.namaLengkap} berhasil diperbarui.`);
     } catch {
       setFeedbackMsg({ type: "error", text: "Terjadi kesalahan jaringan saat menyimpan data." });
     } finally {
@@ -664,6 +724,15 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                             <Eye className="w-4 h-4" />
                           </button>
 
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetail(item, true)}
+                            className="p-1.5 rounded-lg text-amber-700 bg-amber-50 hover:bg-amber-100 transition-all"
+                            title="Koreksi / Edit Data Pendaftar"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+
                           <a
                             href={getWhatsAppNotificationUrl(item)}
                             target="_blank"
@@ -718,39 +787,69 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         )}
       </Card>
 
-      {/* DETAIL & VERIFICATION MODAL */}
+      {/* DETAIL & VERIFICATION / EDIT MODAL */}
       {selectedPetugas && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+            <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
-                  <UserCheck className="w-5 h-5" />
+                <div
+                  className={`p-2 rounded-xl shrink-0 ${
+                    isEditMode ? "bg-amber-100 text-amber-800" : "bg-blue-100 text-blue-700"
+                  }`}
+                >
+                  {isEditMode ? <Edit3 className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">
-                    Pemeriksaan Berkas: {selectedPetugas.namaLengkap}
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                    {isEditMode ? "Edit / Koreksi Data Pendaftar" : "Pemeriksaan Berkas"}:{" "}
+                    {selectedPetugas.namaLengkap}
                   </h3>
                   <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
                     <span>{selectedPetugas.nomorRegistrasi}</span>
                     <span>•</span>
-                    <span>NIK: {selectedPetugas.nik}</span>
+                    <span>NIK: {isEditMode ? editFormData.nik : selectedPetugas.nik}</span>
                   </div>
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleCloseDetail}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs ${
+                    isEditMode
+                      ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                  }`}
+                  title={isEditMode ? "Beralih ke Tinjauan Berkas" : "Beralih ke Form Edit Data"}
+                >
+                  {isEditMode ? (
+                    <>
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Mode Tinjauan</span>
+                    </>
+                  ) : (
+                    <>
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Edit Data</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCloseDetail}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto space-y-6 text-xs sm:text-sm flex-1">
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-6 text-xs sm:text-sm flex-1">
               {/* Feedback alert */}
               {feedbackMsg && (
                 <div
@@ -769,195 +868,479 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                 </div>
               )}
 
-              {/* 1. Biodata Table */}
-              <div className="space-y-2">
-                <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-900">
-                  <MapPin className="w-4 h-4" /> 1. Data Biodata & Domisili
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Nama Lengkap</span>
-                    <strong className="text-slate-900">{selectedPetugas.namaLengkap}</strong>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">NIK</span>
-                    <span className="font-mono text-slate-900">{selectedPetugas.nik}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Nomor KK</span>
-                    <span className="font-mono text-slate-900">{selectedPetugas.noKk}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Tempat, Tgl Lahir</span>
-                    <span className="text-slate-900">
-                      {selectedPetugas.tempatLahir}, {selectedPetugas.tanggalLahir}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Jenis Kelamin</span>
-                    <span className="text-slate-900">
-                      {selectedPetugas.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Nomor WhatsApp</span>
-                    <span className="font-mono text-slate-900 font-semibold">{selectedPetugas.nomorWa}</span>
-                  </div>
-                  <div className="col-span-2 sm:col-span-3 pt-1 border-t border-slate-200">
-                    <span className="text-[10px] text-slate-400 block uppercase font-bold">Alamat Lengkap</span>
-                    <span className="text-slate-900">
-                      {selectedPetugas.alamat}, RT {selectedPetugas.rt} / RW {selectedPetugas.rw}, Desa Kalisalak
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. Hasil Skrining Netralitas */}
-              <div className="space-y-2">
-                <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-amber-900">
-                  <ShieldCheck className="w-4 h-4 text-amber-600" /> 2. Hasil Uji Netralitas & Potensi Afiliasi
-                </h4>
-                <div className="space-y-2.5 bg-amber-50/50 p-3.5 rounded-xl border border-amber-200">
-                  {/* Q1 */}
-                  <div className="p-2 rounded bg-white border border-amber-200/80">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-800">Calon Kepala Desa?</span>
-                      <strong className={selectedPetugas.isCalonKades ? "text-rose-600 font-black" : "text-emerald-700"}>
-                        {selectedPetugas.isCalonKades ? "YA" : "TIDAK"}
-                      </strong>
-                    </div>
-                    {selectedPetugas.keteranganCalonKades && (
-                      <div className="mt-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border">
-                        <em>Keterangan:</em> {selectedPetugas.keteranganCalonKades}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Q2 */}
-                  <div className="p-2 rounded bg-white border border-amber-200/80">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-800">Tim Sukses / Relawan Calon?</span>
-                      <strong className={selectedPetugas.isTimSukses ? "text-rose-600 font-black" : "text-emerald-700"}>
-                        {selectedPetugas.isTimSukses ? "YA" : "TIDAK"}
-                      </strong>
-                    </div>
-                    {selectedPetugas.keteranganTimSukses && (
-                      <div className="mt-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border">
-                        <em>Keterangan:</em> {selectedPetugas.keteranganTimSukses}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Q3 */}
-                  <div className="p-2 rounded bg-white border border-amber-200/80">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-slate-800">Kepentingan / Hubungan dengan Calon?</span>
-                      <strong className={selectedPetugas.isKepentinganCalon ? "text-rose-600 font-black" : "text-emerald-700"}>
-                        {selectedPetugas.isKepentinganCalon ? "YA" : "TIDAK"}
-                      </strong>
-                    </div>
-                    {selectedPetugas.keteranganKepentingan && (
-                      <div className="mt-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border">
-                        <em>Keterangan:</em> {selectedPetugas.keteranganKepentingan}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Tanda Tangan Digital & Pernyataan */}
-              <div className="space-y-2">
-                <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-purple-900">
-                  <PenTool className="w-4 h-4 text-purple-600" /> 3. Tanda Tangan Digital & Pernyataan
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-50/40 p-3.5 rounded-xl border border-purple-200">
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-semibold text-slate-700 block">
-                      Status Surat Pernyataan Netralitas:
-                    </span>
-                    <div className="flex items-center gap-1.5 text-emerald-700 font-bold bg-white p-2 rounded-lg border border-purple-200">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      Disetujui 8 Poin Pernyataan
-                    </div>
-                    <span className="text-[10px] text-slate-400 block pt-1">
-                      Waktu Registrasi: {formatTanggalWaktu(selectedPetugas.tanggalPendaftaran)}
+              {/* ===================== MODE EDIT DATA (ADMIN) ===================== */}
+              {isEditMode ? (
+                <div className="space-y-5">
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-2">
+                    <Info className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Mode Koreksi Data Admin:</strong> Seluruh perubahan data (biodata, kontak, RT/RW, dan jawaban integritas) akan langsung diperbarui ke database Supabase dan tercatat pada audit log panitia.
                     </span>
                   </div>
 
-                  <div className="space-y-1">
-                    <span className="text-[11px] font-semibold text-slate-700 block">
-                      Spesimen Tanda Tangan Layar HP:
-                    </span>
-                    <div className="bg-white p-2 rounded-lg border border-purple-200 flex items-center justify-center min-h-24">
-                      {selectedPetugas.tandaTanganUrl ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                          src={selectedPetugas.tandaTanganUrl}
-                          alt="Tanda Tangan Pendaftar"
-                          className="max-h-20 max-w-full object-contain"
+                  {/* 1. Biodata Kependudukan */}
+                  <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-900">
+                      <UserCheck className="w-4 h-4 text-blue-600" /> 1. Data Kependudukan & Biodata
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Nama Lengkap:</label>
+                        <input
+                          type="text"
+                          value={editFormData.namaLengkap}
+                          onChange={(e) => setEditFormData({ ...editFormData, namaLengkap: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:border-blue-500 outline-none"
                         />
-                      ) : (
-                        <span className="text-slate-400 italic">Tidak ada spesimen tanda tangan</span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Nomor WhatsApp:</label>
+                        <input
+                          type="text"
+                          value={editFormData.nomorWa}
+                          onChange={(e) => setEditFormData({ ...editFormData, nomorWa: e.target.value.replace(/\D/g, "") })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-slate-900 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">NIK (16 Digit):</label>
+                        <input
+                          type="text"
+                          maxLength={16}
+                          value={editFormData.nik}
+                          onChange={(e) => setEditFormData({ ...editFormData, nik: e.target.value.replace(/\D/g, "") })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-slate-900 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Nomor Kartu Keluarga (KK):</label>
+                        <input
+                          type="text"
+                          maxLength={16}
+                          value={editFormData.noKk}
+                          onChange={(e) => setEditFormData({ ...editFormData, noKk: e.target.value.replace(/\D/g, "") })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-slate-900 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Tempat Lahir:</label>
+                        <input
+                          type="text"
+                          value={editFormData.tempatLahir}
+                          onChange={(e) => setEditFormData({ ...editFormData, tempatLahir: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Tanggal Lahir:</label>
+                        <input
+                          type="date"
+                          value={editFormData.tanggalLahir}
+                          onChange={(e) => setEditFormData({ ...editFormData, tanggalLahir: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Jenis Kelamin:</label>
+                        <select
+                          value={editFormData.jenisKelamin}
+                          onChange={(e) => setEditFormData({ ...editFormData, jenisKelamin: e.target.value as "L" | "P" })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                        >
+                          <option value="L">Laki-laki (L)</option>
+                          <option value="P">Perempuan (P)</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Dusun / Wilayah:</label>
+                        <input
+                          type="text"
+                          value={editFormData.dusun}
+                          onChange={(e) => setEditFormData({ ...editFormData, dusun: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2 space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Alamat Lengkap (Jalan / Gang / RT / RW):</label>
+                        <input
+                          type="text"
+                          value={editFormData.alamat}
+                          onChange={(e) => setEditFormData({ ...editFormData, alamat: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Wilayah Domisili Kalisalak */}
+                  <div className="space-y-3 bg-blue-50/50 p-4 rounded-xl border border-blue-200">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-900">
+                      <MapPin className="w-4 h-4 text-blue-600" /> 2. Wilayah Domisili (RW & RT)
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Pilihan Rukun Warga (RW):</label>
+                        <select
+                          value={editFormData.rw}
+                          onChange={(e) => {
+                            const newRw = e.target.value;
+                            setEditFormData({
+                              ...editFormData,
+                              rw: newRw,
+                              assignedWilayah: `RW ${newRw}`,
+                            });
+                            setEditWilayah(`RW ${newRw}`);
+                          }}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-blue-900 focus:border-blue-500 outline-none"
+                        >
+                          {DAFTAR_RW_KALISALAK.map((rw) => (
+                            <option key={rw.value} value={rw.value}>
+                              {rw.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Pilihan Rukun Tetangga (RT):</label>
+                        <select
+                          value={editFormData.rt}
+                          onChange={(e) => setEditFormData({ ...editFormData, rt: e.target.value })}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
+                        >
+                          {DAFTAR_RT_KALISALAK.map((rt) => (
+                            <option key={rt.value} value={rt.value}>
+                              {rt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Uji Netralitas & Integritas */}
+                  <div className="space-y-3 bg-amber-50/40 p-4 rounded-xl border border-amber-200">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-amber-900">
+                      <ShieldCheck className="w-4 h-4 text-amber-600" /> 3. Uji Integritas & Afiliasi Calon
+                    </h4>
+
+                    {/* Q1 */}
+                    <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.isCalonKades}
+                          onChange={(e) => setEditFormData({ ...editFormData, isCalonKades: e.target.checked })}
+                          className="w-4 h-4 text-amber-600 rounded"
+                        />
+                        <span className="font-semibold text-slate-800">Pendaftar adalah Calon Kepala Desa</span>
+                      </label>
+                      {editFormData.isCalonKades && (
+                        <input
+                          type="text"
+                          value={editFormData.keteranganCalonKades}
+                          onChange={(e) => setEditFormData({ ...editFormData, keteranganCalonKades: e.target.value })}
+                          placeholder="Keterangan pencalonan..."
+                          className="w-full px-3 py-1.5 rounded-lg border border-amber-300 text-xs outline-none"
+                        />
+                      )}
+                    </div>
+
+                    {/* Q2 */}
+                    <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.isTimSukses}
+                          onChange={(e) => setEditFormData({ ...editFormData, isTimSukses: e.target.checked })}
+                          className="w-4 h-4 text-amber-600 rounded"
+                        />
+                        <span className="font-semibold text-slate-800">Pendaftar adalah Tim Sukses / Relawan Calon</span>
+                      </label>
+                      {editFormData.isTimSukses && (
+                        <input
+                          type="text"
+                          value={editFormData.keteranganTimSukses}
+                          onChange={(e) => setEditFormData({ ...editFormData, keteranganTimSukses: e.target.value })}
+                          placeholder="Keterangan tim sukses..."
+                          className="w-full px-3 py-1.5 rounded-lg border border-amber-300 text-xs outline-none"
+                        />
+                      )}
+                    </div>
+
+                    {/* Q3 */}
+                    <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={editFormData.isKepentinganCalon}
+                          onChange={(e) => setEditFormData({ ...editFormData, isKepentinganCalon: e.target.checked })}
+                          className="w-4 h-4 text-amber-600 rounded"
+                        />
+                        <span className="font-semibold text-slate-800">Ada Hubungan Keluarga / Kepentingan dengan Calon</span>
+                      </label>
+                      {editFormData.isKepentinganCalon && (
+                        <input
+                          type="text"
+                          value={editFormData.keteranganKepentingan}
+                          onChange={(e) => setEditFormData({ ...editFormData, keteranganKepentingan: e.target.value })}
+                          placeholder="Keterangan kepentingan/hubungan..."
+                          className="w-full px-3 py-1.5 rounded-lg border border-amber-300 text-xs outline-none"
+                        />
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
 
-              {/* 4. Form Tindakan Panitia (Verifikasi & Penetapan) */}
-              <div className="space-y-3 pt-3 border-t border-slate-200">
-                <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-900">
-                  <FileCheck2 className="w-4 h-4 text-blue-600" /> 4. Keputusan & Tindakan Panitia P2KD
-                </h4>
+                  {/* 4. Keputusan & Penugasan Panitia */}
+                  <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-900">
+                      <FileCheck2 className="w-4 h-4 text-blue-600" /> 4. Keputusan & Penugasan Wilayah Panitia
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Status Pendaftar:</label>
+                        <select
+                          value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value as PetugasStatus)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
+                        >
+                          <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
+                          <option value="PERLU_KLARIFIKASI">Perlu Klarifikasi</option>
+                          <option value="LOLOS">Lolos Seleksi Administrasi</option>
+                          <option value="DITETAPKAN">Ditetapkan Sebagai Petugas</option>
+                          <option value="TIDAK_LOLOS">Tidak Lolos</option>
+                        </select>
+                      </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Status Dropdown */}
-                  <div className="space-y-1">
-                    <label className="font-semibold text-slate-700 text-xs">
-                      Ubah Status Verifikasi:
-                    </label>
-                    <select
-                      value={editStatus}
-                      onChange={(e) => setEditStatus(e.target.value as PetugasStatus)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
-                    >
-                      <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
-                      <option value="PERLU_KLARIFIKASI">Perlu Klarifikasi</option>
-                      <option value="LOLOS">Lolos Seleksi Administrasi</option>
-                      <option value="DITETAPKAN">Ditetapkan Sebagai Petugas</option>
-                      <option value="TIDAK_LOLOS">Tidak Lolos</option>
-                    </select>
-                  </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Penugasan Wilayah Kerja:</label>
+                        <input
+                          type="text"
+                          value={editWilayah}
+                          onChange={(e) => {
+                            setEditWilayah(e.target.value);
+                            setEditFormData({ ...editFormData, assignedWilayah: e.target.value });
+                          }}
+                          placeholder="Contoh: RW 03"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
+                        />
+                      </div>
 
-                  {/* Wilayah Penugasan */}
-                  <div className="space-y-1">
-                    <label className="font-semibold text-slate-700 text-xs">
-                      Penugasan Wilayah Kerja (RW):
-                    </label>
-                    <input
-                      type="text"
-                      value={editWilayah}
-                      onChange={(e) => setEditWilayah(e.target.value)}
-                      placeholder="Contoh: RW 02"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none font-semibold text-slate-800"
-                    />
-                  </div>
-
-                  {/* Catatan Panitia */}
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="font-semibold text-slate-700 text-xs">
-                      Catatan / Instruksi Panitia (Dapat dilihat pendaftar saat cek status):
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={editCatatan}
-                      onChange={(e) => setEditCatatan(e.target.value)}
-                      placeholder="Contoh: Berkas telah diverifikasi sah. Silakan hadir Bimtek hari Sabtu pkl 09.00 di Balai Desa."
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none text-xs"
-                    />
+                      <div className="sm:col-span-2 space-y-1">
+                        <label className="text-[11px] font-bold text-slate-700">Catatan / Instruksi Panitia:</label>
+                        <textarea
+                          rows={2}
+                          value={editCatatan}
+                          onChange={(e) => setEditCatatan(e.target.value)}
+                          placeholder="Catatan resmi panitia untuk pendaftar..."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs outline-none"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* ===================== MODE TINJAUAN BERKAS ===================== */
+                <>
+                  {/* 1. Biodata Table */}
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-900">
+                      <MapPin className="w-4 h-4" /> 1. Data Biodata & Domisili
+                    </h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Nama Lengkap</span>
+                        <strong className="text-slate-900">{selectedPetugas.namaLengkap}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">NIK</span>
+                        <span className="font-mono text-slate-900">{selectedPetugas.nik}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Nomor KK</span>
+                        <span className="font-mono text-slate-900">{selectedPetugas.noKk}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Tempat, Tgl Lahir</span>
+                        <span className="text-slate-900">
+                          {selectedPetugas.tempatLahir}, {selectedPetugas.tanggalLahir}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Jenis Kelamin</span>
+                        <span className="text-slate-900">
+                          {selectedPetugas.jenisKelamin === "L" ? "Laki-laki" : "Perempuan"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Nomor WhatsApp</span>
+                        <span className="font-mono text-slate-900 font-semibold">{selectedPetugas.nomorWa}</span>
+                      </div>
+                      <div className="col-span-2 sm:col-span-3 pt-1 border-t border-slate-200">
+                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Alamat Lengkap</span>
+                        <span className="text-slate-900">
+                          {selectedPetugas.alamat}, RT {selectedPetugas.rt} / RW {selectedPetugas.rw}, Desa Kalisalak
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 2. Hasil Skrining Netralitas */}
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-amber-900">
+                      <ShieldCheck className="w-4 h-4 text-amber-600" /> 2. Hasil Uji Netralitas & Potensi Afiliasi
+                    </h4>
+                    <div className="space-y-2.5 bg-amber-50/50 p-3.5 rounded-xl border border-amber-200">
+                      {/* Q1 */}
+                      <div className="p-2 rounded bg-white border border-amber-200/80">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-800">Calon Kepala Desa?</span>
+                          <strong className={selectedPetugas.isCalonKades ? "text-rose-600 font-black" : "text-emerald-700"}>
+                            {selectedPetugas.isCalonKades ? "YA" : "TIDAK"}
+                          </strong>
+                        </div>
+                        {selectedPetugas.keteranganCalonKades && (
+                          <div className="mt-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border">
+                            <em>Keterangan:</em> {selectedPetugas.keteranganCalonKades}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Q2 */}
+                      <div className="p-2 rounded bg-white border border-amber-200/80">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-800">Tim Sukses / Relawan Calon?</span>
+                          <strong className={selectedPetugas.isTimSukses ? "text-rose-600 font-black" : "text-emerald-700"}>
+                            {selectedPetugas.isTimSukses ? "YA" : "TIDAK"}
+                          </strong>
+                        </div>
+                        {selectedPetugas.keteranganTimSukses && (
+                          <div className="mt-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border">
+                            <em>Keterangan:</em> {selectedPetugas.keteranganTimSukses}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Q3 */}
+                      <div className="p-2 rounded bg-white border border-amber-200/80">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-slate-800">Kepentingan / Hubungan dengan Calon?</span>
+                          <strong className={selectedPetugas.isKepentinganCalon ? "text-rose-600 font-black" : "text-emerald-700"}>
+                            {selectedPetugas.isKepentinganCalon ? "YA" : "TIDAK"}
+                          </strong>
+                        </div>
+                        {selectedPetugas.keteranganKepentingan && (
+                          <div className="mt-1 text-[11px] text-slate-600 bg-slate-50 p-2 rounded border">
+                            <em>Keterangan:</em> {selectedPetugas.keteranganKepentingan}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3. Tanda Tangan Digital & Pernyataan */}
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-purple-900">
+                      <PenTool className="w-4 h-4 text-purple-600" /> 3. Tanda Tangan Digital & Pernyataan
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-50/40 p-3.5 rounded-xl border border-purple-200">
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-semibold text-slate-700 block">
+                          Status Surat Pernyataan Netralitas:
+                        </span>
+                        <div className="flex items-center gap-1.5 text-emerald-700 font-bold bg-white p-2 rounded-lg border border-purple-200">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          Disetujui 8 Poin Pernyataan
+                        </div>
+                        <span className="text-[10px] text-slate-400 block pt-1">
+                          Waktu Registrasi: {formatTanggalWaktu(selectedPetugas.tanggalPendaftaran)}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-semibold text-slate-700 block">
+                          Spesimen Tanda Tangan Layar HP:
+                        </span>
+                        <div className="bg-white p-2 rounded-lg border border-purple-200 flex items-center justify-center min-h-24">
+                          {selectedPetugas.tandaTanganUrl ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={selectedPetugas.tandaTanganUrl}
+                              alt="Tanda Tangan Pendaftar"
+                              className="max-h-20 max-w-full object-contain"
+                            />
+                          ) : (
+                            <span className="text-slate-400 italic">Tidak ada spesimen tanda tangan</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Form Tindakan Panitia (Verifikasi & Penetapan) */}
+                  <div className="space-y-3 pt-3 border-t border-slate-200">
+                    <h4 className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 text-blue-900">
+                      <FileCheck2 className="w-4 h-4 text-blue-600" /> 4. Keputusan & Tindakan Panitia P2KD
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Status Dropdown */}
+                      <div className="space-y-1">
+                        <label className="font-semibold text-slate-700 text-xs">
+                          Ubah Status Verifikasi:
+                        </label>
+                        <select
+                          value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value as PetugasStatus)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
+                        >
+                          <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
+                          <option value="PERLU_KLARIFIKASI">Perlu Klarifikasi</option>
+                          <option value="LOLOS">Lolos Seleksi Administrasi</option>
+                          <option value="DITETAPKAN">Ditetapkan Sebagai Petugas</option>
+                          <option value="TIDAK_LOLOS">Tidak Lolos</option>
+                        </select>
+                      </div>
+
+                      {/* Wilayah Penugasan */}
+                      <div className="space-y-1">
+                        <label className="font-semibold text-slate-700 text-xs">
+                          Penugasan Wilayah Kerja (RW):
+                        </label>
+                        <input
+                          type="text"
+                          value={editWilayah}
+                          onChange={(e) => setEditWilayah(e.target.value)}
+                          placeholder="Contoh: RW 02"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none font-semibold text-slate-800"
+                        />
+                      </div>
+
+                      {/* Catatan Panitia */}
+                      <div className="space-y-1 sm:col-span-2">
+                        <label className="font-semibold text-slate-700 text-xs">
+                          Catatan / Instruksi Panitia (Dapat dilihat pendaftar saat cek status):
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={editCatatan}
+                          onChange={(e) => setEditCatatan(e.target.value)}
+                          placeholder="Contoh: Berkas telah diverifikasi sah. Silakan hadir Bimtek hari Sabtu pkl 09.00 di Balai Desa."
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none text-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Modal Footer Actions */}
@@ -1006,17 +1389,26 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                   type="button"
                   onClick={handleSaveVerification}
                   disabled={isSaving}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-2 shadow-md shadow-blue-600/20 disabled:opacity-50 transition-all"
+                  className={`px-5 py-2 rounded-xl text-xs font-bold text-white flex items-center gap-2 shadow-md disabled:opacity-50 transition-all ${
+                    isEditMode
+                      ? "bg-amber-600 hover:bg-amber-700 shadow-amber-600/20"
+                      : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
+                  }`}
                 >
                   {isSaving ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                       Menyimpan...
                     </>
+                  ) : isEditMode ? (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      Simpan Perubahan Data
+                    </>
                   ) : (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      Simpan Keputusan & Log Audit
+                      Simpan Keputusan Panitia
                     </>
                   )}
                 </button>

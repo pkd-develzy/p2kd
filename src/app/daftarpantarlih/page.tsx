@@ -20,6 +20,9 @@ import {
   Info,
   Calendar,
   Lock,
+  Edit3,
+  Save,
+  X,
 } from "lucide-react";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK } from "@/lib/kalisalak-wilayah";
@@ -74,6 +77,120 @@ export default function PendaftaranPetugasPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [statusResult, setStatusResult] = useState<MasterPetugasDpt | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Public Edit States (Pendaftar)
+  const [isEditingPublic, setIsEditingPublic] = useState(false);
+  const [publicEditData, setPublicEditData] = useState({
+    namaLengkap: "",
+    nik: "",
+    noKk: "",
+    tempatLahir: "",
+    tanggalLahir: "",
+    jenisKelamin: "L" as "L" | "P",
+    nomorWa: "",
+    alamat: "",
+    rt: "01",
+    rw: "01",
+    dusun: "Desa Kalisalak",
+    isCalonKades: false,
+    keteranganCalonKades: "",
+    isTimSukses: false,
+    keteranganTimSukses: "",
+    isKepentinganCalon: false,
+    keteranganKepentingan: "",
+  });
+  const [publicEditSignature, setPublicEditSignature] = useState<string | null>(null);
+  const [isSavingPublicEdit, setIsSavingPublicEdit] = useState(false);
+  const [publicEditSuccess, setPublicEditSuccess] = useState<string | null>(null);
+  const [publicEditError, setPublicEditError] = useState<string | null>(null);
+
+  // Start Public Edit
+  const handleStartPublicEdit = () => {
+    if (!statusResult) return;
+    setPublicEditData({
+      namaLengkap: statusResult.namaLengkap || "",
+      nik: statusResult.nik || "",
+      noKk: statusResult.noKk || "",
+      tempatLahir: statusResult.tempatLahir || "",
+      tanggalLahir: statusResult.tanggalLahir || "",
+      jenisKelamin: (statusResult.jenisKelamin as "L" | "P") || "L",
+      nomorWa: statusResult.nomorWa || "",
+      alamat: statusResult.alamat || "",
+      rt: statusResult.rt || "01",
+      rw: statusResult.rw || "01",
+      dusun: statusResult.dusun || "Desa Kalisalak",
+      isCalonKades: Boolean(statusResult.isCalonKades),
+      keteranganCalonKades: statusResult.keteranganCalonKades || "",
+      isTimSukses: Boolean(statusResult.isTimSukses),
+      keteranganTimSukses: statusResult.keteranganTimSukses || "",
+      isKepentinganCalon: Boolean(statusResult.isKepentinganCalon),
+      keteranganKepentingan: statusResult.keteranganKepentingan || "",
+    });
+    setPublicEditSignature(null);
+    setIsEditingPublic(true);
+    setPublicEditSuccess(null);
+    setPublicEditError(null);
+  };
+
+  // Save Public Edit
+  const handleSavePublicEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!statusResult) return;
+    setPublicEditError(null);
+    setPublicEditSuccess(null);
+
+    const cleanNik = publicEditData.nik.replace(/\D/g, "");
+    if (cleanNik && cleanNik.length !== 16) {
+      setPublicEditError("NIK harus tepat 16 digit angka.");
+      return;
+    }
+    const cleanKk = publicEditData.noKk.replace(/\D/g, "");
+    if (cleanKk && cleanKk.length !== 16) {
+      setPublicEditError("Nomor Kartu Keluarga (KK) harus tepat 16 digit angka.");
+      return;
+    }
+    const cleanWa = publicEditData.nomorWa.replace(/\D/g, "");
+    if (cleanWa.length < 9) {
+      setPublicEditError("Nomor WhatsApp minimal 9 digit angka.");
+      return;
+    }
+
+    setIsSavingPublicEdit(true);
+
+    try {
+      const authWa = searchWa.replace(/\D/g, "") || statusResult.nomorWa.replace(/\D/g, "");
+      const res = await fetch("/api/petugas-dpt", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nomorRegistrasi: statusResult.nomorRegistrasi,
+          noWaAuth: authWa,
+          ...publicEditData,
+          nik: cleanNik,
+          noKk: cleanKk,
+          nomorWa: cleanWa,
+          ...(publicEditSignature ? { tandaTanganUrl: publicEditSignature } : {}),
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setPublicEditError(json.message || "Gagal memperbarui data pendaftaran.");
+        setIsSavingPublicEdit(false);
+        return;
+      }
+
+      setStatusResult(json.data);
+      setIsEditingPublic(false);
+      setPublicEditSuccess(
+        "Data pendaftaran Anda berhasil diperbarui! Berkas Anda kini tercatat dan siap diverifikasi oleh Panitia P2KD."
+      );
+    } catch {
+      setPublicEditError("Terjadi kendala koneksi ke server. Silakan coba kembali.");
+    } finally {
+      setIsSavingPublicEdit(false);
+    }
+  };
 
   // Handle Input Changes
   const handleChange = (
@@ -1147,31 +1264,418 @@ export default function PendaftaranPetugasPage() {
                   </div>
                 </div>
 
-                {/* Action Buttons to re-download PDFs */}
-                <div className="pt-2 space-y-2.5">
-                  <span className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
-                    Unduh Dokumen Berkas Anda:
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => downloadPetugasPdf(statusResult, "pernyataan")}
-                      className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-blue-700 hover:bg-blue-800 text-white flex items-center justify-center gap-2 shadow-sm transition-all"
-                    >
-                      <Download className="w-4 h-4" />
-                      Surat Pernyataan (PDF)
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => downloadPetugasPdf(statusResult, "bukti")}
-                      className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-950 text-white flex items-center justify-center gap-2 shadow-sm transition-all"
-                    >
-                      <Download className="w-4 h-4" />
-                      Tanda Bukti Pendaftaran (PDF)
-                    </button>
+                {/* Success Alert after public edit */}
+                {publicEditSuccess && (
+                  <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs sm:text-sm text-emerald-900 flex items-start gap-2.5">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="block font-bold">Pembaruan Berhasil Disimpan!</strong>
+                      <span>{publicEditSuccess}</span>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* FORM EDIT DATA MANDIRI OLEH PENDAFTAR */}
+                {isEditingPublic ? (
+                  <form onSubmit={handleSavePublicEdit} className="space-y-6 pt-2 border-t border-slate-200">
+                    <div className="flex items-center justify-between pb-2 border-b border-amber-200">
+                      <div className="flex items-center gap-2 text-amber-900">
+                        <Edit3 className="w-5 h-5 text-amber-600" />
+                        <h3 className="font-bold text-sm sm:text-base">
+                          Formulir Koreksi / Perbaikan Data Mandiri
+                        </h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingPublic(false)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {publicEditError && (
+                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                        <span>{publicEditError}</span>
+                      </div>
+                    )}
+
+                    {/* Section 1: Biodata */}
+                    <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                      <span className="font-bold text-xs text-blue-900 uppercase tracking-wider block">
+                        1. Data Biodata & Kependudukan
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Nama Lengkap:</label>
+                          <input
+                            type="text"
+                            required
+                            value={publicEditData.namaLengkap}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, namaLengkap: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Nomor WhatsApp Aktif:</label>
+                          <input
+                            type="text"
+                            required
+                            value={publicEditData.nomorWa}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                nomorWa: e.target.value.replace(/\D/g, ""),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">NIK (16 Digit):</label>
+                          <input
+                            type="text"
+                            maxLength={16}
+                            required
+                            value={publicEditData.nik}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                nik: e.target.value.replace(/\D/g, ""),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Nomor Kartu Keluarga (KK):</label>
+                          <input
+                            type="text"
+                            maxLength={16}
+                            required
+                            value={publicEditData.noKk}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                noKk: e.target.value.replace(/\D/g, ""),
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Tempat Lahir:</label>
+                          <input
+                            type="text"
+                            required
+                            value={publicEditData.tempatLahir}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, tempatLahir: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Tanggal Lahir:</label>
+                          <input
+                            type="date"
+                            required
+                            value={publicEditData.tanggalLahir}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, tanggalLahir: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Jenis Kelamin:</label>
+                          <select
+                            value={publicEditData.jenisKelamin}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                jenisKelamin: e.target.value as "L" | "P",
+                              })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                          >
+                            <option value="L">Laki-laki (L)</option>
+                            <option value="P">Perempuan (P)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Dusun:</label>
+                          <input
+                            type="text"
+                            value={publicEditData.dusun}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, dusun: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2 space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Alamat Jalan / Gang:</label>
+                          <input
+                            type="text"
+                            required
+                            value={publicEditData.alamat}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, alamat: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-slate-900 focus:border-blue-500 outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 2: Wilayah Domisili Kalisalak */}
+                    <div className="space-y-3 bg-blue-50/40 p-4 rounded-xl border border-blue-200">
+                      <span className="font-bold text-xs text-blue-900 uppercase tracking-wider block">
+                        2. Wilayah Domisili (RW & RT)
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Pilihan Rukun Warga (RW):</label>
+                          <select
+                            value={publicEditData.rw}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, rw: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-blue-900 focus:border-blue-500 outline-none"
+                          >
+                            {DAFTAR_RW_KALISALAK.map((rw) => (
+                              <option key={rw.value} value={rw.value}>
+                                {rw.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="font-bold text-slate-700 text-xs">Pilihan Rukun Tetangga (RT):</label>
+                          <select
+                            value={publicEditData.rt}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, rt: e.target.value })
+                            }
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
+                          >
+                            {DAFTAR_RT_KALISALAK.map((rt) => (
+                              <option key={rt.value} value={rt.value}>
+                                {rt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 3: Uji Netralitas */}
+                    <div className="space-y-3 bg-amber-50/40 p-4 rounded-xl border border-amber-200">
+                      <span className="font-bold text-xs text-amber-900 uppercase tracking-wider block">
+                        3. Pernyataan Integritas & Uji Netralitas
+                      </span>
+
+                      {/* Q1 */}
+                      <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={publicEditData.isCalonKades}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, isCalonKades: e.target.checked })
+                            }
+                            className="w-4 h-4 text-amber-600 rounded"
+                          />
+                          <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                            Saya adalah Calon Kepala Desa Kalisalak
+                          </span>
+                        </label>
+                        {publicEditData.isCalonKades && (
+                          <input
+                            type="text"
+                            value={publicEditData.keteranganCalonKades}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                keteranganCalonKades: e.target.value,
+                              })
+                            }
+                            placeholder="Berikan keterangan pencalonan..."
+                            className="w-full px-3 py-1.5 rounded-lg border border-amber-300 text-xs outline-none"
+                          />
+                        )}
+                      </div>
+
+                      {/* Q2 */}
+                      <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={publicEditData.isTimSukses}
+                            onChange={(e) =>
+                              setPublicEditData({ ...publicEditData, isTimSukses: e.target.checked })
+                            }
+                            className="w-4 h-4 text-amber-600 rounded"
+                          />
+                          <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                            Saya adalah Tim Sukses / Relawan Salah Satu Calon
+                          </span>
+                        </label>
+                        {publicEditData.isTimSukses && (
+                          <input
+                            type="text"
+                            value={publicEditData.keteranganTimSukses}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                keteranganTimSukses: e.target.value,
+                              })
+                            }
+                            placeholder="Berikan keterangan tim sukses..."
+                            className="w-full px-3 py-1.5 rounded-lg border border-amber-300 text-xs outline-none"
+                          />
+                        )}
+                      </div>
+
+                      {/* Q3 */}
+                      <div className="p-3 bg-white rounded-xl border border-amber-200 space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={publicEditData.isKepentinganCalon}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                isKepentinganCalon: e.target.checked,
+                              })
+                            }
+                            className="w-4 h-4 text-amber-600 rounded"
+                          />
+                          <span className="font-semibold text-slate-800 text-xs sm:text-sm">
+                            Saya memiliki hubungan keluarga / kepentingan langsung dengan Calon
+                          </span>
+                        </label>
+                        {publicEditData.isKepentinganCalon && (
+                          <input
+                            type="text"
+                            value={publicEditData.keteranganKepentingan}
+                            onChange={(e) =>
+                              setPublicEditData({
+                                ...publicEditData,
+                                keteranganKepentingan: e.target.value,
+                              })
+                            }
+                            placeholder="Berikan keterangan kepentingan / afiliasi..."
+                            className="w-full px-3 py-1.5 rounded-lg border border-amber-300 text-xs outline-none"
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Section 4: Spesimen Tanda Tangan */}
+                    <div className="space-y-3 bg-purple-50/40 p-4 rounded-xl border border-purple-200">
+                      <span className="font-bold text-xs text-purple-900 uppercase tracking-wider block">
+                        4. Spesimen Tanda Tangan Digital (Opsional)
+                      </span>
+                      <p className="text-xs text-slate-600">
+                        Bila tidak perlu mengganti tanda tangan, Anda dapat membiarkannya kosong. Tanda tangan terdahulu akan tetap digunakan.
+                      </p>
+                      <SignaturePad
+                        onSignatureChange={(sig) => setPublicEditSignature(sig)}
+                        height={160}
+                      />
+                    </div>
+
+                    {/* Submit Edit Buttons */}
+                    <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingPublic(false)}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100 transition-all text-center"
+                      >
+                        Batalkan Koreksi
+                      </button>
+
+                      <button
+                        type="submit"
+                        disabled={isSavingPublicEdit}
+                        className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-amber-600 hover:bg-amber-700 text-white flex items-center justify-center gap-2 shadow-md shadow-amber-600/20 disabled:opacity-50 transition-all cursor-pointer"
+                      >
+                        {isSavingPublicEdit ? (
+                          <>
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Menyimpan Perubahan...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Simpan & Kirim Perbaikan Data
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    {/* Action Buttons to re-download PDFs & Edit */}
+                    <div className="pt-2 space-y-3">
+                      <span className="text-xs font-bold text-slate-600 uppercase tracking-wider block">
+                        Tindakan Dokumen & Perbaikan Data:
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button
+                          type="button"
+                          onClick={() => downloadPetugasPdf(statusResult, "pernyataan")}
+                          className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-blue-700 hover:bg-blue-800 text-white flex items-center justify-center gap-2 shadow-sm transition-all"
+                        >
+                          <Download className="w-4 h-4" />
+                          Surat Pernyataan (PDF)
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => downloadPetugasPdf(statusResult, "bukti")}
+                          className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-950 text-white flex items-center justify-center gap-2 shadow-sm transition-all"
+                        >
+                          <Download className="w-4 h-4" />
+                          Tanda Bukti Pendaftaran (PDF)
+                        </button>
+                      </div>
+
+                      {/* EDIT BUTTON UNTUK PENDAFTAR */}
+                      {statusResult.status !== "DITETAPKAN" ? (
+                        <button
+                          type="button"
+                          onClick={handleStartPublicEdit}
+                          className="w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Perbaiki / Koreksi Data Pendaftaran Saya
+                        </button>
+                      ) : (
+                        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <span>
+                            Data Anda telah resmi <strong>Ditetapkan</strong> oleh Panitia P2KD. Silakan hubungi Sekretariat P2KD jika terdapat kekeliruan data.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </motion.div>
             )}
           </div>

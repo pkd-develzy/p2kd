@@ -8,7 +8,6 @@ import {
   XCircle,
   Edit,
   Plus,
-  Search,
   Check,
   MapPin,
   Clock,
@@ -19,10 +18,7 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  FileSpreadsheet,
-  Users,
   RotateCcw,
-  AlertTriangle,
   Lock,
   ExternalLink,
   HelpCircle,
@@ -32,16 +28,13 @@ import {
 import { downloadBimtekPdf } from "@/lib/bimtek-pdf-generator";
 
 export default function BimtekMateriPage() {
-  const [activeTab, setActiveTab] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
-
   // Demo Interactive State untuk Simulasi Coklit Langsung di Materi Bimtek
   const [demoStatus, setDemoStatus] = useState<"BELUM" | "SESUAI" | "UBAH_DATA" | "TMS">("BELUM");
   const [demoTmsReason, setDemoTmsReason] = useState<string>("MENINGGAL");
   const [showTmsModal, setShowTmsModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [demoName, setDemoName] = useState("SLAMET RIYADI");
-  const [demoNik, setDemoNik] = useState("3328011508920003");
+  const demoNik = "3328011508920003";
   const [demoAlamat, setDemoAlamat] = useState("RT 02 / RW 03");
 
   // State Checklist Persiapan Lapangan
@@ -252,7 +245,7 @@ export default function BimtekMateriPage() {
                 </div>
                 <h3 className="text-sm font-bold text-white">Verifikasi 1-Sentuhan</h3>
                 <p className="text-xs text-slate-400 leading-normal">
-                  Jika data KTP/KK warga cocok, tekan tombol hijau 'Sesuai'. Sistem seketika mencatat
+                  Jika data KTP/KK warga cocok, tekan tombol hijau &apos;Sesuai&apos;. Sistem seketika mencatat
                   nama Anda & jam verifikasi.
                 </p>
               </div>

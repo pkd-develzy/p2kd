@@ -488,7 +488,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
               </div>
 
               <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-                <span className="text-[10px] font-mono text-slate-500 truncate max-w-[120px]">
+                <span className="text-[10px] font-mono text-slate-500 truncate max-w-30">
                   {nomorBeritaAcara}
                 </span>
                 <Button

@@ -100,7 +100,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
 
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
               Selamat bertugas, <strong className="text-white">{currentUser.namaLengkap}</strong> ({currentUser.jabatan}). 
-              Seluruh data pemilih, 7 tabung pemilihan lapangan, pendaftaran petugas pendataan DPT, dan aduan warga terpantau secara realtime.
+              Seluruh data pemilih, 13 Tabung Pemilihan lapangan, pendaftaran petugas pendataan DPT, dan aduan warga terpantau secara realtime.
             </p>
           </div>
 
@@ -308,7 +308,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column (8 Cols): Tabung Lapangan + Calon Kades */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Section A: Rekap 7 Tabung Pemilihan Desa Kalisalak */}
+          {/* Section A: Rekap 13 Tabung Pemilihan Desa Kalisalak */}
           <Card className="p-6 bg-white border-slate-200 shadow-xs rounded-3xl space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
@@ -317,7 +317,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 tracking-tight">
-                    Rekapitulasi 7 Tabung Pemilihan Desa Kalisalak
+                    Rekapitulasi 13 Tabung Pemilihan Desa Kalisalak
                   </h3>
                   <p className="text-xs text-slate-500 font-normal">
                     Pembagian kuota pemilih per tabung suara untuk melayani 13 RW dan 39 RT secara serentak.
@@ -492,7 +492,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 <Layers className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold text-slate-800 block">4. Pleno DPT & Penguncian</span>
-                  <span className="text-[11px] text-slate-500">Berita acara penetapan DPT Final 7 Tabung.</span>
+                  <span className="text-[11px] text-slate-500">Berita acara penetapan DPT Final 13 Tabung.</span>
                 </div>
               </div>
 
@@ -588,7 +588,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 download
                 className="w-full p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-xs font-bold text-slate-800 hover:text-blue-900 flex items-center justify-between transition-colors"
               >
-                <span>Data Rekap 7 Tabung Suara (.xlsx)</span>
+                <span>Data Rekap 13 Tabung Pemilihan (.xlsx)</span>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
               </a>
 

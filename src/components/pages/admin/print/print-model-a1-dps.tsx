@@ -306,7 +306,7 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
           <div className="text-center space-y-12">
             <div>
               Kalisalak, 14 September 2026
-              <div className="font-bold uppercase">Petugas Pantarlih / Koordinator {selectedTps}</div>
+              <div className="font-bold uppercase">Petugas Pantarlih / Koordinator {selectedTps.replace(/TPS/gi, "Tabung")}</div>
             </div>
             <div>
               <strong className="underline block font-bold uppercase">

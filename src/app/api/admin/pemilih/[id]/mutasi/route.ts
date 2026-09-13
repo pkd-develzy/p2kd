@@ -19,7 +19,7 @@ export async function POST(
 
     if (!tpsBaru) {
       return NextResponse.json(
-        { success: false, message: "TPS tujuan mutasi wajib dipilih." },
+        { success: false, message: "Tabung tujuan mutasi wajib dipilih." },
         { status: 400 }
       );
     }

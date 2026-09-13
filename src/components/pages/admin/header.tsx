@@ -20,7 +20,7 @@ interface HeaderProps {
 const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
   dashboard: {
     title: "Pusat Kendali & Rekapitulasi Eksekutif",
-    subtitle: "Ringkasan menyeluruh seluruh tahapan, 7 tabung pemilihan, data calon, dan kesiapan Pilkades Kalisalak 2027",
+    subtitle: "Ringkasan menyeluruh seluruh tahapan, 13 Tabung Pemilihan, data calon, dan kesiapan Pilkades Kalisalak 2027",
   },
   anggota: {
     title: "Manajemen Anggota P2KD & Akun Petugas",
@@ -39,8 +39,8 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
     subtitle: "Daftar pemilih sah yang telah lolos verifikasi dan siap disahkan pada Sidang Pleno",
   },
   tps: {
-    title: "13 Wilayah RW",
-    subtitle: "Manajemen pembagian 13 Wilayah RW Pilkades Kalisalak",
+    title: "13 Wilayah Tabung (RW)",
+    subtitle: "Manajemen pembagian 13 Tabung Pemilihan berbasis Wilayah RW Pilkades Kalisalak",
   },
   aduan: {
     title: "Aduan & Masukan Masyarakat",

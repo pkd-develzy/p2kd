@@ -89,7 +89,7 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
               <option value={4}>4 Stiker Rumah (1 Lembar A4)</option>
               <option value={8}>8 Stiker Rumah (2 Lembar A4)</option>
               <option value={16}>16 Stiker Rumah (4 Lembar A4)</option>
-              <option value={uniqueFamilies.length}>Semua Stiker {selectedTps} ({uniqueFamilies.length} Rumah)</option>
+              <option value={uniqueFamilies.length}>Semua Stiker {selectedTps.replace(/TPS/gi, "Tabung")} ({uniqueFamilies.length} Rumah)</option>
             </select>
           </div>
 

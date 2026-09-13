@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: `Akses Ditolak: Anda hanya berwenang menambahkan pemilih untuk wilayah ${assignedTps}. Dilarang menginput ke TPS lain.`,
+          message: `Akses Ditolak: Anda hanya berwenang menambahkan pemilih untuk wilayah ${assignedTps}. Dilarang menginput ke Tabung lain.`,
         },
         { status: 403 }
       );

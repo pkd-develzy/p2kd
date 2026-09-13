@@ -37,7 +37,7 @@ export async function GET(req: Request) {
     });
   } catch {
     return NextResponse.json(
-      { success: false, message: "Gagal mengambil daftar master TPS." },
+      { success: false, message: "Gagal mengambil daftar master Tabung Pemilihan." },
       { status: 500 }
     );
   }
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     if (!session.user.isSuperAdmin && session.user.role !== "SUPER_ADMIN" && session.user.seksi !== "PIMPINAN") {
       return NextResponse.json(
-        { success: false, message: "Akses Ditolak: Hanya Ketua / Superadmin yang berwenang menambah TPS." },
+        { success: false, message: "Akses Ditolak: Hanya Ketua / Superadmin yang berwenang menambah Tabung Pemilihan." },
         { status: 403 }
       );
     }
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
     if (!nomorTps || !namaTps || !lokasi) {
       return NextResponse.json(
-        { success: false, message: "Nomor TPS, Nama TPS, dan Lokasi wajib diisi." },
+        { success: false, message: "Nomor Tabung, Nama Tabung, dan Lokasi wajib diisi." },
         { status: 400 }
       );
     }
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
 
     if (isDuplicate) {
       return NextResponse.json(
-        { success: false, message: `TPS dengan nomor ${formattedNomor} sudah ada.` },
+        { success: false, message: `Tabung dengan nomor ${formattedNomor} sudah ada.` },
         { status: 409 }
       );
     }
@@ -98,12 +98,12 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `TPS baru ${newTps.namaTps} berhasil ditambahkan.`,
+      message: `Tabung baru ${(newTps.namaTabung || newTps.namaTps).replace(/TPS/gi, "Tabung")} berhasil ditambahkan.`,
       data: newTps,
     });
   } catch {
     return NextResponse.json(
-      { success: false, message: "Gagal menambahkan TPS baru." },
+      { success: false, message: "Gagal menambahkan Tabung baru." },
       { status: 500 }
     );
   }
@@ -121,7 +121,7 @@ export async function PUT(req: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: "ID TPS wajib disertakan." },
+        { success: false, message: "ID Tabung wajib disertakan." },
         { status: 400 }
       );
     }
@@ -129,7 +129,7 @@ export async function PUT(req: Request) {
     const updated = await dataStore.updateTps(id, updates, session.user.nama || session.user.username);
     if (!updated) {
       return NextResponse.json(
-        { success: false, message: "TPS tidak ditemukan." },
+        { success: false, message: "Tabung Pemilihan tidak ditemukan." },
         { status: 404 }
       );
     }
@@ -141,7 +141,7 @@ export async function PUT(req: Request) {
     });
   } catch {
     return NextResponse.json(
-      { success: false, message: "Gagal memperbarui pengaturan TPS." },
+      { success: false, message: "Gagal memperbarui pengaturan Tabung Pemilihan." },
       { status: 500 }
     );
   }
@@ -156,7 +156,7 @@ export async function DELETE(req: Request) {
 
     if (!session.user.isSuperAdmin && session.user.role !== "SUPER_ADMIN" && session.user.seksi !== "PIMPINAN") {
       return NextResponse.json(
-        { success: false, message: "Akses Ditolak: Hanya Ketua / Superadmin yang berwenang menghapus TPS." },
+        { success: false, message: "Akses Ditolak: Hanya Ketua / Superadmin yang berwenang menghapus Tabung Pemilihan." },
         { status: 403 }
       );
     }
@@ -166,7 +166,7 @@ export async function DELETE(req: Request) {
 
     if (!id) {
       return NextResponse.json(
-        { success: false, message: "ID TPS yang akan dihapus wajib disertakan." },
+        { success: false, message: "ID Tabung yang akan dihapus wajib disertakan." },
         { status: 400 }
       );
     }
@@ -186,7 +186,7 @@ export async function DELETE(req: Request) {
     });
   } catch {
     return NextResponse.json(
-      { success: false, message: "Gagal memproses penghapusan TPS." },
+      { success: false, message: "Gagal memproses penghapusan Tabung Pemilihan." },
       { status: 500 }
     );
   }

@@ -116,7 +116,7 @@ export async function GET(req: Request) {
         "Alamat": p.alamat,
         "RT": p.rt,
         "RW": p.rw,
-        "TPS Asal": p.tps,
+        "Tabung Asal": p.tps.replace(/TPS/gi, "Tabung"),
         "Alasan TMS": p.alasanTms || "Meninggal Dunia",
         "Status Verifikasi": "TMS_TERVERIFIKASI",
       }));

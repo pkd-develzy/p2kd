@@ -252,7 +252,7 @@ export const QuickCheckCard: React.FC = () => {
                 </Badge>
               </div>
               <p className="text-xs text-blue-200 mt-1">
-                Periksa status penetapan hak suara dan lokasi TPS Anda di Pilkades Kalisalak 2026
+                Periksa status penetapan hak suara dan lokasi Tabung Pemilihan Anda di Pilkades Kalisalak 2026
               </p>
             </div>
           </div>

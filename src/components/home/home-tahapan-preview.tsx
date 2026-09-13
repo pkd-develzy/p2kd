@@ -131,7 +131,7 @@ export const HomeTahapanPreview: React.FC = () => {
                 <span>Rabu, 3 Februari 2027</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Pencoblosan serentak di seluruh TPS Desa Kalisalak (07.00–13.00 WIB), penghitungan suara, dan penetapan Calon Kades Terpilih.
+                Pencoblosan serentak di seluruh Tabung Pemilihan Desa Kalisalak (07.00–13.00 WIB), penghitungan suara, dan penetapan Calon Kades Terpilih.
               </p>
             </div>
             <div className="pt-4 border-t border-indigo-100 mt-4 text-[11px] font-semibold text-indigo-900 flex items-center gap-1">

@@ -47,7 +47,7 @@ export const HeroSection: React.FC = () => {
 
         {/* Subtitle */}
         <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
-          Kecamatan Margasari, Kabupaten Tegal • Masa Bakti 2027 – 2035. Portal resmi pengecekan hak suara, alokasi TPS, rekapitulasi DPS, serta kanal pengaduan perbaikan data pemilih yang transparan dan aman.
+          Kecamatan Margasari, Kabupaten Tegal • Masa Bakti 2027 – 2035. Portal resmi pengecekan hak suara, alokasi Tabung Pemilihan, rekapitulasi DPS, serta kanal pengaduan perbaikan data pemilih yang transparan dan aman.
         </p>
 
         {/* Fast Action Buttons */}

@@ -378,7 +378,7 @@ export default function BimtekMateriPage() {
                   <span className="font-mono text-xs font-black text-slate-900">{demoNik}</span>
                   <span className="text-slate-300">•</span>
                   <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 text-[10px] font-black">
-                    Wilayah RW 03 (TPS 03)
+                    Wilayah RW 03 (Tabung 03)
                   </span>
 
                   {/* Badges Status */}

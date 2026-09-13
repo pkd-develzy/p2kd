@@ -95,7 +95,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
               <option value={12}>12 Pemilih (2 Lembar A4)</option>
               <option value={24}>24 Pemilih (4 Lembar A4)</option>
               <option value={tpsVoters.length || 1}>
-                Semua Pemilih DPT {selectedTps} ({tpsVoters.length} Kartu)
+                Semua Pemilih DPT {selectedTps.replace(/TPS/gi, "Tabung")} ({tpsVoters.length} Kartu)
               </option>
             </select>
           </div>
@@ -151,7 +151,7 @@ export const PrintFormC6: React.FC<PrintFormC6Props> = ({
       ) : displayedVoters.length === 0 ? (
         <Card className="p-8 bg-slate-50 border border-slate-200 rounded-3xl text-center space-y-2 max-w-2xl mx-auto">
           <p className="text-xs text-slate-500 font-medium">
-            Tidak ada pemilih DPT aktif pada wilayah {selectedTps}.
+            Tidak ada pemilih DPT aktif pada wilayah {selectedTps.replace(/TPS/gi, "Tabung")}.
           </p>
         </Card>
       ) : (

@@ -1034,16 +1034,18 @@ export const AdminDashboard: React.FC = () => {
               tpsList={tpsList}
               voters={voters}
               onOpenAddTps={() => {
+                const nextNum = String(tpsList.length + 1).padStart(2, "0");
                 setActiveTps({
                   id: "",
-                  kodeTps: `TPS-KLS-00${tpsList.length + 1}`,
-                  nomorTps: `00${tpsList.length + 1}`,
-                  namaTps: `TPS 00${tpsList.length + 1}`,
+                  kodeTps: `TABUNG-${nextNum}`,
+                  nomorTps: nextNum,
+                  namaTps: `Tabung ${nextNum}`,
+                  namaTabung: `Tabung Pemilihan ${nextNum}`,
                   lokasi: "",
                   alamat: "",
                   rt: "",
                   rw: "",
-                  kuotaMaksimal: 300,
+                  kuotaMaksimal: 600,
                   status: "AKTIF",
                 });
                 setShowEditTpsModal(true);

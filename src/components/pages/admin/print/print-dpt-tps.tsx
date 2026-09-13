@@ -199,7 +199,7 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
               {tpsVoters.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="border border-black p-4 text-center text-slate-400">
-                    Belum ada data pemilih aktif di {selectedTps}.
+                    Belum ada data pemilih aktif di {selectedTps.replace(/TPS/gi, "Tabung")}.
                   </td>
                 </tr>
               ) : (

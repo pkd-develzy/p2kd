@@ -29,9 +29,9 @@ const features = [
     icon: <MapPin className="w-5 h-5 text-rose-700" />,
     bg: "bg-rose-50 border-rose-100",
     badge: "Aksesibilitas",
-    title: "Sebaran TPS se-Desa Kalisalak",
-    desc: "Alokasi TPS yang proporsional di seluruh wilayah Rukun Warga (RW) untuk memudahkan akses seluruh pemilih pada hari pemungutan suara.",
-    linkText: "Lihat Lokasi TPS",
+    title: "Sebaran Tabung Pemilihan Kalisalak",
+    desc: "Alokasi 13 Tabung Pemilihan yang terpusat untuk melayani pemilih dari seluruh wilayah RW dan RT Desa Kalisalak pada hari pemungutan suara.",
+    linkText: "Lihat Daftar Tabung",
     href: "/tps",
   },
   {

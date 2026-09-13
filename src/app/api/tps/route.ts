@@ -68,7 +68,7 @@ export async function GET() {
     );
   } catch {
     return NextResponse.json(
-      { success: false, message: "Gagal memuat data sebaran TPS publik." },
+      { success: false, message: "Gagal memuat data sebaran Tabung Pemilihan publik." },
       { status: 500 }
     );
   }

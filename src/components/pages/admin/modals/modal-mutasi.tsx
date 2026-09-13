@@ -46,7 +46,7 @@ const ModalMutasiInner: React.FC<{
 
         <p className="text-xs text-slate-600">
           Pindahkan pemilih <strong>{activeVoter.namaLengkap}</strong> dari{" "}
-          <strong>{activeVoter.tps} (RT {activeVoter.rt} / RW {activeVoter.rw})</strong> ke domisili baru di Desa Kalisalak.
+          <strong>{(activeVoter.tps || "").replace(/TPS/gi, "Tabung")} (RT {activeVoter.rt} / RW {activeVoter.rw})</strong> ke domisili baru di Desa Kalisalak.
         </p>
 
         <div className="space-y-3 text-xs">

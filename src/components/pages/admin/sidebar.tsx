@@ -165,9 +165,9 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
       items: [
         {
           id: "tps" as TabType,
-          label: "13 Wilayah RW",
+          label: "13 Wilayah Tabung (RW)",
           icon: Building2,
-          badge: `${tpsCount} Wilayah RW`,
+          badge: `${tpsCount} Tabung (RW)`,
           badgeColor: "bg-emerald-900/80 text-emerald-200 border-emerald-600/70",
           allowedRoles: ["SUPER_ADMIN", "SEKSI_PUNGUT_HITUNG", "SEKSI_LOGISTIK_PUBLIKASI"],
         },

@@ -15,7 +15,7 @@ export interface Voter {
   kecamatan: string;
   tps: string;
   statusAktif: "AKTIF" | "TMS" | "MUTASI_KELUAR";
-  tahap?: "DPS" | "DPT";
+  tahap?: "DPS" | "DPT" | "DPTB";
   alasanTms?: string;
   disabilitas?: string;
   coklitStatus?: "BELUM_COKLIT" | "SESUAI" | "UBAH_DATA" | "TMS" | "BARU";

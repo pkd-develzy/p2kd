@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Voter, TPSItem } from "../types";
 import { Printer, ArrowLeft, Download, FileSpreadsheet, CheckCircle2 } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
-import { exportModelA3Excel, exportModelA3Pdf } from "@/lib/print-models-export";
+import { exportModelA3Excel, exportModelA3Pdf, matchTpsVoter } from "@/lib/print-models-export";
 
 interface PrintModelA3DptProps {
   voters: Voter[];
@@ -144,9 +144,7 @@ export const PrintModelA3Dpt: React.FC<PrintModelA3DptProps> = ({
                 <tbody>
                   {tpsList.map((t, idx) => {
                     const votersInTps = dptVoters.filter(
-                      (v) =>
-                        v.tps.toLowerCase().includes(t.nomorTps.toLowerCase()) ||
-                        v.tps.toLowerCase().includes(t.namaTps.toLowerCase())
+                      (v) => matchTpsVoter(v.tps, t.namaTps) || matchTpsVoter(v.tps, t.nomorTps)
                     );
                     const l = votersInTps.filter((v) => v.jenisKelamin === "L").length;
                     const p = votersInTps.filter((v) => v.jenisKelamin === "P").length;

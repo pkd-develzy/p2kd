@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Voter, TPSItem } from "../types";
 import { Printer, ArrowLeft, Download, FileSpreadsheet, Sparkles } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
-import { exportModelA1Excel, exportModelA1Pdf } from "@/lib/print-models-export";
+import { exportModelA1Excel, exportModelA1Pdf, matchTpsVoter } from "@/lib/print-models-export";
 
 interface PrintModelA1DpsProps {
   voters: Voter[];
@@ -25,10 +25,7 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
 
   const filteredVoters = voters.filter((v) => {
-    const isTpsMatch =
-      selectedTps === "SEMUA" ||
-      v.tps.toLowerCase().includes(selectedTps.toLowerCase()) ||
-      v.rw.toLowerCase().includes(selectedTps.toLowerCase());
+    const isTpsMatch = matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps);
 
     if (!isTpsMatch) return false;
     if (filterStatus === "SESUAI") return v.coklitStatus === "SESUAI";
@@ -254,7 +251,7 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
                             {v.coklitCatatan ? (
                               <span className="font-semibold text-blue-900">{v.coklitCatatan}</span>
                             ) : (
-                              <span className="text-slate-400 italic">Tidak ada koreksi (identitas sesuai KTP-el/KK)</span>
+                              <span className="text-slate-300 font-mono select-none">..........................................................................</span>
                             )}
                           </td>
 
@@ -263,18 +260,18 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
                             {v.alasanTms ? (
                               <span className="font-bold text-rose-700">TMS: {v.alasanTms}</span>
                             ) : (
-                              <span className="text-slate-600">Dokumen KTP/KK fisik terverifikasi sah</span>
+                              <span className="text-slate-300 font-mono select-none">..........................................................................</span>
                             )}
                           </td>
 
                           {/* Petugas Verifikator */}
                           <td className="p-1.5 border-r border-slate-400 text-left font-semibold">
-                            {v.coklitPetugas || "(Pantarlih / Koordinator RW)"}
+                            {v.coklitPetugas || <span className="text-slate-300 font-mono select-none">................................................</span>}
                           </td>
 
                           {/* Tanggal */}
                           <td className="p-1.5 border-r border-slate-400 text-center font-mono text-[10px]">
-                            {v.coklitTanggal || "-"}
+                            {v.coklitTanggal || <span className="text-slate-300 select-none">..../..../2026</span>}
                           </td>
 
                           {/* Paraf Petugas */}

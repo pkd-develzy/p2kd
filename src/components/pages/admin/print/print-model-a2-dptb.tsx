@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Voter, TPSItem } from "../types";
 import { Printer, ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
-import { exportModelA2Excel, exportModelA2Pdf } from "@/lib/print-models-export";
+import { exportModelA2Excel, exportModelA2Pdf, matchTpsVoter } from "@/lib/print-models-export";
 
 interface PrintModelA2DptbProps {
   voters: Voter[];
@@ -23,13 +23,10 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
 }) => {
   const [selectedTps, setSelectedTps] = useState(defaultTps || "SEMUA");
 
-  // DPTb: Pemilih yang terdaftar sebagai pemilih tambahan (baru, mutasi masuk, atau DPTB)
+  // DPTb: Pemilih yang terdaftar sebagai pemilih tambahan resmi (BARU / DPTb pasca-DPS)
   const dptbList = voters.filter((v) => {
-    const isTpsMatch =
-      selectedTps === "SEMUA" ||
-      v.tps.toLowerCase().includes(selectedTps.toLowerCase()) ||
-      v.rw.toLowerCase().includes(selectedTps.toLowerCase());
-    return isTpsMatch && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.tahap === "DPS");
+    const isTpsMatch = matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps);
+    return isTpsMatch && v.statusAktif === "AKTIF" && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.tahap === "DPTB");
   });
 
   const lCount = dptbList.filter((v) => v.jenisKelamin === "L").length;
@@ -147,11 +144,28 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
             </thead>
             <tbody>
               {dptbList.length === 0 ? (
-                <tr>
-                  <td colSpan={11} className="border border-black p-6 text-center text-slate-400">
-                    Belum ada data pemilih tambahan (DPTb) yang terdaftar pada wilayah ini.
-                  </td>
-                </tr>
+                <>
+                  <tr className="print:hidden">
+                    <td colSpan={11} className="border border-black p-4 text-center text-slate-500 bg-amber-50/50">
+                      Belum ada data pemilih tambahan (DPTb) yang terdaftar. Lembar cetak ini siap digunakan sebagai formulir pendaftaran fisik DPTb di lokasi tabung pemilihan.
+                    </td>
+                  </tr>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+                    <tr key={num} className="text-center h-7 text-[10px]">
+                      <td className="border border-black p-1 font-bold">{num}</td>
+                      <td className="border border-black p-1 text-slate-300 font-mono">...................................</td>
+                      <td className="border border-black p-1 text-slate-300 font-mono">...................................</td>
+                      <td className="border border-black p-1 text-slate-300">................................................</td>
+                      <td className="border border-black p-1 text-slate-400">L / P</td>
+                      <td className="border border-black p-1 text-slate-300">......., ..../..../........</td>
+                      <td className="border border-black p-1 text-slate-300">................................................</td>
+                      <td className="border border-black p-1 text-slate-300">...</td>
+                      <td className="border border-black p-1 text-slate-300">...</td>
+                      <td className="border border-black p-1 font-bold text-blue-900">{selectedTps.replace(/TPS/gi, "Tabung")}</td>
+                      <td className="border border-black p-1 text-slate-400 text-[10px]">KTP-el / Surat Pindah</td>
+                    </tr>
+                  ))}
+                </>
               ) : (
                 dptbList.map((v, idx) => (
                   <tr key={v.id} className="hover:bg-slate-50 text-center">

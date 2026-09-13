@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Voter, TPSItem } from "../types";
 import { Printer, ArrowLeft, Download, FileSpreadsheet } from "lucide-react";
 import { Button, Badge } from "@/components/ui";
-import { exportModelA4Excel, exportModelA4Pdf } from "@/lib/print-models-export";
+import { exportModelA4Excel, exportModelA4Pdf, matchTpsVoter } from "@/lib/print-models-export";
 
 interface PrintModelA4SalinanProps {
   voters: Voter[];
@@ -21,15 +21,15 @@ export const PrintModelA4Salinan: React.FC<PrintModelA4SalinanProps> = ({
   isAdmin,
   onBack,
 }) => {
-  const [selectedTps, setSelectedTps] = useState(defaultTps || tpsList[0]?.namaTps || "TPS 01");
+  const [selectedTps, setSelectedTps] = useState(defaultTps || tpsList[0]?.namaTps || "Tabung 01");
   const [maskNikOption, setMaskNikOption] = useState<"PLAIN" | "MASKED">("PLAIN");
 
-  const tpsObj = tpsList.find((t) => t.namaTps === selectedTps) || tpsList[0];
+  const tpsObj = tpsList.find((t) => t.namaTps === selectedTps || matchTpsVoter(t.namaTps, selectedTps)) || tpsList[0];
 
   const tpsVoters = voters.filter(
     (v) =>
       v.statusAktif === "AKTIF" &&
-      (tpsObj?.nomorTps ? v.tps.toLowerCase().includes(tpsObj.nomorTps.toLowerCase()) : true)
+      (matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.tps, tpsObj?.nomorTps || ""))
   );
 
   const lCount = tpsVoters.filter((v) => v.jenisKelamin === "L").length;

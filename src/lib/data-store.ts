@@ -1757,6 +1757,10 @@ class SystemDataStore {
         perempuan: p,
         kuotaMaksimal: t.kuotaMaksimal,
       };
+    }).sort((a, b) => {
+      const numA = parseInt((a.nomorTps || a.namaTps || "").replace(/\D/g, ""), 10) || 0;
+      const numB = parseInt((b.nomorTps || b.namaTps || "").replace(/\D/g, ""), 10) || 0;
+      return numA - numB;
     });
 
     const uniqueRwSet = new Set<string>();

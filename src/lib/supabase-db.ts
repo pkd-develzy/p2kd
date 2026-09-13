@@ -321,7 +321,11 @@ export class SupabaseDbService {
         rw: t.rw || "01",
         kuotaMaksimal: t.kuota_maksimal,
         status: (t.status as "AKTIF" | "NONAKTIF") || "AKTIF",
-      }));
+      })).sort((a, b) => {
+        const numA = parseInt((a.rw || a.nomorTps || "").replace(/\D/g, ""), 10) || 0;
+        const numB = parseInt((b.rw || b.nomorTps || "").replace(/\D/g, ""), 10) || 0;
+        return numA - numB;
+      });
 
       const pemilihList: MasterPemilih[] = ((pemilihData as SupabasePemilihRow[]) || []).map((p) => ({
         id: p.id,

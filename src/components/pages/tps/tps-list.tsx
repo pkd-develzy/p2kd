@@ -52,17 +52,27 @@ export const TpsList: React.FC = () => {
 
           if (jsonTps.success && Array.isArray(jsonTps.data)) {
             const mapped: TabungItem[] = jsonTps.data.map((t: ApiTpsItem, index: number) => {
-              const tabungNum = t.nomorTps.replace(/\D/g, "") || String(index + 1).padStart(2, "0");
+              const numVal = parseInt((t.rw || t.nomorTps || "").replace(/\D/g, ""), 10) || (index + 1);
+              const tabungNum = String(numVal).padStart(2, "0");
+              const rwNum = t.rw ? parseInt(t.rw.replace(/\D/g, ""), 10) || numVal : numVal;
               return {
                 id: t.id,
-                nomorTabung: tabungNum.padStart(2, "0"),
+                nomorTabung: tabungNum,
                 namaTabung: t.namaTabung || t.namaTps || `Tabung Pemilihan ${tabungNum}`,
                 pintuMasuk: t.alamat || (index < 2 ? "Pintu Masuk Barat (A)" : index < 4 ? "Pintu Masuk Utara (B)" : "Pintu Masuk Timur (C)"),
-                wilayahRw: t.rw ? (t.rw.includes("RW") ? t.rw : `RW ${t.rw}`) : `RW ${tabungNum}`,
+                wilayahRw: `RW ${String(rwNum).padStart(2, "0")}`,
                 cakupanRt: t.rt ? (t.rt.includes("RT") ? t.rt : `RT ${t.rt}`) : "RT 01 s/d RT 03",
                 kuotaPerkiraan: t.kuotaMaksimal || 600,
               };
             });
+
+            // Urutkan per nomor RW secara numerik
+            mapped.sort((a, b) => {
+              const numA = parseInt(a.wilayahRw.replace(/\D/g, ""), 10) || 0;
+              const numB = parseInt(b.wilayahRw.replace(/\D/g, ""), 10) || 0;
+              return numA - numB;
+            });
+
             setTabungList(mapped);
           }
           setLoading(false);

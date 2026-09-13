@@ -47,6 +47,13 @@ export async function GET() {
       };
     });
 
+    // Urutkan per nomor RW/TPS secara numerik (01 s/d 13)
+    publicTps.sort((a, b) => {
+      const numA = parseInt((a.rw || a.nomorTps || "").replace(/\D/g, ""), 10) || 0;
+      const numB = parseInt((b.rw || b.nomorTps || "").replace(/\D/g, ""), 10) || 0;
+      return numA - numB;
+    });
+
     return NextResponse.json(
       {
         success: true,

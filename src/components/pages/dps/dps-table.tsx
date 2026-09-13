@@ -38,16 +38,29 @@ export const DpsTable: React.FC = () => {
         const res = await fetch("/api/stats");
         const json = await res.json();
         if (json.success && json.data?.tpsStats) {
-          const rows: DpsRow[] = json.data.tpsStats.map((t: ApiTpsStat, idx: number) => ({
-            id: idx + 1,
-            rw: `RW 0${t.nomorTps.slice(-1)}`,
-            dusun: "Desa Kalisalak",
-            tps: `TPS ${t.nomorTps}`,
-            lokasi: t.lokasi,
-            jmlPemilih: t.total,
-            laki: t.laki,
-            perempuan: t.perempuan,
-          }));
+          const rows: DpsRow[] = json.data.tpsStats.map((t: ApiTpsStat, idx: number) => {
+            const rawRw = t.namaTps?.includes("RW") ? t.namaTps : (t.nomorTps || "");
+            const num = parseInt(rawRw.replace(/\D/g, ""), 10) || (idx + 1);
+            const rwFormatted = `RW ${String(num).padStart(2, "0")}`;
+            return {
+              id: idx + 1,
+              rw: rwFormatted,
+              dusun: "Desa Kalisalak",
+              tps: `TPS ${String(num).padStart(2, "0")}`,
+              lokasi: t.lokasi,
+              jmlPemilih: t.total,
+              laki: t.laki,
+              perempuan: t.perempuan,
+            };
+          });
+
+          // Sort strictly in ascending order by RW number (RW 01, RW 02, ... RW 13)
+          rows.sort((a, b) => {
+            const numA = parseInt(a.rw.replace(/\D/g, ""), 10) || 0;
+            const numB = parseInt(b.rw.replace(/\D/g, ""), 10) || 0;
+            return numA - numB;
+          });
+
           setDpsList(rows);
         }
       } catch (err) {

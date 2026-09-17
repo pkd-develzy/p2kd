@@ -282,12 +282,12 @@ export class SupabaseDbService {
       }
 
       const client = this.adminClient;
+      const CHUNK_SIZE = 1000;
 
-      // Parallel concurrent fetch of all tables (< 250ms latency total)
-      // Pemilih initial query is capped at 500 records for instantaneous load time
+      // Parallel concurrent fetch of all tables + first chunk of pemilih (< 250ms)
       const [
         tpsRes,
-        pemilihRes,
+        pemilihFirstChunk,
         anggotaRes,
         balonRes,
         kandidatRes,
@@ -301,7 +301,7 @@ export class SupabaseDbService {
         beritaRes,
       ] = await Promise.all([
         client.from("tps").select("*").order("nomor_tps"),
-        client.from("pemilih").select("*", { count: "exact" }).order("nama_lengkap").range(0, 499),
+        client.from("pemilih").select("*", { count: "exact" }).order("nama_lengkap").range(0, CHUNK_SIZE - 1),
         client.from("anggota_p2kd").select("*"),
         client.from("balon_penjaringan").select("*"),
         client.from("kandidat_kades").select("*").order("nomor_urut"),
@@ -315,8 +315,31 @@ export class SupabaseDbService {
         client.from("berita_artikel").select("*").order("created_at", { ascending: false }),
       ]);
 
+      let allPemilih: SupabasePemilihRow[] = (pemilihFirstChunk.data as SupabasePemilihRow[]) || [];
+      const totalPemilihCount = pemilihFirstChunk.count || allPemilih.length;
+
+      // If more than 1000 records (e.g. all 7,787 residents), fetch remaining chunks in parallel concurrently!
+      if (totalPemilihCount > CHUNK_SIZE) {
+        const remainingPromises = [];
+        for (let offset = CHUNK_SIZE; offset < totalPemilihCount; offset += CHUNK_SIZE) {
+          remainingPromises.push(
+            client
+              .from("pemilih")
+              .select("*")
+              .order("nama_lengkap")
+              .range(offset, offset + CHUNK_SIZE - 1)
+          );
+        }
+        const remainingChunks = await Promise.all(remainingPromises);
+        for (const chunkRes of remainingChunks) {
+          if (chunkRes.data && chunkRes.data.length > 0) {
+            allPemilih = allPemilih.concat(chunkRes.data as SupabasePemilihRow[]);
+          }
+        }
+      }
+
       const tpsData = (tpsRes.data as SupabaseTpsRow[]) || [];
-      const pemilihData = (pemilihRes.data as SupabasePemilihRow[]) || [];
+      const pemilihData = allPemilih;
       const anggotaData = (anggotaRes.data as SupabaseAnggotaRow[]) || [];
       const balonData = (balonRes.data as SupabaseBalonRow[]) || [];
       const kandidatData = (kandidatRes.data as SupabaseKandidatRow[]) || [];

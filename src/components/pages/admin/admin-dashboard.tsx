@@ -159,17 +159,28 @@ export const AdminDashboard: React.FC = () => {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Data States
-  const [voters, setVoters] = useState<Voter[]>([]);
-  const [aduanList, setAduanList] = useState<Aduan[]>([]);
-  const [tpsList, setTpsList] = useState<TPSItem[]>([]);
-  const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>([]);
-  const [petugasCount, setPetugasCount] = useState(0);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [dbStatus, setDbStatus] = useState<DbStatus | null>(null);
-  const [isDptLocked, setIsDptLocked] = useState(false);
-  const [lockHashSignature, setLockHashSignature] = useState("");
-  const [nomorBeritaAcara, setNomorBeritaAcara] = useState("BA/01/P2KD-KLS/VIII/2026");
+  // Instant Offline / Browser Restart Cache Loader
+  const initialCache = React.useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("p2kd_admin_dashboard_cache");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  // Data States initialized with persistent cache (Instant 0ms on Browser Restart!)
+  const [voters, setVoters] = useState<Voter[]>(() => initialCache?.voters || []);
+  const [aduanList, setAduanList] = useState<Aduan[]>(() => initialCache?.aduanList || []);
+  const [tpsList, setTpsList] = useState<TPSItem[]>(() => initialCache?.tpsList || []);
+  const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>(() => initialCache?.anggotaList || []);
+  const [petugasCount, setPetugasCount] = useState<number>(() => initialCache?.petugasCount || 0);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => initialCache?.auditLogs || []);
+  const [dbStatus, setDbStatus] = useState<DbStatus | null>(() => initialCache?.dbStatus || null);
+  const [isDptLocked, setIsDptLocked] = useState<boolean>(() => Boolean(initialCache?.isDptLocked));
+  const [lockHashSignature, setLockHashSignature] = useState<string>(() => initialCache?.lockHashSignature || "");
+  const [nomorBeritaAcara, setNomorBeritaAcara] = useState<string>(() => initialCache?.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026");
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState("");
@@ -396,6 +407,43 @@ export const AdminDashboard: React.FC = () => {
     };
   }, [fetchData]);
 
+  // 3. Auto-persist Dashboard Data to LocalStorage (Instant 0ms on Browser Restart / Refresh)
+  useEffect(() => {
+    if (typeof window !== "undefined" && (voters.length > 0 || tpsList.length > 0)) {
+      try {
+        localStorage.setItem(
+          "p2kd_admin_dashboard_cache",
+          JSON.stringify({
+            voters,
+            aduanList,
+            tpsList,
+            anggotaList,
+            petugasCount,
+            auditLogs,
+            dbStatus,
+            isDptLocked,
+            lockHashSignature,
+            nomorBeritaAcara,
+            savedAt: Date.now(),
+          })
+        );
+      } catch (err) {
+        console.warn("Gagal menyimpan cache offline:", err);
+      }
+    }
+  }, [
+    voters,
+    aduanList,
+    tpsList,
+    anggotaList,
+    petugasCount,
+    auditLogs,
+    dbStatus,
+    isDptLocked,
+    lockHashSignature,
+    nomorBeritaAcara,
+  ]);
+
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/auth/logout", { method: "POST" });
@@ -406,6 +454,7 @@ export const AdminDashboard: React.FC = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("admin_token");
       localStorage.removeItem("admin_user_data");
+      localStorage.removeItem("p2kd_admin_dashboard_cache");
       sessionStorage.removeItem("admin_token");
     }
 

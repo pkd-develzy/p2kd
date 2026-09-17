@@ -16,8 +16,18 @@ interface StatsData {
 }
 
 export const StatsOverview: React.FC = () => {
-  const [data, setData] = useState<StatsData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<StatsData | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("p2kd_public_stats_cache");
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(() => !data);
 
   useEffect(() => {
     let isMounted = true;
@@ -26,14 +36,20 @@ export const StatsOverview: React.FC = () => {
         const res = await fetch("/api/stats");
         const json = await res.json();
         if (isMounted && json.success && json.data) {
-          setData({
+          const freshStats: StatsData = {
             totalAktif: Number(json.data.totalAktif) || 0,
             totalLaki: Number(json.data.totalLaki) || 0,
             totalPerempuan: Number(json.data.totalPerempuan) || 0,
             totalTps: Number(json.data.totalTps) || 13,
             totalRw: Number(json.data.totalRw) || 13,
             totalRt: Number(json.data.totalRt) || 39,
-          });
+          };
+          setData(freshStats);
+          try {
+            localStorage.setItem("p2kd_public_stats_cache", JSON.stringify(freshStats));
+          } catch {
+            // ignore
+          }
         }
       } catch (err) {
         console.error("Gagal mengambil data statistik live database:", err);

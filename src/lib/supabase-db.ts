@@ -1675,7 +1675,7 @@ export class SupabaseDbService {
 
   public static async deleteBerita(id: string) {
     try {
-      await this.adminClient.from("berita_artikel").delete().eq("id", id);
+      await this.adminClient.from("berita_artikel").delete().or(`id.eq.${id},slug.eq.${id}`);
       this.invalidateCache();
     } catch (err) {
       console.warn("Supabase deleteBerita sync failed:", err);

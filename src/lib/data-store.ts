@@ -512,24 +512,32 @@ class SystemDataStore {
   }
 
   public async deleteBerita(id: string, user = "Sekretariat P2KD"): Promise<boolean> {
-    const idx = this.beritaList.findIndex((b) => b.id === id);
-    if (idx === -1) return false;
+    const idx = this.beritaList.findIndex((b) => b.id === id || b.slug === id);
+    if (idx !== -1) {
+      const targetJudul = this.beritaList[idx].judul;
+      const targetId = this.beritaList[idx].id;
+      this.beritaList.splice(idx, 1);
+      await SupabaseDbService.deleteBerita(targetId);
 
-    const targetJudul = this.beritaList[idx].judul;
-    this.beritaList.splice(idx, 1);
-    await SupabaseDbService.deleteBerita(id);
+      this.addAuditLog({
+        user,
+        role: "SEKSI_PUBLIKASI",
+        aksi: "DELETE_BERITA",
+        entity: "BERITA",
+        target: targetJudul,
+        detail: `Menghapus artikel/berita: "${targetJudul}".`,
+        ipAddress: "127.0.0.1",
+      });
+      return true;
+    }
 
-    this.addAuditLog({
-      user,
-      role: "SEKSI_PUBLIKASI",
-      aksi: "DELETE_BERITA",
-      entity: "BERITA",
-      target: targetJudul,
-      detail: `Menghapus artikel/berita: "${targetJudul}".`,
-      ipAddress: "127.0.0.1",
-    });
-
-    return true;
+    // Direct Supabase fallback if item wasn't present in in-memory list
+    try {
+      await SupabaseDbService.deleteBerita(id);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   public incrementBeritaViews(slugOrId: string) {

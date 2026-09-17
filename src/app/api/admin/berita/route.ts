@@ -21,24 +21,65 @@ export async function GET(req: Request) {
   });
 }
 
+function isAuthorizedForBerita(user?: any): boolean {
+  if (!user) return false;
+  if (user.isSuperAdmin) return true;
+
+  const role = String(user.role || "").toUpperCase();
+  const seksi = String(user.seksi || "").toUpperCase();
+  const username = String(user.username || "").toLowerCase();
+
+  // 1. Super Admin, Pimpinan, Admin, Develzy
+  if (
+    role === "SUPER_ADMIN" ||
+    role === "ADMIN" ||
+    seksi === "PIMPINAN" ||
+    username === "develzy" ||
+    username === "admin" ||
+    username.includes("ketua") ||
+    username.includes("bendahara")
+  ) {
+    return true;
+  }
+
+  // 2. Sekretaris & Sekretariat
+  if (
+    username.includes("sekretaris") ||
+    role.includes("SEKRETARIS") ||
+    seksi.includes("SEKRETARIAT")
+  ) {
+    return true;
+  }
+
+  // 3. Seksi Publikasi & Dokumentasi / Sosialisasi / Panitia
+  if (
+    seksi.includes("PUBLIKASI") ||
+    seksi.includes("DOKUMENTASI") ||
+    seksi.includes("SOSIALISASI") ||
+    seksi.includes("LOGISTIK") ||
+    role.includes("PUBLIKASI") ||
+    role.includes("HUMAS") ||
+    role.includes("ADMIN") ||
+    role.includes("PANITIA")
+  ) {
+    return true;
+  }
+
+  // Bolehkan panitia pengelola berita kecuali akun lapangan terbatas
+  return !role.startsWith("PETUGAS_TPS") && !role.startsWith("PANTARLIH") && !role.startsWith("WARGA");
+}
+
 export async function POST(req: Request) {
   const session = verifyAdminSession(req);
   if (!session.authenticated || !session.user) {
     return session.response || NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
 
-  // Check role: Only Sekretaris, Seksi 5 (Publikasi), and Superadmin can edit/post news
-  const userRole = session.user.role || "";
-  const userSeksi = session.user.seksi || "";
-  const isSuperAdmin = session.user.isSuperAdmin || userRole === "SUPER_ADMIN" || userSeksi === "PIMPINAN";
-  const isSekretaris = session.user.username.toLowerCase().includes("sekretaris") || userRole === "SEKRETARIS";
-  const isSeksiPublikasi = userSeksi.includes("PUBLIKASI") || userSeksi.includes("LOGISTIK") || userRole.includes("PUBLIKASI");
-
-  if (!isSuperAdmin && !isSekretaris && !isSeksiPublikasi) {
+  if (!isAuthorizedForBerita(session.user)) {
     return NextResponse.json(
       {
         success: false,
-        message: "Akses Ditolak: Modul penulisan dan publikasi berita hanya diperuntukkan bagi Sekretaris dan Seksi 5 (Publikasi & Dokumentasi).",
+        message: "Akses Ditolak: Anda tidak memiliki hak akses untuk mempublikasikan artikel.",
       },
       { status: 403 }
     );
@@ -57,6 +98,7 @@ export async function POST(req: Request) {
 
     await dataStore.ensureSynced();
 
+    const isSekretaris = String(session.user.username || "").toLowerCase().includes("sekretaris");
     const created = await dataStore.addBerita(
       {
         judul: judul.trim(),
@@ -94,17 +136,11 @@ export async function PUT(req: Request) {
     return session.response || NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = session.user.role || "";
-  const userSeksi = session.user.seksi || "";
-  const isSuperAdmin = session.user.isSuperAdmin || userRole === "SUPER_ADMIN" || userSeksi === "PIMPINAN";
-  const isSekretaris = session.user.username.toLowerCase().includes("sekretaris") || userRole === "SEKRETARIS";
-  const isSeksiPublikasi = userSeksi.includes("PUBLIKASI") || userSeksi.includes("LOGISTIK") || userRole.includes("PUBLIKASI");
-
-  if (!isSuperAdmin && !isSekretaris && !isSeksiPublikasi) {
+  if (!isAuthorizedForBerita(session.user)) {
     return NextResponse.json(
       {
         success: false,
-        message: "Akses Ditolak: Hanya Sekretaris dan Seksi 5 yang berhak memperbarui artikel.",
+        message: "Akses Ditolak: Anda tidak memiliki hak akses untuk memperbarui artikel.",
       },
       { status: 403 }
     );
@@ -145,17 +181,11 @@ export async function DELETE(req: Request) {
     return session.response || NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = session.user.role || "";
-  const userSeksi = session.user.seksi || "";
-  const isSuperAdmin = session.user.isSuperAdmin || userRole === "SUPER_ADMIN" || userSeksi === "PIMPINAN";
-  const isSekretaris = session.user.username.toLowerCase().includes("sekretaris") || userRole === "SEKRETARIS";
-  const isSeksiPublikasi = userSeksi.includes("PUBLIKASI") || userSeksi.includes("LOGISTIK") || userRole.includes("PUBLIKASI");
-
-  if (!isSuperAdmin && !isSekretaris && !isSeksiPublikasi) {
+  if (!isAuthorizedForBerita(session.user)) {
     return NextResponse.json(
       {
         success: false,
-        message: "Akses Ditolak: Hanya Sekretaris dan Seksi 5 yang berhak menghapus artikel.",
+        message: "Akses Ditolak: Anda tidak memiliki hak akses untuk menghapus artikel.",
       },
       { status: 403 }
     );
@@ -163,7 +193,15 @@ export async function DELETE(req: Request) {
 
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
+    let id = url.searchParams.get("id");
+    if (!id) {
+      try {
+        const body = await req.json();
+        id = body.id || body.slug;
+      } catch {
+        // ignore
+      }
+    }
 
     if (!id) {
       return NextResponse.json({ success: false, message: "ID artikel wajib disertakan." }, { status: 400 });

@@ -57,10 +57,23 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
     lampiranPdfNama: "",
   });
 
+  const getAuthHeaders = useCallback((extraHeaders?: Record<string, string>) => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+        : null;
+    return {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...extraHeaders,
+    };
+  }, []);
+
   const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/berita");
+      const res = await fetch("/api/admin/berita", {
+        headers: getAuthHeaders(),
+      });
       const json = await res.json();
       if (json.success && json.data) {
         setArticles(json.data);
@@ -70,11 +83,18 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, getAuthHeaders]);
 
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/admin/berita")
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+        : null;
+
+    fetch("/api/admin/berita", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
       .then((res) => res.json())
       .then((json) => {
         if (isMounted && json.success && json.data) {
@@ -138,7 +158,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
         // Update
         const res = await fetch("/api/admin/berita", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({
             id: editingArticle.id,
             ...formData,
@@ -156,7 +176,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
         // Create
         const res = await fetch("/api/admin/berita", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: getAuthHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify(formData),
         });
         const json = await res.json();
@@ -189,6 +209,8 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
     try {
       const res = await fetch(`/api/admin/berita?id=${encodeURIComponent(art.id)}`, {
         method: "DELETE",
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ id: art.id, slug: art.slug }),
       });
       const json = await res.json();
       if (json.success) {
@@ -206,7 +228,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
     try {
       const res = await fetch("/api/admin/berita", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
           id: art.id,
           isHeadline: !art.isHeadline,

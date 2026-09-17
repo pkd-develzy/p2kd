@@ -60,6 +60,31 @@ export const AdminLoginForm: React.FC = () => {
     return false;
   });
 
+  // Auto-restore session: If already logged in, redirect directly to dashboard without re-authenticating
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
+    const storedUserData = localStorage.getItem("admin_user_data");
+
+    if (token && storedUserData) {
+      try {
+        const parsed = JSON.parse(storedUserData);
+        const targetRole = (parsed.role || "SUPER_ADMIN").toLowerCase();
+        const targetTps = parsed.assignedTps || "SEMUA";
+        const targetUser = parsed.username || "";
+        const mustChange = Boolean(parsed.mustChangePassword);
+
+        router.replace(
+          `/admin/dashboard?role=${encodeURIComponent(targetRole)}&tps=${encodeURIComponent(
+            targetTps
+          )}&user=${encodeURIComponent(targetUser)}&force_change=${mustChange ? "true" : "false"}`
+        );
+      } catch {
+        // Corrupted user data, allow login form
+      }
+    }
+  }, [router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 

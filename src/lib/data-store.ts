@@ -88,6 +88,27 @@ export interface MasterPengumuman {
   updatedAt?: string;
 }
 
+export type BeritaKategori = "TAHAPAN" | "RAPAT_BA" | "SOSIALISASI" | "DOKUMENTASI";
+
+export interface MasterBerita {
+  id: string;
+  slug: string;
+  judul: string;
+  kategori: BeritaKategori;
+  ringkasan: string;
+  konten: string;
+  gambarUrl?: string;
+  penulisNama?: string;
+  penulisJabatan?: string;
+  status: "PUBLISHED" | "DRAFT" | "ARCHIVED";
+  isHeadline: boolean;
+  lampiranPdfUrl?: string;
+  lampiranPdfNama?: string;
+  viewsCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface MasterTPS {
   id: string;
   kodeTps: string;
@@ -330,6 +351,7 @@ class SystemDataStore {
   };
 
   private petugasDptList: MasterPetugasDpt[] = [];
+  private beritaList: MasterBerita[] = [];
 
   private constructor() {
     this.syncWithSupabase();
@@ -353,7 +375,7 @@ class SystemDataStore {
         this.syncPromise = null;
       });
     }
-    await this.syncPromise;
+    return this.syncPromise;
   }
 
   public async syncWithSupabase() {
@@ -374,6 +396,10 @@ class SystemDataStore {
         if (res.data.petugasDptList) this.petugasDptList = res.data.petugasDptList;
         this.isSupabaseSynced = true;
       }
+      const fetchedBerita = await SupabaseDbService.fetchBeritaList();
+      if (fetchedBerita && fetchedBerita.length > 0) {
+        this.beritaList = fetchedBerita;
+      }
     } catch (err) {
       console.warn("⚠️ Sinkronisasi Database tertunda:", err);
     }
@@ -381,6 +407,137 @@ class SystemDataStore {
 
   public isCloudConnected() {
     return this.isSupabaseSynced;
+  }
+
+  // --- BERITA ARTIKEL METHODS ---
+  public getBeritaList(kategori?: string, status?: string): MasterBerita[] {
+    let list = [...this.beritaList];
+    if (status && status !== "ALL") {
+      list = list.filter((b) => b.status === status);
+    }
+    if (kategori && kategori !== "ALL" && kategori !== "SEMUA") {
+      list = list.filter((b) => b.kategori === kategori);
+    }
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  public getBeritaBySlug(slug: string): MasterBerita | undefined {
+    return this.beritaList.find((b) => b.slug === slug || b.id === slug);
+  }
+
+  public async addBerita(
+    data: Omit<MasterBerita, "id" | "slug" | "createdAt" | "updatedAt" | "viewsCount"> & { slug?: string; id?: string },
+    user = "Sekretariat P2KD"
+  ): Promise<MasterBerita> {
+    const rawSlug = data.slug || data.judul.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const finalSlug = rawSlug || `berita-${Date.now()}`;
+    const id = data.id || `news-${Date.now()}`;
+    const now = new Date().toISOString();
+
+    const newBerita: MasterBerita = {
+      id,
+      slug: finalSlug,
+      judul: data.judul,
+      kategori: data.kategori,
+      ringkasan: data.ringkasan,
+      konten: data.konten,
+      gambarUrl: data.gambarUrl,
+      penulisNama: data.penulisNama || user,
+      penulisJabatan: data.penulisJabatan || "Seksi Publikasi & Dokumentasi",
+      status: data.status || "PUBLISHED",
+      isHeadline: Boolean(data.isHeadline),
+      lampiranPdfUrl: data.lampiranPdfUrl,
+      lampiranPdfNama: data.lampiranPdfNama,
+      viewsCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (newBerita.isHeadline) {
+      this.beritaList.forEach((b) => {
+        b.isHeadline = false;
+      });
+    }
+
+    this.beritaList.unshift(newBerita);
+    await SupabaseDbService.insertBerita(newBerita);
+
+    this.addAuditLog({
+      user,
+      role: "SEKSI_PUBLIKASI",
+      aksi: "CREATE_BERITA",
+      entity: "BERITA",
+      target: newBerita.judul,
+      detail: `Menerbitkan artikel/berita: "${newBerita.judul}" (${newBerita.kategori}).`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return newBerita;
+  }
+
+  public async updateBerita(
+    id: string,
+    updates: Partial<MasterBerita>,
+    user = "Sekretariat P2KD"
+  ): Promise<MasterBerita | null> {
+    const idx = this.beritaList.findIndex((b) => b.id === id || b.slug === id);
+    if (idx === -1) return null;
+
+    if (updates.isHeadline) {
+      this.beritaList.forEach((b) => {
+        b.isHeadline = false;
+      });
+    }
+
+    const updated: MasterBerita = {
+      ...this.beritaList[idx],
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+
+    this.beritaList[idx] = updated;
+    await SupabaseDbService.updateBerita(this.beritaList[idx].id, updates);
+
+    this.addAuditLog({
+      user,
+      role: "SEKSI_PUBLIKASI",
+      aksi: "UPDATE_BERITA",
+      entity: "BERITA",
+      target: updated.judul,
+      detail: `Memperbarui artikel/berita: "${updated.judul}".`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return updated;
+  }
+
+  public async deleteBerita(id: string, user = "Sekretariat P2KD"): Promise<boolean> {
+    const idx = this.beritaList.findIndex((b) => b.id === id);
+    if (idx === -1) return false;
+
+    const targetJudul = this.beritaList[idx].judul;
+    this.beritaList.splice(idx, 1);
+    await SupabaseDbService.deleteBerita(id);
+
+    this.addAuditLog({
+      user,
+      role: "SEKSI_PUBLIKASI",
+      aksi: "DELETE_BERITA",
+      entity: "BERITA",
+      target: targetJudul,
+      detail: `Menghapus artikel/berita: "${targetJudul}".`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return true;
+  }
+
+  public incrementBeritaViews(slugOrId: string) {
+    const item = this.beritaList.find((b) => b.slug === slugOrId || b.id === slugOrId);
+    if (item) {
+      item.viewsCount = (item.viewsCount || 0) + 1;
+      SupabaseDbService.updateBerita(item.id, { viewsCount: item.viewsCount }).catch(() => {});
+    }
   }
 
   // --- PENGUMUMAN METHODS ---
@@ -1873,21 +2030,9 @@ class SystemDataStore {
       return numA - numB;
     });
 
-    const uniqueRwSet = new Set<string>();
-    const uniqueRtSet = new Set<string>();
-
-    this.pemilihList.forEach((p) => {
-      if (p.rw) uniqueRwSet.add(p.rw.trim());
-      if (p.rt && p.rw) uniqueRtSet.add(`${p.rw.trim()}-${p.rt.trim()}`);
-    });
-
-    this.tpsList.forEach((t) => {
-      if (t.rw) uniqueRwSet.add(t.rw.trim());
-    });
-
-    const totalRw = uniqueRwSet.size || 13;
-    const totalRt = uniqueRtSet.size || 39;
-    const totalTps = this.tpsList.length;
+    const totalRw = this.webConfig.totalRw || 13;
+    const totalRt = this.webConfig.totalRt || 39;
+    const totalTps = this.tpsList.length || 13;
 
     const totalPetugas = this.petugasDptList.length;
     const petugasMenunggu = this.petugasDptList.filter((p) => p.status === "MENUNGGU_VERIFIKASI").length;

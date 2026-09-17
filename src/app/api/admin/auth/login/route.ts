@@ -92,14 +92,17 @@ export async function POST(req: Request) {
     }
 
     const isSuperAdmin = matched.role === "SUPER_ADMIN" || matched.seksi === "PIMPINAN";
-    const token = generateAuthToken({
-      username: matched.username,
-      nama: `${matched.namaLengkap} (${matched.jabatan})`,
-      role: matched.role,
-      seksi: matched.seksi,
-      assignedTps: matched.assignedTps || "SEMUA",
-      isSuperAdmin,
-    });
+    const token = generateAuthToken(
+      {
+        username: matched.username,
+        nama: `${matched.namaLengkap} (${matched.jabatan})`,
+        role: matched.role,
+        seksi: matched.seksi,
+        assignedTps: matched.assignedTps || "SEMUA",
+        isSuperAdmin,
+      },
+      172800 // 48 hours session
+    );
 
     // Audit log successful login
     dataStore.addAuditLog({
@@ -139,7 +142,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 86400,
+      maxAge: 172800, // 48 hours session
       path: "/",
     });
 

@@ -193,6 +193,26 @@ export interface Database {
           created_at: string;
         };
       };
+      berita_artikel: {
+        Row: {
+          id: string;
+          slug: string;
+          judul: string;
+          kategori: string;
+          ringkasan: string | null;
+          konten: string;
+          gambar_url: string | null;
+          penulis_nama: string | null;
+          penulis_jabatan: string | null;
+          status: string;
+          is_headline: boolean;
+          lampiran_pdf_url: string | null;
+          lampiran_pdf_nama: string | null;
+          views_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+      };
     };
   };
 }

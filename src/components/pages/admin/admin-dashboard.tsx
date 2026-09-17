@@ -36,6 +36,7 @@ import { TabAuditTrail } from "./tabs/tab-audit-trail";
 import { TabAnggotaP2KD } from "./tabs/tab-anggota-p2kd";
 import { TabPengaturanWeb } from "./tabs/tab-pengaturan-web";
 import { TabPetugasDpt } from "./tabs/tab-petugas-dpt";
+import { TabManajemenBerita } from "./tabs/tab-manajemen-berita";
 
 import { ModalVoterForm } from "./modals/modal-voter-form";
 import { ModalTms } from "./modals/modal-tms";
@@ -47,9 +48,21 @@ import { FieldBottomNav } from "./field-bottom-nav";
 
 export const AdminDashboard: React.FC = () => {
   const searchParams = useSearchParams();
-  const roleParam = (searchParams.get("role") || "").toLowerCase().trim();
-  const tpsParam = searchParams.get("tps") || "";
-  const userParam = searchParams.get("user") || "";
+  const [storedUser] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("admin_user_data");
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  const roleParam = (searchParams.get("role") || storedUser?.role || "").toLowerCase().trim();
+  const tpsParam = searchParams.get("tps") || storedUser?.assignedTps || "";
+  const userParam = searchParams.get("user") || storedUser?.username || "";
 
   // 1. Check if assigned to a specific TPS / Field Officer (Pantarlih / PPS)
   const isFieldOfficer =
@@ -82,7 +95,7 @@ export const AdminDashboard: React.FC = () => {
   // Dynamic user profile resolution
   let computedUserRole = isSuperAdmin ? "SUPER_ADMIN" : isFieldOfficer ? "PETUGAS_TPS" : roleParam.toUpperCase();
   let computedUserSeksi: SeksiP2KDType = isSuperAdmin ? "PIMPINAN" : isFieldOfficer ? "PANTARLIH_LAPANGAN" : (roleParam.toUpperCase() as SeksiP2KDType);
-  let computedUserName = isSuperAdmin ? "Khasanudin, S.Pd.SD" : isFieldOfficer ? `Petugas Lapangan (${assignedTps})` : "Panitia P2KD";
+  let computedUserName = isSuperAdmin ? (storedUser?.nama || "Khasanudin, S.Pd.SD") : isFieldOfficer ? `Petugas Lapangan (${assignedTps})` : (storedUser?.nama || "Panitia P2KD");
   let computedUserJabatan = isSuperAdmin ? "Ketua P2KD / Superadmin" : isFieldOfficer ? `Pantarlih Lapangan (${assignedTps})` : "Anggota Tim Seksi P2KD";
 
   if (userParam === "develzy") {
@@ -130,7 +143,13 @@ export const AdminDashboard: React.FC = () => {
   }
 
   // Navigation Initial Tab
-  const defaultInitialTab: TabType = isFieldOfficer ? "coklit" : roleParam === "seksi_pemilih" ? "pemilih" : roleParam === "seksi_logistik" || roleParam === "seksi_publikasi" ? "print" : "dashboard";
+  const defaultInitialTab: TabType = isFieldOfficer
+    ? "coklit"
+    : roleParam === "seksi_pemilih"
+    ? "pemilih"
+    : roleParam === "seksi_publikasi" || roleParam === "sekretaris"
+    ? "berita"
+    : "dashboard";
 
   const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
   const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "tps"];
@@ -377,9 +396,21 @@ export const AdminDashboard: React.FC = () => {
     };
   }, [fetchData]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/auth/logout", { method: "POST" });
+    } catch {
+      // ignore network errors on logout
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_user_data");
+      sessionStorage.removeItem("admin_token");
+    }
+
     toast.info("Sesi Berakhir", "Anda telah keluar dari Portal Petugas.");
-    router.push("/admin");
+    router.replace("/admin");
   };
 
   // --- CRUD HANDLERS ---
@@ -1106,6 +1137,15 @@ export const AdminDashboard: React.FC = () => {
 
           {effectiveActiveTab === "pengaturan_web" && (
             <TabPengaturanWeb currentUser={{ namaLengkap: computedUserName, role: computedUserRole }} />
+          )}
+
+          {effectiveActiveTab === "berita" && (
+            <TabManajemenBerita
+              currentUser={computedUserName}
+              isSekretaris={roleParam === "sekretaris" || userParam.toLowerCase().includes("sekretaris")}
+              isSeksiPublikasi={roleParam === "seksi_publikasi" || roleParam === "seksi_logistik" || computedUserSeksi === "SEKSI_LOGISTIK_PUBLIKASI"}
+              isAdmin={isAdmin}
+            />
           )}
         </main>
       </div>

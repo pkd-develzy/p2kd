@@ -16,7 +16,8 @@ const tables = [
   'tahapan',
   'pengumuman',
   'web_config',
-  'pendaftaran_petugas_dpt'
+  'pendaftaran_petugas_dpt',
+  'berita_artikel'
 ];
 
 async function checkTables() {

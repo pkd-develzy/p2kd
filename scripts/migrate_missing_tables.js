@@ -54,9 +54,8 @@ async function runMigration() {
     );
     ALTER TABLE public.balon_penjaringan ENABLE ROW LEVEL SECURITY;
     DROP POLICY IF EXISTS "Allow public read balon_penjaringan" ON public.balon_penjaringan;
-    CREATE POLICY "Allow public read balon_penjaringan" ON public.balon_penjaringan FOR SELECT USING (true);
     DROP POLICY IF EXISTS "Allow all service_role balon_penjaringan" ON public.balon_penjaringan;
-    CREATE POLICY "Allow all service_role balon_penjaringan" ON public.balon_penjaringan FOR ALL USING (true);
+    CREATE POLICY "Allow public read balon_penjaringan" ON public.balon_penjaringan FOR SELECT TO anon, authenticated USING (true);
     GRANT ALL ON public.balon_penjaringan TO anon, authenticated, service_role;
   `);
   console.log('   [OK] balon_penjaringan ready.');
@@ -85,9 +84,8 @@ async function runMigration() {
     );
     ALTER TABLE public.kandidat_kades ENABLE ROW LEVEL SECURITY;
     DROP POLICY IF EXISTS "Allow public read kandidat_kades" ON public.kandidat_kades;
-    CREATE POLICY "Allow public read kandidat_kades" ON public.kandidat_kades FOR SELECT USING (true);
     DROP POLICY IF EXISTS "Allow all service_role kandidat_kades" ON public.kandidat_kades;
-    CREATE POLICY "Allow all service_role kandidat_kades" ON public.kandidat_kades FOR ALL USING (true);
+    CREATE POLICY "Allow public read kandidat_kades" ON public.kandidat_kades FOR SELECT TO anon, authenticated USING (true);
     GRANT ALL ON public.kandidat_kades TO anon, authenticated, service_role;
   `);
   console.log('   [OK] kandidat_kades ready.');
@@ -114,10 +112,16 @@ async function runMigration() {
     );
     ALTER TABLE public.tps_vote_counts ENABLE ROW LEVEL SECURITY;
     DROP POLICY IF EXISTS "Allow public read tps_vote_counts" ON public.tps_vote_counts;
-    CREATE POLICY "Allow public read tps_vote_counts" ON public.tps_vote_counts FOR SELECT USING (true);
     DROP POLICY IF EXISTS "Allow all service_role tps_vote_counts" ON public.tps_vote_counts;
-    CREATE POLICY "Allow all service_role tps_vote_counts" ON public.tps_vote_counts FOR ALL USING (true);
+    CREATE POLICY "Allow public read tps_vote_counts" ON public.tps_vote_counts FOR SELECT TO anon, authenticated USING (true);
     GRANT ALL ON public.tps_vote_counts TO anon, authenticated, service_role;
+
+    DO $$
+    BEGIN
+      IF EXISTS (SELECT 1 FROM pg_views WHERE schemaname = 'public' AND viewname = 'tps_vote_count') THEN
+        ALTER VIEW public.tps_vote_count SET (security_invoker = true);
+      END IF;
+    END $$;
   `);
   console.log('   [OK] tps_vote_counts ready.');
 
@@ -145,12 +149,14 @@ async function runMigration() {
   console.log('6. Ensuring pendaftaran_petugas_dpt permissions...');
   await client.query(`
     GRANT ALL ON public.pendaftaran_petugas_dpt TO anon, authenticated, service_role;
-    DROP POLICY IF EXISTS "Allow anon insert pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt;
-    CREATE POLICY "Allow anon insert pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt FOR INSERT WITH CHECK (true);
-    DROP POLICY IF EXISTS "Allow read pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt;
-    CREATE POLICY "Allow read pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "allow_all_ops" ON public.pendaftaran_petugas_dpt;
+    DROP POLICY IF EXISTS "anon_insert_petugas" ON public.pendaftaran_petugas_dpt;
     DROP POLICY IF EXISTS "Allow all service_role pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt;
-    CREATE POLICY "Allow all service_role pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt FOR ALL USING (true);
+    DROP POLICY IF EXISTS "Allow anon insert pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt;
+    DROP POLICY IF EXISTS "Allow read pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt;
+    
+    CREATE POLICY "Allow anon insert pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt FOR INSERT TO anon, authenticated WITH CHECK (nama_lengkap IS NOT NULL AND nik IS NOT NULL);
+    CREATE POLICY "Allow read pendaftaran_petugas_dpt" ON public.pendaftaran_petugas_dpt FOR SELECT TO anon, authenticated USING (true);
   `);
   console.log('   [OK] pendaftaran_petugas_dpt permissions ready.');
 

@@ -153,5 +153,6 @@ export type TabType =
   | "anggota"
   | "audit"
   | "pengaturan_web"
-  | "petugas_dpt";
+  | "petugas_dpt"
+  | "berita";
 

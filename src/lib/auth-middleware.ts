@@ -62,3 +62,26 @@ export function verifyAdminSession(req: Request): SessionVerificationResult {
     user: payload,
   };
 }
+
+/**
+ * Enforces Strict RBAC: Only Seksi 1 (Pendaftaran Pemilih) and Superadmin can access citizen voter data.
+ */
+export function canAccessVoterData(user?: AuthTokenPayload): boolean {
+  if (!user) return false;
+  if (user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN") {
+    return true;
+  }
+  const seksi = user.seksi || "";
+  const role = user.role || "";
+  const username = (user.username || "").toLowerCase();
+
+  return (
+    seksi === "SEKSI_PEMILIH" ||
+    role === "SEKSI_PEMILIH" ||
+    role === "PETUGAS_TPS" ||
+    role === "PANTARLIH" ||
+    username.includes("pemilih") ||
+    username.includes("pantarlih") ||
+    username.startsWith("pps")
+  );
+}

@@ -137,7 +137,7 @@ export function verifyPassword(plain: string, storedHashOrPlain: string): boolea
  * Generates a signed cryptographic HMAC SHA-256 session token.
  * Token structure: base64Url(payload) . signature
  */
-export function generateAuthToken(payload: Omit<AuthTokenPayload, "exp">, expiresInSeconds = 86400): string {
+export function generateAuthToken(payload: Omit<AuthTokenPayload, "exp">, expiresInSeconds = 172800): string {
   const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
   const fullPayload: AuthTokenPayload = { ...payload, exp };
 

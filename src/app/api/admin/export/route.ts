@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
   try {
@@ -19,6 +19,15 @@ export async function GET(req: Request) {
     const searchFilter = searchParams.get("search") || undefined;
 
     const user = session.user;
+    if ((type === "DPT" || type === "DPS" || type === "TMS" || type === "FULL") && !canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Hanya Seksi 1: Pendaftaran Pemilih yang berwenang mengekspor data kependudukan.",
+        },
+        { status: 403 }
+      );
+    }
     const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
 
     // Strict Data Isolation for field officers from token claims

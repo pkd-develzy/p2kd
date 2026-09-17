@@ -19,6 +19,7 @@ import {
   Printer,
   Shield,
   Globe,
+  Newspaper,
 } from "lucide-react";
 import { Logo } from "@/components/ui";
 import { TabType, DbStatus, SeksiP2KDType } from "./types";
@@ -194,6 +195,14 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
         "SEKSI_LOGISTIK_PUBLIKASI",
       ],
       items: [
+        {
+          id: "berita" as TabType,
+          label: "Manajemen Berita & Publikasi",
+          icon: Newspaper,
+          badge: "CMS Media",
+          badgeColor: "bg-amber-500 text-slate-950 font-black",
+          allowedRoles: ["SUPER_ADMIN", "SEKRETARIS", "SEKSI_LOGISTIK_PUBLIKASI", "SEKSI_PEMILIH", "SEKSI_PENJARINGAN", "SEKSI_PENYARINGAN", "SEKSI_PUNGUT_HITUNG"],
+        },
         {
           id: "pengaturan_web" as TabType,
           label: "Pengaturan Website Publik",

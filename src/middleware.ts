@@ -3,11 +3,17 @@ import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const adminToken = req.cookies.get("admin_token")?.value;
 
-  // Protect admin dashboard routes
+  // 1. If accessing login page (/admin) while already having a valid admin_token, redirect to dashboard
+  if (pathname === "/admin") {
+    if (adminToken) {
+      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+    }
+  }
+
+  // 2. Protect admin dashboard routes
   if (pathname.startsWith("/admin/dashboard")) {
-    const adminToken = req.cookies.get("admin_token")?.value;
-
     if (!adminToken) {
       const loginUrl = new URL("/admin", req.url);
       loginUrl.searchParams.set("from", pathname);
@@ -19,5 +25,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/dashboard/:path*"],
+  matcher: ["/admin", "/admin/dashboard/:path*"],
 };

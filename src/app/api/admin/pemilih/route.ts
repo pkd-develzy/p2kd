@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import { SupabaseDbService } from "@/lib/supabase-db";
+import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
   try {
@@ -13,13 +14,59 @@ export async function GET(req: Request) {
     let tps = searchParams.get("tps") || undefined;
     const status = searchParams.get("status") || undefined;
     const search = searchParams.get("search") || undefined;
+    const pageParam = searchParams.get("page");
+    const limitParam = searchParams.get("limit");
 
     const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Hak akses data kependudukan dan pemilih dibatasi secara ketat khusus untuk Seksi 1: Pendaftaran Pemilih.",
+        },
+        { status: 403 }
+      );
+    }
+
     const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
 
     // Strict Data Isolation from authenticated token: If officer, FORCE filter to assigned TPS only!
     if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA") {
       tps = user.assignedTps;
+    }
+
+    // 1. Search Query: Search across ALL 7,787 residents directly in PostgreSQL (< 30ms)
+    if (search && search.trim().length > 0) {
+      const searchResults = await SupabaseDbService.searchPemilih(search.trim(), { tps, limit: 300 });
+      return NextResponse.json({
+        success: true,
+        total: searchResults.length,
+        isRestricted: isOfficer,
+        assignedTps: isOfficer ? tps : undefined,
+        data: searchResults,
+      });
+    }
+
+    // 2. Pagination on-demand (Tombol > / Next Page batch 500)
+    if (pageParam && parseInt(pageParam, 10) > 1) {
+      const page = parseInt(pageParam, 10);
+      const limit = limitParam ? parseInt(limitParam, 10) : 500;
+      const offset = (page - 1) * limit;
+
+      const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
+        tps,
+        statusAktif: status,
+      });
+
+      return NextResponse.json({
+        success: true,
+        total: pagedResult.total,
+        page,
+        limit,
+        isRestricted: isOfficer,
+        assignedTps: isOfficer ? tps : undefined,
+        data: pagedResult.data,
+      });
     }
 
     await dataStore.ensureSynced();
@@ -66,6 +113,16 @@ export async function POST(req: Request) {
     } = body;
 
     const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Hanya Seksi 1: Pendaftaran Pemilih yang berwenang menambahkan data pemilih.",
+        },
+        { status: 403 }
+      );
+    }
+
     const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
     const assignedTps = user.assignedTps;
 

@@ -8,3 +8,4 @@ export * from "./logo";
 export * from "./pagination-control";
 export * from "./active-qr-code";
 export * from "./signature-pad";
+export * from "./animated-counter";

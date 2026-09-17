@@ -22,6 +22,7 @@ import {
   Shield,
   Award,
   UserCheck,
+  Newspaper,
 } from "lucide-react";
 import { Button, Logo } from "@/components/ui";
 
@@ -42,10 +43,16 @@ const menuCategories: Record<string, MenuCategory> = {
     title: "Informasi & Tahapan",
     items: [
       {
+        href: "/berita",
+        label: "Berita & Liputan Media",
+        desc: "Kabar terkini dan rilis pers resmi P2KD",
+        icon: <Newspaper className="w-4 h-4 text-blue-700" />,
+      },
+      {
         href: "/informasi",
         label: "Informasi Pilkades",
         desc: "Visi, misi, dasar hukum, dan panitia P2KD",
-        icon: <Info className="w-4 h-4 text-blue-700" />,
+        icon: <Info className="w-4 h-4 text-indigo-700" />,
       },
       {
         href: "/calon",
@@ -57,13 +64,13 @@ const menuCategories: Record<string, MenuCategory> = {
         href: "/tahapan",
         label: "Tahapan & Jadwal",
         desc: "Agenda dari pendataan hingga DPT terkunci",
-        icon: <Calendar className="w-4 h-4 text-indigo-700" />,
+        icon: <Calendar className="w-4 h-4 text-amber-700" />,
       },
       {
         href: "/pengumuman",
         label: "Pengumuman Resmi",
         desc: "Surat edaran, tata tertib, dan berita acara",
-        icon: <Megaphone className="w-4 h-4 text-amber-700" />,
+        icon: <Megaphone className="w-4 h-4 text-emerald-700" />,
       },
       {
         href: "/faq",

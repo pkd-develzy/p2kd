@@ -80,7 +80,7 @@ const menuCategories: Record<string, MenuCategory> = {
       },
     ],
   },
-  dataPemilih: {
+  data: {
     title: "Data Pemilih & Wilayah",
     items: [
       {

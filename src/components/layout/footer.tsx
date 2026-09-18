@@ -69,8 +69,13 @@ export const Footer: React.FC = () => {
             </h5>
             <ul className="space-y-2.5 text-slate-200 font-medium pt-1">
               <li>
+                <Link href="/struktur" className="hover:text-blue-300 transition-colors block py-0.5 font-bold text-amber-300">
+                  Struktur Organisasi P2KD
+                </Link>
+              </li>
+              <li>
                 <Link href="/informasi" className="hover:text-blue-300 transition-colors block py-0.5">
-                  Tentang Pilkades Kalisalak
+                  Regulasi & Tata Cara Pilkades
                 </Link>
               </li>
               <li>

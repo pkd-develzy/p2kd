@@ -23,6 +23,7 @@ import {
   Award,
   Newspaper,
   UserCheck,
+  Users,
 } from "lucide-react";
 import { Button, Logo } from "@/components/ui";
 
@@ -49,9 +50,15 @@ const menuCategories: Record<string, MenuCategory> = {
         icon: <Newspaper className="w-4 h-4 text-blue-700" />,
       },
       {
+        href: "/struktur",
+        label: "Struktur Organisasi P2KD",
+        desc: "Susunan panitia, pimpinan, & seksi 1 s/d 6",
+        icon: <Users className="w-4 h-4 text-amber-700" />,
+      },
+      {
         href: "/informasi",
-        label: "Tentang P2KD Kalisalak",
-        desc: "Struktur organisasi, panitia, & visi misi",
+        label: "Regulasi & Dasar Hukum",
+        desc: "PP No. 16/2026, UU Desa, & dasar hukum",
         icon: <Info className="w-4 h-4 text-blue-700" />,
       },
       {
@@ -263,7 +270,7 @@ export const Navbar: React.FC = () => {
                 }
                 className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl transition-all ${
                   activeDropdown === "informasi" ||
-                  ["/informasi", "/tahapan", "/pengumuman", "/faq"].includes(pathname)
+                  ["/informasi", "/struktur", "/tahapan", "/pengumuman", "/faq", "/berita", "/bimtekmateri"].includes(pathname)
                     ? "bg-blue-50 text-blue-900 font-bold"
                     : "hover:bg-slate-50 hover:text-blue-700"
                 }`}

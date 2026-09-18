@@ -115,14 +115,14 @@ export const PanitiaCarousel: React.FC = () => {
     };
   }, []);
 
-  // 3-Second Automatic Rotation Timer
+  // 7-Second Automatic Rotation Timer
   useEffect(() => {
     if (panitiaList.length <= 1 || isPaused) return;
 
     timerRef.current = setInterval(() => {
       setDirection(1);
       setCurrentIndex((prev) => (prev + 1) % panitiaList.length);
-    }, 3000);
+    }, 7000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -162,33 +162,35 @@ export const PanitiaCarousel: React.FC = () => {
 
   // Generate initials for avatar fallback
   const getInitials = (name: string) => {
-    return name
-      .replace(/S\.Pd\.SD|S\.Pd|S\.Kom|S\.Ak|H\.|Hj\./gi, "")
-      .trim()
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase() || "PK";
+    return (
+      name
+        .replace(/S\.Pd\.SD|S\.Pd|S\.Kom|S\.Ak|H\.|Hj\./gi, "")
+        .trim()
+        .split(" ")
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase() || "PK"
+    );
   };
 
   const slideVariants = {
     enter: (dir: number) => ({
-      x: dir > 0 ? 30 : -30,
+      y: dir > 0 ? 15 : -15,
       opacity: 0,
-      scale: 0.96,
+      scale: 0.97,
     }),
     center: {
-      x: 0,
+      y: 0,
       opacity: 1,
       scale: 1,
-      transition: { duration: 0.35, ease: "easeOut" as const },
+      transition: { duration: 0.4, ease: "easeOut" as const },
     },
     exit: (dir: number) => ({
-      x: dir > 0 ? -30 : 30,
+      y: dir > 0 ? -15 : 15,
       opacity: 0,
-      scale: 0.96,
+      scale: 0.97,
       transition: { duration: 0.25, ease: "easeIn" as const },
     }),
   };
@@ -245,8 +247,8 @@ export const PanitiaCarousel: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic Member Profile Showcase (Animated per 3s) */}
-        <div className="relative z-10 my-auto py-4 min-h-35 flex items-center">
+        {/* Dynamic Member Profile Showcase (Foto Di Atas, Nama Di Bawah, Berganti Tiap 7 Detik) */}
+        <div className="relative z-10 my-auto py-3 min-h-48 flex items-center justify-center">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentMember?.id || currentIndex}
@@ -255,11 +257,11 @@ export const PanitiaCarousel: React.FC = () => {
               initial="enter"
               animate="center"
               exit="exit"
-              className="w-full flex items-center gap-4"
+              className="w-full flex flex-col items-center text-center space-y-2.5"
             >
-              {/* Photo Avatar / Frame */}
-              <div className="shrink-0 relative">
-                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl p-0.5 bg-linear-to-tr from-amber-400 via-blue-500 to-indigo-500 shadow-md">
+              {/* Photo Avatar / Frame (Di Atas Nama) */}
+              <div className="relative">
+                <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl p-0.5 bg-linear-to-tr from-amber-400 via-blue-500 to-indigo-500 shadow-lg">
                   <div className="w-full h-full rounded-[14px] overflow-hidden bg-slate-900 flex items-center justify-center relative">
                     {currentMember?.fotoUrl ? (
                       <img
@@ -267,38 +269,39 @@ export const PanitiaCarousel: React.FC = () => {
                         alt={currentMember.namaLengkap}
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          // Fallback to text avatar on image error
                           (e.target as HTMLElement).style.display = "none";
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-blue-900 to-slate-900 text-amber-300 font-black text-xl">
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-linear-to-br from-blue-900 to-slate-900 text-amber-300 font-black text-2xl">
                         {getInitials(currentMember?.namaLengkap || "Panitia")}
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="absolute -bottom-1 -right-1 p-1 rounded-full bg-blue-600 text-white border-2 border-slate-950 shadow-xs">
-                  <ShieldCheck className="w-3 h-3" />
+                  <ShieldCheck className="w-3.5 h-3.5" />
                 </div>
               </div>
 
-              {/* Text Information */}
-              <div className="flex-1 min-w-0 space-y-1.5">
-                <Badge
-                  variant="outline"
-                  className={`text-[9px] font-bold px-2 py-0.5 rounded-md border ${getSeksiColor(
-                    currentMember?.seksi || "PIMPINAN"
-                  )}`}
-                >
-                  {currentMember?.seksiLabel || currentMember?.seksi}
-                </Badge>
+              {/* Text Information (Di Bawah Foto) */}
+              <div className="space-y-1 w-full max-w-xs px-2">
+                <div className="flex justify-center">
+                  <Badge
+                    variant="outline"
+                    className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border ${getSeksiColor(
+                      currentMember?.seksi || "PIMPINAN"
+                    )}`}
+                  >
+                    {currentMember?.seksiLabel || currentMember?.seksi}
+                  </Badge>
+                </div>
 
                 <h3 className="text-sm sm:text-base font-black text-white tracking-tight leading-snug line-clamp-2">
                   {currentMember?.namaLengkap}
                 </h3>
 
-                <p className="text-xs font-semibold text-amber-300 line-clamp-1 flex items-center gap-1.5">
+                <p className="text-xs font-semibold text-amber-300 line-clamp-1 flex items-center justify-center gap-1.5">
                   <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>{currentMember?.jabatan}</span>
                 </p>
@@ -307,26 +310,26 @@ export const PanitiaCarousel: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Bottom Bar: 3s Progress Indicator & Footer Link */}
+        {/* Bottom Bar: 7s Progress Indicator & Footer Link ke /struktur */}
         <div className="relative z-10 pt-3 border-t border-white/10 space-y-2.5">
-          {/* Animated 3-Second Progress Bar */}
+          {/* Animated 7-Second Progress Bar */}
           <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
             <motion.div
               key={currentIndex}
               initial={{ width: "0%" }}
               animate={{ width: isPaused ? "100%" : "100%" }}
-              transition={{ duration: isPaused ? 0 : 3, ease: "linear" }}
+              transition={{ duration: isPaused ? 0 : 7, ease: "linear" }}
               className="h-full bg-linear-to-r from-amber-400 to-blue-400 rounded-full"
             />
           </div>
 
           <div className="flex items-center justify-between text-[11px]">
             <span className="text-slate-400 text-[10px]">
-              {isPaused ? "⏸ Dihentikan (Arahkan kursor)" : "⏱ Berganti otomatis tiap 3 dtk"}
+              {isPaused ? "⏸ Dihentikan (Arahkan kursor)" : "⏱ Berganti otomatis tiap 7 dtk"}
             </span>
 
             <Link
-              href="/informasi"
+              href="/struktur"
               className="text-blue-300 hover:text-white font-bold flex items-center gap-1 transition-colors hover:underline"
             >
               <span>Struktur Lengkap</span>
@@ -338,3 +341,4 @@ export const PanitiaCarousel: React.FC = () => {
     </div>
   );
 };
+

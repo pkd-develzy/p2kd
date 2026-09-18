@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
+import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
@@ -9,8 +10,20 @@ export async function GET(req: Request) {
       return session.response!;
     }
 
-    await dataStore.ensureSynced();
+    const [aggStats] = await Promise.all([
+      SupabaseDbService.getAggregateStats(),
+      dataStore.ensureSynced(),
+    ]);
+
     const stats = dataStore.getStats();
+    if (aggStats) {
+      stats.totalSemua = aggStats.totalSemua || stats.totalSemua;
+      stats.totalAktif = aggStats.totalAktif || stats.totalAktif;
+      stats.totalLaki = aggStats.totalLaki || stats.totalLaki;
+      stats.totalPerempuan = aggStats.totalPerempuan || stats.totalPerempuan;
+      stats.totalTms = aggStats.totalTms || stats.totalTms;
+    }
+
     return NextResponse.json({
       success: true,
       data: stats,

@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       tps = user.assignedTps;
     }
 
-    // 1. Search Query: Search across ALL 7,787 residents directly in PostgreSQL (< 30ms)
+    // 1. Search Query: Instant indexed PostgreSQL database search (< 30ms)
     if (search && search.trim().length > 0) {
       const searchResults = await SupabaseDbService.searchPemilih(search.trim(), { tps, limit: 300 });
       return NextResponse.json({
@@ -47,41 +47,29 @@ export async function GET(req: Request) {
       });
     }
 
-    // 2. Pagination on-demand (Tombol > / Next Page batch 500)
-    if (pageParam && parseInt(pageParam, 10) > 1) {
-      const page = parseInt(pageParam, 10);
-      const limit = limitParam ? parseInt(limitParam, 10) : 500;
-      const offset = (page - 1) * limit;
+    // 2. Direct Server-Side Database Pagination (Offset / Limit)
+    const page = pageParam ? Math.max(1, parseInt(pageParam, 10)) : 1;
+    const limit = limitParam ? Math.min(1000, Math.max(1, parseInt(limitParam, 10))) : 500;
+    const offset = (page - 1) * limit;
 
-      const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
-        tps,
-        statusAktif: status,
-      });
-
-      return NextResponse.json({
-        success: true,
-        total: pagedResult.total,
-        page,
-        limit,
-        isRestricted: isOfficer,
-        assignedTps: isOfficer ? tps : undefined,
-        data: pagedResult.data,
-      });
-    }
-
-    await dataStore.ensureSynced();
-    const list = dataStore.getPemilihList({ tps, status, search });
+    const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
+      tps,
+      statusAktif: status,
+    });
 
     return NextResponse.json({
       success: true,
-      total: list.length,
+      total: pagedResult.total,
+      page,
+      limit,
+      totalPages: Math.ceil(pagedResult.total / limit),
       isRestricted: isOfficer,
       assignedTps: isOfficer ? tps : undefined,
-      data: list,
+      data: pagedResult.data,
     });
   } catch {
     return NextResponse.json(
-      { success: false, message: "Gagal mengambil daftar pemilih." },
+      { success: false, message: "Gagal mengambil daftar pemilih dari database." },
       { status: 500 }
     );
   }

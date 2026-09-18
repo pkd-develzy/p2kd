@@ -972,6 +972,7 @@ export const AdminDashboard: React.FC = () => {
                 role: computedUserRole,
                 jabatan: computedUserJabatan,
               }}
+              dbStatus={dbStatus}
             />
           )}
 

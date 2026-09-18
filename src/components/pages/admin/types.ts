@@ -104,13 +104,23 @@ export interface DbStatus {
   connected: boolean;
   latencyMs: number | null;
   mode: string;
-  maskedConnectionString: string;
-  stats?: {
-    totalPemilih: number;
-    totalAktif: number;
-    totalTms: number;
-    totalTps: number;
-    totalAduan: number;
+  maskedConnectionString?: string;
+  cloudStats?: {
+    pemilihCount?: number;
+    anggotaCount?: number;
+    tpsCount?: number;
+  };
+  localStats?: {
+    totalPemilih?: number;
+    totalAktif?: number;
+    totalTms?: number;
+    totalTps?: number;
+    totalAduan?: number;
+  };
+  tahapan?: {
+    isDptLocked: boolean;
+    lockHashSignature?: string;
+    nomorBeritaAcara?: string;
   };
 }
 

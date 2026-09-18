@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
+import { SupabaseDbService } from "@/lib/supabase-db";
 
 export async function GET() {
   try {
-    await dataStore.ensureSynced();
+    const [aggStats] = await Promise.all([
+      SupabaseDbService.getAggregateStats(),
+      dataStore.ensureSynced(),
+    ]);
+
     const stats = dataStore.getStats();
+    if (aggStats) {
+      stats.totalSemua = aggStats.totalSemua || stats.totalSemua;
+      stats.totalAktif = aggStats.totalAktif || stats.totalAktif;
+      stats.totalLaki = aggStats.totalLaki || stats.totalLaki;
+      stats.totalPerempuan = aggStats.totalPerempuan || stats.totalPerempuan;
+      stats.totalTms = aggStats.totalTms || stats.totalTms;
+    }
+
     return NextResponse.json(
       {
         success: true,
@@ -12,7 +25,7 @@ export async function GET() {
       },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+          "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
         },
       }
     );

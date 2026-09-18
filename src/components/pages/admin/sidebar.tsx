@@ -121,11 +121,11 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
         },
         {
           id: "petugas_dpt" as TabType,
-          label: "Petugas Pendataan DPT",
+          label: "1.4 Pendaftaran Petugas DPT",
           icon: UserCheck,
-          badge: petugasCount > 0 ? `${petugasCount} Berkas` : "Rekrutmen",
+          badge: petugasCount > 0 ? `${petugasCount} Berkas` : "Pantarlih",
           badgeColor: petugasCount > 0 ? "bg-blue-600 text-white font-bold" : "bg-slate-800 text-slate-400 border-slate-700",
-          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "SEKSI_PENJARINGAN", "SEKSI_PENYARINGAN"],
+          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH"],
         },
         {
           id: "aduan" as TabType,

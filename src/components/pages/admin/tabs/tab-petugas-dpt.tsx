@@ -453,7 +453,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                 variant="primary"
                 className="text-[10px] uppercase font-bold bg-blue-500/20 text-blue-300 border-blue-400/30 px-3 py-0.5 rounded-full"
               >
-                Perekrutan & Seleksi Pantarlih
+                Seksi 1: Pendaftaran Pemilih • Rekrutmen Pantarlih
               </Badge>
               <span className="text-xs text-slate-400 font-medium">
                 • {petugasList.length} Total Pendaftar ({metrics.ditetapkan} Ditetapkan • {metrics.menunggu} Menunggu) • Operator: {userName} ({userRole})

@@ -394,10 +394,11 @@ class SystemDataStore {
         if (res.data.tahapanState) this.tahapanState = res.data.tahapanState;
         if (res.data.webConfig) this.webConfig = { ...this.webConfig, ...res.data.webConfig };
         if (res.data.petugasDptList) this.petugasDptList = res.data.petugasDptList;
+        if (Array.isArray(res.data.beritaList)) this.beritaList = res.data.beritaList;
         this.isSupabaseSynced = true;
       }
       const fetchedBerita = await SupabaseDbService.fetchBeritaList();
-      if (fetchedBerita && fetchedBerita.length > 0) {
+      if (Array.isArray(fetchedBerita)) {
         this.beritaList = fetchedBerita;
       }
     } catch (err) {

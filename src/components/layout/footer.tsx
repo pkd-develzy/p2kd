@@ -84,6 +84,11 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/syarat-daftar-kades" className="hover:text-amber-300 transition-colors block py-0.5 font-bold text-amber-400">
+                  Syarat Pendaftaran Kades
+                </Link>
+              </li>
+              <li>
                 <Link href="/tahapan" className="hover:text-blue-300 transition-colors block py-0.5">
                   Jadwal & Agenda P2KD
                 </Link>

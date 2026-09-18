@@ -24,6 +24,7 @@ import {
   Newspaper,
   UserCheck,
   Users,
+  Scale,
 } from "lucide-react";
 import { Button, Logo } from "@/components/ui";
 
@@ -120,6 +121,12 @@ const menuCategories: Record<string, MenuCategory> = {
     title: "Layanan & Regulasi",
     items: [
       {
+        href: "/syarat-daftar-kades",
+        label: "Syarat Pendaftaran Kades",
+        desc: "Syarat, larangan, & periodisasi masa jabatan 8 tahun",
+        icon: <Scale className="w-4 h-4 text-amber-700" />,
+      },
+      {
         href: "/daftarpantarlih",
         label: "Pendaftaran Petugas DPT",
         desc: "Rekrutmen & Uji Integritas Pantarlih/Coklit",
@@ -133,8 +140,8 @@ const menuCategories: Record<string, MenuCategory> = {
       },
       {
         href: "/ketentuan",
-        label: "Ketentuan Pilkades",
-        desc: "Syarat pemilih dan regulasi hukum",
+        label: "Ketentuan Pemilih",
+        desc: "Syarat pemilih dan hak suara warga",
         icon: <FileText className="w-4 h-4 text-slate-700" />,
       },
       {

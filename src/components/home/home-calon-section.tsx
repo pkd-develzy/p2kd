@@ -141,7 +141,7 @@ export const HomeCalonSection: React.FC = () => {
                     <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                   </Button>
                 </Link>
-                <Link href="/ketentuan">
+                <Link href="/syarat-daftar-kades">
                   <Button
                     variant="outline"
                     size="sm"

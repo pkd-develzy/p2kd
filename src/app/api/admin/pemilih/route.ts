@@ -35,39 +35,72 @@ export async function GET(req: Request) {
       tps = user.assignedTps;
     }
 
+    // Clean and validate filters
+    const cleanTps = tps && tps !== "SEMUA" && !tps.toUpperCase().includes("SEMUA") ? tps : undefined;
+    const cleanStatus = status && status !== "SEMUA" && !status.toUpperCase().includes("SEMUA") ? status : undefined;
+
     // 1. Search Query: Instant indexed PostgreSQL database search (< 30ms)
     if (search && search.trim().length > 0) {
-      const searchResults = await SupabaseDbService.searchPemilih(search.trim(), { tps, limit: 300 });
+      const searchResults = await SupabaseDbService.searchPemilih(search.trim(), { tps: cleanTps, limit: 500 });
+      if (searchResults.length > 0) {
+        return NextResponse.json({
+          success: true,
+          total: searchResults.length,
+          isRestricted: isOfficer,
+          assignedTps: isOfficer ? tps : undefined,
+          data: searchResults,
+        });
+      }
+      // Fallback to dataStore search in memory
+      await dataStore.ensureSynced();
+      const localResults = dataStore.getPemilihList({ tps: cleanTps, status: cleanStatus, search: search.trim() });
       return NextResponse.json({
         success: true,
-        total: searchResults.length,
+        total: localResults.length,
         isRestricted: isOfficer,
         assignedTps: isOfficer ? tps : undefined,
-        data: searchResults,
+        data: localResults,
       });
     }
 
     // 2. Direct Server-Side Database Pagination (Offset / Limit)
     const page = pageParam ? Math.max(1, parseInt(pageParam, 10)) : 1;
-    const limit = limitParam ? Math.min(1000, Math.max(1, parseInt(limitParam, 10))) : 500;
+    const limit = limitParam ? Math.min(10000, Math.max(1, parseInt(limitParam, 10))) : 10000;
     const offset = (page - 1) * limit;
 
     const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
-      tps,
-      statusAktif: status,
+      tps: cleanTps,
+      statusAktif: cleanStatus,
     });
+
+    let votersData = pagedResult.data;
+    let totalCount = pagedResult.total;
+
+    // Fallback to dataStore if database returns 0 rows (e.g. during sync or cold start)
+    if (votersData.length === 0) {
+      await dataStore.ensureSynced();
+      const fallbackList = dataStore.getPemilihList({
+        tps: cleanTps,
+        status: cleanStatus,
+      });
+      if (fallbackList.length > 0) {
+        totalCount = fallbackList.length;
+        votersData = fallbackList.slice(offset, offset + limit);
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      total: pagedResult.total,
+      total: totalCount,
       page,
       limit,
-      totalPages: Math.ceil(pagedResult.total / limit),
+      totalPages: Math.ceil(totalCount / limit) || 1,
       isRestricted: isOfficer,
       assignedTps: isOfficer ? tps : undefined,
-      data: pagedResult.data,
+      data: votersData,
     });
-  } catch {
+  } catch (err) {
+    console.error("Error in GET /api/admin/pemilih:", err);
     return NextResponse.json(
       { success: false, message: "Gagal mengambil daftar pemilih dari database." },
       { status: 500 }

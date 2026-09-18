@@ -376,7 +376,7 @@ export class SupabaseDbService {
         beritaRes,
       ] = await Promise.all([
         client.from("tps").select("*").order("nomor_tps"),
-        client.from("pemilih").select("*").order("nama_lengkap").limit(100), // Preview slice only, paged on-demand
+        client.from("pemilih").select("*").order("nama_lengkap"),
         client.from("anggota_p2kd").select("*"),
         client.from("balon_penjaringan").select("*"),
         client.from("kandidat_kades").select("*").order("nomor_urut"),
@@ -748,7 +748,7 @@ export class SupabaseDbService {
    */
   public static async fetchPemilihPaged(
     offset: number,
-    limit = 500,
+    limit = 10000,
     filter?: { tps?: string; statusAktif?: string }
   ): Promise<{ data: MasterPemilih[]; total: number }> {
     try {
@@ -758,10 +758,10 @@ export class SupabaseDbService {
         .order("nama_lengkap")
         .range(offset, offset + limit - 1);
 
-      if (filter?.tps && filter.tps !== "SEMUA") {
+      if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
         q = q.eq("tps", filter.tps);
       }
-      if (filter?.statusAktif) {
+      if (filter?.statusAktif && filter.statusAktif !== "SEMUA" && !filter.statusAktif.toUpperCase().includes("SEMUA")) {
         q = q.eq("status_aktif", filter.statusAktif);
       }
 
@@ -769,7 +769,7 @@ export class SupabaseDbService {
       if (error || !data) return { data: [], total: 0 };
       return {
         data: (data as SupabasePemilihRow[]).map((p) => this.mapSupabasePemilihRow(p)),
-        total: count || 0,
+        total: count ?? data.length,
       };
     } catch (err) {
       console.warn("fetchPemilihPaged failed:", err);
@@ -787,14 +787,14 @@ export class SupabaseDbService {
     try {
       const clean = query.trim();
       if (!clean) return [];
-      const limit = options?.limit || 100;
+      const limit = options?.limit || 200;
       let q = this.adminClient
         .from("pemilih")
         .select("*")
         .order("nama_lengkap")
         .limit(limit);
 
-      if (options?.tps && options.tps !== "SEMUA") {
+      if (options?.tps && options.tps !== "SEMUA" && !options.tps.toUpperCase().includes("SEMUA")) {
         q = q.eq("tps", options.tps);
       }
 

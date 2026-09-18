@@ -35,7 +35,6 @@ import { TabRekapEkspor } from "./tabs/tab-rekap-ekspor";
 import { TabAuditTrail } from "./tabs/tab-audit-trail";
 import { TabAnggotaP2KD } from "./tabs/tab-anggota-p2kd";
 import { TabPengaturanWeb } from "./tabs/tab-pengaturan-web";
-import { TabPetugasDpt } from "./tabs/tab-petugas-dpt";
 import { TabManajemenBerita } from "./tabs/tab-manajemen-berita";
 
 import { ModalVoterForm } from "./modals/modal-voter-form";
@@ -985,14 +984,6 @@ export const AdminDashboard: React.FC = () => {
               userSeksi={computedUserSeksi}
               currentUser={currentUser}
               onRefresh={() => fetchData()}
-            />
-          )}
-
-          {effectiveActiveTab === "petugas_dpt" && (
-            <TabPetugasDpt
-              isAdmin={isAdmin}
-              userRole={computedUserRole}
-              userName={computedUserName}
             />
           )}
 

@@ -113,12 +113,6 @@ const menuCategories: Record<string, MenuCategory> = {
     title: "Layanan & Regulasi",
     items: [
       {
-        href: "/daftarpantarlih",
-        label: "Pendaftaran Petugas DPT",
-        desc: "Rekrutmen & Uji Integritas Pantarlih/Coklit",
-        icon: <UserCheck className="w-4 h-4 text-blue-700" />,
-      },
-      {
         href: "/aduan",
         label: "Form Aduan & Perbaikan",
         desc: "Koreksi data, pendaftaran baru, & TMS",

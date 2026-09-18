@@ -320,7 +320,7 @@ export const AdminLoginForm: React.FC = () => {
                 Sistem Informasi &amp; Layanan Terpadu
               </h1>
               <p className="text-sm sm:text-base text-slate-300 max-w-2xl leading-relaxed font-normal drop-shadow-sm">
-                P2KD Desa Kalisalak Kecamatan Margasari — Software Operasional Sekretariat Administrator Terintegrasi, Penetapan DPT Faktual, Rekapitulasi Berita Acara &amp; Real Count Pilkades 2027 – 2035.
+                P2KD Desa Kalisalak Kecamatan Margasari — Software Operasional Sekretariat Administrator Terintegrasi, Penetapan DPT Faktual &amp; Rekapitulasi Berita Acara Pilkades 2027 – 2035.
               </p>
             </div>
 

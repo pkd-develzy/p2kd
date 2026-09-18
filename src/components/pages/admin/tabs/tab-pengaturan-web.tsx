@@ -501,19 +501,6 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
 
               <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-slate-900 block">Hasil Hitung Cepat Real Count (Publik)</span>
-                  <span className="text-slate-500 text-[11px]">Buka grafik hasil perolehan suara per tabung pada Hari H.</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={config.isRealCountPublic}
-                  onChange={(e) => setConfig({ ...config, isRealCountPublic: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 rounded"
-                />
-              </div>
-
-              <div className="p-3 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-between">
-                <div>
                   <span className="font-bold text-slate-900 block">Kanal Aduan & Tanggapan Online</span>
                   <span className="text-slate-500 text-[11px]">Izinkan warga mengirim formulir perbaikan data DPS online.</span>
                 </div>

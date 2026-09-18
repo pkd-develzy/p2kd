@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Pilkades Desa Kalisalak | Kec. Margasari, Kab. Tegal",
-  description: "Portal Resmi Pendaftaran, Hak Pilih, Coklit & Real Count Pemilihan Kepala Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal.",
+  description: "Portal Resmi Pendaftaran, Hak Pilih & Coklit Pemilihan Kepala Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

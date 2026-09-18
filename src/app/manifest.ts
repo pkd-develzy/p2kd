@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "P2KD Desa Kalisalak - Portal Petugas & Sekretariat",
     short_name: "P2KD Petugas",
-    description: "Aplikasi Operasional P2KD Desa Kalisalak, Coklit Lapangan, DPT & Real Count Pilkades 2027",
+    description: "Aplikasi Operasional P2KD Desa Kalisalak, Coklit Lapangan & DPT Pilkades 2027",
     start_url: "/admin",
     scope: "/admin",
     display: "standalone",

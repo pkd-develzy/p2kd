@@ -79,7 +79,7 @@ export const KetentuanPemilihContent: React.FC = () => {
           Ketentuan & Syarat Pemilih Pilkades {desa}
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 font-medium">
-          Kecamatan {kecamatan}, Kabupaten {kabupaten} • Pelaksanaan Pemungutan Suara: <strong>{hariH}</strong>
+          Kecamatan {kecamatan}, Kabupaten {kabupaten} • Pemungutan Suara: <strong>{hariH} (Pukul 07:00 WIB – Selesai di Lapangan Desa Kalisalak)</strong>
         </p>
       </div>
 
@@ -99,10 +99,10 @@ export const KetentuanPemilihContent: React.FC = () => {
             Hak Menentukan Pemimpin Desa Kalisalak untuk 8 Tahun ke Depan
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-            Setiap warga Desa Kalisalak yang memenuhi persyaratan perundang-undangan berhak menggunakan hak suaranya secara <strong>Langsung, Umum, Bebas, Rahasia, Jujur, dan Adil</strong> tanpa diskriminasi, tekanan, atau paksaan dari pihak mana pun.
+            Setiap warga Desa Kalisalak yang memenuhi persyaratan perundang-undangan berhak menggunakan hak suaranya secara <strong>Langsung, Umum, Bebas, Rahasia, Jujur, dan Adil</strong> pada hari <strong>{hariH} mulai pukul 07:00 WIB sampai dengan selesai di Lapangan Desa Kalisalak</strong>.
           </p>
           <div className="p-3 bg-white/10 rounded-2xl border border-white/10 text-xs text-blue-200 flex items-center gap-2">
-            <span>💡 <strong>Penting:</strong> Pastikan Nomor Induk Kependudukan (NIK) Anda telah tercantum dalam Daftar Pemilih Tetap (DPT) Desa Kalisalak sebelum hari pemungutan suara.</span>
+            <span>💡 <strong>Pemberitahuan Waktu & Lokasi:</strong> Pemilih DPT mencoblos pukul <strong>07:00 WIB – Selesai di Lapangan Desa Kalisalak</strong> sesuai nomor Tabung Pemilihan (TPS) masing-masing RW.</span>
           </div>
         </div>
       </Card>
@@ -136,7 +136,7 @@ export const KetentuanPemilihContent: React.FC = () => {
               {
                 no: 2,
                 title: "Usia Minimal 17 Tahun atau Pernah Kawin",
-                desc: "Telah berusia genap 17 (tujuh belas) tahun pada hari pemungutan suara (Rabu, 3 Februari 2027) ATAU sudah/pernah kawin/menikah meskipun belum berusia 17 tahun.",
+                desc: `Telah berusia genap 17 (tujuh belas) tahun pada hari pemungutan suara (${hariH}) ATAU sudah/pernah kawin/menikah meskipun belum berusia 17 tahun.`,
               },
               {
                 no: 3,
@@ -161,12 +161,12 @@ export const KetentuanPemilihContent: React.FC = () => {
               {
                 no: 7,
                 title: "Terdaftar dalam Daftar Pemilih",
-                desc: "Tercantum dalam Daftar Pemilih Tetap (DPT) Desa Kalisalak yang telah ditetapkan secara resmi oleh P2KD dan BPD.",
+                desc: `Tercantum dalam Daftar Pemilih Tetap (DPT) Desa Kalisalak untuk mencoblos pada ${hariH} pukul 07:00 WIB – Selesai di Lapangan Desa Kalisalak.`,
               },
               {
                 no: 8,
                 title: "Satu Orang Satu Suara (One Person, One Vote)",
-                desc: "Hanya berhak memberikan 1 (satu) suara pada 1 (satu) Tempat Pemungutan Suara (TPS) yang telah ditentukan.",
+                desc: "Hanya berhak memberikan 1 (satu) suara pada 1 (satu) Tempat Pemungutan Suara (TPS / Tabung) di Lapangan Desa Kalisalak.",
               },
             ].map((item) => (
               <div
@@ -211,7 +211,7 @@ export const KetentuanPemilihContent: React.FC = () => {
             {[
               { label: "Meninggal Dunia", desc: "Pemilih telah meninggal dunia dibuktikan dengan Surat Keterangan Kematian dari Desa/Dukcapil." },
               { label: "Mutasi / Pindah Domisili Keluar", desc: "Telah pindah domisili keluar wilayah Desa Kalisalak dengan Surat Keterangan Pindah WNI (SKPWNI)." },
-              { label: "Belum Cukup Umur", desc: "Berusia di bawah 17 tahun pada tanggal 3 Februari 2027 dan belum pernah menikah/kawin." },
+              { label: "Belum Cukup Umur", desc: `Berusia di bawah 17 tahun pada tanggal pelaksanaan (${hariH}) dan belum pernah menikah/kawin.` },
               { label: "Anggota TNI / Polri Aktif", desc: "Telah diangkat menjadi prajurit TNI atau anggota POLRI aktif." },
               { label: "Pencabutan Hak Pilih oleh Pengadilan", desc: "Hak pilihnya dicabut berdasarkan amar putusan vonis pengadilan berkekuatan hukum tetap." },
               { label: "Data Ganda / Fiktif", desc: "Tercatat lebih dari 1 kali dalam DPT (dihapus salah satunya dan disesuaikan TPS domisili riil)." },
@@ -254,7 +254,7 @@ export const KetentuanPemilihContent: React.FC = () => {
             </Badge>
             <h3 className="text-sm font-black text-slate-900">Pemilih Utama Terdaftar</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Daftar pemilih yang telah melalui proses pencocokan & penelitian (Coklit) oleh Pantarlih dan telah ditetapkan secara resmi. Pemilih DPT mencoblos pukul <strong>07:00 – 13:00 WIB</strong> di TPS yang ditentukan.
+              Daftar pemilih yang telah melalui proses pencocokan & penelitian (Coklit) oleh Pantarlih dan telah disahkan dalam DPT. <strong>Pemilih DPT mencoblos pukul 07:00 WIB – Selesai di Lapangan Desa Kalisalak</strong> pada TPS / Tabung sesuai wilayah RW.
             </p>
           </Card>
 
@@ -274,7 +274,7 @@ export const KetentuanPemilihContent: React.FC = () => {
             </Badge>
             <h3 className="text-sm font-black text-slate-900">Warga Ber-KTP Kalisalak</h3>
             <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Pemilih yang memenuhi syarat namun belum terdaftar di DPT. Dapat menggunakan hak pilih pada pukul <strong>12:00 – 13:00 WIB</strong> dengan membawa KTP-el Kalisalak asli di TPS sesuai alamat RT/RW (selama surat suara tersedia).
+              Pemilih yang memenuhi syarat namun belum terdaftar di DPT. Dapat menggunakan hak pilih di Lapangan Desa Kalisalak pada TPS/Tabung sesuai KTP-el Kalisalak asli menjelang akhir waktu pemungutan suara (selama surat suara cadangan tersedia).
             </p>
           </Card>
         </div>

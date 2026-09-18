@@ -4,6 +4,7 @@ import {
   HeroSection,
   StatsOverview,
   NewsSection,
+  HomeCalonSection,
   HomeTahapanPreview,
   FeaturesGrid,
   HomeCtaAduan,
@@ -37,7 +38,12 @@ export default function Home() {
           <NewsSection />
         </section>
 
-        {/* 4. Active Timeline Preview */}
+        {/* 4. Detail Profil Calon & Pendaftar Kepala Desa */}
+        <section>
+          <HomeCalonSection />
+        </section>
+
+        {/* 5. Active Timeline Preview */}
         <section>
           <HomeTahapanPreview />
         </section>

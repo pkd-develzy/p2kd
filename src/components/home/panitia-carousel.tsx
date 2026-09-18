@@ -246,7 +246,7 @@ export const PanitiaCarousel: React.FC = () => {
         </div>
 
         {/* Dynamic Member Profile Showcase (Animated per 3s) */}
-        <div className="relative z-10 my-auto py-4 min-h-[140px] flex items-center">
+        <div className="relative z-10 my-auto py-4 min-h-35 flex items-center">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentMember?.id || currentIndex}

@@ -652,7 +652,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
                     unoptimized
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent flex items-end p-3">
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/60 via-transparent to-transparent flex items-end p-3">
                     <span className="text-[11px] font-medium text-white/90 drop-shadow-xs truncate max-w-full font-mono">
                       {formData.gambarUrl}
                     </span>

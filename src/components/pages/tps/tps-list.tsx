@@ -27,9 +27,36 @@ interface ApiTpsItem {
   kuotaMaksimal?: number;
 }
 
+const DEFAULT_TABUNG_ITEMS: TabungItem[] = Array.from({ length: 13 }, (_, index) => {
+  const numVal = index + 1;
+  const tabungNum = String(numVal).padStart(2, "0");
+  return {
+    id: `tabung-${tabungNum}`,
+    nomorTabung: tabungNum,
+    namaTabung: `Tabung Pemilihan ${tabungNum}`,
+    pintuMasuk: index < 4 ? "Pintu Masuk Barat (Sektor A)" : index < 8 ? "Pintu Masuk Utara (Sektor B)" : "Pintu Masuk Timur (Sektor C)",
+    wilayahRw: `RW ${tabungNum}`,
+    cakupanRt: "RT 01 s/d RT 03",
+    kuotaPerkiraan: 600,
+  };
+});
+
 export const TpsList: React.FC = () => {
-  const [tabungList, setTabungList] = useState<TabungItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tabungList, setTabungList] = useState<TabungItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("p2kd_public_tabung_cache");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return DEFAULT_TABUNG_ITEMS;
+  });
+  const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("");
   const [mapsUrl, setMapsUrl] = useState("https://www.google.com/maps/search/?api=1&query=Desa+Kalisalak+Margasari+Tegal");
   const [venueName, setVenueName] = useState("Desa Kalisalak");
@@ -50,7 +77,7 @@ export const TpsList: React.FC = () => {
             if (jsonConfig.data.lokasiUtama) setVenueName(jsonConfig.data.lokasiUtama);
           }
 
-          if (jsonTps.success && Array.isArray(jsonTps.data)) {
+          if (jsonTps.success && Array.isArray(jsonTps.data) && jsonTps.data.length > 0) {
             const mapped: TabungItem[] = jsonTps.data.map((t: ApiTpsItem, index: number) => {
               const numVal = parseInt((t.rw || t.nomorTps || "").replace(/\D/g, ""), 10) || (index + 1);
               const tabungNum = String(numVal).padStart(2, "0");
@@ -59,7 +86,7 @@ export const TpsList: React.FC = () => {
                 id: t.id,
                 nomorTabung: tabungNum,
                 namaTabung: t.namaTabung || t.namaTps || `Tabung Pemilihan ${tabungNum}`,
-                pintuMasuk: t.alamat || (index < 2 ? "Pintu Masuk Barat (A)" : index < 4 ? "Pintu Masuk Utara (B)" : "Pintu Masuk Timur (C)"),
+                pintuMasuk: t.alamat || (index < 4 ? "Pintu Masuk Barat (Sektor A)" : index < 8 ? "Pintu Masuk Utara (Sektor B)" : "Pintu Masuk Timur (Sektor C)"),
                 wilayahRw: `RW ${String(rwNum).padStart(2, "0")}`,
                 cakupanRt: t.rt ? (t.rt.includes("RT") ? t.rt : `RT ${t.rt}`) : "RT 01 s/d RT 03",
                 kuotaPerkiraan: t.kuotaMaksimal || 600,
@@ -74,6 +101,11 @@ export const TpsList: React.FC = () => {
             });
 
             setTabungList(mapped);
+            try {
+              localStorage.setItem("p2kd_public_tabung_cache", JSON.stringify(mapped));
+            } catch {
+              // ignore
+            }
           }
           setLoading(false);
         }

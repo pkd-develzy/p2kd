@@ -150,6 +150,24 @@ export interface UserProfile {
   isSuperAdmin: boolean;
 }
 
+export interface KandidatKades {
+  id: string;
+  nomorUrut: number;
+  namaLengkap: string;
+  gelarDepan?: string;
+  gelarBelakang?: string;
+  tempatTanggalLahir: string;
+  pendidikanTerakhir: string;
+  pekerjaan: string;
+  tagline: string;
+  visi: string;
+  misi: string[];
+  programUnggulan: string[];
+  fotoUrl: string;
+  warnaTema: string;
+  statusVerifikasi: string;
+}
+
 export type TabType =
   | "dashboard"
   | "pemilih"
@@ -161,8 +179,10 @@ export type TabType =
   | "export"
   | "lock"
   | "anggota"
+  | "calon"
   | "audit"
   | "pengaturan_web"
   | "petugas_dpt"
   | "berita";
+
 

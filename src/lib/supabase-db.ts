@@ -1466,13 +1466,20 @@ export class SupabaseDbService {
   public static async updateKandidat(id: string, data: Partial<MasterKandidat>) {
     try {
       const payload: Record<string, unknown> = {};
-      if (data.namaLengkap) payload.nama_lengkap = data.namaLengkap;
+      if (data.namaLengkap !== undefined) payload.nama_lengkap = data.namaLengkap;
       if (data.nomorUrut !== undefined) payload.nomor_urut = data.nomorUrut;
-      if (data.visi) payload.visi = data.visi;
-      if (data.misi) payload.misi = data.misi;
-      if (data.programUnggulan) payload.program_unggulan = data.programUnggulan;
-      if (data.fotoUrl) payload.foto_url = data.fotoUrl;
-      if (data.statusVerifikasi) payload.status_verifikasi = data.statusVerifikasi;
+      if (data.gelarDepan !== undefined) payload.gelar_depan = data.gelarDepan;
+      if (data.gelarBelakang !== undefined) payload.gelar_belakang = data.gelarBelakang;
+      if (data.tempatTanggalLahir !== undefined) payload.tempat_tanggal_lahir = data.tempatTanggalLahir;
+      if (data.pendidikanTerakhir !== undefined) payload.pendidikan_terakhir = data.pendidikanTerakhir;
+      if (data.pekerjaan !== undefined) payload.pekerjaan = data.pekerjaan;
+      if (data.tagline !== undefined) payload.tagline = data.tagline;
+      if (data.visi !== undefined) payload.visi = data.visi;
+      if (data.misi !== undefined) payload.misi = data.misi;
+      if (data.programUnggulan !== undefined) payload.program_unggulan = data.programUnggulan;
+      if (data.fotoUrl !== undefined) payload.foto_url = data.fotoUrl;
+      if (data.warnaTema !== undefined) payload.warna_tema = data.warnaTema;
+      if (data.statusVerifikasi !== undefined) payload.status_verifikasi = data.statusVerifikasi;
 
       await this.adminClient.from("kandidat_kades").update(payload).eq("id", id);
     } catch (err) {

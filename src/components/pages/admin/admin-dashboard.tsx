@@ -36,6 +36,7 @@ import { TabAnggotaP2KD } from "./tabs/tab-anggota-p2kd";
 import { TabPengaturanWeb } from "./tabs/tab-pengaturan-web";
 import { TabPetugasDpt } from "./tabs/tab-petugas-dpt";
 import { TabManajemenBerita } from "./tabs/tab-manajemen-berita";
+import { TabCalonKades } from "./tabs/tab-calon-kades";
 
 import { ModalVoterForm } from "./modals/modal-voter-form";
 import { ModalTms } from "./modals/modal-tms";
@@ -1167,6 +1168,16 @@ export const AdminDashboard: React.FC = () => {
 
           {effectiveActiveTab === "pengaturan_web" && (
             <TabPengaturanWeb currentUser={{ namaLengkap: computedUserName, role: computedUserRole }} />
+          )}
+
+          {effectiveActiveTab === "calon" && (
+            <TabCalonKades
+              isAdmin={isAdmin}
+              userRole={computedUserRole}
+              userSeksi={computedUserSeksi}
+              currentUser={computedUserName}
+              onRefresh={fetchData}
+            />
           )}
 
           {effectiveActiveTab === "berita" && (

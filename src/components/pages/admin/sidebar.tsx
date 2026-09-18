@@ -20,6 +20,7 @@ import {
   Shield,
   Globe,
   Newspaper,
+  Vote,
 } from "lucide-react";
 import { Logo } from "@/components/ui";
 import { TabType, DbStatus, SeksiP2KDType } from "./types";
@@ -195,6 +196,21 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
         "SEKSI_LOGISTIK_PUBLIKASI",
       ],
       items: [
+        {
+          id: "calon" as TabType,
+          label: "Manajemen Calon Kades",
+          icon: Vote,
+          badge: "Seksi 2 & 3",
+          badgeColor: "bg-amber-500 text-slate-950 font-black",
+          allowedRoles: [
+            "SUPER_ADMIN",
+            "SEKSI_PENJARINGAN",
+            "SEKSI_PENYARINGAN",
+            "SEKSI_PEMILIH",
+            "SEKSI_LOGISTIK_PUBLIKASI",
+            "SEKSI_PUNGUT_HITUNG",
+          ],
+        },
         {
           id: "berita" as TabType,
           label: "Manajemen Berita & Publikasi",

@@ -70,6 +70,10 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
     title: "Pendaftaran Petugas Pendataan DPT",
     subtitle: "Penerimaan berkas, uji integritas netralitas, verifikasi tanda tangan digital, dan penetapan wilayah penugasan Pantarlih",
   },
+  calon: {
+    title: "Manajemen Calon & Pendaftar Kepala Desa",
+    subtitle: "Pengaturan nomor urut resmi, foto profil, visi-misi, program kerja unggulan, dan status tampil di website publik",
+  },
   berita: {
     title: "Manajemen Berita & Publikasi",
     subtitle: "CMS Penulisan & Publikasi Berita Warga, Liputan Kegiatan P2KD, dan Rilis Pers Resmi",

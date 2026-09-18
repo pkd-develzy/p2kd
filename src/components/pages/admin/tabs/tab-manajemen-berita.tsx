@@ -519,248 +519,255 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
 
       {/* Modal Form Tambah / Edit Berita */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl w-full max-w-2xl p-6 shadow-2xl border border-slate-200 my-8 space-y-5 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header (Fixed / Sticky) */}
+            <div className="px-5 py-4 sm:px-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-blue-50 text-blue-700">
                   <Newspaper className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">
+                  <h3 className="text-base font-black text-slate-900 leading-tight">
                     {editingArticle ? "Edit Artikel Berita" : "Tulis Berita / Liputan Baru"}
                   </h3>
                   <p className="text-xs text-slate-500 font-normal">
-                    Publikasikan informasi resmi untuk warga Desa Kalisalak
+                    Publikasikan informasi resmi untuk portal warga Desa Kalisalak
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                title="Tutup (Esc)"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
-              {/* Judul */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                  Judul Berita / Rilis Pers <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.judul}
-                  onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
-                  placeholder="Contoh: P2KD Kalisalak Gelar Rapat Pleno Terbuka Rekapitulasi DPS..."
-                  className="w-full h-11 px-4 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            {/* Modal Form Content (Scrollable) */}
+            <form onSubmit={handleSave} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-5">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                  {/* Kolom Kiri: Konten Teks Berita */}
+                  <div className="lg:col-span-7 space-y-4">
+                    {/* Judul */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                        Judul Berita / Rilis Pers <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.judul}
+                        onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
+                        placeholder="Contoh: P2KD Kalisalak Gelar Rapat Pleno Terbuka Rekapitulasi DPS..."
+                        className="w-full h-11 px-3.5 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
 
-              {/* Kategori & Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                    Kategori Berita <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={formData.kategori}
-                    onChange={(e) => setFormData({ ...formData, kategori: e.target.value as BeritaKategori })}
-                    className="w-full h-11 px-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="TAHAPAN">Tahapan Pilkades</option>
-                    <option value="RAPAT_BA">Rapat &amp; Berita Acara Pleno</option>
-                    <option value="SOSIALISASI">Sosialisasi Warga</option>
-                    <option value="DOKUMENTASI">Dokumentasi Lapangan</option>
-                  </select>
-                </div>
+                    {/* Kategori & Status */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                          Kategori Berita <span className="text-rose-500">*</span>
+                        </label>
+                        <select
+                          value={formData.kategori}
+                          onChange={(e) => setFormData({ ...formData, kategori: e.target.value as BeritaKategori })}
+                          className="w-full h-11 px-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="TAHAPAN">Tahapan Pilkades</option>
+                          <option value="RAPAT_BA">Rapat &amp; Berita Acara Pleno</option>
+                          <option value="SOSIALISASI">Sosialisasi Warga</option>
+                          <option value="DOKUMENTASI">Dokumentasi Lapangan</option>
+                        </select>
+                      </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                    Status Publikasi
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        status: e.target.value as "PUBLISHED" | "DRAFT" | "ARCHIVED",
-                      })
-                    }
-                    className="w-full h-11 px-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="PUBLISHED">Tayang Langsung (Published)</option>
-                    <option value="DRAFT">Simpan Sebagai Draft</option>
-                    <option value="ARCHIVED">Arsipkan</option>
-                  </select>
-                </div>
-              </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                          Status Publikasi
+                        </label>
+                        <select
+                          value={formData.status}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              status: e.target.value as "PUBLISHED" | "DRAFT" | "ARCHIVED",
+                            })
+                          }
+                          className="w-full h-11 px-3 text-xs font-bold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="PUBLISHED">Tayang Langsung (Published)</option>
+                          <option value="DRAFT">Simpan Sebagai Draft</option>
+                          <option value="ARCHIVED">Arsipkan</option>
+                        </select>
+                      </div>
+                    </div>
 
-              {/* Ringkasan */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                  Ringkasan / Paragraf Pengantar (Lead)
-                </label>
-                <textarea
-                  rows={2}
-                  value={formData.ringkasan}
-                  onChange={(e) => setFormData({ ...formData, ringkasan: e.target.value })}
-                  placeholder="Ringkasan singkat 1-2 kalimat yang menarik minat warga..."
-                  className="w-full p-3 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed font-normal"
-                />
-              </div>
+                    {/* Ringkasan */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                        Ringkasan / Paragraf Pengantar (Lead)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={formData.ringkasan}
+                        onChange={(e) => setFormData({ ...formData, ringkasan: e.target.value })}
+                        placeholder="Ringkasan singkat 1-2 kalimat yang menarik minat pembaca warga..."
+                        className="w-full p-3 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed font-normal"
+                      />
+                    </div>
 
-              {/* Konten Lengkap */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                  Isi Berita Lengkap <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={6}
-                  required
-                  value={formData.konten}
-                  onChange={(e) => setFormData({ ...formData, konten: e.target.value })}
-                  placeholder="Tuliskan berita lengkap. Gunakan baris baru untuk memisahkan paragraf..."
-                  className="w-full p-3 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed font-normal"
-                />
-              </div>
+                    {/* Konten Lengkap */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
+                        Isi Berita Lengkap <span className="text-rose-500">*</span>
+                      </label>
+                      <textarea
+                        rows={9}
+                        required
+                        value={formData.konten}
+                        onChange={(e) => setFormData({ ...formData, konten: e.target.value })}
+                        placeholder="Tuliskan isi berita lengkap. Gunakan baris baru antar paragraf..."
+                        className="w-full p-3 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 leading-relaxed font-normal"
+                      />
+                    </div>
+                  </div>
 
-              {/* Gambar Cover Banner Liputan (Cloudinary Storage) */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
-                    <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Foto Banner / Cover Liputan</span>
-                  </label>
-                  {formData.gambarUrl?.includes("cloudinary.com") && (
-                    <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-sky-600" />
-                      <span>Tersimpan di Cloudinary</span>
-                    </span>
-                  )}
-                </div>
+                  {/* Kolom Kanan: Media, Lampiran & Headline */}
+                  <div className="lg:col-span-5 space-y-4">
+                    {/* Gambar Cover Banner Liputan (Cloudinary Storage) */}
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                          <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Foto Cover Liputan</span>
+                        </label>
+                        {formData.gambarUrl?.includes("cloudinary.com") && (
+                          <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-sky-600" />
+                            <span>Cloudinary</span>
+                          </span>
+                        )}
+                      </div>
 
-                {/* Preview Thumbnail */}
-                <div className="relative w-full h-36 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 group">
-                  <Image
-                    src={formData.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
-                    alt="Preview Berita"
-                    fill
-                    unoptimized
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/60 via-transparent to-transparent flex items-end p-3">
-                    <span className="text-[11px] font-medium text-white/90 drop-shadow-xs truncate max-w-full font-mono">
-                      {formData.gambarUrl}
-                    </span>
+                      {/* Preview Thumbnail */}
+                      <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-200 border border-slate-200 group">
+                        <Image
+                          src={formData.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                          alt="Preview Berita"
+                          fill
+                          unoptimized
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-linear-to-t from-slate-950/70 via-transparent to-transparent flex items-end p-2.5">
+                          <span className="text-[10px] font-medium text-white/90 drop-shadow-xs truncate max-w-full font-mono">
+                            {formData.gambarUrl}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Upload Controls */}
+                      <div className="space-y-2 pt-1">
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/png, image/jpeg, image/webp, image/gif"
+                          className="hidden"
+                          onChange={handleImageFileSelect}
+                        />
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            disabled={isUploadingImage}
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex-1 cursor-pointer gap-1.5 text-xs py-2"
+                          >
+                            {isUploadingImage ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Mengunggah...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-3.5 h-3.5" />
+                                <span>Upload Foto</span>
+                              </>
+                            )}
+                          </Button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                gambarUrl: "/images/p2kd-musyawarah-kalisalak.png",
+                              })
+                            }
+                            className="px-3 py-2 text-xs font-bold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors cursor-pointer whitespace-nowrap"
+                          >
+                            Default
+                          </button>
+                        </div>
+
+                        <input
+                          type="text"
+                          value={formData.gambarUrl}
+                          onChange={(e) => setFormData({ ...formData, gambarUrl: e.target.value })}
+                          placeholder="Atau tempel URL gambar eksternal (https://...)"
+                          className="w-full h-8 px-2.5 text-[11px] font-mono rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Lampiran PDF (Opsional) */}
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+                      <label className="text-xs font-black uppercase text-slate-700 tracking-wider block">
+                        Dokumen Lampiran PDF (Opsional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.lampiranPdfNama}
+                        onChange={(e) => setFormData({ ...formData, lampiranPdfNama: e.target.value })}
+                        placeholder="Nama file: misal Berita Acara No. 04.pdf"
+                        className="w-full h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="text"
+                        value={formData.lampiranPdfUrl}
+                        onChange={(e) => setFormData({ ...formData, lampiranPdfUrl: e.target.value })}
+                        placeholder="URL Link PDF: https://..."
+                        className="w-full h-9 px-3 text-xs font-mono rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    {/* Toggle Headline */}
+                    <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-3">
+                      <div className="flex items-start gap-2">
+                        <Star className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="text-xs font-bold text-slate-900 block">Jadikan Berita Utama (Headline)</span>
+                          <span className="text-[10px] text-slate-600 leading-tight block">Tampil dengan banner besar paling atas di beranda website.</span>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={formData.isHeadline}
+                        onChange={(e) => setFormData({ ...formData, isHeadline: e.target.checked })}
+                        className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500 cursor-pointer shrink-0"
+                      />
+                    </div>
                   </div>
                 </div>
-
-                {/* Upload & Action Controls */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png, image/jpeg, image/webp, image/gif"
-                    className="hidden"
-                    onChange={handleImageFileSelect}
-                  />
-
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    disabled={isUploadingImage}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="cursor-pointer gap-1.5"
-                  >
-                    {isUploadingImage ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Mengunggah ke Cloudinary...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Unggah Foto dari Perangkat</span>
-                      </>
-                    )}
-                  </Button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        gambarUrl: "/images/p2kd-musyawarah-kalisalak.png",
-                      })
-                    }
-                    className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                  >
-                    Pakai Foto Default
-                  </button>
-                </div>
-
-                <input
-                  type="text"
-                  value={formData.gambarUrl}
-                  onChange={(e) => setFormData({ ...formData, gambarUrl: e.target.value })}
-                  placeholder="Atau tempel URL gambar eksternal (https://...)"
-                  className="w-full h-9 px-3 text-xs font-mono rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
               </div>
 
-              {/* Lampiran PDF (Opsional) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                    Nama Dokumen Lampiran (Opsional)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lampiranPdfNama}
-                    onChange={(e) => setFormData({ ...formData, lampiranPdfNama: e.target.value })}
-                    placeholder="Contoh: Berita Acara No. 04/BA/2026.pdf"
-                    className="w-full h-10 px-3 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                    Link File PDF Lampiran
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.lampiranPdfUrl}
-                    onChange={(e) => setFormData({ ...formData, lampiranPdfUrl: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full h-10 px-3 text-xs font-mono rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Toggle Headline */}
-              <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-amber-600 fill-amber-500" />
-                  <div>
-                    <span className="text-xs font-bold text-slate-900 block">Jadikan Berita Utama (Headline Homepage)</span>
-                    <span className="text-[11px] text-slate-500 font-normal">Artikel ini akan ditampilkan paling atas dengan banner besar di beranda website.</span>
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={formData.isHeadline}
-                  onChange={(e) => setFormData({ ...formData, isHeadline: e.target.checked })}
-                  className="w-5 h-5 text-blue-600 rounded-md focus:ring-blue-500 cursor-pointer"
-                />
-              </div>
-
-              {/* Form Action Buttons */}
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+              {/* Modal Footer (Sticky / Fixed) */}
+              <div className="px-5 py-3.5 sm:px-6 border-t border-slate-100 flex items-center justify-end gap-2.5 shrink-0 bg-slate-50">
                 <Button
                   type="button"
                   variant="outline"

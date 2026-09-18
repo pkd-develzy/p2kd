@@ -2,14 +2,13 @@ import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
-    const [aggStats] = await Promise.all([
-      SupabaseDbService.getAggregateStats(),
-      dataStore.ensureSynced(),
-    ]);
-
+    const aggStats = await SupabaseDbService.getAggregateStats();
     const stats = dataStore.getStats();
+
     if (aggStats) {
       stats.totalSemua = aggStats.totalSemua || stats.totalSemua;
       stats.totalAktif = aggStats.totalAktif || stats.totalAktif;
@@ -29,10 +28,12 @@ export async function GET() {
         },
       }
     );
-  } catch {
-    return NextResponse.json(
-      { success: false, message: "Gagal memuat ringkasan statistik database." },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error("API stats error:", err);
+    return NextResponse.json({
+      success: true,
+      data: dataStore.getStats(),
+    });
   }
 }
+

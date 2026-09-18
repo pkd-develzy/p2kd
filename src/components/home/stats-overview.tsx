@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Users, FileCheck2, UserCheck, Landmark, MapPinned, ArrowUpRight, Loader2 } from "lucide-react";
+import { Users, FileCheck2, UserCheck, Landmark, MapPinned, ArrowUpRight } from "lucide-react";
 import { Card, AnimatedCounter } from "@/components/ui";
 
 interface StatsData {
@@ -15,19 +15,30 @@ interface StatsData {
   totalRt: number;
 }
 
+const DEFAULT_STATS: StatsData = {
+  totalAktif: 7787,
+  totalLaki: 3933,
+  totalPerempuan: 3854,
+  totalTps: 13,
+  totalRw: 13,
+  totalRt: 39,
+};
+
 export const StatsOverview: React.FC = () => {
-  const [data, setData] = useState<StatsData | null>(() => {
+  const [data, setData] = useState<StatsData>(() => {
     if (typeof window !== "undefined") {
       try {
         const raw = localStorage.getItem("p2kd_public_stats_cache");
-        return raw ? JSON.parse(raw) : null;
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.totalAktif === "number") return parsed;
+        }
       } catch {
-        return null;
+        // ignore
       }
     }
-    return null;
+    return DEFAULT_STATS;
   });
-  const [loading, setLoading] = useState(() => !data);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,9 +48,9 @@ export const StatsOverview: React.FC = () => {
         const json = await res.json();
         if (isMounted && json.success && json.data) {
           const freshStats: StatsData = {
-            totalAktif: Number(json.data.totalAktif) || 0,
-            totalLaki: Number(json.data.totalLaki) || 0,
-            totalPerempuan: Number(json.data.totalPerempuan) || 0,
+            totalAktif: Number(json.data.totalAktif) || 7787,
+            totalLaki: Number(json.data.totalLaki) || 3933,
+            totalPerempuan: Number(json.data.totalPerempuan) || 3854,
             totalTps: Number(json.data.totalTps) || 13,
             totalRw: Number(json.data.totalRw) || 13,
             totalRt: Number(json.data.totalRt) || 39,
@@ -53,8 +64,6 @@ export const StatsOverview: React.FC = () => {
         }
       } catch (err) {
         console.error("Gagal mengambil data statistik live database:", err);
-      } finally {
-        if (isMounted) setLoading(false);
       }
     };
 
@@ -64,12 +73,12 @@ export const StatsOverview: React.FC = () => {
     };
   }, []);
 
-  const total = data?.totalAktif || 7787;
-  const laki = data?.totalLaki || 3933;
-  const perempuan = data?.totalPerempuan || 3854;
-  const tps = data?.totalTps || 13;
-  const rw = data?.totalRw || 13;
-  const rt = data?.totalRt || 39;
+  const total = data.totalAktif || 7787;
+  const laki = data.totalLaki || 3933;
+  const perempuan = data.totalPerempuan || 3854;
+  const tps = data.totalTps || 13;
+  const rw = data.totalRw || 13;
+  const rt = data.totalRt || 39;
 
   const pctLaki = total > 0 ? Math.round((laki / total) * 100) : 51;
   const pctPerempuan = total > 0 ? Math.round((perempuan / total) * 100) : 49;
@@ -182,17 +191,10 @@ export const StatsOverview: React.FC = () => {
                 </div>
                 <div className="mt-2.5">
                   <div className="text-2xl font-black text-slate-900 tracking-tight min-h-8 flex items-center">
-                    {loading ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                        <span>Sinkronisasi...</span>
-                      </span>
-                    ) : (
-                      stat.renderValue()
-                    )}
+                    {stat.renderValue()}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-0.5 font-medium min-h-4">
-                    {loading ? "Sinkronisasi..." : stat.renderLabel()}
+                    {stat.renderLabel()}
                   </div>
                 </div>
               </Card>
@@ -203,3 +205,4 @@ export const StatsOverview: React.FC = () => {
     </div>
   );
 };
+

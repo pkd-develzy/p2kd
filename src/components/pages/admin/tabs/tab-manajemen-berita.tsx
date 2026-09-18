@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import {
   Newspaper,
@@ -17,6 +17,9 @@ import {
   X,
   RefreshCw,
   Loader2,
+  Upload,
+  ImageIcon,
+  CheckCircle2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge } from "@/components/ui";
@@ -34,6 +37,7 @@ interface TabManajemenBeritaProps {
 export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
   const toast = useToast();
   const { confirm } = useConfirm();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [articles, setArticles] = useState<MasterBerita[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +47,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
   // Modal Form State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [editingArticle, setEditingArticle] = useState<MasterBerita | null>(null);
 
   const [formData, setFormData] = useState({
@@ -67,6 +72,49 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
       ...extraHeaders,
     };
   }, []);
+
+  const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Format File Salah", "Hanya file gambar (JPG, PNG, WEBP) yang diperbolehkan.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Ukuran Terlalu Besar", "Ukuran foto maksimal adalah 10MB.");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const data = new FormData();
+      data.append("file", file);
+      data.append("folder", "p2kd_berita");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: data,
+      });
+
+      const json = await res.json();
+      if (json.success && json.data?.url) {
+        setFormData((prev) => ({ ...prev, gambarUrl: json.data.url }));
+        toast.success("Foto Terunggah", "Foto liputan berhasil disimpan ke Cloudinary Storage.");
+      } else {
+        toast.error("Gagal Upload", json.message || "Gagal mengunggah foto ke Cloudinary.");
+      }
+    } catch {
+      toast.error("Kesalahan Jaringan", "Gagal menghubungi server upload Cloudinary.");
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   const fetchArticles = useCallback(async () => {
     setLoading(true);
@@ -580,27 +628,89 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
                 />
               </div>
 
-              {/* Gambar Cover Banner */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-black uppercase text-slate-700 tracking-wider">
-                  URL Foto Banner / Cover Liputan
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={formData.gambarUrl}
-                    onChange={(e) => setFormData({ ...formData, gambarUrl: e.target.value })}
-                    placeholder="/images/p2kd-musyawarah-kalisalak.png"
-                    className="w-full h-10 px-3 text-xs font-mono rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              {/* Gambar Cover Banner Liputan (Cloudinary Storage) */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase text-slate-700 tracking-wider flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                    <span>Foto Banner / Cover Liputan</span>
+                  </label>
+                  {formData.gambarUrl?.includes("cloudinary.com") && (
+                    <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-sky-600" />
+                      <span>Tersimpan di Cloudinary</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Preview Thumbnail */}
+                <div className="relative w-full h-36 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 group">
+                  <Image
+                    src={formData.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                    alt="Preview Berita"
+                    fill
+                    unoptimized
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent flex items-end p-3">
+                    <span className="text-[11px] font-medium text-white/90 drop-shadow-xs truncate max-w-full font-mono">
+                      {formData.gambarUrl}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Upload & Action Controls */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp, image/gif"
+                    className="hidden"
+                    onChange={handleImageFileSelect}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    disabled={isUploadingImage}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="cursor-pointer gap-1.5"
+                  >
+                    {isUploadingImage ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Mengunggah ke Cloudinary...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Unggah Foto dari Perangkat</span>
+                      </>
+                    )}
+                  </Button>
+
                   <button
                     type="button"
-                    onClick={() => setFormData({ ...formData, gambarUrl: "/images/p2kd-musyawarah-kalisalak.png" })}
-                    className="px-3 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap cursor-pointer"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        gambarUrl: "/images/p2kd-musyawarah-kalisalak.png",
+                      })
+                    }
+                    className="px-3 py-1.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
                   >
-                    Foto Bawaan
+                    Pakai Foto Default
                   </button>
                 </div>
+
+                <input
+                  type="text"
+                  value={formData.gambarUrl}
+                  onChange={(e) => setFormData({ ...formData, gambarUrl: e.target.value })}
+                  placeholder="Atau tempel URL gambar eksternal (https://...)"
+                  className="w-full h-9 px-3 text-xs font-mono rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
               {/* Lampiran PDF (Opsional) */}

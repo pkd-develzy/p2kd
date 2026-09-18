@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession } from "@/lib/auth-middleware";
+import { AuthTokenPayload } from "@/lib/encryption";
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from "@/lib/cloudinary";
 
 export async function GET(req: Request) {
   const session = verifyAdminSession(req);
@@ -21,7 +23,7 @@ export async function GET(req: Request) {
   });
 }
 
-function isAuthorizedForBerita(user?: any): boolean {
+function isAuthorizedForBerita(user?: AuthTokenPayload): boolean {
   if (!user) return false;
   if (user.isSuperAdmin) return true;
 
@@ -98,6 +100,18 @@ export async function POST(req: Request) {
 
     await dataStore.ensureSynced();
 
+    let finalGambarUrl = gambarUrl ? String(gambarUrl).trim() : "/images/p2kd-musyawarah-kalisalak.png";
+
+    // Auto upload base64 to Cloudinary if provided
+    if (finalGambarUrl.startsWith("data:image/")) {
+      try {
+        const upl = await uploadImageToCloudinary(finalGambarUrl, "p2kd_berita");
+        finalGambarUrl = upl.secure_url;
+      } catch (uploadErr) {
+        console.error("Gagal mengunggah foto berita ke Cloudinary:", uploadErr);
+      }
+    }
+
     const isSekretaris = String(session.user.username || "").toLowerCase().includes("sekretaris");
     const created = await dataStore.addBerita(
       {
@@ -105,7 +119,7 @@ export async function POST(req: Request) {
         kategori,
         ringkasan: ringkasan ? ringkasan.trim() : "",
         konten: konten.trim(),
-        gambarUrl: gambarUrl ? gambarUrl.trim() : "/images/p2kd-musyawarah-kalisalak.png",
+        gambarUrl: finalGambarUrl,
         penulisNama: session.user.nama || session.user.username,
         penulisJabatan: isSekretaris ? "Sekretaris P2KD" : "Seksi Publikasi & Dokumentasi",
         status: status || "PUBLISHED",
@@ -155,6 +169,28 @@ export async function PUT(req: Request) {
     }
 
     await dataStore.ensureSynced();
+    const existingBerita = dataStore.getBeritaList("ALL", "ALL").find((b) => b.id === id || b.slug === id);
+
+    // If new image is base64, upload to Cloudinary
+    if (updates.gambarUrl && String(updates.gambarUrl).startsWith("data:image/")) {
+      try {
+        const upl = await uploadImageToCloudinary(updates.gambarUrl, "p2kd_berita");
+        updates.gambarUrl = upl.secure_url;
+      } catch (uploadErr) {
+        console.error("Gagal mengunggah foto baru berita ke Cloudinary:", uploadErr);
+      }
+    }
+
+    // Auto-delete previous image in Cloudinary if replaced with a different image
+    if (
+      existingBerita?.gambarUrl &&
+      updates.gambarUrl &&
+      existingBerita.gambarUrl !== updates.gambarUrl &&
+      existingBerita.gambarUrl.includes("cloudinary.com")
+    ) {
+      void deleteImageFromCloudinary(existingBerita.gambarUrl);
+    }
+
     const updated = await dataStore.updateBerita(id, updates, session.user.username);
 
     if (!updated) {
@@ -208,15 +244,22 @@ export async function DELETE(req: Request) {
     }
 
     await dataStore.ensureSynced();
+    const existingBerita = dataStore.getBeritaList("ALL", "ALL").find((b) => b.id === id || b.slug === id);
+
     const deleted = await dataStore.deleteBerita(id, session.user.username);
 
     if (!deleted) {
       return NextResponse.json({ success: false, message: "Artikel tidak ditemukan." }, { status: 404 });
     }
 
+    // Auto-delete image in Cloudinary if article is deleted
+    if (existingBerita?.gambarUrl && existingBerita.gambarUrl.includes("cloudinary.com")) {
+      void deleteImageFromCloudinary(existingBerita.gambarUrl);
+    }
+
     return NextResponse.json({
       success: true,
-      message: "Artikel berita berhasil dihapus.",
+      message: "Artikel berita dan file media terkait berhasil dihapus.",
     });
   } catch (error) {
     console.error("Error deleting berita:", error);

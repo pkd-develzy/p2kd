@@ -11,10 +11,9 @@ import {
   Award,
   ExternalLink,
   BookOpen,
-  Calendar,
   AlertTriangle,
   Users,
-  RefreshCw,
+  Calendar,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge, Logo, Button } from "@/components/ui";
@@ -22,7 +21,6 @@ import { DEFAULT_SYARAT_KADES, DEFAULT_LARANGAN_KADES, PublicWebConfig } from "@
 
 export const SyaratKadesContent: React.FC = () => {
   const [config, setConfig] = useState<Partial<PublicWebConfig> | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -35,8 +33,6 @@ export const SyaratKadesContent: React.FC = () => {
         }
       } catch (err) {
         console.warn("Failed to load web config:", err);
-      } finally {
-        if (isMounted) setLoading(false);
       }
     }
     loadConfig();

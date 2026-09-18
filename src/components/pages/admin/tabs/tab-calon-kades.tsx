@@ -188,15 +188,58 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
   }, []);
 
   useEffect(() => {
-    let active = true;
-    if (active) {
-      fetchCalon();
-      fetchSyaratConfig();
-    }
-    return () => {
-      active = false;
+    let isMounted = true;
+
+    const loadInitialData = async () => {
+      try {
+        const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token") : null;
+        const [calonRes, configRes] = await Promise.all([
+          fetch("/api/admin/calon?refresh=true", {
+            headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          }),
+          fetch("/api/config"),
+        ]);
+
+        const [calonJson, configJson] = await Promise.all([calonRes.json(), configRes.json()]);
+
+        if (isMounted) {
+          if (calonJson.success && Array.isArray(calonJson.data)) {
+            setCalonList(calonJson.data);
+          }
+          if (configJson.success && configJson.data) {
+            if (Array.isArray(configJson.data.syaratCalonList) && configJson.data.syaratCalonList.length > 0) {
+              setSyaratList(configJson.data.syaratCalonList);
+            }
+            if (Array.isArray(configJson.data.laranganCalonList) && configJson.data.laranganCalonList.length > 0) {
+              setLaranganList(configJson.data.laranganCalonList);
+            }
+            if (configJson.data.highlightMasaJabatanJudul) {
+              setHighlightJudul(configJson.data.highlightMasaJabatanJudul);
+            }
+            if (configJson.data.highlightMasaJabatanDeskripsi) {
+              setHighlightDeskripsi(configJson.data.highlightMasaJabatanDeskripsi);
+            }
+            if (configJson.data.highlightMasaJabatanCatatan) {
+              setHighlightCatatan(configJson.data.highlightMasaJabatanCatatan);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Gagal inisialisasi tab calon:", err);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+          setLoadingSyarat(false);
+        }
+      }
     };
-  }, [fetchCalon, fetchSyaratConfig]);
+
+    loadInitialData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);

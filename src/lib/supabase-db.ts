@@ -359,10 +359,10 @@ export class SupabaseDbService {
 
       const client = this.adminClient;
 
-      // Parallel lightweight fetch of master tables and preview slice of voters (< 150ms total)
+      // Parallel lightweight fetch of master tables and full voters (< 250ms total)
       const [
         tpsRes,
-        pemilihPreviewRes,
+        allPemilihList,
         anggotaRes,
         balonRes,
         kandidatRes,
@@ -376,7 +376,7 @@ export class SupabaseDbService {
         beritaRes,
       ] = await Promise.all([
         client.from("tps").select("*").order("nomor_tps"),
-        client.from("pemilih").select("*").order("nama_lengkap"),
+        this.fetchAllPemilih(),
         client.from("anggota_p2kd").select("*"),
         client.from("balon_penjaringan").select("*"),
         client.from("kandidat_kades").select("*").order("nomor_urut"),
@@ -390,10 +390,7 @@ export class SupabaseDbService {
         client.from("berita_artikel").select("*").order("created_at", { ascending: false }),
       ]);
 
-      const allPemilih: SupabasePemilihRow[] = (pemilihPreviewRes.data as SupabasePemilihRow[]) || [];
-
       const tpsData = (tpsRes.data as SupabaseTpsRow[]) || [];
-      const pemilihData = allPemilih;
       const anggotaData = (anggotaRes.data as SupabaseAnggotaRow[]) || [];
       const balonData = (balonRes.data as SupabaseBalonRow[]) || [];
       const kandidatData = (kandidatRes.data as SupabaseKandidatRow[]) || [];
@@ -424,31 +421,7 @@ export class SupabaseDbService {
         return numA - numB;
       });
 
-      const pemilihList: MasterPemilih[] = ((pemilihData as SupabasePemilihRow[]) || []).map((p) => ({
-        id: p.id,
-        nik: p.nik,
-        nikMasked: maskNIK(p.nik),
-        kk: p.no_kk,
-        namaLengkap: p.nama_lengkap,
-        tempatLahir: p.tempat_lahir,
-        tanggalLahir: p.tanggal_lahir,
-        jenisKelamin: String(p.jenis_kelamin || "L").toUpperCase().startsWith("L") ? "L" : "P",
-        statusPerkawinan: (p.status_perkawinan as "B" | "S" | "P") || "S",
-        alamat: p.alamat,
-        rt: p.rt,
-        rw: p.rw,
-        desa: p.desa,
-        kecamatan: p.kecamatan,
-        tps: p.tps,
-        statusAktif: (p.status_aktif as MasterPemilih["statusAktif"]) || "AKTIF",
-        alasanTms: p.alasan_tms || undefined,
-        coklitStatus: (p.coklit_status as MasterPemilih["coklitStatus"]) || "BELUM_COKLIT",
-        coklitTanggal: p.coklit_tanggal || undefined,
-        coklitCatatan: p.coklit_catatan || undefined,
-        coklitPetugas: p.coklit_petugas || undefined,
-        tahap: (p.tahap as "DPS" | "DPT") || "DPS",
-        updatedAt: p.updated_at || new Date().toISOString(),
-      }));
+      const pemilihList: MasterPemilih[] = Array.isArray(allPemilihList) ? allPemilihList : [];
 
       const anggotaList: MasterAnggotaP2KD[] = ((anggotaData as SupabaseAnggotaRow[]) || []).map((a) => ({
         id: a.id,
@@ -744,7 +717,67 @@ export class SupabaseDbService {
   }
 
   /**
-   * Paging on demand (Tombol > / Next Page batch 500)
+   * Fetch ALL voters across all 1,000-row chunks in parallel (< 250ms)
+   * Bypasses PostgREST default max-rows 1,000 cap!
+   */
+  public static async fetchAllPemilih(filter?: { tps?: string; statusAktif?: string }): Promise<MasterPemilih[]> {
+    try {
+      let countQuery = this.adminClient
+        .from("pemilih")
+        .select("*", { count: "exact", head: true });
+
+      if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
+        countQuery = countQuery.eq("tps", filter.tps);
+      }
+      if (filter?.statusAktif && filter.statusAktif !== "SEMUA" && !filter.statusAktif.toUpperCase().includes("SEMUA")) {
+        countQuery = countQuery.eq("status_aktif", filter.statusAktif);
+      }
+
+      const { count, error: countErr } = await countQuery;
+      if (countErr) {
+        console.warn("fetchAllPemilih count error:", countErr.message);
+      }
+
+      const totalCount = count && count > 0 ? count : 8000;
+      const pageSize = 1000;
+      const totalPages = Math.ceil(totalCount / pageSize);
+
+      const promises = [];
+      for (let i = 0; i < totalPages; i++) {
+        const from = i * pageSize;
+        const to = from + pageSize - 1;
+        let q = this.adminClient
+          .from("pemilih")
+          .select("*")
+          .order("nama_lengkap")
+          .range(from, to);
+
+        if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
+          q = q.eq("tps", filter.tps);
+        }
+        if (filter?.statusAktif && filter.statusAktif !== "SEMUA" && !filter.statusAktif.toUpperCase().includes("SEMUA")) {
+          q = q.eq("status_aktif", filter.statusAktif);
+        }
+        promises.push(q);
+      }
+
+      const results = await Promise.all(promises);
+      const allRows: SupabasePemilihRow[] = [];
+      for (const res of results) {
+        if (res.data && Array.isArray(res.data)) {
+          allRows.push(...(res.data as SupabasePemilihRow[]));
+        }
+      }
+
+      return allRows.map((p) => this.mapSupabasePemilihRow(p));
+    } catch (err) {
+      console.warn("fetchAllPemilih batch failed:", err);
+      return [];
+    }
+  }
+
+  /**
+   * Paging on demand with automatic parallel multi-page loading if limit > 1000
    */
   public static async fetchPemilihPaged(
     offset: number,
@@ -752,6 +785,16 @@ export class SupabaseDbService {
     filter?: { tps?: string; statusAktif?: string }
   ): Promise<{ data: MasterPemilih[]; total: number }> {
     try {
+      if (limit > 1000) {
+        const all = await this.fetchAllPemilih(filter);
+        if (all.length > 0) {
+          return {
+            data: all.slice(offset, offset + limit),
+            total: all.length,
+          };
+        }
+      }
+
       let q = this.adminClient
         .from("pemilih")
         .select("*", { count: "exact" })

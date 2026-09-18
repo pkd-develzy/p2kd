@@ -22,7 +22,6 @@ import {
 
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
-import { MetricsOverview } from "./metrics-overview";
 
 import { TabDashboardOverview } from "./tabs/tab-dashboard-overview";
 import { TabMasterPemilih } from "./tabs/tab-master-pemilih";
@@ -942,20 +941,6 @@ export const AdminDashboard: React.FC = () => {
 
         {/* 3. Main Dashboard Body */}
         <main className={`flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6 ${isFieldOfficer ? "pb-28" : ""}`}>
-          {/* KPI Metrics - Khusus Pimpinan / Seksi Utama P2KD */}
-          {!isFieldOfficer && effectiveActiveTab === "dashboard" && (
-            <MetricsOverview
-              totalAktif={totalAktif}
-              totalLaki={totalLaki}
-              totalPerempuan={totalPerempuan}
-              totalTms={totalTms}
-              tpsCount={tpsList.length}
-              aduanCount={aduanList.length}
-              aduanPendingCount={totalAduanMenunggu}
-              isDptLocked={isDptLocked}
-            />
-          )}
-
           {/* Active Tab Views */}
           {effectiveActiveTab === "dashboard" && (
             <TabDashboardOverview

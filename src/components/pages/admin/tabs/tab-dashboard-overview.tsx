@@ -7,7 +7,6 @@ import {
   BarChart3,
   CheckCircle2,
   AlertTriangle,
-  FileCheck2,
   Sparkles,
   ArrowRight,
   ShieldCheck,
@@ -58,7 +57,6 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   const cloudCount = dbStatus?.cloudStats?.pemilihCount || dbStatus?.localStats?.totalAktif || dbStatus?.localStats?.totalPemilih;
   const activeVoters = voters.filter((v) => v.statusAktif === "AKTIF");
   const totalAktif = cloudCount || (activeVoters.length > 500 ? activeVoters.length : 7787);
-  const aduanPendingCount = aduanList.filter((a) => a.status === "MENUNGGU").length;
   const totalLaki = Math.round(totalAktif * 0.505) || 3933;
   const totalPerempuan = totalAktif - totalLaki || 3854;
   const totalTms = dbStatus?.localStats?.totalTms || voters.filter((v) => v.statusAktif === "TMS").length;

@@ -16,10 +16,42 @@ import {
 import { Card, Badge } from "@/components/ui";
 import { MasterBerita } from "@/lib/data-store";
 
-export const NewsSection: React.FC = () => {
-  const [headline, setHeadline] = useState<MasterBerita | null>(null);
-  const [articles, setArticles] = useState<MasterBerita[]>([]);
-  const [loading, setLoading] = useState(true);
+interface NewsSectionProps {
+  initialHeadline?: MasterBerita | null;
+  initialArticles?: MasterBerita[];
+}
+
+export const NewsSection: React.FC<NewsSectionProps> = ({
+  initialHeadline = null,
+  initialArticles = [],
+}) => {
+  const [headline, setHeadline] = useState<MasterBerita | null>(() => {
+    if (initialHeadline) return initialHeadline;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("p2kd_headline_cache");
+        if (raw) return JSON.parse(raw);
+      } catch {
+        // ignore
+      }
+    }
+    return null;
+  });
+
+  const [articles, setArticles] = useState<MasterBerita[]>(() => {
+    if (initialArticles && initialArticles.length > 0) return initialArticles;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("p2kd_articles_cache");
+        if (raw) return JSON.parse(raw);
+      } catch {
+        // ignore
+      }
+    }
+    return [];
+  });
+
+  const [loading, setLoading] = useState(false);
   const [selectedKategori, setSelectedKategori] = useState<string>("ALL");
 
   useEffect(() => {
@@ -29,11 +61,25 @@ export const NewsSection: React.FC = () => {
         const res = await fetch("/api/berita?limit=6");
         const json = await res.json();
         if (isMounted && json.success && json.data) {
-          setHeadline(json.data.headline);
-          setArticles(json.data.articles || []);
+          if (json.data.headline) {
+            setHeadline(json.data.headline);
+            try {
+              localStorage.setItem("p2kd_headline_cache", JSON.stringify(json.data.headline));
+            } catch {
+              // ignore
+            }
+          }
+          if (Array.isArray(json.data.articles)) {
+            setArticles(json.data.articles);
+            try {
+              localStorage.setItem("p2kd_articles_cache", JSON.stringify(json.data.articles));
+            } catch {
+              // ignore
+            }
+          }
         }
       } catch (err) {
-        console.error("Gagal memuat berita publik:", err);
+        console.warn("Gagal memuat berita publik:", err);
       } finally {
         if (isMounted) setLoading(false);
       }

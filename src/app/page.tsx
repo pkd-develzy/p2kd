@@ -9,6 +9,9 @@ import {
   FeaturesGrid,
   HomeCtaAduan,
 } from "@/components/home";
+import { dataStore } from "@/lib/data-store";
+
+export const revalidate = 60;
 
 export const metadata = {
   title: "Pilkades Desa Kalisalak 2027 | Portal Berita & Informasi Resmi Pemilih",
@@ -16,7 +19,13 @@ export const metadata = {
     "Portal Berita, Sistem Informasi dan Data Pemilih Pilkades Serentak Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal.",
 };
 
-export default function Home() {
+export default async function Home() {
+  await dataStore.ensureSynced();
+
+  const allBerita = dataStore.getBeritaList("ALL", "PUBLISHED");
+  const headline = allBerita.find((b) => b.isHeadline) || allBerita[0] || null;
+  const initialCalonList = dataStore.getKandidatList();
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-blue-600/20 selection:text-blue-900">
       {/* Top Navbar */}
@@ -35,12 +44,12 @@ export default function Home() {
 
         {/* 3. Portal Berita & Dokumentasi Media Warga */}
         <section>
-          <NewsSection />
+          <NewsSection initialHeadline={headline} initialArticles={allBerita.slice(0, 6)} />
         </section>
 
         {/* 4. Detail Profil Calon & Pendaftar Kepala Desa */}
         <section>
-          <HomeCalonSection />
+          <HomeCalonSection initialCalonList={initialCalonList} />
         </section>
 
         {/* 5. Active Timeline Preview */}
@@ -48,12 +57,12 @@ export default function Home() {
           <HomeTahapanPreview />
         </section>
 
-        {/* 4. Citizen Service Modules */}
+        {/* 6. Citizen Service Modules */}
         <section>
           <FeaturesGrid />
         </section>
 
-        {/* 5. Support & Feedback Helpdesk Banner */}
+        {/* 7. Support & Feedback Helpdesk Banner */}
         <section>
           <HomeCtaAduan />
         </section>

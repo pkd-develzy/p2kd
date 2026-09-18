@@ -39,9 +39,27 @@ interface KandidatItem {
   statusVerifikasi: string;
 }
 
-export const HomeCalonSection: React.FC = () => {
-  const [calonList, setCalonList] = useState<KandidatItem[]>([]);
-  const [loading, setLoading] = useState(true);
+interface HomeCalonSectionProps {
+  initialCalonList?: KandidatItem[];
+}
+
+export const HomeCalonSection: React.FC<HomeCalonSectionProps> = ({
+  initialCalonList = [],
+}) => {
+  const [calonList, setCalonList] = useState<KandidatItem[]>(() => {
+    if (initialCalonList && initialCalonList.length > 0) return initialCalonList;
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("p2kd_calon_cache");
+        if (raw) return JSON.parse(raw);
+      } catch {
+        // ignore
+      }
+    }
+    return [];
+  });
+
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,14 +69,16 @@ export const HomeCalonSection: React.FC = () => {
         if (isMounted) {
           if (json.success && Array.isArray(json.data)) {
             setCalonList(json.data);
-          } else {
-            setCalonList([]);
+            try {
+              localStorage.setItem("p2kd_calon_cache", JSON.stringify(json.data));
+            } catch {
+              // ignore
+            }
           }
         }
       })
       .catch((err) => {
         console.warn("Gagal memuat data calon:", err);
-        if (isMounted) setCalonList([]);
       })
       .finally(() => {
         if (isMounted) setLoading(false);

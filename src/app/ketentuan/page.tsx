@@ -1,11 +1,11 @@
 import React from "react";
 import { Navbar, Footer } from "@/components/layout";
-import { SyaratKadesContent } from "@/components/pages/syarat-kades/syarat-kades-content";
+import { KetentuanPemilihContent } from "@/components/pages/ketentuan/ketentuan-pemilih-content";
 
 export const metadata = {
-  title: "Ketentuan & Syarat Pendaftaran | Pilkades Desa Kalisalak 2027",
+  title: "Ketentuan & Syarat Pemilih | Pilkades Desa Kalisalak 2027",
   description:
-    "Syarat dan larangan pendaftaran calon Kepala Desa, regulasi masa jabatan 8 tahun, dan ketentuan hak pilih warga Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal.",
+    "Ketentuan syarat hak pilih pemilih, kriteria TMS, mekanisme DPT/DPS/DPTb, dan dokumen wajib TPS Pilkades Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal.",
 };
 
 export default function KetentuanPage() {
@@ -14,7 +14,7 @@ export default function KetentuanPage() {
       <Navbar />
 
       <main className="flex-1 py-8 sm:py-12">
-        <SyaratKadesContent />
+        <KetentuanPemilihContent />
       </main>
 
       <Footer />

@@ -583,6 +583,11 @@ export class SupabaseDbService {
           skPenetapanCalon: (c as unknown as Record<string, string>).sk_penetapan_calon || "Keputusan P2KD No. 06/P2KD-KLS/IX/2026",
           skPenetapanDPT: (c as unknown as Record<string, string>).sk_penetapan_dpt || "Berita Acara & Keputusan P2KD No. 07/BA-DPT/X/2026",
           perbupPilkades: (c as unknown as Record<string, string>).perbup_pilkades || "Perda No. 2/2015 & Perbup Tegal No. 27/2018 jo PP No. 16/2026",
+          syaratCalonList: (c as unknown as Record<string, unknown>).syarat_calon_list ? (Array.isArray((c as unknown as Record<string, unknown>).syarat_calon_list) ? (c as unknown as Record<string, string[]>).syarat_calon_list : JSON.parse((c as unknown as Record<string, string>).syarat_calon_list)) : undefined,
+          laranganCalonList: (c as unknown as Record<string, unknown>).larangan_calon_list ? (Array.isArray((c as unknown as Record<string, unknown>).larangan_calon_list) ? (c as unknown as Record<string, string[]>).larangan_calon_list : JSON.parse((c as unknown as Record<string, string>).larangan_calon_list)) : undefined,
+          highlightMasaJabatanJudul: (c as unknown as Record<string, string>).highlight_masa_jabatan_judul || undefined,
+          highlightMasaJabatanDeskripsi: (c as unknown as Record<string, string>).highlight_masa_jabatan_deskripsi || undefined,
+          highlightMasaJabatanCatatan: (c as unknown as Record<string, string>).highlight_masa_jabatan_catatan || undefined,
         };
       }
 
@@ -1673,6 +1678,11 @@ export class SupabaseDbService {
         sk_penetapan_calon: data.skPenetapanCalon,
         sk_penetapan_dpt: data.skPenetapanDPT,
         perbup_pilkades: data.perbupPilkades,
+        syarat_calon_list: data.syaratCalonList,
+        larangan_calon_list: data.laranganCalonList,
+        highlight_masa_jabatan_judul: data.highlightMasaJabatanJudul,
+        highlight_masa_jabatan_deskripsi: data.highlightMasaJabatanDeskripsi,
+        highlight_masa_jabatan_catatan: data.highlightMasaJabatanCatatan,
         updated_at: new Date().toISOString(),
       });
     } catch (err) {

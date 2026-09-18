@@ -33,10 +33,26 @@ export async function POST(req: Request) {
     }
 
     const user = session.user;
-    const isAuthorized = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN";
+    const isAuthorized =
+      user.isSuperAdmin ||
+      user.role === "SUPER_ADMIN" ||
+      user.seksi === "PIMPINAN" ||
+      user.role === "PIMPINAN" ||
+      user.role === "KETUA" ||
+      user.role === "SEKRETARIS" ||
+      user.seksi === "SEKRETARIS" ||
+      user.seksi === "SEKSI_PENJARINGAN" ||
+      user.seksi === "SEKSI_PENYARINGAN" ||
+      user.role === "SEKSI_1" ||
+      user.role === "SEKSI_2" ||
+      user.role === "SEKSI_3";
+
     if (!isAuthorized) {
       return NextResponse.json(
-        { success: false, message: "Akses Ditolak: Hanya Ketua / Pimpinan P2KD yang berwenang mengubah konfigurasi portal publik." },
+        {
+          success: false,
+          message: "Akses Ditolak: Hanya Pimpinan, Sekretaris, atau Seksi terkait P2KD yang berwenang mengubah konfigurasi ini.",
+        },
         { status: 403 }
       );
     }

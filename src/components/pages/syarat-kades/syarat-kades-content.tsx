@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -12,11 +14,49 @@ import {
   Calendar,
   AlertTriangle,
   Users,
+  RefreshCw,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge, Logo, Button } from "@/components/ui";
+import { DEFAULT_SYARAT_KADES, DEFAULT_LARANGAN_KADES, PublicWebConfig } from "@/lib/data-store";
 
 export const SyaratKadesContent: React.FC = () => {
+  const [config, setConfig] = useState<Partial<PublicWebConfig> | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadConfig() {
+      try {
+        const res = await fetch("/api/config");
+        const json = await res.json();
+        if (isMounted && json.success && json.data) {
+          setConfig(json.data);
+        }
+      } catch (err) {
+        console.warn("Failed to load web config:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+    loadConfig();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const syaratList = config?.syaratCalonList && config.syaratCalonList.length > 0
+    ? config.syaratCalonList
+    : DEFAULT_SYARAT_KADES;
+
+  const laranganList = config?.laranganCalonList && config.laranganCalonList.length > 0
+    ? config.laranganCalonList
+    : DEFAULT_LARANGAN_KADES;
+
+  const highlightJudul = config?.highlightMasaJabatanJudul || "Masa Jabatan Kepala Desa 8 Tahun & Maksimal 2 Kali Masa Jabatan";
+  const highlightDeskripsi = config?.highlightMasaJabatanDeskripsi || "Masa jabatan Kepala Desa adalah 8 (delapan) tahun terhitung sejak tanggal pelantikan dan dapat menjabat paling banyak 2 (dua) kali masa jabatan, baik secara berturut-turut maupun tidak secara berturut-turut.";
+  const highlightCatatan = config?.highlightMasaJabatanCatatan || "Seseorang yang telah menjabat Kepala Desa sebanyak 2 (dua) kali masa jabatan tidak dapat mencalonkan diri kembali. Ketentuan periodisasi tersebut juga mencakup masa jabatan Kepala Desa antarwaktu. Ketentuan baru 8 tahun 2 periode menggantikan aturan lama (6 tahun 3 periode) berdasarkan UU 3/2024 dan PP 16/2026.";
+
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 w-full space-y-8">
       {/* Breadcrumb / Action Navigation */}
@@ -47,10 +87,10 @@ export const SyaratKadesContent: React.FC = () => {
           Dokumen Regulasi & Pedoman Resmi P2KD
         </Badge>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-          Syarat dan Larangan Pendaftaran Calon Kepala Desa Kalisalak
+          Syarat dan Larangan Pendaftaran Calon Kepala Desa {config?.namaDesa || "Kalisalak"}
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 font-medium">
-          Kecamatan Margasari, Kabupaten Tegal • Berpedoman pada UU No. 3 Tahun 2024 & PP No. 16 Tahun 2026
+          Kecamatan {config?.kecamatan || "Margasari"}, Kabupaten {config?.kabupaten || "Tegal"} • Berpedoman pada UU No. 3 Tahun 2024 & PP No. 16 Tahun 2026
         </p>
       </div>
 
@@ -67,81 +107,52 @@ export const SyaratKadesContent: React.FC = () => {
             </span>
           </div>
           <h2 className="text-lg sm:text-2xl font-black text-white leading-snug">
-            Masa Jabatan Kepala Desa 8 Tahun & Maksimal 2 Kali Masa Jabatan
+            {highlightJudul}
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
-            Masa jabatan Kepala Desa adalah <strong>8 (delapan) tahun</strong> terhitung sejak tanggal pelantikan dan dapat menjabat paling banyak <strong>2 (dua) kali masa jabatan</strong>, baik secara berturut-turut maupun tidak secara berturut-turut.
+            {highlightDeskripsi}
           </p>
           <div className="p-3 bg-white/10 rounded-2xl border border-white/10 text-xs text-amber-200">
-            ⚠️ <strong>Catatan Penting:</strong> Seseorang yang telah menjabat Kepala Desa sebanyak 2 (dua) kali masa jabatan <strong>tidak dapat mencalonkan diri kembali</strong>. Ketentuan periodisasi tersebut juga mencakup masa jabatan Kepala Desa antarwaktu. Ketentuan baru 8 tahun 2 periode menggantikan aturan lama (6 tahun 3 periode) berdasarkan UU 3/2024 dan PP 16/2026.
+            ⚠️ <strong>Catatan Penting:</strong> {highlightCatatan}
           </div>
         </div>
       </Card>
 
       {/* Section A: Syarat Pendaftaran Calon Kepala Desa */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200">
-          <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
-            <CheckCircle2 className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-emerald-100 text-emerald-800 rounded-xl">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">BAGIAN A</span>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                Persyaratan Calon Kepala Desa
+              </h2>
+            </div>
           </div>
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700">BAGIAN A</span>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Persyaratan Calon Kepala Desa
-            </h2>
-          </div>
+          <Badge variant="outline" className="text-[10px] font-bold text-emerald-700 border-emerald-200 bg-emerald-50">
+            {syaratList.length} Butir Persyaratan
+          </Badge>
         </div>
 
         <Card className="p-6 sm:p-8 bg-white border border-slate-200 rounded-3xl shadow-xs space-y-4">
           <p className="text-xs sm:text-sm text-slate-700 font-medium">
-            Calon Kepala Desa Kalisalak wajib memenuhi seluruh persyaratan administratif dan kualifikasi berikut:
+            Calon Kepala Desa {config?.namaDesa || "Kalisalak"} wajib memenuhi seluruh persyaratan administratif dan kualifikasi berikut:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {[
-              { no: 1, text: "Warga Negara Indonesia (WNI)." },
-              { no: 2, text: "Bertakwa kepada Tuhan Yang Maha Esa." },
-              {
-                no: 3,
-                text: "Memegang teguh dan mengamalkan Pancasila, melaksanakan UUD 1945, serta mempertahankan keutuhan NKRI dan Bhinneka Tunggal Ika.",
-              },
-              {
-                no: 4,
-                text: "Berpendidikan paling rendah tamat Sekolah Menengah Pertama (SMP) atau sederajat.",
-              },
-              {
-                no: 5,
-                text: "Berusia paling rendah 25 (dua puluh lima) tahun pada saat mendaftar.",
-              },
-              { no: 6, text: "Bersedia dicalonkan menjadi Kepala Desa." },
-              { no: 7, text: "Tidak sedang menjalani hukuman pidana penjara." },
-              {
-                no: 8,
-                text: "Tidak pernah dijatuhi pidana penjara berkekuatan hukum tetap karena tindak pidana berancaman ≥ 5 tahun, kecuali telah lewat 5 tahun setelah selesai menjalani pidana serta mengumumkan secara jujur dan terbuka kepada publik bahwa pernah dipidana dan bukan residivis.",
-              },
-              {
-                no: 9,
-                text: "Tidak sedang dicabut hak pilihnya berdasarkan putusan pengadilan yang telah mempunyai kekuatan hukum tetap.",
-              },
-              { no: 10, text: "Berbadan sehat jasmani dan rohani." },
-              {
-                no: 11,
-                text: "Tidak pernah menjabat sebagai Kepala Desa selama 2 (dua) kali masa jabatan.",
-              },
-              {
-                no: 12,
-                text: "Memenuhi persyaratan lain yang ditetapkan dalam Peraturan Daerah Kabupaten Tegal dan peraturan pelaksanaannya yang sah.",
-              },
-            ].map((item) => (
+            {syaratList.map((text, idx) => (
               <div
-                key={item.no}
+                key={idx}
                 className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition-colors"
               >
                 <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                  {item.no}
+                  {idx + 1}
                 </span>
                 <p className="text-xs text-slate-800 leading-relaxed font-normal">
-                  {item.text}
+                  {text}
                 </p>
               </div>
             ))}
@@ -151,16 +162,21 @@ export const SyaratKadesContent: React.FC = () => {
 
       {/* Section B: Larangan & Kriteria Tidak Memenuhi Syarat (TMS) */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2.5 pb-2 border-b border-slate-200">
-          <div className="p-2 bg-rose-100 text-rose-800 rounded-xl">
-            <ShieldAlert className="w-5 h-5" />
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-rose-100 text-rose-800 rounded-xl">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">BAGIAN B</span>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                Larangan & Kriteria Tidak Memenuhi Syarat (TMS)
+              </h2>
+            </div>
           </div>
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-700">BAGIAN B</span>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Larangan & Kriteria Tidak Memenuhi Syarat (TMS)
-            </h2>
-          </div>
+          <Badge variant="outline" className="text-[10px] font-bold text-rose-700 border-rose-200 bg-rose-50">
+            {laranganList.length} Kriteria Larangan
+          </Badge>
         </div>
 
         <Card className="p-6 sm:p-8 bg-rose-50/40 border border-rose-200 rounded-3xl shadow-xs space-y-4">
@@ -169,18 +185,7 @@ export const SyaratKadesContent: React.FC = () => {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {[
-              "Bukan Warga Negara Indonesia (WNI).",
-              "Berusia kurang dari 25 (dua puluh lima) tahun pada saat mendaftar.",
-              "Berpendidikan di bawah Sekolah Menengah Pertama (SMP) atau sederajat.",
-              "Tidak bersedia dicalonkan menjadi Kepala Desa.",
-              "Sedang menjalani hukuman pidana penjara.",
-              "Belum memenuhi ketentuan mengenai riwayat tindak pidana sebagaimana dipersyaratkan dalam Pasal 33 UU Nomor 3 Tahun 2024.",
-              "Sedang dicabut hak pilihnya berdasarkan putusan pengadilan yang berkekuatan hukum tetap.",
-              "Telah pernah menjabat sebagai Kepala Desa selama 2 (dua) kali masa jabatan.",
-              "Tidak memenuhi persyaratan kesehatan yang diwajibkan.",
-              "Tidak memenuhi persyaratan lain yang secara sah ditetapkan dalam Peraturan Daerah Kabupaten Tegal dan peraturan pelaksanaannya.",
-            ].map((larangan, idx) => (
+            {laranganList.map((larangan, idx) => (
               <div
                 key={idx}
                 className="flex items-start gap-2.5 p-3 rounded-2xl bg-white border border-rose-100 shadow-2xs text-xs text-rose-950 font-medium"

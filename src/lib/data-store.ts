@@ -72,7 +72,40 @@ export interface PublicWebConfig {
   skPenetapanCalon?: string;
   skPenetapanDPT?: string;
   perbupPilkades?: string;
+  syaratCalonList?: string[];
+  laranganCalonList?: string[];
+  highlightMasaJabatanJudul?: string;
+  highlightMasaJabatanDeskripsi?: string;
+  highlightMasaJabatanCatatan?: string;
 }
+
+export const DEFAULT_SYARAT_KADES: string[] = [
+  "Warga Negara Indonesia (WNI).",
+  "Bertakwa kepada Tuhan Yang Maha Esa.",
+  "Memegang teguh dan mengamalkan Pancasila, melaksanakan Undang-Undang Dasar Negara Republik Indonesia Tahun 1945, serta mempertahankan dan memelihara keutuhan Negara Kesatuan Republik Indonesia dan Bhinneka Tunggal Ika.",
+  "Berpendidikan paling rendah tamat Sekolah Menengah Pertama (SMP) atau sederajat.",
+  "Berusia paling rendah 25 (dua puluh lima) tahun pada saat mendaftar.",
+  "Bersedia dicalonkan menjadi Kepala Desa.",
+  "Tidak sedang menjalani hukuman pidana penjara.",
+  "Tidak pernah dijatuhi pidana penjara berdasarkan putusan pengadilan yang telah mempunyai kekuatan hukum tetap karena melakukan tindak pidana yang diancam dengan pidana penjara paling singkat 5 (lima) tahun atau lebih, kecuali telah lewat 5 (lima) tahun setelah selesai menjalani pidana serta mengumumkan secara jujur dan terbuka kepada publik bahwa pernah dipidana dan bukan residivis.",
+  "Tidak sedang dicabut hak pilihnya berdasarkan putusan pengadilan yang telah mempunyai kekuatan hukum tetap.",
+  "Berbadan sehat jasmani dan rohani.",
+  "Tidak pernah menjabat sebagai Kepala Desa selama 2 (dua) kali masa jabatan.",
+  "Memenuhi persyaratan lain yang ditetapkan dalam Peraturan Daerah Kabupaten Tegal dan peraturan pelaksanaannya yang sah.",
+];
+
+export const DEFAULT_LARANGAN_KADES: string[] = [
+  "Bukan Warga Negara Indonesia (WNI).",
+  "Berusia kurang dari 25 (dua puluh lima) tahun pada saat mendaftar.",
+  "Berpendidikan di bawah Sekolah Menengah Pertama (SMP) atau sederajat.",
+  "Tidak bersedia dicalonkan menjadi Kepala Desa.",
+  "Sedang menjalani hukuman pidana penjara.",
+  "Belum memenuhi ketentuan mengenai riwayat tindak pidana sebagaimana dipersyaratkan dalam Pasal 33 UU Nomor 3 Tahun 2024.",
+  "Sedang dicabut hak pilihnya berdasarkan putusan pengadilan yang berkekuatan hukum tetap.",
+  "Telah pernah menjabat sebagai Kepala Desa selama 2 (dua) kali masa jabatan.",
+  "Tidak memenuhi persyaratan kesehatan yang diwajibkan.",
+  "Tidak memenuhi persyaratan lain yang secara sah ditetapkan dalam Peraturan Daerah Kabupaten Tegal dan peraturan pelaksanaannya.",
+];
 
 export interface MasterPengumuman {
   id: string;
@@ -348,6 +381,11 @@ class SystemDataStore {
     skPenetapanCalon: "Keputusan P2KD No. 06/P2KD-KLS/IX/2026",
     skPenetapanDPT: "Berita Acara & Keputusan P2KD No. 07/BA-DPT/X/2026",
     perbupPilkades: "Perda No. 2/2015 & Perbup Tegal No. 27/2018 jo PP No. 16/2026",
+    syaratCalonList: DEFAULT_SYARAT_KADES,
+    laranganCalonList: DEFAULT_LARANGAN_KADES,
+    highlightMasaJabatanJudul: "Masa Jabatan Kepala Desa 8 Tahun & Maksimal 2 Kali Masa Jabatan",
+    highlightMasaJabatanDeskripsi: "Masa jabatan Kepala Desa adalah 8 (delapan) tahun terhitung sejak tanggal pelantikan dan dapat menjabat paling banyak 2 (dua) kali masa jabatan, baik secara berturut-turut maupun tidak secara berturut-turut.",
+    highlightMasaJabatanCatatan: "Seseorang yang telah menjabat Kepala Desa sebanyak 2 (dua) kali masa jabatan tidak dapat mencalonkan diri kembali. Ketentuan periodisasi tersebut juga mencakup masa jabatan Kepala Desa antarwaktu berdasarkan UU 3/2024 dan PP 16/2026.",
   };
 
   private petugasDptList: MasterPetugasDpt[] = [];

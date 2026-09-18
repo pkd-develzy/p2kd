@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
@@ -19,6 +20,12 @@ import {
   Eye,
   CheckCircle2,
   Check,
+  Scale,
+  FileText,
+  ShieldAlert,
+  RotateCcw,
+  AlertTriangle,
+  Award,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Input, Badge } from "@/components/ui";
@@ -27,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { compressImage } from "@/lib/image-compressor";
+import { DEFAULT_SYARAT_KADES, DEFAULT_LARANGAN_KADES } from "@/lib/data-store";
 
 interface TabCalonKadesProps {
   isAdmin: boolean;
@@ -57,6 +65,12 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
   const isAuthorized =
     isAdmin ||
     userRole === "SUPER_ADMIN" ||
+    userRole === "PIMPINAN" ||
+    userRole === "KETUA" ||
+    userRole === "SEKRETARIS" ||
+    userRole === "SEKSI_1" ||
+    userRole === "SEKSI_2" ||
+    userRole === "SEKSI_3" ||
     userSeksi === "PIMPINAN" ||
     userSeksi === "SEKSI_PENJARINGAN" ||
     userSeksi === "SEKSI_PENYARINGAN";
@@ -65,11 +79,28 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Modal State
+  // Modal Calon State
   const [showFormModal, setShowFormModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentId, setCurrentId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Modal Syarat & Larangan State (Dapat diubah Sekretaris & Seksi terkait)
+  const [showSyaratModal, setShowSyaratModal] = useState(false);
+  const [activeSyaratTab, setActiveSyaratTab] = useState<"syarat" | "larangan" | "regulasi">("syarat");
+  const [syaratList, setSyaratList] = useState<string[]>(DEFAULT_SYARAT_KADES);
+  const [laranganList, setLaranganList] = useState<string[]>(DEFAULT_LARANGAN_KADES);
+  const [highlightJudul, setHighlightJudul] = useState("Masa Jabatan Kepala Desa 8 Tahun & Maksimal 2 Kali Masa Jabatan");
+  const [highlightDeskripsi, setHighlightDeskripsi] = useState(
+    "Masa jabatan Kepala Desa adalah 8 (delapan) tahun terhitung sejak tanggal pelantikan dan dapat menjabat paling banyak 2 (dua) kali masa jabatan, baik secara berturut-turut maupun tidak secara berturut-turut."
+  );
+  const [highlightCatatan, setHighlightCatatan] = useState(
+    "Seseorang yang telah menjabat Kepala Desa sebanyak 2 (dua) kali masa jabatan tidak dapat mencalonkan diri kembali. Ketentuan periodisasi tersebut juga mencakup masa jabatan Kepala Desa antarwaktu berdasarkan UU 3/2024 dan PP 16/2026."
+  );
+  const [newSyaratText, setNewSyaratText] = useState("");
+  const [newLaranganText, setNewLaranganText] = useState("");
+  const [loadingSyarat, setLoadingSyarat] = useState(false);
+  const [savingSyarat, setSavingSyarat] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<{
@@ -127,9 +158,45 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
     }
   }, [toast]);
 
+  const fetchSyaratConfig = useCallback(async () => {
+    try {
+      setLoadingSyarat(true);
+      const res = await fetch("/api/config");
+      const json = await res.json();
+      if (json.success && json.data) {
+        if (Array.isArray(json.data.syaratCalonList) && json.data.syaratCalonList.length > 0) {
+          setSyaratList(json.data.syaratCalonList);
+        }
+        if (Array.isArray(json.data.laranganCalonList) && json.data.laranganCalonList.length > 0) {
+          setLaranganList(json.data.laranganCalonList);
+        }
+        if (json.data.highlightMasaJabatanJudul) {
+          setHighlightJudul(json.data.highlightMasaJabatanJudul);
+        }
+        if (json.data.highlightMasaJabatanDeskripsi) {
+          setHighlightDeskripsi(json.data.highlightMasaJabatanDeskripsi);
+        }
+        if (json.data.highlightMasaJabatanCatatan) {
+          setHighlightCatatan(json.data.highlightMasaJabatanCatatan);
+        }
+      }
+    } catch (err) {
+      console.warn("Gagal memuat konfigurasi syarat:", err);
+    } finally {
+      setLoadingSyarat(false);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchCalon();
-  }, [fetchCalon]);
+    let active = true;
+    if (active) {
+      fetchCalon();
+      fetchSyaratConfig();
+    }
+    return () => {
+      active = false;
+    };
+  }, [fetchCalon, fetchSyaratConfig]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -313,6 +380,113 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
     }
   };
 
+  // --- Handlers Pengaturan Syarat & Larangan (Sekretaris & Seksi Terkait) ---
+  const handleOpenSyaratModal = () => {
+    fetchSyaratConfig();
+    setShowSyaratModal(true);
+  };
+
+  const handleAddSyarat = () => {
+    if (!newSyaratText.trim()) {
+      toast.warning("Teks Kosong", "Masukkan butir syarat terlebih dahulu.");
+      return;
+    }
+    setSyaratList((prev) => [...prev, newSyaratText.trim()]);
+    setNewSyaratText("");
+    toast.success("Butir Ditambahkan", "Butir syarat baru berhasil dimasukkan.");
+  };
+
+  const handleRemoveSyarat = (index: number) => {
+    setSyaratList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEditSyarat = (index: number, val: string) => {
+    setSyaratList((prev) => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
+  };
+
+  const handleAddLarangan = () => {
+    if (!newLaranganText.trim()) {
+      toast.warning("Teks Kosong", "Masukkan kriteria larangan terlebih dahulu.");
+      return;
+    }
+    setLaranganList((prev) => [...prev, newLaranganText.trim()]);
+    setNewLaranganText("");
+    toast.success("Kriteria Ditambahkan", "Kriteria larangan baru berhasil dimasukkan.");
+  };
+
+  const handleRemoveLarangan = (index: number) => {
+    setLaranganList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleEditLarangan = (index: number, val: string) => {
+    setLaranganList((prev) => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
+  };
+
+  const handleResetSyaratDefault = async () => {
+    const approved = await confirm({
+      title: "Reset ke Standar UU 3/2024?",
+      message: "Apakah Anda yakin ingin mengembalikan seluruh butir syarat dan larangan ke ketentuan standar UU Desa No. 3/2024 dan PP No. 16/2026?",
+      confirmText: "Reset Standar",
+      cancelText: "Batal",
+      variant: "warning",
+    });
+
+    if (!approved) return;
+    setSyaratList(DEFAULT_SYARAT_KADES);
+    setLaranganList(DEFAULT_LARANGAN_KADES);
+    setHighlightJudul("Masa Jabatan Kepala Desa 8 Tahun & Maksimal 2 Kali Masa Jabatan");
+    setHighlightDeskripsi(
+      "Masa jabatan Kepala Desa adalah 8 (delapan) tahun terhitung sejak tanggal pelantikan dan dapat menjabat paling banyak 2 (dua) kali masa jabatan, baik secara berturut-turut maupun tidak secara berturut-turut."
+    );
+    setHighlightCatatan(
+      "Seseorang yang telah menjabat Kepala Desa sebanyak 2 (dua) kali masa jabatan tidak dapat mencalonkan diri kembali. Ketentuan periodisasi tersebut juga mencakup masa jabatan Kepala Desa antarwaktu berdasarkan UU 3/2024 dan PP 16/2026."
+    );
+    toast.info("Format Direset", "Data dikembalikan ke standar regulasi nasional.");
+  };
+
+  const handleSaveSyaratConfig = async () => {
+    setSavingSyarat(true);
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token") : null;
+      const res = await fetch("/api/config", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          data: {
+            syaratCalonList: syaratList,
+            laranganCalonList: laranganList,
+            highlightMasaJabatanJudul: highlightJudul,
+            highlightMasaJabatanDeskripsi: highlightDeskripsi,
+            highlightMasaJabatanCatatan: highlightCatatan,
+          },
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Syarat & Larangan Disimpan", "Ketentuan calon kades di website publik berhasil diperbarui secara live.");
+        setShowSyaratModal(false);
+      } else {
+        toast.error("Gagal Menyimpan", json.message || "Terjadi kesalahan saat memperbarui syarat.");
+      }
+    } catch {
+      toast.error("Error Jaringan", "Tidak dapat terhubung ke server konfigurasi.");
+    } finally {
+      setSavingSyarat(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Hero Banner */}
@@ -336,31 +510,55 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
               <span>Manajemen Calon & Pendaftar Kepala Desa</span>
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
-              Kelola nomor urut resmi, foto profil, rekam jejak, visi, misi, serta program unggulan calon Kepala Desa. Setiap data yang disimpan di sini otomatis tampil di halaman publik (`/calon` dan section beranda).
+              Kelola nomor urut resmi, foto profil, rekam jejak, visi, misi, serta syarat & larangan calon Kepala Desa. Setiap data yang disimpan di sini otomatis tayang di halaman publik (`/calon` dan `/syarat-daftar-kades`).
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="text-xs font-bold border-slate-700 bg-white/5 text-white hover:bg-white/15 rounded-2xl py-2.5 px-3.5 backdrop-blur-xs"
+              className="text-xs font-bold border-slate-700 bg-white/5 text-white hover:bg-white/15 rounded-2xl py-2 px-3 backdrop-blur-xs"
             >
               <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${refreshing ? "animate-spin" : ""}`} />
               <span>Refresh</span>
             </Button>
 
+            {isAuthorized && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenSyaratModal}
+                className="text-xs font-bold border-emerald-500/50 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25 rounded-2xl py-2 px-3.5 shadow-sm"
+              >
+                <Scale className="w-3.5 h-3.5 mr-1.5 text-emerald-300" />
+                <span>Atur Syarat & Larangan</span>
+              </Button>
+            )}
+
+            <Link href="/syarat-daftar-kades" target="_blank">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs font-bold border-indigo-400/40 bg-indigo-500/10 text-indigo-200 hover:bg-indigo-500/20 rounded-2xl py-2 px-3"
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5 text-indigo-300" />
+                <span>Lihat Syarat</span>
+                <ExternalLink className="w-3 h-3 ml-1 opacity-70" />
+              </Button>
+            </Link>
+
             <Link href="/calon" target="_blank">
               <Button
                 variant="outline"
                 size="sm"
-                className="text-xs font-bold border-blue-400/40 bg-blue-500/10 text-blue-200 hover:bg-blue-500/20 rounded-2xl py-2.5 px-3.5"
+                className="text-xs font-bold border-blue-400/40 bg-blue-500/10 text-blue-200 hover:bg-blue-500/20 rounded-2xl py-2 px-3"
               >
                 <Eye className="w-3.5 h-3.5 mr-1.5 text-blue-300" />
-                <span>Lihat di Website Publik</span>
-                <ExternalLink className="w-3 h-3 ml-1" />
+                <span>Halaman Calon</span>
+                <ExternalLink className="w-3 h-3 ml-1 opacity-70" />
               </Button>
             </Link>
 
@@ -369,10 +567,10 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={handleOpenAdd}
-                className="text-xs font-black bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md rounded-2xl py-2.5 px-4"
+                className="text-xs font-black bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md rounded-2xl py-2 px-3.5"
               >
                 <UserPlus className="w-4 h-4 mr-1.5" />
-                <span>Tambah Calon Kades</span>
+                <span>Tambah Calon</span>
               </Button>
             )}
           </div>
@@ -877,6 +1075,324 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pengaturan Syarat & Larangan Calon (Sekretaris & Seksi Terkait) */}
+      {showSyaratModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200">
+            {/* Modal Header */}
+            <div className="p-5 sm:p-6 bg-linear-to-r from-slate-900 via-blue-950 to-indigo-950 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-400/20 text-amber-300 rounded-2xl border border-amber-400/30">
+                  <Scale className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="primary" className="text-[10px] bg-amber-400 text-slate-950 font-black px-2.5 py-0.5 rounded-full">
+                      P2KD Realtime Sync
+                    </Badge>
+                    <span className="text-xs text-slate-300 font-medium">Wewenang: Sekretaris & Seksi Terkait</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white mt-1">
+                    Pengaturan Syarat & Larangan Pencalonan Kades
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSyaratModal(false)}
+                className="p-2 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex items-center gap-2 p-3 bg-slate-50 border-b border-slate-200 shrink-0 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setActiveSyaratTab("syarat")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  activeSyaratTab === "syarat"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Persyaratan Calon ({syaratList.length} Butir)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSyaratTab("larangan")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  activeSyaratTab === "larangan"
+                    ? "bg-rose-600 text-white shadow-xs"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                <ShieldAlert className="w-4 h-4" />
+                <span>Kriteria Larangan / TMS ({laranganList.length} Butir)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSyaratTab("regulasi")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                  activeSyaratTab === "regulasi"
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                <span>Highlight Regulasi (UU 3/2024 & PP 16/2026)</span>
+              </button>
+            </div>
+
+            {/* Modal Body Scrollable */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
+              {loadingSyarat ? (
+                <div className="py-12 text-center text-slate-400 space-y-2">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
+                  <p className="text-xs font-bold">Memuat konfigurasi regulasi...</p>
+                </div>
+              ) : (
+                <>
+                  {/* TAB 1: PERSYARATAN CALON */}
+                  {activeSyaratTab === "syarat" && (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-2xl flex items-start gap-3 text-xs text-emerald-900">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <div>
+                          <strong>Petunjuk Persyaratan:</strong> Setiap butir di bawah ini wajib dipenuhi oleh bakal calon Kepala Desa Kalisalak sesuai regulasi Pasal 33 UU 3/2024 dan Perda Kabupaten Tegal. Perubahan butir akan langsung aktif di halaman <code>/syarat-daftar-kades</code>.
+                        </div>
+                      </div>
+
+                      {/* Add New Syarat Input */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                        <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                          <Plus className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Tambah Butir Persyaratan Baru</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <textarea
+                            rows={2}
+                            value={newSyaratText}
+                            onChange={(e) => setNewSyaratText(e.target.value)}
+                            placeholder="Ketik butir persyaratan baru..."
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                          />
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={handleAddSyarat}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shrink-0 self-end rounded-xl px-4 py-2"
+                          >
+                            Tambah
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* List Syarat Existing */}
+                      <div className="space-y-2.5">
+                        <label className="text-xs font-bold text-slate-700">Daftar Butir Syarat Aktif ({syaratList.length}):</label>
+                        {syaratList.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-slate-200 hover:border-emerald-300 transition-colors shadow-2xs group"
+                          >
+                            <span className="w-6 h-6 rounded-full bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-1 shadow-xs">
+                              {idx + 1}
+                            </span>
+                            <textarea
+                              rows={2}
+                              value={item}
+                              onChange={(e) => handleEditSyarat(idx, e.target.value)}
+                              className="w-full text-xs p-2 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 bg-slate-50/50 group-hover:bg-white transition-colors"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSyarat(idx)}
+                              title="Hapus Butir"
+                              className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 mt-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: LARANGAN / TMS */}
+                  {activeSyaratTab === "larangan" && (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-rose-50/60 border border-rose-200 rounded-2xl flex items-start gap-3 text-xs text-rose-900">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                        <div>
+                          <strong>Petunjuk Larangan:</strong> Kriteria di bawah menyatakan kondisi yang menyebabkan seorang bakal calon <strong>Tidak Memenuhi Syarat (TMS)</strong> / dilarang ditetapkan menjadi calon Kades.
+                        </div>
+                      </div>
+
+                      {/* Add New Larangan Input */}
+                      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                        <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                          <Plus className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Tambah Kriteria Larangan / TMS Baru</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <textarea
+                            rows={2}
+                            value={newLaranganText}
+                            onChange={(e) => setNewLaranganText(e.target.value)}
+                            placeholder="Ketik kriteria larangan / TMS baru..."
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
+                          />
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={handleAddLarangan}
+                            className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shrink-0 self-end rounded-xl px-4 py-2"
+                          >
+                            Tambah
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* List Larangan Existing */}
+                      <div className="space-y-2.5">
+                        <label className="text-xs font-bold text-slate-700">Daftar Kriteria Larangan Aktif ({laranganList.length}):</label>
+                        {laranganList.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-rose-100 hover:border-rose-300 transition-colors shadow-2xs group"
+                          >
+                            <span className="w-6 h-6 rounded-full bg-rose-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-1 shadow-xs">
+                              {idx + 1}
+                            </span>
+                            <textarea
+                              rows={2}
+                              value={item}
+                              onChange={(e) => handleEditLarangan(idx, e.target.value)}
+                              className="w-full text-xs p-2 rounded-xl border border-rose-100 focus:outline-none focus:border-rose-500 bg-rose-50/20 group-hover:bg-white transition-colors"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLarangan(idx)}
+                              title="Hapus Kriteria"
+                              className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0 mt-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: HIGHLIGHT REGULASI & MASA JABATAN */}
+                  {activeSyaratTab === "regulasi" && (
+                    <div className="space-y-4">
+                      <div className="p-4 bg-blue-50/60 border border-blue-200 rounded-2xl flex items-start gap-3 text-xs text-blue-900">
+                        <Award className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                        <div>
+                          <strong>Ketentuan Banner Regulasi:</strong> Mengatur penjelasan masa jabatan 8 tahun dan maksimal 2 periode yang tampil di bagian atas halaman informasi syarat publik.
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Judul Banner Regulasi Masa Jabatan
+                          </label>
+                          <Input
+                            type="text"
+                            value={highlightJudul}
+                            onChange={(e) => setHighlightJudul(e.target.value)}
+                            className="text-xs h-9"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Deskripsi Ketentuan Masa Jabatan (8 Tahun 2 Periode)
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={highlightDeskripsi}
+                            onChange={(e) => setHighlightDeskripsi(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 mb-1">
+                            Catatan Penting / Disclaimer Hukum
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={highlightCatatan}
+                            onChange={(e) => setHighlightCatatan(e.target.value)}
+                            className="w-full text-xs p-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetSyaratDefault}
+                className="text-xs font-bold text-amber-700 border-amber-300 bg-amber-50/50 hover:bg-amber-100 rounded-xl gap-1.5 w-full sm:w-auto"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset ke Standar UU 3/2024</span>
+              </Button>
+
+              <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowSyaratModal(false)}
+                  className="text-xs rounded-xl"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveSyaratConfig}
+                  disabled={savingSyarat}
+                  className="text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-md gap-1.5"
+                >
+                  {savingSyarat ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Menyimpan ke Portal Publik...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Simpan Syarat ke Website Publik</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

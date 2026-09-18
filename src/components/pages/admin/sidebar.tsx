@@ -37,6 +37,7 @@ interface SidebarProps {
   isDptLocked: boolean;
   auditCount: number;
   anggotaCount?: number;
+  petugasCount?: number;
   dbStatus: DbStatus | null;
   isAdmin: boolean;
   userRole?: string; // SUPER_ADMIN, SEKSI_PEMILIH, SEKSI_PENJARINGAN, SEKSI_PENYARINGAN, SEKSI_PUNGUT_HITUNG, SEKSI_LOGISTIK_PUBLIKASI, PETUGAS_TPS
@@ -60,6 +61,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
   isDptLocked,
   auditCount,
   anggotaCount = 15,
+  petugasCount = 0,
   dbStatus,
   isAdmin,
   userRole = "SUPER_ADMIN",
@@ -116,6 +118,14 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           badge: "Coklit",
           badgeColor: "bg-amber-400 text-slate-950 font-black border-amber-300 animate-pulse",
           allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
+        },
+        {
+          id: "petugas_dpt" as TabType,
+          label: "Petugas Pendataan DPT",
+          icon: UserCheck,
+          badge: petugasCount > 0 ? `${petugasCount} Berkas` : "Rekrutmen",
+          badgeColor: petugasCount > 0 ? "bg-blue-600 text-white font-bold" : "bg-slate-800 text-slate-400 border-slate-700",
+          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "SEKSI_PENJARINGAN", "SEKSI_PENYARINGAN"],
         },
         {
           id: "aduan" as TabType,

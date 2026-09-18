@@ -22,6 +22,7 @@ import {
   Shield,
   Award,
   Newspaper,
+  UserCheck,
 } from "lucide-react";
 import { Button, Logo } from "@/components/ui";
 
@@ -43,60 +44,60 @@ const menuCategories: Record<string, MenuCategory> = {
     items: [
       {
         href: "/berita",
-        label: "Berita & Liputan Media",
-        desc: "Kabar terkini dan rilis pers resmi P2KD",
+        label: "Berita & Kabar Desa",
+        desc: "Liputan kegiatan, sosialisasi, & rilis pers",
         icon: <Newspaper className="w-4 h-4 text-blue-700" />,
       },
       {
         href: "/informasi",
-        label: "Informasi Pilkades",
-        desc: "Visi, misi, dasar hukum, dan panitia P2KD",
-        icon: <Info className="w-4 h-4 text-indigo-700" />,
-      },
-      {
-        href: "/calon",
-        label: "Profil Calon Kades",
-        desc: "Daftar calon, nomor urut, dan visi misi",
-        icon: <Award className="w-4 h-4 text-rose-700" />,
+        label: "Tentang P2KD Kalisalak",
+        desc: "Struktur organisasi, panitia, & visi misi",
+        icon: <Info className="w-4 h-4 text-blue-700" />,
       },
       {
         href: "/tahapan",
-        label: "Tahapan & Jadwal",
-        desc: "Agenda dari pendataan hingga DPT terkunci",
-        icon: <Calendar className="w-4 h-4 text-amber-700" />,
+        label: "Jadwal & Tahapan Pilkades",
+        desc: "Timeline tahapan dari persiapan hingga hari-H",
+        icon: <Calendar className="w-4 h-4 text-blue-700" />,
       },
       {
         href: "/pengumuman",
-        label: "Pengumuman Resmi",
-        desc: "Surat edaran, tata tertib, dan berita acara",
-        icon: <Megaphone className="w-4 h-4 text-emerald-700" />,
+        label: "Dokumen & Pengumuman",
+        desc: "Unduh SK, berita acara, dan dokumen resmi",
+        icon: <Megaphone className="w-4 h-4 text-amber-700" />,
+      },
+      {
+        href: "/bimtekmateri",
+        label: "Materi Bimtek & Panduan",
+        desc: "Modul pelatihan saksi, KPPS, dan bimtek",
+        icon: <Award className="w-4 h-4 text-indigo-700" />,
       },
       {
         href: "/faq",
-        label: "Pusat Bantuan (FAQ)",
-        desc: "Tanya jawab seputar hak pilih dan syarat",
-        icon: <HelpCircle className="w-4 h-4 text-teal-700" />,
+        label: "Tanya Jawab (FAQ)",
+        desc: "Jawaban pertanyaan seputar Pilkades",
+        icon: <HelpCircle className="w-4 h-4 text-purple-700" />,
       },
     ],
   },
-  data: {
-    title: "Data Pemilih",
+  dataPemilih: {
+    title: "Data Pemilih & Wilayah",
     items: [
       {
         href: "/cek-pemilih",
-        label: "Cek Hak Pilih Mandiri",
-        desc: "Pencarian NIK & nomor Tabung terenkripsi",
+        label: "Cek Hak Pilih (NIK)",
+        desc: "Pencarian NIK cepat, akurat, dan terlindungi",
         icon: <Search className="w-4 h-4 text-blue-700" />,
       },
       {
         href: "/dps",
-        label: "Daftar Pemilih Sementara",
-        desc: "Rekapitulasi DPS per RW Desa Kalisalak",
-        icon: <Database className="w-4 h-4 text-emerald-700" />,
+        label: "Daftar Pemilih Sementara (DPS)",
+        desc: "Data pemilih hasil pemutakhiran awal",
+        icon: <Database className="w-4 h-4 text-teal-700" />,
       },
       {
         href: "/dpt",
-        label: "Daftar Pemilih Tetap",
+        label: "Daftar Pemilih Tetap (DPT)",
         desc: "Status pleno & penguncian data final",
         icon: <FileCheck className="w-4 h-4 text-purple-700" />,
       },
@@ -111,6 +112,12 @@ const menuCategories: Record<string, MenuCategory> = {
   layanan: {
     title: "Layanan & Regulasi",
     items: [
+      {
+        href: "/daftarpantarlih",
+        label: "Pendaftaran Petugas DPT",
+        desc: "Rekrutmen & Uji Integritas Pantarlih/Coklit",
+        icon: <UserCheck className="w-4 h-4 text-blue-700" />,
+      },
       {
         href: "/aduan",
         label: "Form Aduan & Perbaikan",

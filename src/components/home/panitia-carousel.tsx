@@ -24,7 +24,7 @@ export interface PanitiaProfile {
   fotoUrl?: string | null;
 }
 
-// Fallback seed data in case API is loading or empty
+// Fallback seed data (Strictly matching Dashboard P2KD settings - No Vice Chairman)
 const DEFAULT_PANITIA_FALLBACK: PanitiaProfile[] = [
   {
     id: "p-1",
@@ -35,55 +35,48 @@ const DEFAULT_PANITIA_FALLBACK: PanitiaProfile[] = [
   },
   {
     id: "p-2",
-    namaLengkap: "HERIK, S.Pd",
-    jabatan: "Wakil Ketua",
-    seksi: "PIMPINAN",
-    seksiLabel: "Pimpinan Panitia (Wakil Ketua)",
-  },
-  {
-    id: "p-3",
     namaLengkap: "AKHMAD SAIFUDIN, S.Kom",
     jabatan: "Sekretaris",
     seksi: "PIMPINAN",
     seksiLabel: "Pimpinan Panitia (Sekretariat)",
   },
   {
-    id: "p-4",
+    id: "p-3",
     namaLengkap: "MOH. FAUZAN, S.Ak",
     jabatan: "Bendahara",
     seksi: "PIMPINAN",
     seksiLabel: "Pimpinan Panitia (Kebendaharaan)",
   },
   {
-    id: "p-5",
+    id: "p-4",
     namaLengkap: "AGUS SUPRIYADI",
     jabatan: "Ketua Seksi 1: Pendaftaran Pemilih",
     seksi: "SEKSI_PEMILIH",
     seksiLabel: "Seksi 1: Pendaftaran Pemilih",
   },
   {
-    id: "p-6",
+    id: "p-5",
     namaLengkap: "BAMBANG IRAWAN",
     jabatan: "Ketua Seksi 2: Penjaringan Balon",
     seksi: "SEKSI_PENJARINGAN",
     seksiLabel: "Seksi 2: Penjaringan Calon",
   },
   {
-    id: "p-7",
+    id: "p-6",
     namaLengkap: "SLAMET RIYADI",
     jabatan: "Ketua Seksi 3: Penyaringan & Uji Berkas",
     seksi: "SEKSI_PENYARINGAN",
     seksiLabel: "Seksi 3: Penyaringan Calon",
   },
   {
-    id: "p-8",
+    id: "p-7",
     namaLengkap: "NUR HIDAYAT",
     jabatan: "Ketua Seksi 4: Pemungutan & Penghitungan",
     seksi: "SEKSI_PUNGUT_HITUNG",
     seksiLabel: "Seksi 4: Pungut Hitung",
   },
   {
-    id: "p-9",
+    id: "p-8",
     namaLengkap: "DIDI SETIAWAN",
     jabatan: "Ketua Seksi 5: Logistik, Publikasi & Humas",
     seksi: "SEKSI_LOGISTIK_PUBLIKASI",

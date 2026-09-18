@@ -27,50 +27,43 @@ interface PanitiaMember {
   fotoUrl?: string | null;
 }
 
-const SEKSI_GROUPS = [
-  {
-    key: "PIMPINAN",
+const SEKSI_CONFIGS: Record<string, { title: string; desc: string; badgeColor: string }> = {
+  PIMPINAN: {
     title: "Pimpinan & Sekretariat P2KD",
-    desc: "Unsur pimpinan penanggung jawab umum, manajerial tahapan, administrasi persuratan, dan perbendaharaan keuangan Pilkades.",
+    desc: "Unsur pimpinan penanggung jawab umum (Ketua, Sekretaris, Bendahara), manajerial tahapan, administrasi persuratan, dan perbendaharaan keuangan Pilkades.",
     badgeColor: "bg-amber-500/10 text-amber-700 border-amber-500/20",
-    headerBg: "from-amber-950 via-slate-900 to-indigo-950",
   },
-  {
-    key: "SEKSI_PEMILIH",
+  SEKSI_PEMILIH: {
     title: "Seksi 1: Pendaftaran & Pemutakhiran Pemilih",
     desc: "Bertanggung jawab atas pemutakhiran data DPS, rekrutmen/bimbingan teknis Pantarlih, penyusunan DPSHP, hingga penetapan DPT final.",
     badgeColor: "bg-blue-500/10 text-blue-700 border-blue-500/20",
-    headerBg: "from-blue-950 via-slate-900 to-indigo-950",
   },
-  {
-    key: "SEKSI_PENJARINGAN",
+  SEKSI_PENJARINGAN: {
     title: "Seksi 2: Penjaringan Bakal Calon Kepala Desa",
     desc: "Bertanggung jawab atas pengumuman pendaftaran, penerimaan berkas pendaftaran balon Kades, dan verifikasi awal kelengkapan administrasi.",
     badgeColor: "bg-purple-500/10 text-purple-700 border-purple-500/20",
-    headerBg: "from-purple-950 via-slate-900 to-indigo-950",
   },
-  {
-    key: "SEKSI_PENYARINGAN",
+  SEKSI_PENYARINGAN: {
     title: "Seksi 3: Penyaringan & Uji Kelayakan Calon",
     desc: "Bertanggung jawab atas verifikasi keabsahan ijazah/dokumen, klarifikasi instansi, ujian tertulis/wawancara (jika > 5 calon), dan penetapan calon berhak dipilih.",
     badgeColor: "bg-indigo-500/10 text-indigo-700 border-indigo-500/20",
-    headerBg: "from-indigo-950 via-slate-900 to-blue-950",
   },
-  {
-    key: "SEKSI_PUNGUT_HITUNG",
+  SEKSI_PUNGUT_HITUNG: {
     title: "Seksi 4: Pemungutan & Penghitungan Suara",
     desc: "Bertanggung jawab atas teknis TPS Lapangan, penyiapan surat suara & bilik suara, bimbingan teknis KPPS/Petugas Meja, hingga rekapitulasi pleno.",
     badgeColor: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
-    headerBg: "from-emerald-950 via-slate-900 to-indigo-950",
   },
-  {
-    key: "SEKSI_LOGISTIK_PUBLIKASI",
+  SEKSI_LOGISTIK_PUBLIKASI: {
     title: "Seksi 5: Logistik, Publikasi & Humas",
     desc: "Bertanggung jawab atas pengadaan perlengkapan Pilkades, penyebaran informasi publik, transparansi berita desa, dan posko layanan warga.",
     badgeColor: "bg-rose-500/10 text-rose-700 border-rose-500/20",
-    headerBg: "from-rose-950 via-slate-900 to-indigo-950",
   },
-];
+  SEKSI_KETERTIBAN: {
+    title: "Seksi 6: Ketenteraman, Ketertiban & Keamanan",
+    desc: "Bertanggung jawab atas koordinasi ketertiban, pengamanan lokasi pemungutan suara, dan penjagaan logistik Pilkades.",
+    badgeColor: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20",
+  },
+};
 
 export const StrukturContent: React.FC = () => {
   const [panitiaList, setPanitiaList] = useState<PanitiaMember[]>([]);
@@ -188,29 +181,30 @@ export const StrukturContent: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-10">
-          {SEKSI_GROUPS.map((group, gIdx) => {
-            const members = panitiaList.filter((m) => m.seksi === group.key);
+          {Object.entries(SEKSI_CONFIGS).map(([seksiKey, config], gIdx) => {
+            const members = panitiaList.filter((m) => m.seksi === seksiKey);
+            if (members.length === 0 && seksiKey === "SEKSI_KETERTIBAN") return null;
 
             return (
-              <div key={group.key} className="space-y-4">
+              <div key={seksiKey} className="space-y-4">
                 {/* Section Group Header */}
                 <div className="border-b border-slate-200 pb-3 flex flex-col sm:flex-row sm:items-end justify-between gap-2">
                   <div>
                     <span
-                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border inline-block mb-1.5 ${group.badgeColor}`}
+                      className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border inline-block mb-1.5 ${config.badgeColor}`}
                     >
                       Struktur Unit #{gIdx + 1}
                     </span>
                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                      {group.title}
+                      {config.title}
                     </h2>
                     <p className="text-xs text-slate-600 mt-0.5 max-w-3xl leading-relaxed">
-                      {group.desc}
+                      {config.desc}
                     </p>
                   </div>
 
                   <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-xl shrink-0 self-start sm:self-auto">
-                    {members.length > 0 ? `${members.length} Personil` : "Dalam Penetapan"}
+                    {members.length > 0 ? `${members.length} Personil Terdaftar` : "Dalam Penetapan"}
                   </span>
                 </div>
 

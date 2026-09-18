@@ -1,14 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
-"use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Vote,
   UserPlus,
   Edit2,
   Trash2,
-  ShieldCheck,
   ExternalLink,
   Plus,
   X,
@@ -108,9 +104,8 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
     statusVerifikasi: "MEMENUHI_SYARAT",
   });
 
-  const fetchCalon = async () => {
+  const fetchCalon = useCallback(async () => {
     try {
-      setLoading(true);
       const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token") : null;
       const res = await fetch("/api/admin/calon?refresh=true", {
         headers: {
@@ -130,11 +125,11 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchCalon();
-  }, []);
+  }, [fetchCalon]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -269,7 +264,7 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify(isEditing ? { id: currentId, ...payload } : payload),
+        body: JSON.stringify(isEditing ? { id: currentId, ...payload, user: currentUser } : { ...payload, user: currentUser }),
       });
 
       const json = await res.json();
@@ -374,7 +369,7 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
                 variant="primary"
                 size="sm"
                 onClick={handleOpenAdd}
-                className="text-xs font-bold bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md rounded-2xl py-2.5 px-4 font-black"
+                className="text-xs font-black bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md rounded-2xl py-2.5 px-4"
               >
                 <UserPlus className="w-4 h-4 mr-1.5" />
                 <span>Tambah Calon Kades</span>
@@ -815,7 +810,7 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
               {/* Row 8: Program Unggulan Dinamis */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block font-bold text-slate-700 flex items-center gap-1">
+                  <label className="font-bold text-slate-700 flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                     <span>Program Kerja Prioritas / Unggulan</span>
                   </label>

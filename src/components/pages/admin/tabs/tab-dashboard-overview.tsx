@@ -16,7 +16,6 @@ import {
   Layers,
   FileSpreadsheet,
   Clock,
-  UserCheck,
   Printer,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";

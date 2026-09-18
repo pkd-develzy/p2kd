@@ -174,7 +174,6 @@ export const AdminDashboard: React.FC = () => {
   const [aduanList, setAduanList] = useState<Aduan[]>(() => initialCache?.aduanList || []);
   const [tpsList, setTpsList] = useState<TPSItem[]>(() => initialCache?.tpsList || []);
   const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>(() => initialCache?.anggotaList || []);
-  const [petugasCount, setPetugasCount] = useState<number>(() => initialCache?.petugasCount || 0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => initialCache?.auditLogs || []);
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(() => initialCache?.dbStatus || null);
   const [isDptLocked, setIsDptLocked] = useState<boolean>(() => Boolean(initialCache?.isDptLocked));
@@ -278,7 +277,6 @@ export const AdminDashboard: React.FC = () => {
         resAudit,
         resDb,
         resAnggota,
-        resPetugas,
       ] = await Promise.all([
         fetch(`/api/admin/pemilih?tps=${effectiveTps}&status=${selectedStatusFilter}&role=${isAdmin ? "admin" : "petugas"}&assignedTps=${encodeURIComponent(assignedTps)}`, { cache: "no-store" }),
         fetch(`/api/admin/aduan?status=${selectedAduanFilter}`, { cache: "no-store" }),
@@ -286,7 +284,6 @@ export const AdminDashboard: React.FC = () => {
         fetch("/api/admin/audit", { cache: "no-store" }),
         fetch("/api/admin/db-status", { cache: "no-store" }),
         fetch("/api/admin/anggota?refresh=true", { cache: "no-store" }),
-        fetch("/api/admin/petugas-dpt?refresh=true", { cache: "no-store" }),
       ]);
 
       const [
@@ -296,7 +293,6 @@ export const AdminDashboard: React.FC = () => {
         dataAudit,
         dataDb,
         dataAnggota,
-        dataPetugas,
       ] = await Promise.all([
         resVoters.json(),
         resAduan.json(),
@@ -304,7 +300,6 @@ export const AdminDashboard: React.FC = () => {
         resAudit.json(),
         resDb.json(),
         resAnggota.json(),
-        resPetugas.json(),
       ]);
 
       if (resVoters.status === 401 || resAduan.status === 401 || resTps.status === 401) {
@@ -318,7 +313,6 @@ export const AdminDashboard: React.FC = () => {
       if (dataTps.success) setTpsList(dataTps.data);
       if (dataAudit.success) setAuditLogs(dataAudit.data);
       if (dataAnggota.success) setAnggotaList(dataAnggota.data);
-      if (dataPetugas?.success && Array.isArray(dataPetugas.data)) setPetugasCount(dataPetugas.data.length);
       if (dataDb.success) {
         setDbStatus(dataDb.data);
         if (dataDb.data.tahapan) {
@@ -417,7 +411,6 @@ export const AdminDashboard: React.FC = () => {
             aduanList,
             tpsList,
             anggotaList,
-            petugasCount,
             auditLogs,
             dbStatus,
             isDptLocked,
@@ -435,7 +428,6 @@ export const AdminDashboard: React.FC = () => {
     aduanList,
     tpsList,
     anggotaList,
-    petugasCount,
     auditLogs,
     dbStatus,
     isDptLocked,
@@ -912,7 +904,6 @@ export const AdminDashboard: React.FC = () => {
         isDptLocked={isDptLocked}
         auditCount={auditLogs.length}
         anggotaCount={anggotaList.length}
-        petugasCount={petugasCount}
         dbStatus={dbStatus}
         isAdmin={isAdmin}
         userRole={computedUserRole}
@@ -963,7 +954,6 @@ export const AdminDashboard: React.FC = () => {
               voters={voters}
               tpsList={tpsList}
               aduanList={aduanList}
-              petugasDptCount={petugasCount}
               isDptLocked={isDptLocked}
               onNavigateTab={(tab) => setActiveTab(tab)}
               currentUser={{

@@ -21,7 +21,6 @@ import {
   FileText,
   Shield,
   Award,
-  UserCheck,
   Newspaper,
 } from "lucide-react";
 import { Button, Logo } from "@/components/ui";

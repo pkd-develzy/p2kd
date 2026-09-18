@@ -2094,12 +2094,6 @@ class SystemDataStore {
     const totalRt = this.webConfig.totalRt || 39;
     const totalTps = sourceTps.length || 13;
 
-    const totalPetugas = this.petugasDptList.length;
-    const petugasMenunggu = this.petugasDptList.filter((p) => p.status === "MENUNGGU_VERIFIKASI").length;
-    const petugasKlarifikasi = this.petugasDptList.filter((p) => p.status === "PERLU_KLARIFIKASI").length;
-    const petugasLolos = this.petugasDptList.filter((p) => p.status === "LOLOS").length;
-    const petugasDitetapkan = this.petugasDptList.filter((p) => p.status === "DITETAPKAN").length;
-
     return {
       totalSemua,
       totalAktif,
@@ -2111,11 +2105,6 @@ class SystemDataStore {
       aduanSelesai,
       totalAnggota,
       totalBalon,
-      totalPetugas,
-      petugasMenunggu,
-      petugasKlarifikasi,
-      petugasLolos,
-      petugasDitetapkan,
       totalTps,
       totalRw,
       totalRt,

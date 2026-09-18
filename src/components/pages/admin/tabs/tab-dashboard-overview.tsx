@@ -33,7 +33,6 @@ interface TabDashboardOverviewProps {
   voters: Voter[];
   tpsList: TPSItem[];
   aduanList: Aduan[];
-  petugasDptCount?: number;
   isDptLocked: boolean;
   onNavigateTab: (tab: TabType) => void;
   currentUser: {
@@ -48,7 +47,6 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   voters,
   tpsList,
   aduanList,
-  petugasDptCount = 0,
   isDptLocked,
   onNavigateTab,
   currentUser,
@@ -58,6 +56,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   const cloudCount = dbStatus?.cloudStats?.pemilihCount || dbStatus?.localStats?.totalAktif || dbStatus?.localStats?.totalPemilih;
   const activeVoters = voters.filter((v) => v.statusAktif === "AKTIF");
   const totalAktif = cloudCount || (activeVoters.length > 500 ? activeVoters.length : 7787);
+  const aduanPendingCount = aduanList.filter((a) => a.status === "MENUNGGU").length;
   const totalLaki = Math.round(totalAktif * 0.505) || 3933;
   const totalPerempuan = totalAktif - totalLaki || 3854;
   const totalTms = dbStatus?.localStats?.totalTms || voters.filter((v) => v.statusAktif === "TMS").length;
@@ -241,24 +240,24 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
           </div>
         </Card>
 
-        {/* KPI 4: Petugas DPT */}
+        {/* KPI 4: Aduan Warga */}
         <Card
-          onClick={() => onNavigateTab("petugas_dpt")}
+          onClick={() => onNavigateTab("aduan")}
           className="p-4 bg-white border-slate-200 hover:border-amber-300 hover:shadow-md transition-all cursor-pointer rounded-2xl group space-y-1.5"
         >
           <div className="flex items-center justify-between">
             <div className="p-2 rounded-xl bg-amber-50 text-amber-700 group-hover:bg-amber-600 group-hover:text-white transition-colors">
-              <UserCheck className="w-4 h-4" />
+              <AlertTriangle className="w-4 h-4" />
             </div>
             <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
           </div>
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              Petugas DPT
+              Aduan Warga
             </span>
-            <div className="text-2xl font-black text-amber-600">{petugasDptCount} Petugas</div>
+            <div className="text-2xl font-black text-amber-600">{aduanList.length} Laporan</div>
             <span className="text-[10px] text-slate-500 font-medium block">
-              Pendaftar & Pantarlih
+              {aduanPendingCount} Menunggu Verifikasi
             </span>
           </div>
         </Card>
@@ -395,58 +394,6 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               })}
             </div>
           </Card>
-
-          {/* Section B: Pendaftaran & Verifikasi Petugas Pendataan DPT */}
-          <Card className="p-6 bg-white border-slate-200 shadow-xs rounded-3xl space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
-                  <UserCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 tracking-tight">
-                    Pendaftaran & Verifikasi Petugas Pendataan DPT
-                  </h3>
-                  <p className="text-xs text-slate-500 font-normal">
-                    Pantarlih bertugas melakukan pencocokan dan penelitian (Coklit) DPT di 13 RW Desa Kalisalak.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => onNavigateTab("petugas_dpt")}
-                className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
-              >
-                <span>Kelola Petugas</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-              <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/80 space-y-1">
-                <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider block">
-                  Total Pendaftar
-                </span>
-                <div className="text-2xl font-black text-amber-900">{petugasDptCount} Petugas</div>
-                <span className="text-[10px] text-amber-700 block">Tercatat di Database</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-1">
-                <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider block">
-                  Pakta Integritas
-                </span>
-                <div className="text-sm font-bold text-emerald-900 mt-1">100% Wajib Netral</div>
-                <span className="text-[10px] text-emerald-700 block">Surat Pernyataan Ditandatangani</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 space-y-1">
-                <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider block">
-                  Cakupan Wilayah
-                </span>
-                <div className="text-sm font-bold text-blue-900 mt-1">Desa Kalisalak</div>
-                <span className="text-[10px] text-blue-700 block">13 RW • 39 RT</span>
-              </div>
-            </div>
-          </Card>
         </div>
 
         {/* Right Column (4 Cols): Tahapan Pilkades + Aduan Terkini + Pintasan Cepat */}
@@ -487,8 +434,8 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-start gap-2.5">
                 <Clock className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-indigo-900 block">3. Rekrutmen Petugas Pendataan</span>
-                  <span className="text-[11px] text-indigo-700">Verifikasi berkas & integritas petugas DPT ({petugasDptCount} pendaftar).</span>
+                  <span className="font-bold text-indigo-900 block">3. Uji Publik & Masukan DPS</span>
+                  <span className="text-[11px] text-indigo-700">Tanggapan masyarakat & perbaikan data DPS ({aduanList.length} laporan).</span>
                 </div>
               </div>
 

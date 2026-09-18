@@ -37,7 +37,6 @@ interface SidebarProps {
   isDptLocked: boolean;
   auditCount: number;
   anggotaCount?: number;
-  petugasCount?: number;
   dbStatus: DbStatus | null;
   isAdmin: boolean;
   userRole?: string; // SUPER_ADMIN, SEKSI_PEMILIH, SEKSI_PENJARINGAN, SEKSI_PENYARINGAN, SEKSI_PUNGUT_HITUNG, SEKSI_LOGISTIK_PUBLIKASI, PETUGAS_TPS
@@ -61,7 +60,6 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
   isDptLocked,
   auditCount,
   anggotaCount = 15,
-  petugasCount = 0,
   dbStatus,
   isAdmin,
   userRole = "SUPER_ADMIN",

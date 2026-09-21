@@ -8,6 +8,7 @@ export interface AuthTokenPayload {
   nama: string;
   role: string;
   seksi: string;
+  jabatan?: string;
   assignedTps: string;
   isSuperAdmin: boolean;
   exp: number; // unix timestamp in seconds

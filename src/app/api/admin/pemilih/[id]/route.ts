@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import {
+  verifyAdminSession,
+  canAccessVoterData,
+  isAuthorizedForVoterTps,
+  isDeveloper,
+  isKetuaP2KD,
+} from "@/lib/auth-middleware";
 
 export async function GET(
   req: Request,
@@ -10,6 +16,17 @@ export async function GET(
     const session = verifyAdminSession(req);
     if (!session.authenticated || !session.user) {
       return session.response!;
+    }
+
+    const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Data pemilih hanya dapat diakses oleh Developer, Ketua P2KD, Seksi 1, dan Petugas Pantarlih RW terkait.",
+        },
+        { status: 403 }
+      );
     }
 
     await dataStore.ensureSynced();
@@ -23,15 +40,12 @@ export async function GET(
       );
     }
 
-    const user = session.user;
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
-
-    // Strict Data Leak Protection: Officers can only view voters in their assigned TPS!
-    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA" && !voter.tps.includes(user.assignedTps)) {
+    // Strict Data Leak Protection: Pantarlih can only view voters in their assigned TPS/RW!
+    if (!isAuthorizedForVoterTps(user, voter.tps)) {
       return NextResponse.json(
         {
           success: false,
-          message: `Kerahasiaan Data Terlindungi: Petugas lapangan dilarang mengakses data pemilih di luar ${user.assignedTps}.`,
+          message: `Kerahasiaan Data Terlindungi: Petugas lapangan dilarang mengakses data pemilih di luar wilayah binaan ${user.assignedTps || ""}.`,
         },
         { status: 403 }
       );
@@ -59,6 +73,17 @@ export async function PUT(
       return session.response!;
     }
 
+    const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Anda tidak memiliki wewenang memperbarui data pemilih.",
+        },
+        { status: 403 }
+      );
+    }
+
     await dataStore.ensureSynced();
     const { id } = await params;
     const body = await req.json();
@@ -72,15 +97,12 @@ export async function PUT(
       );
     }
 
-    const user = session.user;
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
-
     // Strict TPS Protection: Officer cannot modify voter outside assigned TPS
-    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA" && !existing.tps.includes(user.assignedTps)) {
+    if (!isAuthorizedForVoterTps(user, existing.tps)) {
       return NextResponse.json(
         {
           success: false,
-          message: `Akses Ditolak: Anda tidak memiliki wewenang mengedit data pemilih di luar wilayah binaan ${user.assignedTps}.`,
+          message: `Akses Ditolak: Anda tidak memiliki wewenang mengedit data pemilih di luar wilayah binaan ${user.assignedTps || ""}.`,
         },
         { status: 403 }
       );
@@ -120,6 +142,17 @@ export async function DELETE(
       return session.response!;
     }
 
+    const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Anda tidak memiliki wewenang mengubah status pemilih.",
+        },
+        { status: 403 }
+      );
+    }
+
     await dataStore.ensureSynced();
     const { id } = await params;
     const { searchParams } = new URL(req.url);
@@ -134,15 +167,12 @@ export async function DELETE(
       );
     }
 
-    const user = session.user;
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
-
     // Strict TPS Protection
-    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA" && !existing.tps.includes(user.assignedTps)) {
+    if (!isAuthorizedForVoterTps(user, existing.tps)) {
       return NextResponse.json(
         {
           success: false,
-          message: `Akses Ditolak: Anda tidak memiliki wewenang mengubah status pemilih di luar ${user.assignedTps}.`,
+          message: `Akses Ditolak: Anda tidak memiliki wewenang mengubah status pemilih di luar wilayah binaan ${user.assignedTps || ""}.`,
         },
         { status: 403 }
       );
@@ -157,12 +187,12 @@ export async function DELETE(
       });
     }
 
-    // Direct permanent deletion is restricted to Superadmin / Pimpinan
-    if (isOfficer) {
+    // Direct permanent deletion is strictly restricted to Developer & Ketua P2KD
+    if (!isDeveloper(user) && !isKetuaP2KD(user)) {
       return NextResponse.json(
         {
           success: false,
-          message: "Akses Terbatas: Penghapusan permanen hanya dapat dilakukan oleh Ketua / Superadmin P2KD. Gunakan opsi Tandai TMS.",
+          message: "Akses Terbatas: Penghapusan permanen hanya dapat dilakukan oleh Ketua P2KD atau Developer. Gunakan opsi Tandai TMS.",
         },
         { status: 403 }
       );

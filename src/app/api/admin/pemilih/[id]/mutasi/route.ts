@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import {
+  verifyAdminSession,
+  canAccessVoterData,
+  isAuthorizedForVoterTps,
+} from "@/lib/auth-middleware";
 
 export async function POST(
   req: Request,
@@ -10,6 +14,17 @@ export async function POST(
     const session = verifyAdminSession(req);
     if (!session.authenticated || !session.user) {
       return session.response!;
+    }
+
+    const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Anda tidak memiliki wewenang memutasikan pemilih.",
+        },
+        { status: 403 }
+      );
     }
 
     await dataStore.ensureSynced();
@@ -32,15 +47,12 @@ export async function POST(
       );
     }
 
-    const user = session.user;
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
-
     // Strict TPS protection: field officers can only mutate voters within their assigned TPS
-    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA" && !existing.tps.includes(user.assignedTps)) {
+    if (!isAuthorizedForVoterTps(user, existing.tps)) {
       return NextResponse.json(
         {
           success: false,
-          message: `Akses Ditolak: Anda tidak memiliki wewenang memutasikan pemilih di luar wilayah ${user.assignedTps}.`,
+          message: `Akses Ditolak: Anda tidak memiliki wewenang memutasikan pemilih di luar wilayah binaan ${user.assignedTps || ""}.`,
         },
         { status: 403 }
       );

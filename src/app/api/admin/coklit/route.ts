@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import {
+  verifyAdminSession,
+  canAccessVoterData,
+  isAuthorizedForVoterTps,
+  isPantarlih,
+  isDeveloper,
+  isKetuaP2KD,
+  isSeksiPemilih,
+} from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
   try {
@@ -9,16 +17,35 @@ export async function GET(req: Request) {
       return session.response!;
     }
 
+    const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Modul Coklit hanya dapat diakses oleh Ketua P2KD, Seksi 1, dan Petugas Pantarlih wilayah.",
+        },
+        { status: 403 }
+      );
+    }
+
     await dataStore.ensureSynced();
     const { searchParams } = new URL(req.url);
     let tps = searchParams.get("tps") || undefined;
     const status = searchParams.get("status") || undefined; // "ALL", "BELUM", "SESUAI", "UBAH_DATA", "TMS"
     const search = searchParams.get("search") || undefined;
 
-    const user = session.user;
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
+    const isFieldOfficer = isPantarlih(user) && !isKetuaP2KD(user) && !isDeveloper(user) && !isSeksiPemilih(user);
 
-    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA") {
+    if (isFieldOfficer) {
+      if (!user.assignedTps || user.assignedTps === "SEMUA") {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Akses Ditolak: Anda belum memiliki alokasi wilayah TPS/RW untuk coklit.",
+          },
+          { status: 403 }
+        );
+      }
       tps = user.assignedTps;
     }
 
@@ -55,6 +82,17 @@ export async function PUT(req: Request) {
       return session.response!;
     }
 
+    const user = session.user;
+    if (!canAccessVoterData(user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Akses Ditolak: Anda tidak memiliki wewenang memperbarui data coklit pemilih.",
+        },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const { voterId, status, catatan } = body;
 
@@ -65,22 +103,24 @@ export async function PUT(req: Request) {
       );
     }
 
-    const user = session.user;
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
+    await dataStore.ensureSynced();
+    const targetVoter = dataStore.getPemilihById(voterId);
+    if (!targetVoter) {
+      return NextResponse.json(
+        { success: false, message: "Data pemilih tidak ditemukan." },
+        { status: 404 }
+      );
+    }
 
     // Strict TPS protection: field officers can only coklit voters in their assigned TPS
-    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA") {
-      await dataStore.ensureSynced();
-      const targetVoter = dataStore.getPemilihById(voterId);
-      if (targetVoter && !targetVoter.tps.includes(user.assignedTps)) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: `Akses Ditolak: Anda hanya berwenang melakukan coklit pemilih di wilayah ${user.assignedTps}.`,
-          },
-          { status: 403 }
-        );
-      }
+    if (!isAuthorizedForVoterTps(user, targetVoter.tps)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Akses Ditolak: Anda hanya berwenang melakukan coklit pemilih di wilayah binaan ${user.assignedTps || ""}.`,
+        },
+        { status: 403 }
+      );
     }
 
     const userName = user.nama || user.username || "Koordinator RW";

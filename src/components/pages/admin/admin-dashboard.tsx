@@ -64,7 +64,17 @@ export const AdminDashboard: React.FC = () => {
   const tpsParam = searchParams.get("tps") || storedUser?.assignedTps || "";
   const userParam = searchParams.get("user") || storedUser?.username || "";
 
-  // 1. Check if assigned to a specific TPS / Field Officer (Pantarlih / PPS)
+  // 1. Strict RBAC Resolution: Developer, Ketua P2KD, Seksi 1, and Pantarlih
+  const isDeveloperUser = userParam.toLowerCase() === "develzy" || roleParam === "developer";
+  const isKetuaUser =
+    userParam.toLowerCase() === "admin_kalisalak" ||
+    userParam.toLowerCase() === "khasanudin" ||
+    (Boolean(storedUser?.nama) && storedUser.nama.toLowerCase().includes("khasanudin")) ||
+    (Boolean(storedUser?.jabatan) && storedUser.jabatan.toLowerCase().includes("ketua p2kd"));
+
+  const isKetuaOrDev = isDeveloperUser || isKetuaUser;
+
+  // Field officer (Pantarlih / PPS)
   const isFieldOfficer =
     (tpsParam !== "" && tpsParam !== "SEMUA") ||
     roleParam === "petugas" ||
@@ -73,19 +83,23 @@ export const AdminDashboard: React.FC = () => {
     roleParam === "pps" ||
     userParam.toLowerCase().includes("lapangan") ||
     userParam.toLowerCase().includes("pantarlih") ||
-    userParam.toLowerCase().startsWith("pps");
+    userParam.toLowerCase().startsWith("pps") ||
+    storedUser?.role === "PETUGAS_TPS" ||
+    storedUser?.seksi === "PANTARLIH_LAPANGAN";
 
-  const isSuperAdmin = !isFieldOfficer && (
-    roleParam === "super_admin" ||
-    roleParam === "sekretaris" ||
-    roleParam === "bendahara" ||
-    roleParam === "" ||
-    userParam === "admin_kalisalak" ||
-    userParam === "khasanudin" ||
-    userParam === "develzy"
-  );
+  const isSeksiPemilihUser =
+    !isFieldOfficer &&
+    (roleParam === "seksi_pemilih" ||
+      userParam.toLowerCase().includes("pemilih") ||
+      storedUser?.seksi === "SEKSI_PEMILIH" ||
+      storedUser?.role === "SEKSI_PEMILIH");
 
-  const isAdmin = isSuperAdmin;
+  // ONLY Developer, Ketua, Seksi 1, and Pantarlih are authorized to access voter data
+  const canAccessVoterDataUI = isKetuaOrDev || isSeksiPemilihUser || isFieldOfficer;
+
+  // Super Admin privilege is strictly restricted to Developer and Ketua P2KD
+  const isSuperAdmin = isKetuaOrDev;
+  const isAdmin = isKetuaOrDev;
   const assignedTps = tpsParam || (isFieldOfficer ? "Tabung Pemilihan 01" : "SEMUA");
   const currentUser = userParam || (isAdmin ? "admin_kalisalak" : "petugas");
   const router = useRouter();
@@ -93,14 +107,38 @@ export const AdminDashboard: React.FC = () => {
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
 
   // Dynamic user profile resolution
-  let computedUserRole = isSuperAdmin ? "SUPER_ADMIN" : isFieldOfficer ? "PETUGAS_TPS" : roleParam.toUpperCase();
-  let computedUserSeksi: SeksiP2KDType = isSuperAdmin ? "PIMPINAN" : isFieldOfficer ? "PANTARLIH_LAPANGAN" : (roleParam.toUpperCase() as SeksiP2KDType);
-  let computedUserName = isSuperAdmin ? (storedUser?.nama || "Khasanudin, S.Pd.SD") : isFieldOfficer ? `Petugas Lapangan (${assignedTps})` : (storedUser?.nama || "Panitia P2KD");
-  let computedUserJabatan = isSuperAdmin ? "Ketua P2KD / Superadmin" : isFieldOfficer ? `Pantarlih Lapangan (${assignedTps})` : "Anggota Tim Seksi P2KD";
+  let computedUserRole = isKetuaOrDev
+    ? "SUPER_ADMIN"
+    : isFieldOfficer
+    ? "PETUGAS_TPS"
+    : roleParam === "sekretaris"
+    ? "SEKRETARIS"
+    : roleParam === "bendahara"
+    ? "BENDAHARA"
+    : roleParam.toUpperCase();
+
+  let computedUserSeksi: SeksiP2KDType = isKetuaOrDev
+    ? "PIMPINAN"
+    : isFieldOfficer
+    ? "PANTARLIH_LAPANGAN"
+    : (roleParam.toUpperCase() as SeksiP2KDType);
+
+  let computedUserName = isKetuaOrDev
+    ? (storedUser?.nama || "Khasanudin, S.Pd.SD")
+    : isFieldOfficer
+    ? `Petugas Lapangan (${assignedTps})`
+    : (storedUser?.nama || "Panitia P2KD");
+
+  let computedUserJabatan = isKetuaOrDev
+    ? "Ketua P2KD / Superadmin"
+    : isFieldOfficer
+    ? `Pantarlih Lapangan (${assignedTps})`
+    : "Anggota Tim Seksi P2KD";
 
   if (userParam === "develzy") {
     computedUserName = "Develzy (Developer)";
     computedUserJabatan = "System Architect & Technical Core Developer";
+    computedUserRole = "SUPER_ADMIN";
   }
 
   // Specific role mapping
@@ -135,9 +173,13 @@ export const AdminDashboard: React.FC = () => {
     computedUserName = "Topik Santoso";
     computedUserJabatan = "Koordinator Seksi Keamanan & Ketertiban";
   } else if (roleParam === "sekretaris") {
+    computedUserRole = "SEKRETARIS";
+    computedUserSeksi = "PIMPINAN";
     computedUserName = "Mashady, M.H.";
     computedUserJabatan = "Sekretaris P2KD";
   } else if (roleParam === "bendahara") {
+    computedUserRole = "BENDAHARA";
+    computedUserSeksi = "PIMPINAN";
     computedUserName = "Ali Nurhakim, S.Pd";
     computedUserJabatan = "Bendahara P2KD";
   }
@@ -145,15 +187,25 @@ export const AdminDashboard: React.FC = () => {
   // Navigation Initial Tab
   const defaultInitialTab: TabType = isFieldOfficer
     ? "coklit"
-    : roleParam === "seksi_pemilih"
+    : isSeksiPemilihUser
     ? "pemilih"
     : roleParam === "seksi_publikasi" || roleParam === "sekretaris"
     ? "berita"
+    : roleParam === "seksi_penjaringan" || roleParam === "seksi_penyaringan"
+    ? "calon"
     : "dashboard";
 
   const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
   const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "tps"];
-  const effectiveActiveTab: TabType = isFieldOfficer && !allowedFieldTabs.includes(activeTab) ? "coklit" : activeTab;
+  const voterDataTabs: TabType[] = ["pemilih", "dpt", "coklit", "petugas_dpt", "aduan", "lock", "export"];
+
+  let effectiveActiveTab: TabType = activeTab;
+  if (!canAccessVoterDataUI && voterDataTabs.includes(activeTab)) {
+    effectiveActiveTab = defaultInitialTab !== "pemilih" && defaultInitialTab !== "coklit" ? defaultInitialTab : "dashboard";
+  } else if (isFieldOfficer && !allowedFieldTabs.includes(activeTab)) {
+    effectiveActiveTab = "coklit";
+  }
+
   const [currentCoklitTps, setCurrentCoklitTps] = useState(assignedTps);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -170,8 +222,11 @@ export const AdminDashboard: React.FC = () => {
     }
   }, []);
 
-  // Data States initialized with persistent cache (Instant 0ms on Browser Restart!)
-  const [voters, setVoters] = useState<Voter[]>(() => initialCache?.voters || []);
+  // Data States initialized with persistent cache - strictly sanitized if unauthorized!
+  const [voters, setVoters] = useState<Voter[]>(() => {
+    if (!canAccessVoterDataUI) return [];
+    return initialCache?.voters || [];
+  });
   const [aduanList, setAduanList] = useState<Aduan[]>(() => initialCache?.aduanList || []);
   const [tpsList, setTpsList] = useState<TPSItem[]>(() => initialCache?.tpsList || []);
   const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>(() => initialCache?.anggotaList || []);
@@ -314,7 +369,11 @@ export const AdminDashboard: React.FC = () => {
         return;
       }
 
-      if (dataVoters.success) setVoters(dataVoters.data);
+      if (dataVoters.success && canAccessVoterDataUI) {
+        setVoters(dataVoters.data);
+      } else {
+        setVoters([]);
+      }
       if (dataAduan.success) setAduanList(dataAduan.data);
       if (dataTps.success) setTpsList(dataTps.data);
       if (dataAudit.success) setAuditLogs(dataAudit.data);
@@ -342,6 +401,7 @@ export const AdminDashboard: React.FC = () => {
     selectedStatusFilter,
     selectedAduanFilter,
     isAdmin,
+    canAccessVoterDataUI,
     assignedTps,
     router,
     toast,
@@ -356,6 +416,21 @@ export const AdminDashboard: React.FC = () => {
     setNomorBeritaAcara,
     setIsLoading,
   ]);
+
+  const handleNavigateTab = useCallback(
+    (tab: TabType) => {
+      const voterTabs: TabType[] = ["pemilih", "dpt", "coklit", "petugas_dpt", "aduan", "lock", "export"];
+      if (!canAccessVoterDataUI && voterTabs.includes(tab)) {
+        toast.error(
+          "Akses Ditolak",
+          "Data kependudukan dan pemilih hanya dapat diakses oleh Developer, Ketua P2KD, Seksi 1, dan Petugas Pantarlih wilayah binaan."
+        );
+        return;
+      }
+      setActiveTab(tab);
+    },
+    [canAccessVoterDataUI, toast, setActiveTab]
+  );
 
   // 1. Initial Load & Dynamic Filter Changes
   useEffect(() => {
@@ -409,16 +484,16 @@ export const AdminDashboard: React.FC = () => {
 
   // 3. Auto-persist Dashboard Data to LocalStorage (Instant 0ms on Browser Restart / Refresh)
   useEffect(() => {
-    if (typeof window !== "undefined" && (voters.length > 0 || tpsList.length > 0)) {
+    if (typeof window !== "undefined") {
       try {
         localStorage.setItem(
           "p2kd_admin_dashboard_cache",
           JSON.stringify({
-            voters,
-            aduanList,
+            voters: canAccessVoterDataUI ? voters : [],
+            aduanList: canAccessVoterDataUI ? aduanList : [],
             tpsList,
             anggotaList,
-            auditLogs,
+            auditLogs: isAdmin ? auditLogs : [],
             dbStatus,
             isDptLocked,
             lockHashSignature,
@@ -431,6 +506,8 @@ export const AdminDashboard: React.FC = () => {
       }
     }
   }, [
+    canAccessVoterDataUI,
+    isAdmin,
     voters,
     aduanList,
     tpsList,
@@ -898,7 +975,7 @@ export const AdminDashboard: React.FC = () => {
       {/* 1. Professional Admin Sidebar */}
       <AdminSidebar
         activeTab={effectiveActiveTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleNavigateTab}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         voterCount={voters.length}
@@ -947,7 +1024,7 @@ export const AdminDashboard: React.FC = () => {
               aduanList={aduanList}
               petugasDptCount={petugasCount}
               isDptLocked={isDptLocked}
-              onNavigateTab={(tab) => setActiveTab(tab)}
+              onNavigateTab={handleNavigateTab}
               currentUser={{
                 namaLengkap: computedUserName,
                 role: computedUserRole,
@@ -957,7 +1034,7 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "petugas_dpt" && (
+          {effectiveActiveTab === "petugas_dpt" && canAccessVoterDataUI && (
             <TabPetugasDpt
               isAdmin={isAdmin}
               userRole={computedUserRole}
@@ -977,7 +1054,7 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "coklit" && (
+          {effectiveActiveTab === "coklit" && canAccessVoterDataUI && (
             <TabCoklitLapangan
               voters={voters}
               tpsList={tpsList}
@@ -1009,7 +1086,7 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "pemilih" && (
+          {effectiveActiveTab === "pemilih" && canAccessVoterDataUI && (
             <TabMasterPemilih
               mode="DPS"
               voters={voters}
@@ -1049,7 +1126,7 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "dpt" && (
+          {effectiveActiveTab === "dpt" && canAccessVoterDataUI && (
             <TabMasterPemilih
               mode="DPT"
               voters={voters}
@@ -1101,26 +1178,26 @@ export const AdminDashboard: React.FC = () => {
                   id: "",
                   kodeTps: `TABUNG-${nextNum}`,
                   nomorTps: nextNum,
-                  namaTps: `Tabung ${nextNum}`,
-                  namaTabung: `Tabung Pemilihan ${nextNum}`,
-                  lokasi: "",
-                  alamat: "",
-                  rt: "",
-                  rw: "",
-                  kuotaMaksimal: 600,
+                  namaTps: `TPS ${nextNum}`,
+                  namaTabung: `Tabung RW ${nextNum}`,
+                  lokasi: `Balai Pertemuan RW ${nextNum}, Desa Kalisalak`,
+                  alamat: `Wilayah RW ${nextNum}, Desa Kalisalak`,
+                  rt: "01, 02, 03",
+                  rw: nextNum,
+                  kuotaMaksimal: 700,
                   status: "AKTIF",
                 });
                 setShowEditTpsModal(true);
               }}
-              onOpenEditTps={(tps) => {
-                setActiveTps(tps);
+              onOpenEditTps={(t) => {
+                setActiveTps(t);
                 setShowEditTpsModal(true);
               }}
               onDeleteTps={handleDeleteTps}
             />
           )}
 
-          {effectiveActiveTab === "aduan" && (
+          {effectiveActiveTab === "aduan" && canAccessVoterDataUI && (
             <TabAduanWarga
               aduanList={aduanList}
               selectedAduanFilter={selectedAduanFilter}
@@ -1143,7 +1220,7 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "lock" && (
+          {effectiveActiveTab === "lock" && canAccessVoterDataUI && (
             <TabFinalisasiDPT
               isDptLocked={isDptLocked}
               lockHashSignature={lockHashSignature}
@@ -1158,7 +1235,7 @@ export const AdminDashboard: React.FC = () => {
             />
           )}
 
-          {effectiveActiveTab === "export" && (
+          {effectiveActiveTab === "export" && canAccessVoterDataUI && (
             <TabRekapEkspor tpsList={tpsList} voters={voters} />
           )}
 

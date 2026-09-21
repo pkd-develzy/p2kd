@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import * as XLSX from "xlsx";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
+import {
+  verifyAdminSession,
+  canAccessVoterData,
+  isPantarlih,
+  isDeveloper,
+  isKetuaP2KD,
+  isSeksiPemilih,
+} from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
   try {
@@ -23,12 +30,12 @@ export async function GET(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Akses Ditolak: Hanya Seksi 1: Pendaftaran Pemilih yang berwenang mengekspor data kependudukan.",
+          message: "Akses Ditolak: Hanya Developer, Ketua P2KD, Seksi 1, dan Petugas Pantarlih (wilayah tugas) yang berwenang mengekspor data pemilih.",
         },
         { status: 403 }
       );
     }
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
+    const isOfficer = isPantarlih(user) && !isKetuaP2KD(user) && !isDeveloper(user) && !isSeksiPemilih(user);
 
     // Strict Data Isolation for field officers from token claims
     if (isOfficer) {

@@ -189,6 +189,8 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
       color: "text-blue-400",
       allowedRoles: [
         "SUPER_ADMIN",
+        "SEKRETARIS",
+        "BENDAHARA",
         "SEKSI_PEMILIH",
         "SEKSI_PENJARINGAN",
         "SEKSI_PENYARINGAN",
@@ -235,6 +237,8 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           badgeColor: "bg-blue-900/80 text-blue-200 border-blue-600/70",
           allowedRoles: [
             "SUPER_ADMIN",
+            "SEKRETARIS",
+            "BENDAHARA",
             "SEKSI_PEMILIH",
             "SEKSI_PENJARINGAN",
             "SEKSI_PENYARINGAN",

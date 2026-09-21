@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
-import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
+import {
+  verifyAdminSession,
+  canAccessVoterData,
+  isPantarlih,
+  isDeveloper,
+  isKetuaP2KD,
+  isSeksiPemilih,
+} from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
   try {
@@ -22,16 +29,25 @@ export async function GET(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Akses Ditolak: Hak akses data kependudukan dan pemilih dibatasi secara ketat khusus untuk Seksi 1: Pendaftaran Pemilih.",
+          message: "Akses Ditolak: Hak akses data pemilih dibatasi khusus untuk Developer, Ketua P2KD, Seksi 1, dan Petugas Pantarlih (per RW binaan).",
         },
         { status: 403 }
       );
     }
 
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
+    const isFieldOfficer = isPantarlih(user) && !isKetuaP2KD(user) && !isDeveloper(user) && !isSeksiPemilih(user);
 
-    // Strict Data Isolation from authenticated token: If officer, FORCE filter to assigned TPS only!
-    if (isOfficer && user.assignedTps && user.assignedTps !== "SEMUA") {
+    // Strict Data Isolation: Pantarlih is strictly forced to their assigned TPS/RW only!
+    if (isFieldOfficer) {
+      if (!user.assignedTps || user.assignedTps === "SEMUA") {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Akses Ditolak: Petugas lapangan belum memiliki alokasi wilayah binaan TPS/RW.",
+          },
+          { status: 403 }
+        );
+      }
       tps = user.assignedTps;
     }
 
@@ -46,8 +62,8 @@ export async function GET(req: Request) {
         return NextResponse.json({
           success: true,
           total: searchResults.length,
-          isRestricted: isOfficer,
-          assignedTps: isOfficer ? tps : undefined,
+          isRestricted: isFieldOfficer,
+          assignedTps: isFieldOfficer ? tps : undefined,
           data: searchResults,
         });
       }
@@ -57,8 +73,8 @@ export async function GET(req: Request) {
       return NextResponse.json({
         success: true,
         total: localResults.length,
-        isRestricted: isOfficer,
-        assignedTps: isOfficer ? tps : undefined,
+        isRestricted: isFieldOfficer,
+        assignedTps: isFieldOfficer ? tps : undefined,
         data: localResults,
       });
     }
@@ -95,8 +111,8 @@ export async function GET(req: Request) {
       page,
       limit,
       totalPages: Math.ceil(totalCount / limit) || 1,
-      isRestricted: isOfficer,
-      assignedTps: isOfficer ? tps : undefined,
+      isRestricted: isFieldOfficer,
+      assignedTps: isFieldOfficer ? tps : undefined,
       data: votersData,
     });
   } catch (err) {
@@ -138,21 +154,21 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Akses Ditolak: Hanya Seksi 1: Pendaftaran Pemilih yang berwenang menambahkan data pemilih.",
+          message: "Akses Ditolak: Hanya Developer, Ketua P2KD, Seksi 1, dan Petugas Pantarlih (wilayah tugas) yang berwenang menambahkan data pemilih.",
         },
         { status: 403 }
       );
     }
 
-    const isOfficer = !user.isSuperAdmin && user.role !== "SUPER_ADMIN" && user.seksi !== "PIMPINAN";
+    const isFieldOfficer = isPantarlih(user) && !isKetuaP2KD(user) && !isDeveloper(user) && !isSeksiPemilih(user);
     const assignedTps = user.assignedTps;
 
-    // Strict TPS isolation on adding voters
-    if (isOfficer && assignedTps && assignedTps !== "SEMUA" && tps && !tps.includes(assignedTps)) {
+    // Strict TPS isolation on adding voters for Pantarlih
+    if (isFieldOfficer && assignedTps && assignedTps !== "SEMUA" && tps && !tps.includes(assignedTps)) {
       return NextResponse.json(
         {
           success: false,
-          message: `Akses Ditolak: Anda hanya berwenang menambahkan pemilih untuk wilayah ${assignedTps}. Dilarang menginput ke Tabung lain.`,
+          message: `Akses Ditolak: Anda hanya berwenang menambahkan pemilih untuk wilayah ${assignedTps}. Dilarang menginput ke wilayah lain.`,
         },
         { status: 403 }
       );
@@ -198,7 +214,7 @@ export async function POST(req: Request) {
         rw: rw || "01",
         desa: desa || "Kalisalak",
         kecamatan: kecamatan || "Margasari",
-        tps: tps || (isOfficer && assignedTps && assignedTps !== "SEMUA" ? assignedTps : (dataStore.getTpsList()[0]?.namaTps || "")),
+        tps: tps || (isFieldOfficer && assignedTps && assignedTps !== "SEMUA" ? assignedTps : (dataStore.getTpsList()[0]?.namaTps || "")),
         statusAktif: statusAktif || "AKTIF",
       },
       user.nama || user.username

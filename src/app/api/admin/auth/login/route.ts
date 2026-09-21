@@ -91,13 +91,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const isSuperAdmin = matched.role === "SUPER_ADMIN" || matched.seksi === "PIMPINAN";
+    const isDeveloper = matched.username.toLowerCase() === "develzy" || matched.role === "DEVELOPER";
+    const isKetua =
+      matched.username.toLowerCase() === "khasanudin" ||
+      matched.username.toLowerCase() === "admin_kalisalak" ||
+      (Boolean(matched.jabatan) && matched.jabatan.toLowerCase().includes("ketua") && !matched.jabatan.toLowerCase().includes("seksi"));
+
+    const isSuperAdmin = isDeveloper || isKetua;
     const token = generateAuthToken(
       {
         username: matched.username,
         nama: `${matched.namaLengkap} (${matched.jabatan})`,
         role: matched.role,
         seksi: matched.seksi,
+        jabatan: matched.jabatan,
         assignedTps: matched.assignedTps || "SEMUA",
         isSuperAdmin,
       },
@@ -131,6 +138,7 @@ export async function POST(req: Request) {
         nama: `${matched.namaLengkap} (${matched.jabatan})`,
         role: matched.role,
         seksi: matched.seksi,
+        jabatan: matched.jabatan,
         assignedTps: matched.assignedTps || "SEMUA",
         isSuperAdmin,
         mustChangePassword: isDefault,

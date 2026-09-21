@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import {
+  verifyAdminSession,
+  isDeveloper,
+  isKetuaP2KD,
+  isSeksiPemilih,
+} from "@/lib/auth-middleware";
 
 export async function POST(req: Request) {
   try {
@@ -10,12 +15,12 @@ export async function POST(req: Request) {
       return session.response!;
     }
 
-    // Only Superadmin, Pimpinan, or Seksi Pemilih can promote voters
+    // Only Developer, Ketua P2KD, or Seksi Pemilih can promote voters
     const user = session.user;
-    const isAuthorized = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN" || user.seksi === "SEKSI_PEMILIH";
+    const isAuthorized = isDeveloper(user) || isKetuaP2KD(user) || isSeksiPemilih(user);
     if (!isAuthorized) {
       return NextResponse.json(
-        { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang memindahkan tahap DPT/DPS." },
+        { success: false, message: "Akses Ditolak: Hanya Developer, Ketua P2KD, dan Seksi 1 yang berwenang memindahkan tahap DPT/DPS." },
         { status: 403 }
       );
     }

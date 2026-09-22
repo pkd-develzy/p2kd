@@ -162,24 +162,25 @@ export const StatsOverview: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-4 mb-3.5">
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <FileCheck2 className="w-4 h-4 text-blue-700" />
-          Rekapitulasi Live Database Pemilih Kalisalak
+          <FileCheck2 className="w-4 h-4 text-blue-700 shrink-0" />
+          <span>Rekapitulasi Live Database Pemilih Kalisalak</span>
         </h3>
-        <Link href="/dps" className="text-xs font-bold text-blue-700 hover:underline inline-flex items-center gap-0.5">
+        <Link href="/dps" className="text-xs font-bold text-blue-700 hover:underline inline-flex items-center gap-0.5 shrink-0">
           <span>Lihat Rincian DPS</span>
           <ArrowUpRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.06 }}
+            className={i === 4 ? "col-span-2 md:col-span-1" : ""}
           >
             <Link href={stat.href}>
               <Card className={`p-4 transition-all duration-200 bg-white hover:shadow-md cursor-pointer ${stat.border}`}>

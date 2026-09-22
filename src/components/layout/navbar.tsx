@@ -206,13 +206,13 @@ export const Navbar: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 text-[10px] text-slate-400">
-            <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60">
+          <div className="flex items-center gap-2 sm:gap-3 text-[10px] text-slate-400">
+            <span className="inline-flex items-center gap-1 text-emerald-400 font-semibold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/60 whitespace-nowrap">
               <ShieldCheck className="w-3 h-3" />
               Portal Resmi P2KD
             </span>
-            <span className="text-slate-700">|</span>
-            <span>Pilkades Serentak Gelombang I 2027</span>
+            <span className="text-slate-700 hidden sm:inline">|</span>
+            <span className="hidden sm:inline">Pilkades Serentak Gelombang I 2027</span>
           </div>
         </div>
       </div>
@@ -223,8 +223,8 @@ export const Navbar: React.FC = () => {
           <div className="max-w-7xl mx-auto flex items-center gap-2 sm:gap-3">
             <span className="bg-amber-400 text-slate-950 font-black px-2 sm:px-2.5 py-0.5 rounded-md text-[9px] sm:text-[10px] uppercase tracking-wider shrink-0 flex items-center gap-1 sm:gap-1.5 z-10 shadow-xs">
               <Megaphone className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-950" />
-              <span className="hidden xs:inline sm:inline">PENGUMUMAN RESMI</span>
-              <span className="xs:hidden sm:hidden">INFO</span>
+              <span className="hidden sm:inline">PENGUMUMAN RESMI</span>
+              <span className="sm:hidden">INFO</span>
             </span>
             <div className="flex-1 overflow-hidden relative mask-[linear-gradient(to_right,transparent,black_8px,black_calc(100%-8px),transparent)]">
               <div className="animate-marquee-seamless font-medium text-amber-200 text-[11px] sm:text-xs tracking-wide cursor-pointer hover:text-white">
@@ -443,10 +443,10 @@ export const Navbar: React.FC = () => {
               <Button
                 variant="primary"
                 size="sm"
-                className="text-xs font-bold shadow-md shadow-blue-900/20 px-4"
+                className="text-xs font-bold shadow-md shadow-blue-900/20 px-4 text-white"
               >
-                <Search className="w-3.5 h-3.5 mr-1.5" />
-                <span>Cek Hak Pilih</span>
+                <Search className="w-3.5 h-3.5 mr-1.5 text-white" />
+                <span className="text-white">Cek Hak Pilih</span>
               </Button>
             </Link>
 

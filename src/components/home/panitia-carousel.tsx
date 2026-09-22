@@ -194,32 +194,32 @@ export const PanitiaCarousel: React.FC = () => {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <Card className="h-full border-blue-800/40 bg-linear-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-5 sm:p-6 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden group">
+      <Card className="h-full border-blue-800/40 bg-linear-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-4 sm:p-6 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden group">
         {/* Background Ambient Glow */}
         <div className="absolute top-0 right-0 w-44 h-44 bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-44 h-44 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
         {/* Top Header Card */}
         <div className="relative z-10 flex items-center justify-between gap-2 border-b border-white/10 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-400/30">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-400/30 shrink-0">
               <Users className="w-4 h-4" />
             </div>
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-300 block">
+            <div className="min-w-0">
+              <span className="text-[10px] font-black uppercase tracking-wider text-blue-300 block truncate leading-tight">
                 Panitia Pelaksana Pilkades
               </span>
-              <span className="text-xs font-bold text-white block">
+              <span className="text-xs font-bold text-white block truncate leading-tight">
                 P2KD Desa Kalisalak
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15 whitespace-nowrap shrink-0 tabular-nums">
               {currentIndex + 1} / {panitiaList.length}
             </span>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
                 onClick={handlePrev}
@@ -316,17 +316,17 @@ export const PanitiaCarousel: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="text-slate-400 text-[10px]">
-              {isPaused ? "⏸ Dihentikan (Arahkan kursor)" : "⏱ Berganti otomatis tiap 7 dtk"}
+          <div className="flex items-center justify-between text-[11px] gap-2">
+            <span className="text-slate-400 text-[10px] truncate">
+              {isPaused ? "⏸ Dihentikan (Kursor/Sentuh)" : "⏱ Berganti otomatis tiap 7 dtk"}
             </span>
 
             <Link
               href="/struktur"
-              className="text-blue-300 hover:text-white font-bold flex items-center gap-1 transition-colors hover:underline"
+              className="text-blue-300 hover:text-white font-bold flex items-center gap-1 transition-colors hover:underline shrink-0 text-[11px]"
             >
-              <span>Struktur Lengkap</span>
-              <ExternalLink className="w-3 h-3" />
+              <span className="whitespace-nowrap">Struktur Lengkap</span>
+              <ExternalLink className="w-3 h-3 shrink-0" />
             </Link>
           </div>
         </div>

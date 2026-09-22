@@ -18,12 +18,12 @@ export const HeroSection: React.FC = () => {
         transition={{ duration: 0.5 }}
         className="space-y-6"
       >
-        {/* Official Crest Badge with Glow */}
+        {/* Official Crest Badge */}
         <div className="flex justify-center">
           <motion.div
             whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300 }}
-            className="p-3.5 rounded-3xl bg-white border border-slate-200/90 shadow-xl shadow-blue-900/5 backdrop-blur-xs"
+            className="inline-flex items-center justify-center"
           >
             <Logo size="lg" />
           </motion.div>
@@ -51,17 +51,17 @@ export const HeroSection: React.FC = () => {
         </p>
 
         {/* Fast Action Buttons */}
-        <div className="pt-2 flex flex-wrap items-center justify-center gap-3.5">
-          <Link href="/cek-pemilih">
-            <Button variant="primary" size="lg" className="shadow-lg shadow-blue-900/20 py-3 px-6 font-extrabold text-sm rounded-xl">
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-sm sm:max-w-none mx-auto w-full">
+          <Link href="/cek-pemilih" className="w-full sm:w-auto">
+            <Button variant="primary" size="lg" className="w-full shadow-lg shadow-blue-900/20 py-3 px-6 font-extrabold text-sm rounded-xl justify-center">
               <Search className="w-4 h-4 mr-2" />
               <span>Cek Hak Pilih Sekarang</span>
               <ArrowRight className="w-4 h-4 ml-1.5" />
             </Button>
           </Link>
 
-          <Link href="/aduan">
-            <Button variant="secondary" size="lg" className="shadow-xs py-3 px-5 font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl border border-slate-200">
+          <Link href="/aduan" className="w-full sm:w-auto">
+            <Button variant="secondary" size="lg" className="w-full shadow-xs py-3 px-5 font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl border border-slate-200 justify-center">
               <FileText className="w-4 h-4 mr-2 text-blue-700" />
               <span>Formulir Aduan Warga</span>
             </Button>

@@ -150,22 +150,22 @@ export const HomeCalonSection: React.FC<HomeCalonSectionProps> = ({
                 </p>
               </div>
 
-              <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
-                <Link href="/tahapan">
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3 max-w-sm sm:max-w-none mx-auto w-full">
+                <Link href="/tahapan" className="w-full sm:w-auto">
                   <Button
                     variant="primary"
                     size="sm"
-                    className="text-xs font-bold rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 shadow-md"
+                    className="w-full sm:w-auto justify-center text-xs font-bold rounded-xl text-white shadow-md shadow-blue-900/30 py-2.5 px-4"
                   >
-                    <span>Lihat Jadwal Tahapan</span>
-                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                    <span className="text-white">Lihat Jadwal Tahapan</span>
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5 text-white" />
                   </Button>
                 </Link>
-                <Link href="/syarat-daftar-kades">
+                <Link href="/syarat-daftar-kades" className="w-full sm:w-auto">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs font-bold rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/15"
+                    className="w-full sm:w-auto justify-center text-xs font-bold rounded-xl border-white/20 bg-white/5 text-white hover:bg-white/15 py-2.5 px-4"
                   >
                     <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-400" />
                     <span>Syarat Pendaftaran</span>

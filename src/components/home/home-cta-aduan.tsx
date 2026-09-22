@@ -39,13 +39,13 @@ export const HomeCtaAduan: React.FC = () => {
                   <span>Balai Desa Kalisalak</span>
                 </div>
                 <a
-                  href="https://wa.me/6285879584257?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20butuh%20bantuan%20layanan%20pemilih"
+                  href="https://wa.me/6287830188452?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20butuh%20bantuan%20layanan%20pemilih"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 px-2.5 py-1.5 rounded-xl border border-emerald-500/30 transition-colors text-[11px] sm:text-xs"
                 >
                   <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Hotline WA: 0858-7958-4257</span>
+                  <span>Hotline WA: +62 878-3018-8452</span>
                 </a>
               </div>
             </div>

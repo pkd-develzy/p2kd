@@ -7,4 +7,5 @@ export * from "./home-cta-aduan";
 export * from "./panitia-carousel";
 export * from "./home-calon-section";
 export * from "./news-section";
+export * from "./popup-info-modal";
 

@@ -155,7 +155,7 @@ export const StrukturContent: React.FC = () => {
             </Link>
 
             <a
-              href="https://wa.me/6285879584257?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20ingin%20berkonsultasi%20mengenai%20tahapan%20Pilkades"
+              href="https://wa.me/6287830188452?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20ingin%20berkonsultasi%20mengenai%20tahapan%20Pilkades"
               target="_blank"
               rel="noreferrer"
               className="w-full"

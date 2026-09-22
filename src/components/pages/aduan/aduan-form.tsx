@@ -115,12 +115,12 @@ export const AduanForm: React.FC = () => {
             <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
               Butuh konfirmasi cepat atau bantuan teknis? Hubungi Layanan Aduan & Bantuan Resmi P2KD via WhatsApp di{" "}
               <a
-                href={`https://wa.me/6285879584257?text=${encodeURIComponent(`Halo Panitia P2KD Kalisalak, saya ingin konfirmasi aduan nomor registrasi: ${submittedNo}`)}`}
+                href={`https://wa.me/6287830188452?text=${encodeURIComponent(`Halo Panitia P2KD Kalisalak, saya ingin konfirmasi aduan nomor registrasi: ${submittedNo}`)}`}
                 target="_blank"
                 rel="noreferrer"
                 className="text-emerald-700 font-bold hover:underline"
               >
-                0858-7958-4257
+                +62 878-3018-8452
               </a>.
             </p>
             <div className="pt-4">

@@ -243,6 +243,10 @@ interface SupabaseWebConfigRow {
   alamat_sekretariat: string;
   total_rw: number;
   total_rt: number;
+  is_popup_active?: boolean | null;
+  popup_slides?: unknown;
+  popup_auto_slide?: boolean | null;
+  popup_interval?: number | null;
 }
 
 interface SupabaseTahapanRow {
@@ -588,6 +592,10 @@ export class SupabaseDbService {
           highlightMasaJabatanJudul: (c as unknown as Record<string, string>).highlight_masa_jabatan_judul || undefined,
           highlightMasaJabatanDeskripsi: (c as unknown as Record<string, string>).highlight_masa_jabatan_deskripsi || undefined,
           highlightMasaJabatanCatatan: (c as unknown as Record<string, string>).highlight_masa_jabatan_catatan || undefined,
+          isPopupActive: c.is_popup_active !== undefined && c.is_popup_active !== null ? Boolean(c.is_popup_active) : true,
+          popupSlides: c.popup_slides ? (Array.isArray(c.popup_slides) ? (c.popup_slides as unknown as PublicWebConfig["popupSlides"]) : (typeof c.popup_slides === "string" ? JSON.parse(c.popup_slides) : [])) : [],
+          popupAutoSlide: c.popup_auto_slide !== undefined && c.popup_auto_slide !== null ? Boolean(c.popup_auto_slide) : true,
+          popupInterval: Number(c.popup_interval) || 3,
         };
       }
 
@@ -1683,6 +1691,10 @@ export class SupabaseDbService {
         highlight_masa_jabatan_judul: data.highlightMasaJabatanJudul,
         highlight_masa_jabatan_deskripsi: data.highlightMasaJabatanDeskripsi,
         highlight_masa_jabatan_catatan: data.highlightMasaJabatanCatatan,
+        is_popup_active: data.isPopupActive !== undefined ? Boolean(data.isPopupActive) : true,
+        popup_slides: data.popupSlides || [],
+        popup_auto_slide: data.popupAutoSlide !== undefined ? Boolean(data.popupAutoSlide) : true,
+        popup_interval: Number(data.popupInterval) || 3,
         updated_at: new Date().toISOString(),
       });
     } catch (err) {

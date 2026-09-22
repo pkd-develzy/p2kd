@@ -8,6 +8,7 @@ import {
   HomeTahapanPreview,
   FeaturesGrid,
   HomeCtaAduan,
+  PopupInfoModal,
 } from "@/components/home";
 import { dataStore } from "@/lib/data-store";
 
@@ -22,12 +23,21 @@ export const metadata = {
 export default async function Home() {
   await dataStore.ensureSynced();
 
+  const webConfig = dataStore.getWebConfig();
   const allBerita = dataStore.getBeritaList("ALL", "PUBLISHED");
   const headline = allBerita.find((b) => b.isHeadline) || allBerita[0] || null;
   const initialCalonList = dataStore.getKandidatList();
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-blue-600/20 selection:text-blue-900">
+      {/* Informational Announcement Popup Modal (Cloudinary Storage, max 3 slides) */}
+      <PopupInfoModal
+        isPopupActive={webConfig.isPopupActive}
+        popupSlides={webConfig.popupSlides}
+        popupAutoSlide={webConfig.popupAutoSlide}
+        popupInterval={webConfig.popupInterval}
+      />
+
       {/* Top Navbar */}
       <Navbar />
 

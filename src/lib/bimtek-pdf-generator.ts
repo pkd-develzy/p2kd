@@ -10,7 +10,7 @@ import { jsPDF } from "jspdf";
 const KOP_INSTANSI_1 = "PANITIA PEMILIHAN KEPALA DESA (P2KD)";
 const KOP_INSTANSI_2 = "DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL";
 const KOP_ALAMAT = "Sekretariat: Gedung Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01 Margasari 52463";
-const KOP_KONTAK = "Portal Aplikasi: www.p2kdkalisalak.my.id | Helpdesk WA: 0858-7958-4257";
+const KOP_KONTAK = "Portal: www.p2kdkalisalak.my.id | Email: panitia@p2kdkalisalak.my.id | WA: +62 878-3018-8452";
 
 function renderKop(doc: jsPDF): number {
   doc.setFont("helvetica", "bold");
@@ -474,7 +474,7 @@ export function generateMateriBimtekPdf(): jsPDF {
     },
     {
       q: "4. Bagaimana jika saya lupa password atau akun terkunci?",
-      a: "Segera hubungi Helpdesk Teknis P2KD Kalisalak (WA: 0858-7958-4257) atau temui Sekretaris / Koordinator Seksi Pendaftaran Pemilih di Sekretariat Balai Desa untuk dilakukan reset password.",
+      a: "Segera hubungi Helpdesk Teknis P2KD Kalisalak (WA: +62 878-3018-8452) atau temui Sekretaris / Koordinator Seksi Pendaftaran Pemilih di Sekretariat Balai Desa untuk dilakukan reset password.",
     },
   ];
 
@@ -635,7 +635,7 @@ export function generateLembarSakuPdf(): jsPDF {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(30, 41, 59);
-  doc.text("• Helpdesk WA P2KD    : 0858-7958-4257 (Siap mendampingi kendala teknis lapangan)", 24, y + 14);
+  doc.text("• Helpdesk WA P2KD    : +62 878-3018-8452 (Siap mendampingi kendala teknis lapangan)", 24, y + 14);
   doc.text("• Portal Sistem        : https://www.p2kdkalisalak.my.id/admin", 24, y + 19);
   doc.text("• Sekretariat          : Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01", 24, y + 24);
   doc.text("• Koordinator Seksi    : M. Lu’lu Khulaludin, S.F.U (Seksi Pendaftaran Pemilih)", 24, y + 29);

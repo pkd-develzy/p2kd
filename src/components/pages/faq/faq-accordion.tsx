@@ -109,11 +109,11 @@ export const FaqAccordion: React.FC = () => {
             </h4>
             <p className="text-xs text-slate-300 leading-relaxed">
               Silakan hubungi Layanan Bantuan & Helpdesk Resmi Panitia P2KD Desa Kalisalak di nomor kontak/WhatsApp:{" "}
-              <strong className="text-emerald-300 font-mono">0858-7958-4257</strong>.
+              <strong className="text-emerald-300 font-mono">+62 878-3018-8452</strong>.
             </p>
           </div>
           <a
-            href="https://wa.me/6285879584257?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20ingin%20bertanya%20seputar%20informasi%20Pilkades"
+            href="https://wa.me/6287830188452?text=Halo%20Panitia%20P2KD%20Kalisalak%2C%20saya%20ingin%20bertanya%20seputar%20informasi%20Pilkades"
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all shrink-0"

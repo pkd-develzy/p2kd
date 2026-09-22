@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Shield, FileText, Search, MapPin, Clock, ShieldCheck, Database, Calendar, ArrowRight, Phone } from "lucide-react";
+import { Shield, FileText, Search, MapPin, Clock, ShieldCheck, Database, Calendar, ArrowRight, Phone, Mail } from "lucide-react";
 import { Logo } from "@/components/ui";
 
 export const Footer: React.FC = () => {
@@ -38,12 +38,24 @@ export const Footer: React.FC = () => {
                 <span>
                   <strong className="text-white font-bold">Kontak Bantuan / WA Resmi:</strong>{" "}
                   <a
-                    href="https://wa.me/6285879584257?text=Halo%20Panitia%20P2KD%20Desa%20Kalisalak%2C%20saya%20ingin%20berkonsultasi"
+                    href="https://wa.me/6287830188452?text=Halo%20Panitia%20P2KD%20Desa%20Kalisalak%2C%20saya%20ingin%20berkonsultasi"
                     target="_blank"
                     rel="noreferrer"
                     className="text-emerald-300 font-bold hover:underline transition-colors"
                   >
-                    0858-7958-4257
+                    Kirim Pesan
+                  </a>
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Mail className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <span>
+                  <strong className="text-white font-bold">Email Resmi:</strong>{" "}
+                  <a
+                    href="mailto:panitia@p2kdkalisalak.my.id"
+                    className="text-amber-300 font-medium hover:underline transition-colors"
+                  >
+                    panitia@p2kdkalisalak.my.id
                   </a>
                 </span>
               </div>

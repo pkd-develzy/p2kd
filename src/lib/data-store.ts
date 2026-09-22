@@ -47,6 +47,15 @@ export interface MasterAduan {
   tanggalDisetujui?: string;
 }
 
+export interface PopupSlideItem {
+  id: string;
+  imageUrl: string;
+  judul?: string;
+  linkUrl?: string;
+  startDate?: string; // Format YYYY-MM-DD atau ISO string
+  endDate?: string;   // Tanggal berakhirnya pamflet (otomatis nonaktif jika lewat tanggal)
+}
+
 export interface PublicWebConfig {
   namaDesa: string;
   kecamatan: string;
@@ -77,6 +86,11 @@ export interface PublicWebConfig {
   highlightMasaJabatanJudul?: string;
   highlightMasaJabatanDeskripsi?: string;
   highlightMasaJabatanCatatan?: string;
+  // Popup Informasi Pengumuman Website Publik (Cloudinary, maks 3 foto)
+  isPopupActive?: boolean;
+  popupSlides?: PopupSlideItem[];
+  popupAutoSlide?: boolean;
+  popupInterval?: number;
 }
 
 export const DEFAULT_SYARAT_KADES: string[] = [
@@ -371,7 +385,7 @@ class SystemDataStore {
     isProfilCalonVisible: true,
     isRealCountPublic: false,
     isAduanOpen: true,
-    kontakWaP2kd: "0858-7958-4257",
+    kontakWaP2kd: "+62 878-3018-8452",
     jamLayanan: "Senin – Kamis (08:00 – 13:00 WIB), Jum'at (08.00 - 11.00 WIB), Sabtu - Minggu (Libur)",
     alamatSekretariat: "Kantor Balai Desa Kalisalak, Jl. Raya Kalisalak No. 01, Kec. Margasari, Kab. Tegal",
     totalRw: 13,
@@ -386,6 +400,10 @@ class SystemDataStore {
     highlightMasaJabatanJudul: "Masa Jabatan Kepala Desa 8 Tahun & Maksimal 2 Kali Masa Jabatan",
     highlightMasaJabatanDeskripsi: "Masa jabatan Kepala Desa adalah 8 (delapan) tahun terhitung sejak tanggal pelantikan dan dapat menjabat paling banyak 2 (dua) kali masa jabatan, baik secara berturut-turut maupun tidak secara berturut-turut.",
     highlightMasaJabatanCatatan: "Seseorang yang telah menjabat Kepala Desa sebanyak 2 (dua) kali masa jabatan tidak dapat mencalonkan diri kembali. Ketentuan periodisasi tersebut juga mencakup masa jabatan Kepala Desa antarwaktu berdasarkan UU 3/2024 dan PP 16/2026.",
+    isPopupActive: true,
+    popupSlides: [],
+    popupAutoSlide: true,
+    popupInterval: 3,
   };
 
   private petugasDptList: MasterPetugasDpt[] = [];

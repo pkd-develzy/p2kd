@@ -139,7 +139,7 @@ export const HomeCalonSection: React.FC<HomeCalonSectionProps> = ({
               </div>
 
               <div className="space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20 inline-block">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20 inline-block whitespace-nowrap max-w-full truncate">
                   Tahapan Penjaringan & Penyaringan Balon Kades
                 </span>
                 <h3 className="text-lg sm:text-xl font-black tracking-tight text-white">

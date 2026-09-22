@@ -30,15 +30,15 @@ export const HeroSection: React.FC = () => {
         </div>
 
         {/* Institution Badge */}
-        <div className="inline-flex items-center gap-2">
-          <Badge variant="primary" className="px-4 py-1.5 text-xs font-black uppercase tracking-wider shadow-xs bg-blue-50 text-blue-800 border-blue-200">
-            <ShieldCheck className="w-3.5 h-3.5 mr-1.5 inline text-blue-700" />
-            Panitia Pemilihan Kepala Desa (P2KD) • Desa Kalisalak
+        <div className="inline-flex items-center gap-2 max-w-full">
+          <Badge variant="primary" className="px-3 sm:px-4 py-1 sm:py-1.5 text-[10px] sm:text-xs font-black uppercase tracking-normal sm:tracking-wider shadow-xs bg-blue-50 text-blue-800 border-blue-200 whitespace-nowrap max-w-full truncate">
+            <ShieldCheck className="w-3.5 h-3.5 mr-1.5 inline text-blue-700 shrink-0" />
+            <span className="truncate">Panitia Pemilihan Kepala Desa (P2KD) • Desa Kalisalak</span>
           </Badge>
         </div>
 
         {/* Main Title */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.12]">
+        <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.15]">
           Sistem Informasi & Pendaftaran Pemilih <br className="hidden sm:inline" />
           <span className="bg-linear-to-r from-blue-700 via-indigo-800 to-blue-950 bg-clip-text text-transparent">
             Pilkades Desa Kalisalak
@@ -46,14 +46,14 @@ export const HeroSection: React.FC = () => {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
+        <p className="text-xs sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-medium">
           Kecamatan Margasari, Kabupaten Tegal • Masa Bakti 2027 – 2035. Portal resmi pengecekan hak suara, alokasi Tabung Pemilihan, rekapitulasi DPS, serta kanal pengaduan perbaikan data pemilih yang transparan dan aman.
         </p>
 
         {/* Fast Action Buttons */}
         <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 max-w-sm sm:max-w-none mx-auto w-full">
           <Link href="/cek-pemilih" className="w-full sm:w-auto">
-            <Button variant="primary" size="lg" className="w-full shadow-lg shadow-blue-900/20 py-3 px-6 font-extrabold text-sm rounded-xl justify-center">
+            <Button variant="primary" size="lg" className="w-full shadow-lg shadow-blue-900/20 py-3 px-6 font-extrabold text-xs sm:text-sm rounded-xl justify-center whitespace-nowrap">
               <Search className="w-4 h-4 mr-2" />
               <span>Cek Hak Pilih Sekarang</span>
               <ArrowRight className="w-4 h-4 ml-1.5" />
@@ -61,7 +61,7 @@ export const HeroSection: React.FC = () => {
           </Link>
 
           <Link href="/aduan" className="w-full sm:w-auto">
-            <Button variant="secondary" size="lg" className="w-full shadow-xs py-3 px-5 font-bold text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl border border-slate-200 justify-center">
+            <Button variant="secondary" size="lg" className="w-full shadow-xs py-3 px-5 font-bold text-xs sm:text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl border border-slate-200 justify-center whitespace-nowrap">
               <FileText className="w-4 h-4 mr-2 text-blue-700" />
               <span>Formulir Aduan Warga</span>
             </Button>
@@ -69,20 +69,20 @@ export const HeroSection: React.FC = () => {
         </div>
 
         {/* Status Indicator Bar */}
-        <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 bg-white/90 px-4 py-2 rounded-full border border-slate-200 shadow-xs backdrop-blur-xs">
-            <Vote className="w-4 h-4 text-blue-700" />
-            <span>Tahapan Berjalan: <strong className="text-blue-900 font-bold">Persiapan & Sosialisasi</strong></span>
+        <div className="pt-3 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-[11px] sm:text-xs">
+          <div className="inline-flex items-center gap-1.5 font-semibold text-slate-700 bg-white/90 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-slate-200 shadow-xs backdrop-blur-xs whitespace-nowrap">
+            <Vote className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+            <span>Tahapan: <strong className="text-blue-900 font-bold">Persiapan & Sosialisasi</strong></span>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-full border border-emerald-200 shadow-xs">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Sistem Database Server Terverifikasi Aman</span>
+          <div className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 bg-emerald-50 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full border border-emerald-200 shadow-xs whitespace-nowrap">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span>Database Terverifikasi Aman</span>
           </div>
 
-          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-800 bg-indigo-50 px-3.5 py-2 rounded-full border border-indigo-200 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Proteksi Keamanan Database • Develzy Shield</span>
+          <div className="inline-flex items-center gap-1.5 font-semibold text-indigo-800 bg-indigo-50 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full border border-indigo-200 shadow-xs whitespace-nowrap">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <span>Proteksi Develzy Shield</span>
           </div>
         </div>
       </motion.div>

@@ -183,18 +183,18 @@ export const StatsOverview: React.FC = () => {
             className={i === 4 ? "col-span-2 md:col-span-1" : ""}
           >
             <Link href={stat.href}>
-              <Card className={`p-4 transition-all duration-200 bg-white hover:shadow-md cursor-pointer ${stat.border}`}>
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-600 truncate">{stat.title}</span>
-                  <div className={`p-2 rounded-xl border border-slate-100 ${stat.bg}`}>
+              <Card className={`p-3 sm:p-4 transition-all duration-200 bg-white hover:shadow-md cursor-pointer ${stat.border}`}>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 truncate whitespace-nowrap">{stat.title}</span>
+                  <div className={`p-1.5 sm:p-2 rounded-xl border border-slate-100 shrink-0 ${stat.bg}`}>
                     {stat.icon}
                   </div>
                 </div>
-                <div className="mt-2.5">
-                  <div className="text-2xl font-black text-slate-900 tracking-tight min-h-8 flex items-center">
+                <div className="mt-2 sm:mt-2.5">
+                  <div className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight min-h-7 sm:min-h-8 flex items-center whitespace-nowrap">
                     {stat.renderValue()}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5 font-medium min-h-4">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 font-medium min-h-4 truncate whitespace-nowrap">
                     {stat.renderLabel()}
                   </div>
                 </div>

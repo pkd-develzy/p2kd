@@ -200,23 +200,23 @@ export const PanitiaCarousel: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-44 h-44 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
         {/* Top Header Card */}
-        <div className="relative z-10 flex items-center justify-between gap-2 border-b border-white/10 pb-3">
+        <div className="relative z-10 flex items-center justify-between gap-1.5 sm:gap-2 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2 min-w-0">
             <div className="p-1.5 rounded-lg bg-blue-500/20 text-blue-300 border border-blue-400/30 shrink-0">
-              <Users className="w-4 h-4" />
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-blue-300 block truncate leading-tight">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-blue-300 block truncate leading-tight whitespace-nowrap">
                 Panitia Pelaksana Pilkades
               </span>
-              <span className="text-xs font-bold text-white block truncate leading-tight">
+              <span className="text-[11px] sm:text-xs font-bold text-white block truncate leading-tight whitespace-nowrap">
                 P2KD Desa Kalisalak
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[10px] font-bold text-slate-300 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15 whitespace-nowrap shrink-0 tabular-nums">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <span className="text-[9px] sm:text-[10px] font-bold text-slate-300 bg-white/10 px-2 py-0.5 rounded-full border border-white/15 whitespace-nowrap shrink-0 tabular-nums">
               {currentIndex + 1} / {panitiaList.length}
             </span>
             <div className="flex items-center gap-1 shrink-0">
@@ -224,17 +224,17 @@ export const PanitiaCarousel: React.FC = () => {
                 type="button"
                 onClick={handlePrev}
                 aria-label="Panitia Sebelumnya"
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+                className="p-1 sm:p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
+                <ChevronLeft className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
               <button
                 type="button"
                 onClick={handleNext}
                 aria-label="Panitia Selanjutnya"
-                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+                className="p-1 sm:p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               </button>
             </div>
           </div>
@@ -282,7 +282,7 @@ export const PanitiaCarousel: React.FC = () => {
                 <div className="flex justify-center">
                   <Badge
                     variant="outline"
-                    className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border ${getSeksiColor(
+                    className={`text-[9px] sm:text-[10px] font-bold px-2.5 py-0.5 rounded-full border whitespace-nowrap max-w-full truncate ${getSeksiColor(
                       currentMember?.seksi || "PIMPINAN"
                     )}`}
                   >
@@ -290,13 +290,13 @@ export const PanitiaCarousel: React.FC = () => {
                   </Badge>
                 </div>
 
-                <h3 className="text-sm sm:text-base font-black text-white tracking-tight leading-snug line-clamp-2">
+                <h3 className="text-sm sm:text-base font-black text-white tracking-tight leading-snug truncate">
                   {currentMember?.namaLengkap}
                 </h3>
 
-                <p className="text-xs font-semibold text-amber-300 line-clamp-1 flex items-center justify-center gap-1.5">
+                <p className="text-[11px] sm:text-xs font-semibold text-amber-300 truncate flex items-center justify-center gap-1.5">
                   <Award className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>{currentMember?.jabatan}</span>
+                  <span className="truncate">{currentMember?.jabatan}</span>
                 </p>
               </div>
             </motion.div>
@@ -304,7 +304,7 @@ export const PanitiaCarousel: React.FC = () => {
         </div>
 
         {/* Bottom Bar: 7s Progress Indicator & Footer Link ke /struktur */}
-        <div className="relative z-10 pt-3 border-t border-white/10 space-y-2.5">
+        <div className="relative z-10 pt-3 border-t border-white/10 space-y-2">
           {/* Animated 7-Second Progress Bar */}
           <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
             <motion.div
@@ -316,16 +316,16 @@ export const PanitiaCarousel: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center justify-between text-[11px] gap-2">
-            <span className="text-slate-400 text-[10px] truncate">
-              {isPaused ? "⏸ Dihentikan (Kursor/Sentuh)" : "⏱ Berganti otomatis tiap 7 dtk"}
+          <div className="flex items-center justify-between text-[10px] sm:text-[11px] gap-2">
+            <span className="text-slate-400 text-[9px] sm:text-[10px] truncate whitespace-nowrap">
+              {isPaused ? "⏸ Dihentikan (Sentuh)" : "⏱ Berganti tiap 7 dtk"}
             </span>
 
             <Link
               href="/struktur"
-              className="text-blue-300 hover:text-white font-bold flex items-center gap-1 transition-colors hover:underline shrink-0 text-[11px]"
+              className="text-blue-300 hover:text-white font-bold flex items-center gap-1 transition-colors hover:underline shrink-0 text-[10px] sm:text-[11px] whitespace-nowrap"
             >
-              <span className="whitespace-nowrap">Struktur Lengkap</span>
+              <span>Struktur Lengkap</span>
               <ExternalLink className="w-3 h-3 shrink-0" />
             </Link>
           </div>

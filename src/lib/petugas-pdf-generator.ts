@@ -10,7 +10,7 @@ import { MasterPetugasDpt } from "./data-store";
 
 const KOP_TITLE_1 = "PANITIA PEMILIHAN KEPALA DESA (P2KD)";
 const KOP_TITLE_2 = "DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL";
-const KOP_SUBTITLE = "Sekretariat: Kantor Balai Desa Kalisalak, Jl. Raya Kalisalak No. 01 Margasari 52463";
+const KOP_SUBTITLE = "Sekretariat: Gedung Balai Desa Kalisalak, Jl. K. Abdul Latief, Kalisalak, Kec. Margasari, Kabupaten Tegal 52463";
 const KOP_EMAIL_WA = "Email: panitia@p2kdkalisalak.my.id | Kontak/WA: +62 878-3018-8452";
 
 function drawKopSurat(doc: jsPDF): number {

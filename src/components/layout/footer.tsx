@@ -30,7 +30,7 @@ export const Footer: React.FC = () => {
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                 <span>
-                  <strong className="text-white font-bold">Sekretariat P2KD:</strong> Gedung Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01, Kec. Margasari, Kab. Tegal 52463
+                  <strong className="text-white font-bold">Sekretariat P2KD:</strong> Gedung Balai Desa Kalisalak, Jl. K. Abdul Latief, Kalisalak, Kec. Margasari, Kabupaten Tegal, Jawa Tengah 52463
                 </span>
               </div>
               <div className="flex items-start gap-2.5">
@@ -64,9 +64,9 @@ export const Footer: React.FC = () => {
                 <div>
                   <strong className="text-white font-bold block mb-0.5">Jam Layanan:</strong>
                   <div className="text-slate-200 text-xs space-y-0.5">
-                    <p>• Senin – Kamis (08:00 – 13:00 WIB)</p>
+                    <p>• Senin – Kamis (08.00–16.00)</p>
                     <p>• Jum&apos;at (08.00 – 11.00 WIB)</p>
-                    <p>• Sabtu – Minggu (Libur)</p>
+                    <p>• Sabtu – Minggu (Tutup)</p>
                   </div>
                 </div>
               </div>

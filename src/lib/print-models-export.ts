@@ -13,7 +13,7 @@ import { Voter, TPSItem } from "@/components/pages/admin/types";
 
 const KOP_TITLE_1 = "PANITIA PEMILIHAN KEPALA DESA (P2KD)";
 const KOP_TITLE_2 = "DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL";
-const KOP_SUB = "Sekretariat: Gedung Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01 Margasari 52463";
+const KOP_SUB = "Sekretariat: Gedung Balai Desa Kalisalak, Jl. K. Abdul Latief, Kalisalak, Kec. Margasari, Kabupaten Tegal 52463";
 
 /**
  * Helper pencocokan tabung yang robust antara nomor tabung, nama tabung, atau RW

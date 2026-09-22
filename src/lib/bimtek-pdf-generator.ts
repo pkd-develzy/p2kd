@@ -9,7 +9,7 @@ import { jsPDF } from "jspdf";
 
 const KOP_INSTANSI_1 = "PANITIA PEMILIHAN KEPALA DESA (P2KD)";
 const KOP_INSTANSI_2 = "DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL";
-const KOP_ALAMAT = "Sekretariat: Gedung Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01 Margasari 52463";
+const KOP_ALAMAT = "Sekretariat: Gedung Balai Desa Kalisalak, Jl. K. Abdul Latief, Kalisalak, Kec. Margasari, Kabupaten Tegal 52463";
 const KOP_KONTAK = "Portal: www.p2kdkalisalak.my.id | Email: panitia@p2kdkalisalak.my.id | WA: +62 878-3018-8452";
 
 function renderKop(doc: jsPDF): number {
@@ -637,7 +637,7 @@ export function generateLembarSakuPdf(): jsPDF {
   doc.setTextColor(30, 41, 59);
   doc.text("• Helpdesk WA P2KD    : +62 878-3018-8452 (Siap mendampingi kendala teknis lapangan)", 24, y + 14);
   doc.text("• Portal Sistem        : https://www.p2kdkalisalak.my.id/admin", 24, y + 19);
-  doc.text("• Sekretariat          : Balai Desa Kalisalak, Jl. Raya Margasari – Kalisalak No. 01", 24, y + 24);
+  doc.text("• Sekretariat          : Balai Desa Kalisalak, Jl. K. Abdul Latief, Margasari 52463", 24, y + 24);
   doc.text("• Koordinator Seksi    : M. Lu’lu Khulaludin, S.F.U (Seksi Pendaftaran Pemilih)", 24, y + 29);
 
   renderFooter(doc, 2, totalPages);

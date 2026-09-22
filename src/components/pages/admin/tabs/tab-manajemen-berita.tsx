@@ -55,7 +55,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
     kategori: "SOSIALISASI" as BeritaKategori,
     ringkasan: "",
     konten: "",
-    gambarUrl: "/images/p2kd-musyawarah-kalisalak.png",
+    gambarUrl: "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png",
     status: "PUBLISHED" as "PUBLISHED" | "DRAFT" | "ARCHIVED",
     isHeadline: false,
     lampiranPdfUrl: "",
@@ -168,7 +168,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
       kategori: "SOSIALISASI",
       ringkasan: "",
       konten: "",
-      gambarUrl: "/images/p2kd-musyawarah-kalisalak.png",
+      gambarUrl: "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png",
       status: "PUBLISHED",
       isHeadline: false,
       lampiranPdfUrl: "",
@@ -184,7 +184,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
       kategori: art.kategori,
       ringkasan: art.ringkasan || "",
       konten: art.konten,
-      gambarUrl: art.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png",
+      gambarUrl: art.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png",
       status: art.status,
       isHeadline: Boolean(art.isHeadline),
       lampiranPdfUrl: art.lampiranPdfUrl || "",
@@ -418,7 +418,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
                 {/* Thumbnail Preview */}
                 <div className="relative h-40 w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
                   <Image
-                    src={art.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                    src={art.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png"}
                     alt={art.judul}
                     fill
                     unoptimized
@@ -656,7 +656,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
                       {/* Preview Thumbnail */}
                       <div className="relative w-full h-44 rounded-xl overflow-hidden bg-slate-200 border border-slate-200 group">
                         <Image
-                          src={formData.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                          src={formData.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png"}
                           alt="Preview Berita"
                           fill
                           unoptimized
@@ -706,7 +706,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
                             onClick={() =>
                               setFormData({
                                 ...formData,
-                                gambarUrl: "/images/p2kd-musyawarah-kalisalak.png",
+                                gambarUrl: "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png",
                               })
                             }
                             className="px-3 py-2 text-xs font-bold rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors cursor-pointer whitespace-nowrap"

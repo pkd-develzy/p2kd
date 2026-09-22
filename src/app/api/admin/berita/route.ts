@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
     await dataStore.ensureSynced();
 
-    let finalGambarUrl = gambarUrl ? String(gambarUrl).trim() : "/images/p2kd-musyawarah-kalisalak.png";
+    let finalGambarUrl = gambarUrl ? String(gambarUrl).trim() : "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png";
 
     // Auto upload base64 to Cloudinary if provided
     if (finalGambarUrl.startsWith("data:image/")) {

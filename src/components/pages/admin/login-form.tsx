@@ -157,7 +157,7 @@ export const AdminLoginForm: React.FC = () => {
       <div
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"
         style={{
-          backgroundImage: "url('/images/p2kd-musyawarah-kalisalak.png')",
+          backgroundImage: "url('https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png')",
         }}
       />
       {/* Multi-layered dark glass overlay for high readability */}

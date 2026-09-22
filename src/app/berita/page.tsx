@@ -163,7 +163,7 @@ export default function BeritaIndexPage() {
                     {/* Thumbnail */}
                     <div className="relative h-48 w-full rounded-2xl overflow-hidden bg-slate-900">
                       <Image
-                        src={art.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                        src={art.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png"}
                         alt={art.judul}
                         fill
                         unoptimized

@@ -201,7 +201,7 @@ export default function SingleBeritaPage() {
         {/* Hero Featured Image */}
         <div className="rounded-3xl overflow-hidden bg-slate-900 border border-slate-200 shadow-xl relative aspect-video max-h-120">
           <Image
-            src={article.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+            src={article.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png"}
             alt={article.judul}
             fill
             unoptimized
@@ -320,7 +320,7 @@ export default function SingleBeritaPage() {
                     <div className="space-y-2.5">
                       <div className="relative h-32 rounded-xl overflow-hidden bg-slate-900">
                         <Image
-                          src={rel.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                          src={rel.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png"}
                           alt={rel.judul}
                           fill
                           unoptimized

@@ -184,7 +184,7 @@ export const NewsSection: React.FC<NewsSectionProps> = ({
                   {/* Big Image Banner */}
                   <div className="lg:col-span-7 relative h-64 sm:h-80 lg:h-auto bg-slate-900 overflow-hidden min-h-55">
                     <Image
-                      src={displayHeadline.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                      src={displayHeadline.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png"}
                       alt={displayHeadline.judul}
                       fill
                       unoptimized
@@ -275,7 +275,7 @@ export const NewsSection: React.FC<NewsSectionProps> = ({
                         {/* Thumbnail */}
                         <div className="relative h-44 w-full rounded-2xl overflow-hidden bg-slate-900">
                           <Image
-                            src={art.gambarUrl || "/images/p2kd-musyawarah-kalisalak.png"}
+                            src={art.gambarUrl || "https://res.cloudinary.com/xwgfvkld/image/upload/v1790082178/p2kd_berita/p2kd-musyawarah-kalisalak.png"}
                             alt={art.judul}
                             fill
                             unoptimized

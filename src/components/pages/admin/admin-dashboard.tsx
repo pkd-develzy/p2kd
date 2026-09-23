@@ -337,7 +337,7 @@ export const AdminDashboard: React.FC = () => {
         resPetugas,
       ] = await Promise.all([
         fetch(`/api/admin/pemilih?tps=${effectiveTps}&status=${selectedStatusFilter}&role=${isAdmin ? "admin" : "petugas"}&assignedTps=${encodeURIComponent(assignedTps)}`, { cache: "no-store" }),
-        fetch(`/api/admin/aduan?status=${selectedAduanFilter}`, { cache: "no-store" }),
+        fetch("/api/admin/aduan", { cache: "no-store" }),
         fetch("/api/admin/tps", { cache: "no-store" }),
         fetch("/api/admin/audit", { cache: "no-store" }),
         fetch("/api/admin/db-status", { cache: "no-store" }),
@@ -399,7 +399,6 @@ export const AdminDashboard: React.FC = () => {
   }, [
     effectiveTps,
     selectedStatusFilter,
-    selectedAduanFilter,
     isAdmin,
     canAccessVoterDataUI,
     assignedTps,
@@ -760,14 +759,29 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // --- ADUAN RESOLUTION ---
+  // --- ADUAN RESOLUTION (INSTANT OPTIMISTIC UI) ---
   const handleApproveAduan = async (a: Aduan) => {
+    // 1. Instant Optimistic UI Update (< 1ms)
+    const targetKey = a.id || a.nomorAduan;
+    setAduanList((prev) =>
+      prev.map((item) =>
+        item.id === targetKey || item.nomorAduan === a.nomorAduan
+          ? {
+              ...item,
+              status: "DISETUJUI",
+              catatanPetugas: "Disetujui oleh Petugas P2KD & Data Master Terkait Telah Diperbarui.",
+              tanggalDisetujui: new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
+            }
+          : item
+      )
+    );
+
     try {
       const res = await fetch("/api/admin/aduan", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: a.id,
+          id: targetKey,
           status: "DISETUJUI",
           catatan: "Disetujui oleh Petugas P2KD & Data Master Terkait Telah Diperbarui.",
           user: currentUser,
@@ -777,20 +791,37 @@ export const AdminDashboard: React.FC = () => {
       const result = await res.json();
       if (result.success) {
         toast.success("Aduan Disetujui", `Tiket ${a.nomorAduan} disetujui & data pemilih otomatis diselaraskan.`);
+      } else {
+        toast.error("Gagal", result.message || "Tidak dapat memproses aduan.");
         fetchData();
       }
     } catch {
       toast.error("Gagal", "Tidak dapat memproses aduan.");
+      fetchData();
     }
   };
 
   const handleRejectAduan = async (a: Aduan) => {
+    // 1. Instant Optimistic UI Update (< 1ms)
+    const targetKey = a.id || a.nomorAduan;
+    setAduanList((prev) =>
+      prev.map((item) =>
+        item.id === targetKey || item.nomorAduan === a.nomorAduan
+          ? {
+              ...item,
+              status: "DITOLAK",
+              catatanPetugas: "Data atau bukti pendukung tidak memenuhi syarat administrasi.",
+            }
+          : item
+      )
+    );
+
     try {
       const res = await fetch("/api/admin/aduan", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: a.id,
+          id: targetKey,
           status: "DITOLAK",
           catatan: "Data atau bukti pendukung tidak memenuhi syarat administrasi.",
           user: currentUser,
@@ -800,10 +831,13 @@ export const AdminDashboard: React.FC = () => {
       const result = await res.json();
       if (result.success) {
         toast.warning("Aduan Ditolak", `Tiket ${a.nomorAduan} telah ditolak.`);
+      } else {
+        toast.error("Gagal", result.message || "Tidak dapat memproses penolakan aduan.");
         fetchData();
       }
     } catch {
       toast.error("Gagal", "Tidak dapat memproses penolakan aduan.");
+      fetchData();
     }
   };
 

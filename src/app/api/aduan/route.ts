@@ -19,7 +19,6 @@ export async function POST(req: Request) {
       );
     }
 
-    await dataStore.ensureSynced();
     const body = await req.json();
     const { nama, nik, kontak, rt, rw, jenis, pesan, turnstileToken } = body;
 

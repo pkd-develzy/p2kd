@@ -1199,27 +1199,45 @@ class SystemDataStore {
     user = "Petugas P2KD",
     autoUpdateMaster = true
   ): Promise<MasterAduan | null> {
-    const idx = this.aduanList.findIndex((a) => a.id === id);
-    if (idx === -1) return null;
+    const idx = this.aduanList.findIndex((a) => a.id === id || a.nomorAduan === id);
 
-    this.aduanList[idx].status = status;
-    this.aduanList[idx].catatanPetugas = catatan;
-    this.aduanList[idx].tanggalDisetujui = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+    if (idx !== -1) {
+      this.aduanList[idx].status = status;
+      this.aduanList[idx].catatanPetugas = catatan;
+      this.aduanList[idx].tanggalDisetujui = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+    }
 
     // Sync to Supabase Cloud
     await SupabaseDbService.updateAduan(id, status, catatan);
+
+    const resolved = idx !== -1 ? this.aduanList[idx] : {
+      id,
+      nomorAduan: id,
+      namaPelapor: "Warga",
+      nik: "",
+      nikMasked: "",
+      kontakPelapor: "",
+      rt: "",
+      rw: "",
+      jenisAduan: "LAINNYA" as const,
+      isiAduan: "",
+      status,
+      catatanPetugas: catatan,
+      tanggal: new Date().toLocaleDateString("id-ID"),
+      tanggalDisetujui: new Date().toLocaleDateString("id-ID"),
+    };
 
     this.addAuditLog({
       user,
       role: "SEKSI_PEMILIH",
       aksi: status === "DISETUJUI" ? "VERIFIKASI_ADUAN_TERIMA" : "VERIFIKASI_ADUAN_TOLAK",
       entity: "ADUAN",
-      target: `${this.aduanList[idx].nomorAduan} (${this.aduanList[idx].namaPelapor})`,
+      target: `${resolved.nomorAduan} (${resolved.namaPelapor})`,
       detail: `Status tanggapan diubah menjadi ${status}. Catatan: ${catatan}. AutoUpdate: ${autoUpdateMaster}`,
       ipAddress: "127.0.0.1",
     });
 
-    return this.aduanList[idx];
+    return resolved;
   }
 
   // --- TPS METHODS ---

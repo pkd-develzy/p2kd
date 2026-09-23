@@ -12,8 +12,10 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status") || undefined;
 
-    await dataStore.ensureSynced();
-    const list = dataStore.getAduanList(status);
+    if (dataStore.getAduanList().length === 0) {
+      await dataStore.ensureSynced();
+    }
+    const list = dataStore.getAduanList(status && status !== "SEMUA" ? status : undefined);
 
     return NextResponse.json({
       success: true,

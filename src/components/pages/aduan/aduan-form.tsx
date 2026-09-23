@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge, Input, Logo, Button } from "@/components/ui";
-import { Send, CheckCircle2 } from "lucide-react";
+import { Send, CheckCircle2, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
 import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK } from "@/lib/kalisalak-wilayah";
@@ -113,17 +113,19 @@ export const AduanForm: React.FC = () => {
               Laporan Anda telah tercatat dengan nomor registrasi <strong className="text-blue-900 font-mono text-sm bg-blue-50 px-2 py-1 rounded">{submittedNo}</strong>. Panitia P2KD Desa Kalisalak akan memverifikasi berkas Anda.
             </p>
             <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
-              Butuh konfirmasi cepat atau bantuan teknis? Hubungi Layanan Aduan & Bantuan Resmi P2KD via WhatsApp di{" "}
+              Konfirmasi langsung laporan Anda ke WhatsApp Panitia P2KD Kalisalak (Hotline Khusus Pengaduan):
+            </p>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
-                href={`https://wa.me/6287830188452?text=${encodeURIComponent(`Halo Panitia P2KD Kalisalak, saya ingin konfirmasi aduan nomor registrasi: ${submittedNo}`)}`}
+                href={`https://wa.me/6285879584257?text=${encodeURIComponent(`Halo Panitia P2KD Kalisalak, saya baru saja mengirimkan laporan aduan warga melalui website dengan nomor registrasi: ${submittedNo}. Mohon segera diverifikasi, terima kasih.`)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-emerald-700 font-bold hover:underline"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-900/20 transition-all cursor-pointer"
               >
-                +62 878-3018-8452
-              </a>.
-            </p>
-            <div className="pt-4">
+                <MessageSquare className="w-4 h-4" />
+                <span>Konfirmasi via WhatsApp (+62 858-7958-4257)</span>
+              </a>
+
               <Button
                 variant="outline"
                 size="sm"

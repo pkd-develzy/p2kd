@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { notifyNewAduan } from "@/lib/telegram";
 
 export async function POST(req: Request) {
   try {
@@ -56,6 +57,19 @@ export async function POST(req: Request) {
       rw: rw || "01",
       jenis: jenis || "BELUM_TERDAFTAR",
       pesan,
+    });
+
+    // Kirim notifikasi Telegram ke grup panitia P2KD (berjalan di background tanpa membebani respon user)
+    void notifyNewAduan({
+      nomorAduan: savedAduan.nomorAduan,
+      namaPelapor: savedAduan.namaPelapor,
+      nikMasked: savedAduan.nikMasked,
+      kontakPelapor: savedAduan.kontakPelapor,
+      rt: savedAduan.rt,
+      rw: savedAduan.rw,
+      jenisAduan: savedAduan.jenisAduan,
+      pesan: savedAduan.isiAduan || pesan,
+      tanggal: savedAduan.tanggal,
     });
 
     return NextResponse.json({

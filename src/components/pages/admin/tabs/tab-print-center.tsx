@@ -244,7 +244,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                   Model A.1: Daftar Pemilih Sementara (DPS) Pilkades
                 </h4>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Lembar kerja pemutakhiran data pemilih. <strong className="text-amber-800">Dilengkapi 1 sub-tabel di bawahnya pada setiap 1 data daftar pemilih</strong> untuk catatan verifikasi faktual Coklit, koreksi data, dan paraf petugas.
+                  Lembar kerja pemutakhiran data pemilih dipilah <strong className="text-amber-800">per Wilayah RW</strong>. Dilengkapi 1 sub-tabel di bawahnya pada setiap 1 data daftar pemilih untuk catatan verifikasi faktual Coklit, koreksi data, dan paraf petugas.
                 </p>
               </div>
             </div>
@@ -254,9 +254,15 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => exportModelA1Excel(voters, isAdmin ? "SEMUA" : assignedTps)}
+                  onClick={() => {
+                    if (isAdmin) {
+                      setActiveDoc("MODEL_A1_DPS");
+                    } else {
+                      exportModelA1Excel(voters, assignedTps);
+                    }
+                  }}
                   className="text-xs font-bold text-emerald-700 border-emerald-300 hover:bg-emerald-50 px-2.5"
-                  title="Unduh file Excel Model A.1 lengkap dengan sub-tabel per pemilih"
+                  title={isAdmin ? "Buka Grid RW untuk unduh Excel Model A.1 per wilayah" : "Unduh file Excel Model A.1"}
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5 mr-1 text-emerald-600" />
                   Excel (.xlsx)
@@ -264,9 +270,15 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => exportModelA1Pdf(voters, isAdmin ? "SEMUA" : assignedTps)}
+                  onClick={() => {
+                    if (isAdmin) {
+                      setActiveDoc("MODEL_A1_DPS");
+                    } else {
+                      exportModelA1Pdf(voters, assignedTps);
+                    }
+                  }}
                   className="text-xs font-bold text-rose-700 border-rose-300 hover:bg-rose-50 px-2.5"
-                  title="Unduh dokumen PDF Model A.1"
+                  title={isAdmin ? "Buka Grid RW untuk unduh PDF Model A.1 per wilayah" : "Unduh dokumen PDF Model A.1"}
                 >
                   <Download className="w-3.5 h-3.5 mr-1 text-rose-600" />
                   PDF
@@ -280,7 +292,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                 className="text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white shadow-xs"
               >
                 <Printer className="w-3.5 h-3.5 mr-1" />
-                Buka / Cetak
+                Pilih RW & Cetak
               </Button>
             </div>
           </Card>
@@ -551,16 +563,16 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                 </Badge>
               </div>
               <h4 className="text-xs font-black text-slate-900">
-                Stiker Coklit Rumah Warga
+                Stiker Coklit Rumah Warga (Model A.A)
               </h4>
               <p className="text-[11px] text-slate-500 leading-normal">
-                Lembar stiker bukti pencocokan & penelitian door-to-door yang ditempel di rumah warga. Format 4 stiker per lembar A4.
+                Lembar stiker bukti pencocokan & penelitian door-to-door yang ditempel di rumah warga. Mendukung format cetak & unduh PDF langsung untuk <strong>Kertas A4 (4 stiker)</strong> dan <strong>Kertas A3 (8 stiker)</strong>.
               </p>
             </div>
 
             <div className="pt-2 flex items-center justify-between border-t border-slate-100">
-              <span className="text-[10px] text-slate-500">
-                4 Stiker / A4
+              <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                A4 (4) / A3 (8) • PDF
               </span>
               <Button
                 variant="primary"
@@ -569,7 +581,7 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                 className="text-xs font-bold bg-amber-600 hover:bg-amber-500 text-white"
               >
                 <Printer className="w-3.5 h-3.5 mr-1" />
-                Cetak Stiker
+                Buka / Cetak Stiker
               </Button>
             </div>
           </Card>

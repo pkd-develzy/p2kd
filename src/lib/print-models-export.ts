@@ -44,7 +44,7 @@ export function matchTpsVoter(voterTps: string, targetTps: string): boolean {
 
 export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA") {
   const filtered = voters.filter(
-    (v) => v.statusAktif === "AKTIF" && matchTpsVoter(v.tps, selectedTps)
+    (v) => v.statusAktif === "AKTIF" && (matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps))
   );
 
   const rows: (string | number)[][] = [];
@@ -138,7 +138,7 @@ export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA
 
 export function exportModelA1Pdf(voters: Voter[], selectedTps: string = "SEMUA") {
   const filtered = voters.filter(
-    (v) => v.statusAktif === "AKTIF" && matchTpsVoter(v.tps, selectedTps)
+    (v) => v.statusAktif === "AKTIF" && (matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps))
   );
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });

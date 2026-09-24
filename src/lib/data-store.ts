@@ -1199,6 +1199,10 @@ class SystemDataStore {
     user = "Petugas P2KD",
     autoUpdateMaster = true
   ): Promise<MasterAduan | null> {
+    if (this.aduanList.length === 0) {
+      await this.ensureSynced();
+    }
+
     const idx = this.aduanList.findIndex((a) => a.id === id || a.nomorAduan === id);
 
     if (idx !== -1) {
@@ -1241,22 +1245,31 @@ class SystemDataStore {
   }
 
   public async deleteAduan(id: string, user = "Petugas P2KD"): Promise<boolean> {
-    const idx = this.aduanList.findIndex((a) => a.id === id || a.nomorAduan === id);
-    if (idx === -1) return false;
+    if (this.aduanList.length === 0) {
+      await this.ensureSynced();
+    }
 
-    const target = this.aduanList[idx];
-    this.aduanList.splice(idx, 1);
+    const idx = this.aduanList.findIndex((a) => a.id === id || a.nomorAduan === id);
+    const target = idx !== -1 ? this.aduanList[idx] : null;
+
+    if (idx !== -1) {
+      this.aduanList.splice(idx, 1);
+    }
+    this.aduanList = this.aduanList.filter((a) => a.id !== id && a.nomorAduan !== id);
 
     // Sync to Supabase Cloud
     await SupabaseDbService.deleteAduan(id);
+    if (target && target.nomorAduan && target.nomorAduan !== id) {
+      await SupabaseDbService.deleteAduan(target.nomorAduan);
+    }
 
     this.addAuditLog({
       user,
       role: "SEKSI_PEMILIH",
       aksi: "DELETE_ADUAN",
       entity: "ADUAN",
-      target: `${target.nomorAduan} (${target.namaPelapor})`,
-      detail: `Menghapus laporan aduan warga ${target.nomorAduan}. Status saat dihapus: ${target.status}.`,
+      target: target ? `${target.nomorAduan} (${target.namaPelapor})` : id,
+      detail: `Menghapus laporan aduan warga ${target?.nomorAduan || id}. Status saat dihapus: ${target?.status || "SELESAI"}.`,
       ipAddress: "127.0.0.1",
     });
 

@@ -1551,27 +1551,18 @@ export class SupabaseDbService {
 
   public static async updateAduan(id: string, status: string, catatan?: string) {
     try {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      if (isUuid) {
-        await this.adminClient.from("aduan_pemilih").update({
+      this.invalidateCache();
+      const res = await this.adminClient
+        .from("aduan_pemilih")
+        .update({
           status,
           catatan_petugas: catatan,
           tanggal_disetujui: status === "DISETUJUI" ? new Date().toLocaleDateString("id-ID") : null,
-        }).eq("id", id);
-      } else {
-        const res = await this.adminClient.from("aduan_pemilih").update({
-          status,
-          catatan_petugas: catatan,
-          tanggal_disetujui: status === "DISETUJUI" ? new Date().toLocaleDateString("id-ID") : null,
-        }).eq("nomor_aduan", id);
+        })
+        .or(`id.eq.${id},nomor_aduan.eq.${id}`);
 
-        if (res.error) {
-          await this.adminClient.from("aduan_pemilih").update({
-            status,
-            catatan_petugas: catatan,
-            tanggal_disetujui: status === "DISETUJUI" ? new Date().toLocaleDateString("id-ID") : null,
-          }).eq("id", id);
-        }
+      if (res.error) {
+        console.warn("Supabase updateAduan warning:", res.error.message);
       }
     } catch (err) {
       console.warn("Supabase updateAduan sync failed:", err);
@@ -1580,14 +1571,14 @@ export class SupabaseDbService {
 
   public static async deleteAduan(id: string) {
     try {
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-      if (isUuid) {
-        await this.adminClient.from("aduan_pemilih").delete().eq("id", id);
-      } else {
-        const res = await this.adminClient.from("aduan_pemilih").delete().eq("nomor_aduan", id);
-        if (res.error) {
-          await this.adminClient.from("aduan_pemilih").delete().eq("id", id);
-        }
+      this.invalidateCache();
+      const res = await this.adminClient
+        .from("aduan_pemilih")
+        .delete()
+        .or(`id.eq.${id},nomor_aduan.eq.${id}`);
+
+      if (res.error) {
+        console.warn("Supabase deleteAduan warning:", res.error.message);
       }
     } catch (err) {
       console.warn("Supabase deleteAduan sync failed:", err);

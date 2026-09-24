@@ -79,30 +79,26 @@ export async function GET(req: Request) {
       });
     }
 
-    // 2. Direct Server-Side Database Pagination (Offset / Limit)
-    const page = pageParam ? Math.max(1, parseInt(pageParam, 10)) : 1;
-    const limit = limitParam ? Math.min(10000, Math.max(1, parseInt(limitParam, 10))) : 10000;
-    const offset = (page - 1) * limit;
-
-    const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
+    // 2. Prioritaskan In-Memory Cache (0 Bytes Egress Supabase & Respon Sub-Milidetik)
+    const localPemilih = dataStore.getPemilihList({
       tps: cleanTps,
-      statusAktif: cleanStatus,
+      status: cleanStatus,
     });
 
-    let votersData = pagedResult.data;
-    let totalCount = pagedResult.total;
+    let votersData = [];
+    let totalCount = 0;
 
-    // Fallback to dataStore if database returns 0 rows (e.g. during sync or cold start)
-    if (votersData.length === 0) {
-      await dataStore.ensureSynced();
-      const fallbackList = dataStore.getPemilihList({
+    if (localPemilih.length > 0) {
+      totalCount = localPemilih.length;
+      votersData = localPemilih.slice(offset, offset + limit);
+    } else {
+      // Fallback ke Supabase jika server baru saja cold-start dan memori masih kosong
+      const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
         tps: cleanTps,
-        status: cleanStatus,
+        statusAktif: cleanStatus,
       });
-      if (fallbackList.length > 0) {
-        totalCount = fallbackList.length;
-        votersData = fallbackList.slice(offset, offset + limit);
-      }
+      votersData = pagedResult.data;
+      totalCount = pagedResult.total;
     }
 
     return NextResponse.json({

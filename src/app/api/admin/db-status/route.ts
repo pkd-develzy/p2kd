@@ -25,16 +25,17 @@ export async function GET(req: Request) {
       const server3Client = getSupabaseServer3Admin();
 
       // Parallelize queries across all 3 isolated database servers
-      const [pemRes, agtRes, tpsRes] = await Promise.all([
+      const [pemRes, agtRes, tpsRes, beritaRes] = await Promise.all([
         seksi1Client.from("pemilih").select("*", { count: "exact", head: true }),
         server3Client.from("anggota_p2kd").select("*", { count: "exact", head: true }),
         seksi1Client.from("tps").select("*", { count: "exact", head: true }),
+        client.from("berita_artikel").select("*", { count: "exact", head: true }),
       ]);
 
       latencyMs = Date.now() - startTime;
 
-      if (pemRes.error) {
-        errorMessage = pemRes.error.message;
+      if (pemRes.error || agtRes.error || beritaRes.error) {
+        errorMessage = pemRes.error?.message || agtRes.error?.message || beritaRes.error?.message || "Gagal menghubungi database server.";
         isConnected = false;
       } else {
         isConnected = true;

@@ -1240,6 +1240,29 @@ class SystemDataStore {
     return resolved;
   }
 
+  public async deleteAduan(id: string, user = "Petugas P2KD"): Promise<boolean> {
+    const idx = this.aduanList.findIndex((a) => a.id === id || a.nomorAduan === id);
+    if (idx === -1) return false;
+
+    const target = this.aduanList[idx];
+    this.aduanList.splice(idx, 1);
+
+    // Sync to Supabase Cloud
+    await SupabaseDbService.deleteAduan(id);
+
+    this.addAuditLog({
+      user,
+      role: "SEKSI_PEMILIH",
+      aksi: "DELETE_ADUAN",
+      entity: "ADUAN",
+      target: `${target.nomorAduan} (${target.namaPelapor})`,
+      detail: `Menghapus laporan aduan warga ${target.nomorAduan}. Status saat dihapus: ${target.status}.`,
+      ipAddress: "127.0.0.1",
+    });
+
+    return true;
+  }
+
   // --- TPS METHODS ---
   public getTpsList(): MasterTPS[] {
     if (this.tpsList.length > 0) {

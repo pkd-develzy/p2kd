@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { FileSpreadsheet, Check, MessageSquare, Loader2 } from "lucide-react";
+import { FileSpreadsheet, Check, MessageSquare, Loader2, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge, PaginationControl } from "@/components/ui";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { Aduan } from "../types";
 
 interface TabAduanWargaProps {
@@ -12,6 +13,7 @@ interface TabAduanWargaProps {
   setSelectedAduanFilter: (filter: string) => void;
   onApproveAduan: (a: Aduan) => void | Promise<void>;
   onRejectAduan: (a: Aduan) => void | Promise<void>;
+  onDeleteAduan?: (a: Aduan) => void | Promise<void>;
 }
 
 export const TabAduanWarga: React.FC<TabAduanWargaProps> = ({
@@ -20,8 +22,11 @@ export const TabAduanWarga: React.FC<TabAduanWargaProps> = ({
   setSelectedAduanFilter,
   onApproveAduan,
   onRejectAduan,
+  onDeleteAduan,
 }) => {
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [deletingAduan, setDeletingAduan] = useState<Aduan | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const handleOpenWhatsApp = (a: Aduan) => {
     let cleanPhone = a.kontakPelapor.replace(/\D/g, "");
@@ -190,7 +195,7 @@ export const TabAduanWarga: React.FC<TabAduanWargaProps> = ({
                       <span>WhatsApp Warga</span>
                     </Button>
 
-                    {a.status === "MENUNGGU" && (
+                    {a.status === "MENUNGGU" ? (
                       <div className="flex items-center gap-1.5">
                         <Button
                           variant="primary"
@@ -241,6 +246,21 @@ export const TabAduanWarga: React.FC<TabAduanWargaProps> = ({
                           )}
                         </Button>
                       </div>
+                    ) : (
+                      onDeleteAduan && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isProcessing}
+                          onClick={() => setDeletingAduan(a)}
+                          className="text-xs border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 font-bold transition-all shadow-xs cursor-pointer"
+                          title="Hapus riwayat laporan yang sudah selesai"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-500" />
+                          <span>Hapus Laporan</span>
+                        </Button>
+                      )
                     )}
                   </div>
                 </div>
@@ -260,6 +280,36 @@ export const TabAduanWarga: React.FC<TabAduanWargaProps> = ({
           </div>
         )}
       </div>
+
+      {/* Modal Dialog Konfirmasi Hapus Laporan Aduan */}
+      <ConfirmDialog
+        isOpen={!!deletingAduan}
+        isLoading={isDeleting}
+        options={
+          deletingAduan
+            ? {
+                title: "Hapus Laporan Aduan?",
+                message: `Apakah Anda yakin ingin menghapus data laporan ${deletingAduan.nomorAduan} (${deletingAduan.namaPelapor})? Laporan yang sudah selesai ini akan dihapus secara permanen dari basis data sistem.`,
+                variant: "danger",
+                confirmText: "Ya, Hapus Permanen",
+                cancelText: "Batal",
+              }
+            : null
+        }
+        onConfirm={async () => {
+          if (!deletingAduan || !onDeleteAduan) return;
+          setIsDeleting(true);
+          try {
+            await onDeleteAduan(deletingAduan);
+            setDeletingAduan(null);
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+        onCancel={() => {
+          if (!isDeleting) setDeletingAduan(null);
+        }}
+      />
     </div>
   );
 };

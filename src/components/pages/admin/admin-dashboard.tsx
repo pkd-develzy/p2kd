@@ -841,6 +841,30 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteAduan = async (a: Aduan) => {
+    const targetKey = a.id || a.nomorAduan;
+    // 1. Instant Optimistic UI Update (< 1ms)
+    setAduanList((prev) =>
+      prev.filter((item) => item.id !== targetKey && item.nomorAduan !== a.nomorAduan)
+    );
+
+    try {
+      const res = await fetch(`/api/admin/aduan?id=${encodeURIComponent(targetKey)}`, {
+        method: "DELETE",
+      });
+      const result = await res.json();
+      if (result.success) {
+        toast.success("Laporan Dihapus", `Laporan aduan ${a.nomorAduan} berhasil dihapus.`);
+      } else {
+        toast.error("Gagal Menghapus", result.message || "Tidak dapat menghapus aduan.");
+        fetchData();
+      }
+    } catch {
+      toast.error("Kesalahan Jaringan", "Tidak dapat menghapus aduan.");
+      fetchData();
+    }
+  };
+
   // --- COKLIT HANDLER ---
   const handleUpdateCoklitStatus = async (
     voterId: string,
@@ -1238,6 +1262,7 @@ export const AdminDashboard: React.FC = () => {
               setSelectedAduanFilter={setSelectedAduanFilter}
               onApproveAduan={handleApproveAduan}
               onRejectAduan={handleRejectAduan}
+              onDeleteAduan={handleDeleteAduan}
             />
           )}
 

@@ -1558,6 +1558,22 @@ export class SupabaseDbService {
     }
   }
 
+  public static async deleteAduan(id: string) {
+    try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      if (isUuid) {
+        await this.adminClient.from("aduan_pemilih").delete().eq("id", id);
+      } else {
+        const res = await this.adminClient.from("aduan_pemilih").delete().eq("nomor_aduan", id);
+        if (res.error) {
+          await this.adminClient.from("aduan_pemilih").delete().eq("id", id);
+        }
+      }
+    } catch (err) {
+      console.warn("Supabase deleteAduan sync failed:", err);
+    }
+  }
+
   public static async updateVoteCount(nomorTps: string, data: { suaraKandidat: Record<number, number>; suaraTidakSah: number; statusPlenoTps: string }) {
     try {
       this.invalidateCache();

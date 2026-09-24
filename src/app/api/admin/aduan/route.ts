@@ -74,3 +74,51 @@ export async function PUT(req: Request) {
     );
   }
 }
+
+export async function DELETE(req: Request) {
+  try {
+    const session = verifyAdminSession(req);
+    if (!session.authenticated || !session.user) {
+      return session.response!;
+    }
+
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get("id");
+
+    if (!id) {
+      try {
+        const body = await req.json();
+        id = body.id;
+      } catch {}
+    }
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, message: "ID atau Nomor aduan wajib disertakan." },
+        { status: 400 }
+      );
+    }
+
+    const deleted = await dataStore.deleteAduan(
+      id,
+      session.user.nama || session.user.username
+    );
+
+    if (!deleted) {
+      return NextResponse.json(
+        { success: false, message: "Aduan tidak ditemukan atau sudah dihapus." },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Laporan aduan berhasil dihapus secara permanen.",
+    });
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Gagal menghapus laporan aduan." },
+      { status: 500 }
+    );
+  }
+}

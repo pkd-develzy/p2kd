@@ -66,7 +66,9 @@ export const getSupabaseSeksi1Admin = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_SEKSI1_URL || process.env.SUPABASE_SEKSI1_URL || supabaseSeksi1Url;
   const key = process.env.SUPABASE_SEKSI1_SERVICE_ROLE_KEY || process.env.SUPABASE_SEKSI1_SECRET_KEY || supabaseSeksi1ServiceKey;
   if (!key) {
-    return getSupabaseAdmin();
+    throw new Error(
+      "[STRICT ISOLATION FATAL ERROR] SUPABASE_SEKSI1_SERVICE_ROLE_KEY is missing! Seksi 1 & Pantarlih database is strictly isolated and forbidden from querying the old server."
+    );
   }
   return createClient(url, key, {
     auth: {

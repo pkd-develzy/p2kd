@@ -271,7 +271,12 @@ export class SupabaseDbService {
   private static seksi1AdminClient = getSupabaseSeksi1Admin();
 
   public static getSeksi1Client() {
-    return this.seksi1AdminClient || this.adminClient;
+    if (!this.seksi1AdminClient) {
+      throw new Error(
+        "[STRICT ISOLATION FATAL ERROR] Seksi 1 Client (ewzhaldoxepheugxjquz) is not initialized! Seksi 1 & Pantarlih operations are strictly forbidden from querying the old server."
+      );
+    }
+    return this.seksi1AdminClient;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static cachedResult: any = null;

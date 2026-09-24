@@ -79,7 +79,12 @@ export async function GET(req: Request) {
       });
     }
 
-    // 2. Prioritaskan In-Memory Cache (0 Bytes Egress Supabase & Respon Sub-Milidetik)
+    // 2. Kalkulasi Pagination
+    const page = pageParam ? Math.max(1, parseInt(pageParam, 10)) : 1;
+    const limit = limitParam ? Math.min(10000, Math.max(1, parseInt(limitParam, 10))) : 10000;
+    const offset = (page - 1) * limit;
+
+    // Prioritaskan In-Memory Cache (0 Bytes Egress Supabase & Respon Sub-Milidetik)
     const localPemilih = dataStore.getPemilihList({
       tps: cleanTps,
       status: cleanStatus,

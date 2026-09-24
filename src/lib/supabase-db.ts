@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "./supabase";
+import { getSupabaseAdmin, getSupabaseSeksi1Admin } from "./supabase";
 import {
   MasterPemilih,
   MasterAduan,
@@ -268,6 +268,11 @@ interface SupabaseTahapanRow {
  */
 export class SupabaseDbService {
   private static adminClient = getSupabaseAdmin();
+  private static seksi1AdminClient = getSupabaseSeksi1Admin();
+
+  public static getSeksi1Client() {
+    return this.seksi1AdminClient || this.adminClient;
+  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static cachedResult: any = null;
   private static lastCacheTimestamp = 0;
@@ -309,7 +314,7 @@ export class SupabaseDbService {
     }
 
     try {
-      const client = this.adminClient;
+      const client = this.getSeksi1Client();
       // Parallel fast HEAD count queries
       const [
         resTotal,
@@ -384,7 +389,7 @@ export class SupabaseDbService {
         petugasRes,
         beritaRes,
       ] = await Promise.all([
-        client.from("tps").select("*").order("nomor_tps"),
+        this.getSeksi1Client().from("tps").select("*").order("nomor_tps"),
         this.fetchAllPemilih(),
         client.from("anggota_p2kd").select("*"),
         client.from("balon_penjaringan").select("*"),
@@ -395,7 +400,7 @@ export class SupabaseDbService {
         client.from("pengumuman").select("*").order("created_at", { ascending: false }),
         client.from("web_config").select("*").limit(1),
         client.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100),
-        client.from("pendaftaran_petugas_dpt").select("*").order("tanggal_pendaftaran", { ascending: false }),
+        this.getSeksi1Client().from("pendaftaran_petugas_dpt").select("*").order("tanggal_pendaftaran", { ascending: false }),
         client.from("berita_artikel").select("*").order("created_at", { ascending: false }),
       ]);
 
@@ -720,7 +725,7 @@ export class SupabaseDbService {
       const clean = String(nik || "").replace(/[^0-9]/g, "");
       if (clean.length !== 16) return null;
 
-      const { data, error } = await this.adminClient
+      const { data, error } = await this.getSeksi1Client()
         .from("pemilih")
         .select("*")
         .eq("nik", clean)
@@ -750,7 +755,7 @@ export class SupabaseDbService {
     }
 
     try {
-      let countQuery = this.adminClient
+      let countQuery = this.getSeksi1Client()
         .from("pemilih")
         .select("*", { count: "exact", head: true });
 
@@ -774,7 +779,7 @@ export class SupabaseDbService {
       for (let i = 0; i < totalPages; i++) {
         const from = i * pageSize;
         const to = from + pageSize - 1;
-        let q = this.adminClient
+        let q = this.getSeksi1Client()
           .from("pemilih")
           .select("*")
           .order("nama_lengkap")
@@ -828,7 +833,7 @@ export class SupabaseDbService {
         }
       }
 
-      let q = this.adminClient
+      let q = this.getSeksi1Client()
         .from("pemilih")
         .select("*", { count: "exact" })
         .order("nama_lengkap")
@@ -864,7 +869,7 @@ export class SupabaseDbService {
       const clean = query.trim();
       if (!clean) return [];
       const limit = options?.limit || 200;
-      let q = this.adminClient
+      let q = this.getSeksi1Client()
         .from("pemilih")
         .select("*")
         .order("nama_lengkap")
@@ -900,7 +905,7 @@ export class SupabaseDbService {
     try {
       if (!ids || ids.length === 0) return { success: false, count: 0 };
 
-      const { data, error } = await this.adminClient
+      const { data, error } = await this.getSeksi1Client()
         .from("pemilih")
         .update({
           tahap: targetTahap,
@@ -961,7 +966,7 @@ export class SupabaseDbService {
         payload.tahap = "DPT"; // Otomatis promosikan ke DPT
       }
 
-      const { error } = await this.adminClient
+      const { error } = await this.getSeksi1Client()
         .from("pemilih")
         .update(payload)
         .eq("id", voterId);
@@ -996,7 +1001,7 @@ export class SupabaseDbService {
    */
   public static async findPemilihForC6Verification(id?: string, nik?: string): Promise<MasterPemilih | null> {
     try {
-      const client = this.adminClient;
+      const client = this.getSeksi1Client();
       let query = client.from("pemilih").select("*").limit(1);
 
       if (id) {
@@ -1110,7 +1115,7 @@ export class SupabaseDbService {
   public static async insertPemilih(data: MasterPemilih) {
     try {
       this.invalidateCache();
-      await this.adminClient.from("pemilih").insert({
+      await this.getSeksi1Client().from("pemilih").insert({
         id: data.id,
         nik: data.nik,
         no_kk: data.kk,
@@ -1159,7 +1164,7 @@ export class SupabaseDbService {
           alasan_tms: data.alasanTms,
           coklit_status: data.coklitStatus || "BELUM_COKLIT",
         }));
-        await this.adminClient.from("pemilih").insert(rows);
+        await this.getSeksi1Client().from("pemilih").insert(rows);
       }
     } catch (err) {
       console.warn("Supabase insertPemilihBatch sync failed:", err);
@@ -1184,7 +1189,7 @@ export class SupabaseDbService {
       if (data.coklitCatatan !== undefined) payload.coklit_catatan = data.coklitCatatan;
       if (data.coklitPetugas !== undefined) payload.coklit_petugas = data.coklitPetugas;
 
-      await this.adminClient.from("pemilih").update(payload).eq("id", id);
+      await this.getSeksi1Client().from("pemilih").update(payload).eq("id", id);
     } catch (err) {
       console.warn("Supabase updatePemilih sync failed:", err);
     }
@@ -1193,7 +1198,7 @@ export class SupabaseDbService {
   public static async deletePemilih(id: string): Promise<boolean> {
     try {
       this.invalidateCache();
-      const { error } = await this.adminClient.from("pemilih").delete().eq("id", id);
+      const { error } = await this.getSeksi1Client().from("pemilih").delete().eq("id", id);
       if (error) {
         console.error("Supabase deletePemilih error:", error);
         return false;
@@ -1208,7 +1213,7 @@ export class SupabaseDbService {
   public static async insertTps(data: MasterTPS) {
     try {
       this.invalidateCache();
-      await this.adminClient.from("tps").insert({
+      await this.getSeksi1Client().from("tps").insert({
         id: data.id,
         kode_tps: data.kodeTps,
         nomor_tps: data.nomorTps,
@@ -1239,7 +1244,7 @@ export class SupabaseDbService {
       if (data.kuotaMaksimal !== undefined) payload.kuota_maksimal = data.kuotaMaksimal;
       if (data.status) payload.status = data.status;
 
-      await this.adminClient.from("tps").update(payload).eq("id", id);
+      await this.getSeksi1Client().from("tps").update(payload).eq("id", id);
     } catch (err) {
       console.warn("Supabase updateTps sync failed:", err);
     }
@@ -1248,7 +1253,7 @@ export class SupabaseDbService {
   public static async deleteTps(id: string): Promise<boolean> {
     try {
       this.invalidateCache();
-      const { error } = await this.adminClient.from("tps").delete().eq("id", id);
+      const { error } = await this.getSeksi1Client().from("tps").delete().eq("id", id);
       if (error) {
         console.error("Supabase deleteTps error:", error);
         return false;
@@ -1378,7 +1383,7 @@ export class SupabaseDbService {
         updated_at: data.updatedAt || new Date().toISOString(),
       };
 
-      const { error } = await this.adminClient.from("pendaftaran_petugas_dpt").insert(payload);
+      const { error } = await this.getSeksi1Client().from("pendaftaran_petugas_dpt").insert(payload);
       if (error) {
         console.error("Supabase insertPetugasDpt error:", error);
         return false;
@@ -1445,7 +1450,7 @@ export class SupabaseDbService {
         payload.assigned_wilayah = data.assignedWilayah;
       }
 
-      const { error } = await this.adminClient.from("pendaftaran_petugas_dpt").update(payload).eq("id", id);
+      const { error } = await this.getSeksi1Client().from("pendaftaran_petugas_dpt").update(payload).eq("id", id);
       if (error) {
         console.error("Supabase updatePetugasDpt error:", error);
         return false;
@@ -1460,7 +1465,7 @@ export class SupabaseDbService {
   public static async deletePetugasDpt(id: string): Promise<boolean> {
     try {
       this.invalidateCache();
-      const { error } = await this.adminClient.from("pendaftaran_petugas_dpt").delete().eq("id", id);
+      const { error } = await this.getSeksi1Client().from("pendaftaran_petugas_dpt").delete().eq("id", id);
       if (error) {
         console.error("Supabase deletePetugasDpt error:", error);
         return false;

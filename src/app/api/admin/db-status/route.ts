@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { getSupabaseAdmin, getSupabaseSeksi1Admin } from "@/lib/supabase";
 import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 
@@ -21,12 +21,13 @@ export async function GET(req: Request) {
     try {
       const startTime = Date.now();
       const client = getSupabaseAdmin();
+      const seksi1Client = getSupabaseSeksi1Admin();
 
-      // Parallelize queries to measure true network latency and eliminate sequential roundtrip delays
+      // Parallelize queries across both databases to measure true network latency
       const [pemRes, agtRes, tpsRes] = await Promise.all([
-        client.from("pemilih").select("*", { count: "exact", head: true }),
+        seksi1Client.from("pemilih").select("*", { count: "exact", head: true }),
         client.from("anggota_p2kd").select("*", { count: "exact", head: true }),
-        client.from("tps").select("*", { count: "exact", head: true }),
+        seksi1Client.from("tps").select("*", { count: "exact", head: true }),
       ]);
 
       latencyMs = Date.now() - startTime;

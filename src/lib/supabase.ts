@@ -1,14 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 
+// --- Primary Database (Public Portal & Panitia Umum) ---
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.SUPABASE_URL ||
-  "";
+  "https://apiastdpwrycnsbskpmy.supabase.co";
 
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "";
+  "anon-key";
 
 const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -25,11 +26,49 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // 2. Server-Side Admin Supabase Instance (Service Role Key for elevated backend operations)
 export const getSupabaseAdmin = () => {
-  if (!supabaseServiceKey) {
-    // Fallback to anon client if service key is not configured
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || supabaseUrl;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || supabaseServiceKey;
+  if (!key) {
     return supabase;
   }
-  return createClient(supabaseUrl, supabaseServiceKey, {
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+};
+
+// --- Dedicated Database (Seksi 1: Pendaftaran Pemilih & Pantarlih - ewzhaldoxepheugxjquz) ---
+const supabaseSeksi1Url =
+  process.env.NEXT_PUBLIC_SUPABASE_SEKSI1_URL ||
+  process.env.SUPABASE_SEKSI1_URL ||
+  "https://ewzhaldoxepheugxjquz.supabase.co";
+
+const supabaseSeksi1AnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_SEKSI1_ANON_KEY ||
+  process.env.SUPABASE_SEKSI1_PUBLISHABLE_KEY ||
+  "anon-key";
+
+const supabaseSeksi1ServiceKey =
+  process.env.SUPABASE_SEKSI1_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SEKSI1_SECRET_KEY ||
+  "";
+
+export const supabaseSeksi1 = createClient(supabaseSeksi1Url, supabaseSeksi1AnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
+
+export const getSupabaseSeksi1Admin = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_SEKSI1_URL || process.env.SUPABASE_SEKSI1_URL || supabaseSeksi1Url;
+  const key = process.env.SUPABASE_SEKSI1_SERVICE_ROLE_KEY || process.env.SUPABASE_SEKSI1_SECRET_KEY || supabaseSeksi1ServiceKey;
+  if (!key) {
+    return getSupabaseAdmin();
+  }
+  return createClient(url, key, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

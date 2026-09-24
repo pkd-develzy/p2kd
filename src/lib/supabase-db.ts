@@ -273,6 +273,9 @@ export class SupabaseDbService {
   private static lastCacheTimestamp = 0;
   private static CACHE_TTL = 60000; // 60 detik cache dalam memory
 
+  private static cachedPemilihList: MasterPemilih[] | null = null;
+  private static lastPemilihCacheTimestamp = 0;
+
   // In-memory cache for aggregate database counts (ultra-fast 0ms throughput)
   private static cachedAggregateStats: {
     timestamp: number;
@@ -291,6 +294,8 @@ export class SupabaseDbService {
     this.lastCacheTimestamp = 0;
     this.cachedResult = null;
     this.cachedAggregateStats = null;
+    this.cachedPemilihList = null;
+    this.lastPemilihCacheTimestamp = 0;
   }
 
   /**
@@ -734,6 +739,16 @@ export class SupabaseDbService {
    * Bypasses PostgREST default max-rows 1,000 cap!
    */
   public static async fetchAllPemilih(filter?: { tps?: string; statusAktif?: string }): Promise<MasterPemilih[]> {
+    const isUnfiltered =
+      !filter ||
+      ((!filter.tps || filter.tps === "SEMUA" || filter.tps.toUpperCase().includes("SEMUA")) &&
+        (!filter.statusAktif || filter.statusAktif === "SEMUA" || filter.statusAktif.toUpperCase().includes("SEMUA")));
+
+    const now = Date.now();
+    if (isUnfiltered && this.cachedPemilihList && now - this.lastPemilihCacheTimestamp < 120000) {
+      return this.cachedPemilihList;
+    }
+
     try {
       let countQuery = this.adminClient
         .from("pemilih")
@@ -782,7 +797,12 @@ export class SupabaseDbService {
         }
       }
 
-      return allRows.map((p) => this.mapSupabasePemilihRow(p));
+      const mapped = allRows.map((p) => this.mapSupabasePemilihRow(p));
+      if (isUnfiltered && mapped.length > 0) {
+        this.cachedPemilihList = mapped;
+        this.lastPemilihCacheTimestamp = Date.now();
+      }
+      return mapped;
     } catch (err) {
       console.warn("fetchAllPemilih batch failed:", err);
       return [];

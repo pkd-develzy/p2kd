@@ -341,8 +341,8 @@ export const AdminDashboard: React.FC = () => {
         fetch("/api/admin/tps", { cache: "no-store" }),
         fetch("/api/admin/audit", { cache: "no-store" }),
         fetch("/api/admin/db-status", { cache: "no-store" }),
-        fetch("/api/admin/anggota?refresh=true", { cache: "no-store" }),
-        fetch("/api/admin/petugas-dpt?refresh=true", { cache: "no-store" }),
+        fetch("/api/admin/anggota", { cache: "no-store" }),
+        fetch("/api/admin/petugas-dpt", { cache: "no-store" }),
       ]);
 
       const [

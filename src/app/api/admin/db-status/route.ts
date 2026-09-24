@@ -48,7 +48,9 @@ export async function GET(req: Request) {
     }
   }
 
-  await dataStore.ensureSynced();
+  if (!dataStore.isCloudConnected()) {
+    await dataStore.ensureSynced();
+  }
   const localStats = dataStore.getStats();
 
   return NextResponse.json({

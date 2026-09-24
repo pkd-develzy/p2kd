@@ -102,7 +102,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   // Fetch Petugas List on initial load
   useEffect(() => {
     let isMounted = true;
-    fetch("/api/admin/petugas-dpt?refresh=true")
+    fetch("/api/admin/petugas-dpt")
       .then((res) => res.json())
       .then((json) => {
         if (isMounted) {

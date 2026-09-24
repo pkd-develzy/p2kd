@@ -1,4 +1,4 @@
-import { getSupabaseAdmin, getSupabaseSeksi1Admin } from "./supabase";
+import { getSupabaseAdmin, getSupabaseSeksi1Admin, getSupabaseServer3Admin } from "./supabase";
 import {
   MasterPemilih,
   MasterAduan,
@@ -269,6 +269,7 @@ interface SupabaseTahapanRow {
 export class SupabaseDbService {
   private static adminClient = getSupabaseAdmin();
   private static seksi1AdminClient = getSupabaseSeksi1Admin();
+  private static server3AdminClient = getSupabaseServer3Admin();
 
   public static getSeksi1Client() {
     if (!this.seksi1AdminClient) {
@@ -277,6 +278,15 @@ export class SupabaseDbService {
       );
     }
     return this.seksi1AdminClient;
+  }
+
+  public static getServer3Client() {
+    if (!this.server3AdminClient) {
+      throw new Error(
+        "[STRICT ISOLATION FATAL ERROR] Server 3 Client (msrefdzbexmkputwbyjc) is not initialized!"
+      );
+    }
+    return this.server3AdminClient;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static cachedResult: any = null;
@@ -378,7 +388,7 @@ export class SupabaseDbService {
 
       const client = this.adminClient;
 
-      // Parallel lightweight fetch of master tables and full voters (< 250ms total)
+      // Parallel lightweight fetch across 3 dedicated servers (< 250ms total)
       const [
         tpsRes,
         allPemilihList,
@@ -396,15 +406,15 @@ export class SupabaseDbService {
       ] = await Promise.all([
         this.getSeksi1Client().from("tps").select("*").order("nomor_tps"),
         this.fetchAllPemilih(),
-        client.from("anggota_p2kd").select("*"),
-        client.from("balon_penjaringan").select("*"),
-        client.from("kandidat_kades").select("*").order("nomor_urut"),
-        client.from("tps_vote_counts").select("*").order("nomor_tps"),
+        this.getServer3Client().from("anggota_p2kd").select("*"),
+        this.getServer3Client().from("balon_penjaringan").select("*"),
+        this.getServer3Client().from("kandidat_kades").select("*").order("nomor_urut"),
+        this.getServer3Client().from("tps_vote_counts").select("*").order("nomor_tps"),
         client.from("aduan_pemilih").select("*").order("created_at", { ascending: false }),
         client.from("tahapan").select("*"),
         client.from("pengumuman").select("*").order("created_at", { ascending: false }),
         client.from("web_config").select("*").limit(1),
-        client.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100),
+        this.getServer3Client().from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100),
         this.getSeksi1Client().from("pendaftaran_petugas_dpt").select("*").order("tanggal_pendaftaran", { ascending: false }),
         client.from("berita_artikel").select("*").order("created_at", { ascending: false }),
       ]);
@@ -926,8 +936,8 @@ export class SupabaseDbService {
 
       this.invalidateCache();
 
-      // Log Audit
-      await this.adminClient.from("audit_logs").insert({
+      // Log Audit to Server 3
+      await this.getServer3Client().from("audit_logs").insert({
         user_name: user,
         role: "ADMIN / SEKSI PEMILIH",
         aksi: targetTahap === "DPT" ? "VERIFIKASI_MASUK_DPT" : "KEMBALIKAN_KE_DPS",
@@ -983,8 +993,8 @@ export class SupabaseDbService {
 
       this.invalidateCache();
 
-      // Audit log
-      await this.adminClient.from("audit_logs").insert({
+      // Audit log to Server 3
+      await this.getServer3Client().from("audit_logs").insert({
         user_name: petugas,
         role: "KOORDINATOR_RW / PETUGAS",
         aksi: "COKLIT_STATUS_UPDATE",
@@ -1052,11 +1062,11 @@ export class SupabaseDbService {
     }
   }
 
-  // --- Async Write Operations to Supabase Cloud ---
+  // --- Async Write Operations to Server 3 (Panitia & Admin) ---
   public static async insertAnggota(data: MasterAnggotaP2KD) {
     try {
       this.invalidateCache();
-      await this.adminClient.from("anggota_p2kd").insert({
+      await this.getServer3Client().from("anggota_p2kd").insert({
         id: data.id,
         nama_lengkap: data.namaLengkap,
         nik: data.nik,
@@ -1096,7 +1106,7 @@ export class SupabaseDbService {
       if (data.fotoUrl !== undefined) updatePayload.foto_url = data.fotoUrl;
       if (data.passwordHash !== undefined) updatePayload.password_hash = data.passwordHash;
 
-      await this.adminClient.from("anggota_p2kd").update(updatePayload).eq("id", id);
+      await this.getServer3Client().from("anggota_p2kd").update(updatePayload).eq("id", id);
     } catch (err) {
       console.warn("Supabase updateAnggota background sync failed:", err);
     }
@@ -1105,7 +1115,7 @@ export class SupabaseDbService {
   public static async deleteAnggota(id: string): Promise<boolean> {
     try {
       this.invalidateCache();
-      const { error } = await this.adminClient.from("anggota_p2kd").delete().eq("id", id);
+      const { error } = await this.getServer3Client().from("anggota_p2kd").delete().eq("id", id);
       if (error) {
         console.error("Supabase deleteAnggota error:", error);
         return false;
@@ -1272,7 +1282,7 @@ export class SupabaseDbService {
 
   public static async insertAuditLog(log: AuditLogItem) {
     try {
-      await this.adminClient.from("audit_logs").insert({
+      await this.getServer3Client().from("audit_logs").insert({
         id: log.id,
         aksi: log.aksi,
         entity: log.entity,
@@ -1288,7 +1298,7 @@ export class SupabaseDbService {
 
   public static async insertBalon(data: MasterBalonPenjaringan) {
     try {
-      await this.adminClient.from("balon_penjaringan").insert({
+      await this.getServer3Client().from("balon_penjaringan").insert({
         id: data.id,
         nama_lengkap: data.namaLengkap,
         nik: data.nik,
@@ -1315,7 +1325,7 @@ export class SupabaseDbService {
       if (data.kelengkapan) payload.kelengkapan = data.kelengkapan;
       if (data.catatanPenjaringan !== undefined) payload.catatan_penjaringan = data.catatanPenjaringan;
 
-      await this.adminClient.from("balon_penjaringan").update(payload).eq("id", id);
+      await this.getServer3Client().from("balon_penjaringan").update(payload).eq("id", id);
     } catch (err) {
       console.warn("Supabase updateBalon sync failed:", err);
     }
@@ -1323,7 +1333,7 @@ export class SupabaseDbService {
 
   public static async deleteBalon(id: string) {
     try {
-      await this.adminClient.from("balon_penjaringan").delete().eq("id", id);
+      await this.getServer3Client().from("balon_penjaringan").delete().eq("id", id);
     } catch (err) {
       console.warn("Supabase deleteBalon sync failed:", err);
     }
@@ -1484,7 +1494,7 @@ export class SupabaseDbService {
 
   public static async insertKandidat(data: MasterKandidat) {
     try {
-      await this.adminClient.from("kandidat_kades").insert({
+      await this.getServer3Client().from("kandidat_kades").insert({
         id: data.id,
         nomor_urut: data.nomorUrut,
         nama_lengkap: data.namaLengkap,
@@ -1524,7 +1534,7 @@ export class SupabaseDbService {
       if (data.warnaTema !== undefined) payload.warna_tema = data.warnaTema;
       if (data.statusVerifikasi !== undefined) payload.status_verifikasi = data.statusVerifikasi;
 
-      await this.adminClient.from("kandidat_kades").update(payload).eq("id", id);
+      await this.getServer3Client().from("kandidat_kades").update(payload).eq("id", id);
     } catch (err) {
       console.warn("Supabase updateKandidat sync failed:", err);
     }
@@ -1532,7 +1542,7 @@ export class SupabaseDbService {
 
   public static async deleteKandidat(id: string) {
     try {
-      await this.adminClient.from("kandidat_kades").delete().eq("id", id);
+      await this.getServer3Client().from("kandidat_kades").delete().eq("id", id);
     } catch (err) {
       console.warn("Supabase deleteKandidat sync failed:", err);
     }
@@ -1601,7 +1611,7 @@ export class SupabaseDbService {
       const suaraMasuk = Object.values(data.suaraKandidat).reduce((a, b) => a + b, 0) + data.suaraTidakSah;
       const suaraSah = Object.values(data.suaraKandidat).reduce((a, b) => a + b, 0);
 
-      await this.adminClient.from("tps_vote_counts").upsert({
+      await this.getServer3Client().from("tps_vote_counts").upsert({
         id: `vote-${nomorTps}`,
         nomor_tps: nomorTps,
         suara_kandidat: data.suaraKandidat,

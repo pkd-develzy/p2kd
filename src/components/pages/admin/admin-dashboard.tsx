@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
-import { supabase, supabaseSeksi1 } from "@/lib/supabase";
+import { supabase, supabaseSeksi1, supabaseServer3 } from "@/lib/supabase";
 import { getAutoTabungByRtRw } from "@/lib/kalisalak-wilayah";
 
 import {
@@ -447,7 +447,7 @@ export const AdminDashboard: React.FC = () => {
 
   // 2. Realtime Background Sync (Supabase Realtime Channel + Smart Visibility-Aware Fallback Polling)
   useEffect(() => {
-    // A. Supabase Realtime Postgres Changes Channel (Main DB + Dedicated Seksi 1 DB)
+    // A. Supabase Realtime Postgres Changes Channel (All 3 isolated servers)
     const channelMain = supabase
       .channel("admin-dashboard-realtime")
       .on(
@@ -461,6 +461,17 @@ export const AdminDashboard: React.FC = () => {
 
     const channelSeksi1 = supabaseSeksi1
       .channel("admin-seksi1-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public" },
+        () => {
+          void fetchData();
+        }
+      )
+      .subscribe();
+
+    const channelServer3 = supabaseServer3
+      .channel("admin-server3-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public" },
@@ -490,6 +501,7 @@ export const AdminDashboard: React.FC = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       supabase.removeChannel(channelMain);
       supabaseSeksi1.removeChannel(channelSeksi1);
+      supabaseServer3.removeChannel(channelServer3);
     };
   }, [fetchData]);
 

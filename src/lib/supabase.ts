@@ -78,6 +78,45 @@ export const getSupabaseSeksi1Admin = () => {
   });
 };
 
+// --- Dedicated Database (Server 3: Dashboard Panitia / Seksi 2 & 3 Calon & Real Count - msrefdzbexmkputwbyjc) ---
+const supabaseServer3Url =
+  process.env.NEXT_PUBLIC_SUPABASE_SERVER3_URL ||
+  process.env.SUPABASE_SERVER3_URL ||
+  "https://msrefdzbexmkputwbyjc.supabase.co";
+
+const supabaseServer3AnonKey =
+  process.env.NEXT_PUBLIC_SUPABASE_SERVER3_ANON_KEY ||
+  process.env.SUPABASE_SERVER3_PUBLISHABLE_KEY ||
+  "anon-key";
+
+const supabaseServer3ServiceKey =
+  process.env.SUPABASE_SERVER3_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SERVER3_SECRET_KEY ||
+  "";
+
+export const supabaseServer3 = createClient(supabaseServer3Url, supabaseServer3AnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
+
+export const getSupabaseServer3Admin = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_SERVER3_URL || process.env.SUPABASE_SERVER3_URL || supabaseServer3Url;
+  const key = process.env.SUPABASE_SERVER3_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVER3_SECRET_KEY || supabaseServer3ServiceKey;
+  if (!key) {
+    throw new Error(
+      "[STRICT ISOLATION FATAL ERROR] SUPABASE_SERVER3_SERVICE_ROLE_KEY is missing! Panitia & Calon & Real Count database is strictly isolated."
+    );
+  }
+  return createClient(url, key, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+};
+
 // Database Schema Interfaces for Supabase Type Safety
 export interface Database {
   public: {

@@ -17,10 +17,12 @@ export async function sendTelegramNotification(
   message: string,
   replyMarkup?: {
     inline_keyboard: Array<Array<{ text: string; url?: string; callback_data?: string }>>;
-  }
+  },
+  threadId?: number | string
 ): Promise<TelegramNotificationResult> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
+  const targetThread = threadId ?? process.env.TELEGRAM_THREAD_ID;
 
   // Jika belum dikonfigurasi, lewati dengan aman tanpa menggagalkan request
   if (!token || !chatId) {
@@ -38,6 +40,14 @@ export async function sendTelegramNotification(
       parse_mode: "HTML",
       disable_web_page_preview: true,
     };
+
+    // Di Telegram, tautan topik General berakhiran /1 (misal: /3903989959/1).
+    // Namun Telegram Bot API menolak jika diberi message_thread_id: 1 ('message thread not found').
+    // Untuk topik 1 (General/Utama), payload tanpa message_thread_id akan otomatis masuk ke topik 1 tersebut.
+    const threadNum = targetThread ? Number(targetThread) : NaN;
+    if (!isNaN(threadNum) && threadNum > 1) {
+      payload.message_thread_id = threadNum;
+    }
 
     if (replyMarkup) {
       payload.reply_markup = replyMarkup;

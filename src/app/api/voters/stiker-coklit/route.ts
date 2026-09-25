@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore, MasterPemilih } from "@/lib/data-store";
+import { SupabaseDbService } from "@/lib/supabase-db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 
 export async function GET(req: Request) {
@@ -25,19 +26,21 @@ export async function GET(req: Request) {
       );
     }
 
-    await dataStore.ensureSynced();
-    const pemilihList: MasterPemilih[] = dataStore.getPemilihList();
-
-    // Find reference voter
     let targetVoter: MasterPemilih | null = null;
-    if (id) {
-      targetVoter = pemilihList.find((v: MasterPemilih) => v.id === id) || null;
+    if (nik) {
+      targetVoter = await SupabaseDbService.findPemilihDirect(nik);
     }
-    if (!targetVoter && nik) {
-      targetVoter = pemilihList.find((v: MasterPemilih) => v.nik === nik) || null;
-    }
-    if (!targetVoter && kk) {
-      targetVoter = pemilihList.find((v: MasterPemilih) => v.kk === kk) || null;
+    if (!targetVoter && (id || kk)) {
+      const q = SupabaseDbService.getSeksi1Client().from("pemilih").select("*");
+      if (id) {
+        q.eq("id", id);
+      } else if (kk) {
+        q.eq("no_kk", kk);
+      }
+      const { data } = await q.limit(1).maybeSingle();
+      if (data) {
+        targetVoter = SupabaseDbService.mapSupabasePemilihRow(data);
+      }
     }
 
     if (!targetVoter) {
@@ -50,9 +53,16 @@ export async function GET(req: Request) {
     // Find all family members with same KK in same RT/RW (or fallback to this voter)
     let familyVoters: MasterPemilih[] = [];
     if (targetVoter.kk && targetVoter.kk.trim().length > 5) {
-      familyVoters = pemilihList.filter(
-        (v: MasterPemilih) => v.kk === targetVoter.kk && v.rw === targetVoter.rw && v.statusAktif !== "TMS"
-      );
+      const { data } = await SupabaseDbService.getSeksi1Client()
+        .from("pemilih")
+        .select("*")
+        .eq("no_kk", targetVoter.kk)
+        .neq("status_aktif", "TMS")
+        .order("nama_lengkap");
+
+      if (data && Array.isArray(data)) {
+        familyVoters = data.map((p) => SupabaseDbService.mapSupabasePemilihRow(p));
+      }
     }
 
     if (familyVoters.length === 0) {

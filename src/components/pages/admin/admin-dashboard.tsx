@@ -7,6 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { supabase, supabaseSeksi1, supabaseServer3 } from "@/lib/supabase";
 import { getAutoTabungByRtRw } from "@/lib/kalisalak-wilayah";
+import {
+  fetchPemilihPaged,
+  searchPemilih,
+  clearDeviceSessionCache,
+  invalidateVoterCache,
+} from "@/lib/secure-device-cache";
 
 import {
   Voter,
@@ -223,10 +229,9 @@ export const AdminDashboard: React.FC = () => {
   }, []);
 
   // Data States initialized with persistent cache - strictly sanitized if unauthorized!
-  const [voters, setVoters] = useState<Voter[]>(() => {
-    if (!canAccessVoterDataUI) return [];
-    return initialCache?.voters || [];
-  });
+  // CATATAN KEAMANAN: Data pemilih TIDAK disimpan di localStorage (plain text dilarang).
+  // Data pemilih disimpan dan dibaca secara aman dari Encrypted IndexedDB (AES-GCM 256-bit).
+  const [voters, setVoters] = useState<Voter[]>([]);
   const [aduanList, setAduanList] = useState<Aduan[]>(() => initialCache?.aduanList || []);
   const [tpsList, setTpsList] = useState<TPSItem[]>(() => initialCache?.tpsList || []);
   const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>(() => initialCache?.anggotaList || []);
@@ -247,15 +252,24 @@ export const AdminDashboard: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("SEMUA");
   const [selectedAduanFilter, setSelectedAduanFilter] = useState("SEMUA");
 
-  // Instant 0ms RW Filter Switch with Background Synchronization
-  const handleSelectTpsFilter = useCallback((newTps: string) => {
+  // Instant 0ms RW Filter Switch with Background Synchronization via Encrypted IndexedDB
+  const handleSelectTpsFilter = useCallback(async (newTps: string) => {
     setSelectedTpsFilter(newTps);
     const effectiveNew = isAdmin ? newTps : assignedTps;
-    const cacheKey = `${effectiveNew}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      setVoters(rwVotersCacheRef.current[cacheKey]);
+    if (canAccessVoterDataUI) {
+      const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
+      const pagedRes = await fetchPemilihPaged(
+        0,
+        100,
+        {
+          tps: effectiveNew,
+          statusAktif: selectedStatusFilter,
+        },
+        userContext
+      );
+      setVoters(pagedRes.data);
     }
-  }, [isAdmin, assignedTps, selectedStatusFilter, setVoters]);
+  }, [isAdmin, assignedTps, selectedStatusFilter, canAccessVoterDataUI, currentUser, computedUserRole]);
 
   // Modal States
   const [showAddVoterModal, setShowAddVoterModal] = useState(false);
@@ -342,7 +356,6 @@ export const AdminDashboard: React.FC = () => {
   const fetchData = useCallback(async () => {
     try {
       const [
-        resVoters,
         resAduan,
         resTps,
         resAudit,
@@ -350,7 +363,6 @@ export const AdminDashboard: React.FC = () => {
         resAnggota,
         resPetugas,
       ] = await Promise.all([
-        fetch(`/api/admin/pemilih?tps=${effectiveTps}&status=${selectedStatusFilter}&role=${isAdmin ? "admin" : "petugas"}&assignedTps=${encodeURIComponent(assignedTps)}`, { cache: "no-store" }),
         fetch("/api/admin/aduan", { cache: "no-store" }),
         fetch("/api/admin/tps", { cache: "no-store" }),
         fetch("/api/admin/audit", { cache: "no-store" }),
@@ -360,7 +372,6 @@ export const AdminDashboard: React.FC = () => {
       ]);
 
       const [
-        dataVoters,
         dataAduan,
         dataTps,
         dataAudit,
@@ -368,7 +379,6 @@ export const AdminDashboard: React.FC = () => {
         dataAnggota,
         dataPetugas,
       ] = await Promise.all([
-        resVoters.json(),
         resAduan.json(),
         resTps.json(),
         resAudit.json(),
@@ -377,15 +387,24 @@ export const AdminDashboard: React.FC = () => {
         resPetugas.json(),
       ]);
 
-      if (resVoters.status === 401 || resAduan.status === 401 || resTps.status === 401) {
+      if (resAduan.status === 401 || resTps.status === 401) {
         toast.error("Sesi Berakhir", "Sesi autentikasi Anda telah berakhir. Silakan masuk kembali.");
         router.push("/admin");
         return;
       }
 
-      if (dataVoters.success && canAccessVoterDataUI) {
-        rwVotersCacheRef.current[`${effectiveTps}_${selectedStatusFilter}`] = dataVoters.data;
-        setVoters(dataVoters.data);
+      if (canAccessVoterDataUI) {
+        const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
+        const pagedRes = await fetchPemilihPaged(
+          0,
+          100,
+          {
+            tps: effectiveTps,
+            statusAktif: selectedStatusFilter,
+          },
+          userContext
+        );
+        setVoters(pagedRes.data);
       } else {
         setVoters([]);
       }
@@ -511,14 +530,14 @@ export const AdminDashboard: React.FC = () => {
     };
   }, [fetchData]);
 
-  // 3. Auto-persist Dashboard Data to LocalStorage (Instant 0ms on Browser Restart / Refresh)
+  // 3. Auto-persist Non-Sensitive Dashboard Data to LocalStorage (Instant 0ms on Browser Restart / Refresh)
+  // PERHATIAN: Data pemilih SENSITIF TIDAK disimpan di localStorage (menggunakan IndexedDB terenkripsi).
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
         localStorage.setItem(
           "p2kd_admin_dashboard_cache",
           JSON.stringify({
-            voters: canAccessVoterDataUI ? voters : [],
             aduanList: canAccessVoterDataUI ? aduanList : [],
             tpsList,
             anggotaList,
@@ -537,7 +556,6 @@ export const AdminDashboard: React.FC = () => {
   }, [
     canAccessVoterDataUI,
     isAdmin,
-    voters,
     aduanList,
     tpsList,
     anggotaList,
@@ -548,22 +566,71 @@ export const AdminDashboard: React.FC = () => {
     nomorBeritaAcara,
   ]);
 
+  // 4. Server-Side Debounced Search via Encrypted Cache & PostgreSQL
+  useEffect(() => {
+    if (!canAccessVoterDataUI) return;
+    const cleanSearch = searchTerm.trim();
+    if (!cleanSearch) {
+      void fetchData();
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
+      const results = await searchPemilih(cleanSearch, { tps: effectiveTps }, userContext);
+      setVoters(results);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, canAccessVoterDataUI, currentUser, computedUserRole, effectiveTps, fetchData]);
+
+  // 5. Cross-Tab Synchronization Listener (BroadcastChannel: Logout & Invalidation)
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+
+    try {
+      const channel = new BroadcastChannel("p2kd_secure_vault_sync");
+      channel.onmessage = (event) => {
+        if (event.data?.type === "LOGOUT") {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user_data");
+          localStorage.removeItem("p2kd_admin_dashboard_cache");
+          sessionStorage.removeItem("admin_token");
+          router.replace("/admin");
+        } else if (event.data?.type === "CACHE_INVALIDATED") {
+          void fetchData();
+        }
+      };
+
+      return () => {
+        channel.close();
+      };
+    } catch {
+      // Ignored if restricted
+    }
+  }, [router, fetchData]);
+
+  // Logout Handler: Wajib menggunakan blok finally untuk menjamin penghapusan cache terenkripsi & kunci
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/auth/logout", { method: "POST" });
     } catch {
-      // ignore network errors on logout
-    }
+      // Abaikan kegagalan jaringan saat logout
+    } finally {
+      // 1. Hapus seluruh ciphertext & CryptoKey dari IndexedDB
+      await clearDeviceSessionCache();
 
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_user_data");
-      localStorage.removeItem("p2kd_admin_dashboard_cache");
-      sessionStorage.removeItem("admin_token");
-    }
+      // 2. Hapus token sesi dari browser
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_user_data");
+        localStorage.removeItem("p2kd_admin_dashboard_cache");
+        sessionStorage.removeItem("admin_token");
+      }
 
-    toast.info("Sesi Berakhir", "Anda telah keluar dari Portal Petugas.");
-    router.replace("/admin");
+      toast.info("Sesi Berakhir", "Anda telah keluar dari Portal Petugas.");
+      router.replace("/admin");
+    }
   };
 
   // --- CRUD HANDLERS (OPTIMISTIC & ASYNCHRONOUS BACKGROUND SYNC) ---
@@ -631,6 +698,7 @@ export const AdminDashboard: React.FC = () => {
               v.id === tempId ? { ...v, id: realId } : v
             );
           }
+          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
         } else if (!result.success) {
           setVoters((prev) => prev.filter((v) => v.id !== tempId));
           toast.error("Gagal Menyimpan di Server", result.message || "Data dibatalkan.");
@@ -713,7 +781,9 @@ export const AdminDashboard: React.FC = () => {
           }),
         });
         const result = await res.json();
-        if (!result.success) {
+        if (result.success) {
+          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+        } else {
           setVoters((prev) =>
             prev.map((v) => (v.id === activeVoter.id ? previousVoter : v))
           );
@@ -777,7 +847,9 @@ export const AdminDashboard: React.FC = () => {
           { method: "DELETE" }
         );
         const result = await res.json();
-        if (!result.success) {
+        if (result.success) {
+          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+        } else {
           toast.error("Gagal di Server", "Tidak dapat memproses status TMS.");
         }
       } catch (err) {
@@ -824,7 +896,9 @@ export const AdminDashboard: React.FC = () => {
           body: JSON.stringify({ tpsBaru, rtBaru, rwBaru, user: currentUser }),
         });
         const result = await res.json();
-        if (!result.success) {
+        if (result.success) {
+          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+        } else {
           toast.error("Gagal Mutasi di Server", "Tidak dapat memproses mutasi Tabung.");
         }
       } catch (err) {
@@ -858,7 +932,9 @@ export const AdminDashboard: React.FC = () => {
             method: "DELETE",
           });
           const result = await res.json();
-          if (!result.success) {
+          if (result.success) {
+            await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+          } else {
             toast.error("Gagal Hapus di Server", "Tidak dapat menghapus data.");
           }
         } catch (err) {
@@ -893,7 +969,9 @@ export const AdminDashboard: React.FC = () => {
           body: JSON.stringify({ ids, targetTahap: "DPT", user: currentUser }),
         });
         const result = await res.json();
-        if (!result.success) {
+        if (result.success) {
+          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+        } else {
           toast.error("Gagal Sinkronisasi DPT", result.message || "Tidak dapat memindahkan data di server.");
         }
       } catch (err) {
@@ -926,7 +1004,9 @@ export const AdminDashboard: React.FC = () => {
           body: JSON.stringify({ ids, targetTahap: "DPS", user: currentUser }),
         });
         const result = await res.json();
-        if (!result.success) {
+        if (result.success) {
+          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+        } else {
           toast.error("Gagal Rollback di Server", result.message || "Tidak dapat mengembalikan data.");
         }
       } catch (err) {
@@ -1099,7 +1179,9 @@ export const AdminDashboard: React.FC = () => {
           }),
         });
         const result = await res.json();
-        if (!result.success) {
+        if (result.success) {
+          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+        } else {
           toast.error("Gagal Sinkronisasi Coklit", result.message);
         }
       } catch (err) {

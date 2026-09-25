@@ -55,66 +55,52 @@ export async function GET(req: Request) {
     const cleanTps = tps && tps !== "SEMUA" && !tps.toUpperCase().includes("SEMUA") ? tps : undefined;
     const cleanStatus = status && status !== "SEMUA" && !status.toUpperCase().includes("SEMUA") ? status : undefined;
 
-    // 1. Search Query: Instant indexed PostgreSQL database search (< 30ms)
+    const tahap = searchParams.get("tahap") || undefined;
+    const cleanTahap = tahap && tahap !== "SEMUA" && !tahap.toUpperCase().includes("SEMUA") ? tahap : undefined;
+    const offsetParam = searchParams.get("offset");
+
+    // Batas aman: default 100, max 200
+    const limit = limitParam ? Math.min(200, Math.max(1, parseInt(limitParam, 10))) : 100;
+
+    // 1. Search Query: Server-side search di PostgreSQL/Supabase (< 30ms)
     if (search && search.trim().length > 0) {
-      const searchResults = await SupabaseDbService.searchPemilih(search.trim(), { tps: cleanTps, limit: 500 });
-      if (searchResults.length > 0) {
-        return NextResponse.json({
-          success: true,
-          total: searchResults.length,
-          isRestricted: isFieldOfficer,
-          assignedTps: isFieldOfficer ? tps : undefined,
-          data: searchResults,
-        });
-      }
-      // Fallback to dataStore search in memory
-      await dataStore.ensureSynced();
-      const localResults = dataStore.getPemilihList({ tps: cleanTps, status: cleanStatus, search: search.trim() });
+      const searchResults = await SupabaseDbService.searchPemilih(search.trim(), {
+        tps: cleanTps,
+        limit,
+      });
+
       return NextResponse.json({
         success: true,
-        total: localResults.length,
+        total: searchResults.length,
+        limit,
         isRestricted: isFieldOfficer,
         assignedTps: isFieldOfficer ? tps : undefined,
-        data: localResults,
+        data: searchResults,
       });
     }
 
-    // 2. Kalkulasi Pagination
+    // 2. Server-side Pagination: Range query PostgreSQL
     const page = pageParam ? Math.max(1, parseInt(pageParam, 10)) : 1;
-    const limit = limitParam ? Math.min(10000, Math.max(1, parseInt(limitParam, 10))) : 10000;
-    const offset = (page - 1) * limit;
+    const offset = offsetParam !== null ? Math.max(0, parseInt(offsetParam, 10)) : (page - 1) * limit;
 
-    // Prioritaskan In-Memory Cache (0 Bytes Egress Supabase & Respon Sub-Milidetik)
-    const localPemilih = dataStore.getPemilihList({
+    const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
       tps: cleanTps,
-      status: cleanStatus,
+      statusAktif: cleanStatus,
+      tahap: cleanTahap,
     });
 
-    let votersData = [];
-    let totalCount = 0;
-
-    if (localPemilih.length > 0) {
-      totalCount = localPemilih.length;
-      votersData = localPemilih.slice(offset, offset + limit);
-    } else {
-      // Fallback ke Supabase jika server baru saja cold-start dan memori masih kosong
-      const pagedResult = await SupabaseDbService.fetchPemilihPaged(offset, limit, {
-        tps: cleanTps,
-        statusAktif: cleanStatus,
-      });
-      votersData = pagedResult.data;
-      totalCount = pagedResult.total;
-    }
+    const totalCount = pagedResult.total;
 
     return NextResponse.json({
       success: true,
       total: totalCount,
       page,
       limit,
+      offset,
       totalPages: Math.ceil(totalCount / limit) || 1,
       isRestricted: isFieldOfficer,
       assignedTps: isFieldOfficer ? tps : undefined,
-      data: votersData,
+      data: pagedResult.data,
     });
   } catch (err) {
     console.error("Error in GET /api/admin/pemilih:", err);

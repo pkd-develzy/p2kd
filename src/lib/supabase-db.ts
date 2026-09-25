@@ -394,10 +394,11 @@ export class SupabaseDbService {
 
       const client = this.adminClient;
 
-      // Parallel lightweight fetch across 3 dedicated servers (< 250ms total)
+      // Parallel lightweight fetch across 3 dedicated servers (< 100ms total)
+      // Data pemilih TIDAK dimuat di sini agar initial load ringan (< 50KB).
+      // Data pemilih di-load on-demand via fetchPemilihPaged / searchPemilih / Encrypted IndexedDB.
       const [
         tpsRes,
-        allPemilihList,
         anggotaRes,
         balonRes,
         kandidatRes,
@@ -411,7 +412,6 @@ export class SupabaseDbService {
         beritaRes,
       ] = await Promise.all([
         this.getSeksi1Client().from("tps").select("*").order("nomor_tps"),
-        this.fetchAllPemilih(),
         this.getServer3Client().from("anggota_p2kd").select("*"),
         this.getServer3Client().from("balon_penjaringan").select("*"),
         this.getServer3Client().from("kandidat_kades").select("*").order("nomor_urut"),
@@ -456,7 +456,7 @@ export class SupabaseDbService {
         return numA - numB;
       });
 
-      const pemilihList: MasterPemilih[] = Array.isArray(allPemilihList) ? allPemilihList : [];
+      const pemilihList: MasterPemilih[] = [];
 
       const anggotaList: MasterAnggotaP2KD[] = ((anggotaData as SupabaseAnggotaRow[]) || []).map((a) => ({
         id: a.id,
@@ -761,104 +761,16 @@ export class SupabaseDbService {
   }
 
   /**
-   * Fetch ALL voters across all 1,000-row chunks in parallel (< 250ms)
-   * Bypasses PostgREST default max-rows 1,000 cap!
+   * Fetch voters with strict safeguard to prevent massive 10,000-row memory dump.
+   * Digunakan untuk keperluan legacy/spesifik (misal 1 TPS) dengan batas aman.
    */
   public static async fetchAllPemilih(filter?: { tps?: string; statusAktif?: string }): Promise<MasterPemilih[]> {
-    const isUnfiltered =
-      !filter ||
-      ((!filter.tps || filter.tps === "SEMUA" || filter.tps.toUpperCase().includes("SEMUA")) &&
-        (!filter.statusAktif || filter.statusAktif === "SEMUA" || filter.statusAktif.toUpperCase().includes("SEMUA")));
-
-    const now = Date.now();
-    if (isUnfiltered && this.cachedPemilihList && now - this.lastPemilihCacheTimestamp < 120000) {
-      return this.cachedPemilihList;
-    }
-
     try {
-      let countQuery = this.getSeksi1Client()
-        .from("pemilih")
-        .select("*", { count: "exact", head: true });
-
-      if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
-        countQuery = countQuery.eq("tps", filter.tps);
-      }
-      if (filter?.statusAktif && filter.statusAktif !== "SEMUA" && !filter.statusAktif.toUpperCase().includes("SEMUA")) {
-        countQuery = countQuery.eq("status_aktif", filter.statusAktif);
-      }
-
-      const { count, error: countErr } = await countQuery;
-      if (countErr) {
-        console.warn("fetchAllPemilih count error:", countErr.message);
-      }
-
-      const totalCount = count && count > 0 ? count : 8000;
-      const pageSize = 1000;
-      const totalPages = Math.ceil(totalCount / pageSize);
-
-      const promises = [];
-      for (let i = 0; i < totalPages; i++) {
-        const from = i * pageSize;
-        const to = from + pageSize - 1;
-        let q = this.getSeksi1Client()
-          .from("pemilih")
-          .select("*")
-          .order("nama_lengkap")
-          .range(from, to);
-
-        if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
-          q = q.eq("tps", filter.tps);
-        }
-        if (filter?.statusAktif && filter.statusAktif !== "SEMUA" && !filter.statusAktif.toUpperCase().includes("SEMUA")) {
-          q = q.eq("status_aktif", filter.statusAktif);
-        }
-        promises.push(q);
-      }
-
-      const results = await Promise.all(promises);
-      const allRows: SupabasePemilihRow[] = [];
-      for (const res of results) {
-        if (res.data && Array.isArray(res.data)) {
-          allRows.push(...(res.data as SupabasePemilihRow[]));
-        }
-      }
-
-      const mapped = allRows.map((p) => this.mapSupabasePemilihRow(p));
-      if (isUnfiltered && mapped.length > 0) {
-        this.cachedPemilihList = mapped;
-        this.lastPemilihCacheTimestamp = Date.now();
-      }
-      return mapped;
-    } catch (err) {
-      console.warn("fetchAllPemilih batch failed:", err);
-      return [];
-    }
-  }
-
-  /**
-   * Paging on demand with automatic parallel multi-page loading if limit > 1000
-   */
-  public static async fetchPemilihPaged(
-    offset: number,
-    limit = 10000,
-    filter?: { tps?: string; statusAktif?: string }
-  ): Promise<{ data: MasterPemilih[]; total: number }> {
-    try {
-      if (limit > 1000) {
-        const all = await this.fetchAllPemilih(filter);
-        if (all.length > 0) {
-          return {
-            data: all.slice(offset, offset + limit),
-            total: all.length,
-          };
-        }
-      }
-
       let q = this.getSeksi1Client()
         .from("pemilih")
-        .select("*", { count: "exact" })
+        .select("*")
         .order("nama_lengkap")
-        .range(offset, offset + limit - 1);
+        .limit(500); // Batas aman untuk mencegah freeze browser
 
       if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
         q = q.eq("tps", filter.tps);
@@ -867,8 +779,50 @@ export class SupabaseDbService {
         q = q.eq("status_aktif", filter.statusAktif);
       }
 
+      const { data, error } = await q;
+      if (error || !data) return [];
+      return (data as SupabasePemilihRow[]).map((p) => this.mapSupabasePemilihRow(p));
+    } catch (err) {
+      console.warn("fetchAllPemilih failed:", err);
+      return [];
+    }
+  }
+
+  /**
+   * Server-Side Pagination: 50 - 200 record per request (default 100 record).
+   * Tidak pernah mengunduh seluruh 10.000 data sekaligus.
+   */
+  public static async fetchPemilihPaged(
+    offset = 0,
+    limit = 100,
+    filter?: { tps?: string; statusAktif?: string; tahap?: string }
+  ): Promise<{ data: MasterPemilih[]; total: number }> {
+    try {
+      const safeLimit = Math.min(200, Math.max(1, limit));
+      let q = this.getSeksi1Client()
+        .from("pemilih")
+        .select("*", { count: "exact" })
+        .order("rt")
+        .order("no_kk")
+        .order("nama_lengkap")
+        .range(offset, offset + safeLimit - 1);
+
+      if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
+        q = q.eq("tps", filter.tps);
+      }
+      if (filter?.statusAktif && filter.statusAktif !== "SEMUA" && !filter.statusAktif.toUpperCase().includes("SEMUA")) {
+        q = q.eq("status_aktif", filter.statusAktif);
+      }
+      if (filter?.tahap && filter.tahap !== "SEMUA" && !filter.tahap.toUpperCase().includes("SEMUA")) {
+        q = q.eq("tahap", filter.tahap);
+      }
+
       const { data, count, error } = await q;
-      if (error || !data) return { data: [], total: 0 };
+      if (error || !data) {
+        if (error) console.warn("fetchPemilihPaged error:", error.message);
+        return { data: [], total: 0 };
+      }
+
       return {
         data: (data as SupabasePemilihRow[]).map((p) => this.mapSupabasePemilihRow(p)),
         total: count ?? data.length,
@@ -880,7 +834,11 @@ export class SupabaseDbService {
   }
 
   /**
-   * Fast Indexed Search across ALL 7,787 residents directly in PostgreSQL (< 30ms)
+   * Server-Side Search di PostgreSQL/Supabase:
+   * - NIK 16 digit: Exact lookup
+   * - No KK 16 digit: Exact lookup
+   * - Nama / Kata Kunci: PostgreSQL ILIKE
+   * - Batas hasil: Maksimal 100 - 200 record
    */
   public static async searchPemilih(
     query: string,
@@ -889,7 +847,8 @@ export class SupabaseDbService {
     try {
       const clean = query.trim();
       if (!clean) return [];
-      const limit = options?.limit || 200;
+      const limit = Math.min(200, Math.max(1, options?.limit || 100));
+
       let q = this.getSeksi1Client()
         .from("pemilih")
         .select("*")
@@ -900,8 +859,12 @@ export class SupabaseDbService {
         q = q.eq("tps", options.tps);
       }
 
-      if (/^\d+$/.test(clean)) {
-        q = q.or(`nik.ilike.%${clean}%,no_kk.ilike.%${clean}%,nama_lengkap.ilike.%${clean}%`);
+      const digitsOnly = clean.replace(/\D/g, "");
+      if (digitsOnly.length === 16) {
+        // NIK atau KK 16 digit exact lookup
+        q = q.or(`nik.eq.${digitsOnly},no_kk.eq.${digitsOnly}`);
+      } else if (digitsOnly.length >= 3 && /^\d+$/.test(clean)) {
+        q = q.or(`nik.ilike.%${clean}%,no_kk.ilike.%${clean}%`);
       } else {
         q = q.ilike("nama_lengkap", `%${clean}%`);
       }

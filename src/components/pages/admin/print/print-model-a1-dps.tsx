@@ -20,6 +20,7 @@ import {
 import { Button, Badge, Card } from "@/components/ui";
 import { exportModelA1Excel, exportModelA1Pdf, matchTpsVoter, sortVotersByKk } from "@/lib/print-models-export";
 import { DAFTAR_RW_KALISALAK, normalizeWilayahCode } from "@/lib/kalisalak-wilayah";
+import { fetchPemilihPaged } from "@/lib/secure-device-cache";
 
 interface PrintModelA1DpsProps {
   voters: Voter[];
@@ -49,6 +50,32 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [searchGrid, setSearchGrid] = useState<string>("");
   const [searchVoter, setSearchVoter] = useState<string>("");
+  const [lazyRwVoters, setLazyRwVoters] = useState<Record<string, Voter[]>>({});
+  const [isLoadingRw, setIsLoadingRw] = useState(false);
+
+  // Lazy-load RW data dari IndexedDB terenkripsi jika belum ada di props voters
+  React.useEffect(() => {
+    if (!selectedRw) return;
+    const hasInProps = voters.some((v) => normalizeWilayahCode(v.rw) === selectedRw);
+    if (hasInProps || (lazyRwVoters[selectedRw] && lazyRwVoters[selectedRw].length > 0)) return;
+
+    let isMounted = true;
+    setIsLoadingRw(true);
+    fetchPemilihPaged(0, 200, { tps: `TPS ${selectedRw}` })
+      .then((res) => {
+        if (isMounted && res.data && res.data.length > 0) {
+          setLazyRwVoters((prev) => ({ ...prev, [selectedRw]: res.data }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsLoadingRw(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedRw, voters, lazyRwVoters]);
 
   // ========================================================
   // REKAP DATA PER RW (Ultra-fast client aggregation < 5ms)
@@ -369,8 +396,12 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
     activeTabungInfo?.namaTabung || `Tabung ${selectedRw}`;
 
   // Filter pemilih khusus RW ini (diurutkan per nomor KK & peran keluarga)
+  const voterPool = (selectedRw && lazyRwVoters[selectedRw] && lazyRwVoters[selectedRw].length > 0)
+    ? lazyRwVoters[selectedRw]
+    : voters;
+
   const rawRwVoters = sortVotersByKk(
-    voters.filter((v) => {
+    voterPool.filter((v) => {
       const normVoterRw = normalizeWilayahCode(v.rw);
       const matchByRw = normVoterRw === selectedRw;
       const matchByTps =
@@ -552,7 +583,12 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
 
         {/* Daftar Pemilih dengan Sub-Tabel */}
         <div className="space-y-3">
-          {filteredVoters.length === 0 ? (
+          {isLoadingRw ? (
+            <div className="p-8 text-center text-slate-500 text-xs border border-dashed border-slate-300 rounded-xl flex items-center justify-center gap-2">
+              <Clock className="w-4 h-4 animate-spin text-amber-600" />
+              Memuat data pemilih terenkripsi untuk {activeRwLabel}...
+            </div>
+          ) : filteredVoters.length === 0 ? (
             <div className="p-8 text-center text-slate-400 text-xs border border-dashed border-slate-300 rounded-xl">
               Tidak ada data pemilih yang sesuai kriteria filter di {activeRwLabel}.
             </div>

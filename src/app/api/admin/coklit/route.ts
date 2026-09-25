@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
+import { SupabaseDbService } from "@/lib/supabase-db";
 import {
   verifyAdminSession,
   canAccessVoterData,
@@ -50,6 +51,14 @@ export async function GET(req: Request) {
     }
 
     let list = dataStore.getPemilihList({ tps, search });
+    if (list.length === 0) {
+      if (search && search.trim()) {
+        list = await SupabaseDbService.searchPemilih(search.trim(), { tps, limit: 100 });
+      } else {
+        const paged = await SupabaseDbService.fetchPemilihPaged(0, 100, { tps });
+        list = paged.data;
+      }
+    }
 
     if (status && status !== "ALL") {
       if (status === "BELUM") {

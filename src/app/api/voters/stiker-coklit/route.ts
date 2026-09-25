@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { dataStore, MasterPemilih } from "@/lib/data-store";
+import type { MasterPemilih } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 

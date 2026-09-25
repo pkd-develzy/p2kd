@@ -60,7 +60,10 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
     if (hasInProps || (lazyRwVoters[selectedRw] && lazyRwVoters[selectedRw].length > 0)) return;
 
     let isMounted = true;
-    setIsLoadingRw(true);
+    const timer = setTimeout(() => {
+      if (isMounted) setIsLoadingRw(true);
+    }, 0);
+
     fetchPemilihPaged(0, 200, { tps: `TPS ${selectedRw}` })
       .then((res) => {
         if (isMounted && res.data && res.data.length > 0) {
@@ -69,11 +72,13 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
       })
       .catch(() => {})
       .finally(() => {
+        clearTimeout(timer);
         if (isMounted) setIsLoadingRw(false);
       });
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [selectedRw, voters, lazyRwVoters]);
 

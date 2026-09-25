@@ -112,83 +112,90 @@ export const AdminDashboard: React.FC = () => {
   const toast = useToast();
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
 
-  // Dynamic user profile resolution
-  let computedUserRole = isKetuaOrDev
-    ? "SUPER_ADMIN"
-    : isFieldOfficer
-    ? "PETUGAS_TPS"
-    : roleParam === "sekretaris"
-    ? "SEKRETARIS"
-    : roleParam === "bendahara"
-    ? "BENDAHARA"
-    : roleParam.toUpperCase();
+  // Dynamic user profile resolution (Memoized to prevent React Compiler memoization bailouts)
+  const resolvedProfile = React.useMemo(() => {
+    let role = isKetuaOrDev
+      ? "SUPER_ADMIN"
+      : isFieldOfficer
+      ? "PETUGAS_TPS"
+      : roleParam === "sekretaris"
+      ? "SEKRETARIS"
+      : roleParam === "bendahara"
+      ? "BENDAHARA"
+      : roleParam.toUpperCase();
 
-  let computedUserSeksi: SeksiP2KDType = isKetuaOrDev
-    ? "PIMPINAN"
-    : isFieldOfficer
-    ? "PANTARLIH_LAPANGAN"
-    : (roleParam.toUpperCase() as SeksiP2KDType);
+    let seksi: SeksiP2KDType = isKetuaOrDev
+      ? "PIMPINAN"
+      : isFieldOfficer
+      ? "PANTARLIH_LAPANGAN"
+      : (roleParam.toUpperCase() as SeksiP2KDType);
 
-  let computedUserName = isKetuaOrDev
-    ? (storedUser?.nama || "Khasanudin, S.Pd.SD")
-    : isFieldOfficer
-    ? `Petugas Lapangan (${assignedTps})`
-    : (storedUser?.nama || "Panitia P2KD");
+    let nama = isKetuaOrDev
+      ? (storedUser?.nama || "Khasanudin, S.Pd.SD")
+      : isFieldOfficer
+      ? `Petugas Lapangan (${assignedTps})`
+      : (storedUser?.nama || "Panitia P2KD");
 
-  let computedUserJabatan = isKetuaOrDev
-    ? "Ketua P2KD / Superadmin"
-    : isFieldOfficer
-    ? `Pantarlih Lapangan (${assignedTps})`
-    : "Anggota Tim Seksi P2KD";
+    let jabatan = isKetuaOrDev
+      ? "Ketua P2KD / Superadmin"
+      : isFieldOfficer
+      ? `Pantarlih Lapangan (${assignedTps})`
+      : "Anggota Tim Seksi P2KD";
 
-  if (userParam === "develzy") {
-    computedUserName = "Develzy (Developer)";
-    computedUserJabatan = "System Architect & Technical Core Developer";
-    computedUserRole = "SUPER_ADMIN";
-  }
+    if (userParam === "develzy") {
+      nama = "Develzy (Developer)";
+      jabatan = "System Architect & Technical Core Developer";
+      role = "SUPER_ADMIN";
+    }
 
-  // Specific role mapping
-  if (roleParam === "seksi_pemilih" && !isFieldOfficer) {
-    computedUserRole = "SEKSI_PEMILIH";
-    computedUserSeksi = "SEKSI_PEMILIH";
-    computedUserName = "M. Lu’lu Khulaludin, S.F.U";
-    computedUserJabatan = "Koordinator Seksi Pendaftaran Pemilih";
-  } else if (roleParam === "seksi_penjaringan") {
-    computedUserRole = "SEKSI_PENJARINGAN";
-    computedUserSeksi = "SEKSI_PENJARINGAN";
-    computedUserName = "Hero Budiadi";
-    computedUserJabatan = "Koordinator Seksi Penjaringan Balon";
-  } else if (roleParam === "seksi_penyaringan") {
-    computedUserRole = "SEKSI_PENYARINGAN";
-    computedUserSeksi = "SEKSI_PENYARINGAN";
-    computedUserName = "Urip";
-    computedUserJabatan = "Koordinator Seksi Penyaringan & Seleksi";
-  } else if (roleParam === "seksi_pemungutan") {
-    computedUserRole = "SEKSI_PUNGUT_HITUNG";
-    computedUserSeksi = "SEKSI_PUNGUT_HITUNG";
-    computedUserName = "Wihadi";
-    computedUserJabatan = "Koordinator Seksi Pemungutan Suara";
-  } else if (roleParam === "seksi_logistik" || roleParam === "seksi_publikasi") {
-    computedUserRole = "SEKSI_LOGISTIK_PUBLIKASI";
-    computedUserSeksi = "SEKSI_LOGISTIK_PUBLIKASI";
-    computedUserName = "Mohamad Khumaidi, S.Pd.I";
-    computedUserJabatan = "Koordinator Seksi Perlengkapan & Publikasi";
-  } else if (roleParam === "seksi_keamanan") {
-    computedUserRole = "SEKSI_LOGISTIK_PUBLIKASI";
-    computedUserSeksi = "SEKSI_LOGISTIK_PUBLIKASI";
-    computedUserName = "Topik Santoso";
-    computedUserJabatan = "Koordinator Seksi Keamanan & Ketertiban";
-  } else if (roleParam === "sekretaris") {
-    computedUserRole = "SEKRETARIS";
-    computedUserSeksi = "PIMPINAN";
-    computedUserName = "Mashady, M.H.";
-    computedUserJabatan = "Sekretaris P2KD";
-  } else if (roleParam === "bendahara") {
-    computedUserRole = "BENDAHARA";
-    computedUserSeksi = "PIMPINAN";
-    computedUserName = "Ali Nurhakim, S.Pd";
-    computedUserJabatan = "Bendahara P2KD";
-  }
+    // Specific role mapping
+    if (roleParam === "seksi_pemilih" && !isFieldOfficer) {
+      role = "SEKSI_PEMILIH";
+      seksi = "SEKSI_PEMILIH";
+      nama = "M. Lu’lu Khulaludin, S.F.U";
+      jabatan = "Koordinator Seksi Pendaftaran Pemilih";
+    } else if (roleParam === "seksi_penjaringan") {
+      role = "SEKSI_PENJARINGAN";
+      seksi = "SEKSI_PENJARINGAN";
+      nama = "Hero Budiadi";
+      jabatan = "Koordinator Seksi Penjaringan Balon";
+    } else if (roleParam === "seksi_penyaringan") {
+      role = "SEKSI_PENYARINGAN";
+      seksi = "SEKSI_PENYARINGAN";
+      nama = "Urip";
+      jabatan = "Koordinator Seksi Penyaringan & Seleksi";
+    } else if (roleParam === "seksi_pemungutan") {
+      role = "SEKSI_PUNGUT_HITUNG";
+      seksi = "SEKSI_PUNGUT_HITUNG";
+      nama = "Wihadi";
+      jabatan = "Koordinator Seksi Pemungutan Suara";
+    } else if (roleParam === "seksi_logistik" || roleParam === "seksi_publikasi") {
+      role = "SEKSI_LOGISTIK_PUBLIKASI";
+      seksi = "SEKSI_LOGISTIK_PUBLIKASI";
+      nama = "Mohamad Khumaidi, S.Pd.I";
+      jabatan = "Koordinator Seksi Perlengkapan & Publikasi";
+    } else if (roleParam === "seksi_keamanan") {
+      role = "SEKSI_LOGISTIK_PUBLIKASI";
+      seksi = "SEKSI_LOGISTIK_PUBLIKASI";
+      nama = "Topik Santoso";
+      jabatan = "Koordinator Seksi Keamanan & Ketertiban";
+    } else if (roleParam === "sekretaris") {
+      role = "SEKRETARIS";
+      seksi = "PIMPINAN";
+      nama = "Mashady, M.H.";
+      jabatan = "Sekretaris P2KD";
+    } else if (roleParam === "bendahara") {
+      role = "BENDAHARA";
+      seksi = "PIMPINAN";
+      nama = "Ali Nurhakim, S.Pd";
+      jabatan = "Bendahara P2KD";
+    }
+
+    return { role, seksi, nama, jabatan };
+  }, [isKetuaOrDev, isFieldOfficer, roleParam, userParam, storedUser, assignedTps]);
+
+  const computedUserRole = resolvedProfile.role;
+  const computedUserSeksi = resolvedProfile.seksi;
 
   // Navigation Initial Tab
   const defaultInitialTab: TabType = isFieldOfficer
@@ -318,10 +325,8 @@ export const AdminDashboard: React.FC = () => {
   const dbMatchedMember = anggotaList.find(
     (a) => a.username.toLowerCase() === currentUser.toLowerCase()
   );
-  if (dbMatchedMember) {
-    computedUserName = dbMatchedMember.namaLengkap;
-    computedUserJabatan = dbMatchedMember.jabatan;
-  }
+  const computedUserName = dbMatchedMember?.namaLengkap || resolvedProfile.nama;
+  const computedUserJabatan = dbMatchedMember?.jabatan || resolvedProfile.jabatan;
 
   // Floating QR Verifier is STRICTLY ONLY for PETUGAS_TPS (PPS / KPPS RW)
   const isPetugasTpsOnly =
@@ -433,9 +438,7 @@ export const AdminDashboard: React.FC = () => {
   }, [
     effectiveTps,
     selectedStatusFilter,
-    isAdmin,
     canAccessVoterDataUI,
-    assignedTps,
     router,
     toast,
     setVoters,
@@ -448,6 +451,8 @@ export const AdminDashboard: React.FC = () => {
     setLockHashSignature,
     setNomorBeritaAcara,
     setIsLoading,
+    currentUser,
+    computedUserRole,
   ]);
 
   const handleNavigateTab = useCallback(
@@ -567,14 +572,22 @@ export const AdminDashboard: React.FC = () => {
   ]);
 
   // 4. Server-Side Debounced Search via Encrypted Cache & PostgreSQL
+  const prevSearchTermRef = React.useRef("");
   useEffect(() => {
     if (!canAccessVoterDataUI) return;
     const cleanSearch = searchTerm.trim();
     if (!cleanSearch) {
-      void fetchData();
+      if (prevSearchTermRef.current !== "") {
+        prevSearchTermRef.current = "";
+        const resetTimer = setTimeout(() => {
+          void fetchData();
+        }, 0);
+        return () => clearTimeout(resetTimer);
+      }
       return;
     }
 
+    prevSearchTermRef.current = cleanSearch;
     const timer = setTimeout(async () => {
       const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
       const results = await searchPemilih(cleanSearch, { tps: effectiveTps }, userContext);

@@ -213,7 +213,7 @@ export class SecureDeviceCache {
   /**
    * Enkripsi dan simpan nilai ke IndexedDB (AES-GCM 256-bit + Random IV)
    */
-  public static async set(namespace: string, key: string, value: any): Promise<void> {
+  public static async set(namespace: string, key: string, value: unknown): Promise<void> {
     if (!this.isSupported()) return;
 
     try {
@@ -302,7 +302,7 @@ export class SecureDeviceCache {
 
       devLog("CACHE HIT", maskKeyForLog(key));
       return parsedData;
-    } catch (err) {
+    } catch {
       devLog("CACHE MISS (Decryption Failed / Expired Key)", maskKeyForLog(key));
       return null;
     }

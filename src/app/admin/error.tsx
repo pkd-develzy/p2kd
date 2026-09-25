@@ -27,7 +27,7 @@ export default function AdminErrorBoundary({
   const [showTechnical, setShowTechnical] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
 
-  const digestCode = error?.digest || `ADM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const digestCode = error?.digest || "ADM-DB-500";
 
   const handleRetry = () => {
     setIsRetrying(true);
@@ -76,8 +76,8 @@ export default function AdminErrorBoundary({
 
         {/* Central Icon */}
         <div className="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-tr from-rose-600/20 to-blue-600/20 rounded-2xl blur-lg" />
-          <div className="relative w-full h-full bg-gradient-to-b from-slate-800 to-slate-900 border border-rose-500/30 rounded-2xl flex items-center justify-center shadow-inner">
+          <div className="absolute inset-0 bg-linear-to-tr from-rose-600/20 to-blue-600/20 rounded-2xl blur-lg" />
+          <div className="relative w-full h-full bg-linear-to-b from-slate-800 to-slate-900 border border-rose-500/30 rounded-2xl flex items-center justify-center shadow-inner">
             <ServerOff className="w-10 h-10 text-rose-400" />
           </div>
         </div>

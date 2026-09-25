@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldAlert, KeyRound, Home, ArrowLeft, LifeBuoy } from "lucide-react";
+import { ShieldAlert, KeyRound, Home } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 
 export const metadata = {
@@ -37,8 +37,8 @@ export default function Forbidden() {
 
         {/* Central Icon */}
         <div className="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-rose-600/20 rounded-2xl blur-lg" />
-          <div className="relative w-full h-full bg-gradient-to-b from-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-inner">
+          <div className="absolute inset-0 bg-linear-to-tr from-amber-500/20 to-rose-600/20 rounded-2xl blur-lg" />
+          <div className="relative w-full h-full bg-linear-to-b from-slate-800 to-slate-900 border border-amber-500/30 rounded-2xl flex items-center justify-center shadow-inner">
             <ShieldAlert className="w-10 h-10 text-amber-400" />
           </div>
         </div>
@@ -55,7 +55,7 @@ export default function Forbidden() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
           <Link
             href="/admin"
-            className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-600/25 transition-all duration-200 hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-linear-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-amber-600/25 transition-all duration-200 hover:-translate-y-0.5"
           >
             <KeyRound className="w-4 h-4 text-slate-950" />
             <span>Masuk Akun Petugas</span>

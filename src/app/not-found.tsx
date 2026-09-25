@@ -43,7 +43,7 @@ export default function NotFound() {
 
         {/* 404 Large Display */}
         <div className="relative mb-6">
-          <span className="text-7xl sm:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 select-none opacity-90">
+          <span className="text-7xl sm:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-blue-400 via-indigo-300 to-purple-400 select-none opacity-90">
             404
           </span>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 text-slate-300 text-xs font-semibold -mt-2">
@@ -64,7 +64,7 @@ export default function NotFound() {
         <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all duration-200 hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all duration-200 hover:-translate-y-0.5"
           >
             <Home className="w-4 h-4" />
             <span>Kembali ke Halaman Utama</span>

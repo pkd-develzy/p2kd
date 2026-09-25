@@ -31,8 +31,8 @@ export default function Unauthorized() {
         </div>
 
         <div className="relative mx-auto w-20 h-20 mb-6 flex items-center justify-center">
-          <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-cyan-500/20 rounded-2xl blur-lg" />
-          <div className="relative w-full h-full bg-gradient-to-b from-slate-800 to-slate-900 border border-blue-500/30 rounded-2xl flex items-center justify-center shadow-inner">
+          <div className="absolute inset-0 bg-linear-to-tr from-blue-600/20 to-cyan-500/20 rounded-2xl blur-lg" />
+          <div className="relative w-full h-full bg-linear-to-b from-slate-800 to-slate-900 border border-blue-500/30 rounded-2xl flex items-center justify-center shadow-inner">
             <Lock className="w-10 h-10 text-blue-400" />
           </div>
         </div>

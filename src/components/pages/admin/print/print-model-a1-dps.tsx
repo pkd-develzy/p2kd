@@ -369,8 +369,8 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
     activeTabungInfo?.namaTabung || `Tabung ${selectedRw}`;
 
   // Filter pemilih khusus RW ini (diurutkan per nomor KK & peran keluarga)
-  const rawRwVoters = useMemo(() => {
-    const list = voters.filter((v) => {
+  const rawRwVoters = sortVotersByKk(
+    voters.filter((v) => {
       const normVoterRw = normalizeWilayahCode(v.rw);
       const matchByRw = normVoterRw === selectedRw;
       const matchByTps =
@@ -378,9 +378,8 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
         matchTpsVoter(v.tps, `Tabung ${selectedRw}`) ||
         matchTpsVoter(v.tps, selectedRw);
       return matchByRw || matchByTps;
-    });
-    return sortVotersByKk(list);
-  }, [voters, selectedRw]);
+    })
+  );
 
   // Terapkan filter status & pencarian pemilih
   const filteredVoters = rawRwVoters.filter((v) => {

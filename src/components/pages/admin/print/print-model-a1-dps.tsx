@@ -18,7 +18,7 @@ import {
   FileText,
 } from "lucide-react";
 import { Button, Badge, Card } from "@/components/ui";
-import { exportModelA1Excel, exportModelA1Pdf, matchTpsVoter } from "@/lib/print-models-export";
+import { exportModelA1Excel, exportModelA1Pdf, matchTpsVoter, sortVotersByKk } from "@/lib/print-models-export";
 import { DAFTAR_RW_KALISALAK, normalizeWilayahCode } from "@/lib/kalisalak-wilayah";
 
 interface PrintModelA1DpsProps {
@@ -100,7 +100,7 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
         selesai,
         belum,
         persentase,
-        voters: rwVoters,
+        voters: sortVotersByKk(rwVoters),
       };
     });
   }, [voters, tpsList]);
@@ -368,16 +368,19 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
   const activeTabungNama =
     activeTabungInfo?.namaTabung || `Tabung ${selectedRw}`;
 
-  // Filter pemilih khusus RW ini
-  const rawRwVoters = voters.filter((v) => {
-    const normVoterRw = normalizeWilayahCode(v.rw);
-    const matchByRw = normVoterRw === selectedRw;
-    const matchByTps =
-      matchTpsVoter(v.tps, `TPS ${selectedRw}`) ||
-      matchTpsVoter(v.tps, `Tabung ${selectedRw}`) ||
-      matchTpsVoter(v.tps, selectedRw);
-    return matchByRw || matchByTps;
-  });
+  // Filter pemilih khusus RW ini (diurutkan per nomor KK & peran keluarga)
+  const rawRwVoters = useMemo(() => {
+    const list = voters.filter((v) => {
+      const normVoterRw = normalizeWilayahCode(v.rw);
+      const matchByRw = normVoterRw === selectedRw;
+      const matchByTps =
+        matchTpsVoter(v.tps, `TPS ${selectedRw}`) ||
+        matchTpsVoter(v.tps, `Tabung ${selectedRw}`) ||
+        matchTpsVoter(v.tps, selectedRw);
+      return matchByRw || matchByTps;
+    });
+    return sortVotersByKk(list);
+  }, [voters, selectedRw]);
 
   // Terapkan filter status & pencarian pemilih
   const filteredVoters = rawRwVoters.filter((v) => {

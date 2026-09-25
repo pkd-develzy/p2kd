@@ -37,14 +37,75 @@ export function matchTpsVoter(voterTps: string, targetTps: string): boolean {
   return normVoter.includes(normTarget) || normTarget.includes(normVoter);
 }
 
+/**
+ * Mengurutkan pemilih berdasarkan Nomor Kartu Keluarga (KK).
+ * Jika nomor KK sama, anggota keluarga diurutkan sesuai urutan standar dokumen KK:
+ * 1. Kepala Keluarga (Laki-laki, Status Kawin "S")
+ * 2. Istri (Perempuan, Status Kawin "S")
+ * 3. Pernah Kawin ("P")
+ * 4. Belum Kawin / Anak-anak ("B") dari usia tertua ke termuda (tanggalLahir)
+ * Sehingga petugas Coklit dapat memverifikasi satu keluarga secara berurutan tanpa mencari jauh.
+ */
+export function sortVotersByKk(list: Voter[]): Voter[] {
+  return [...list].sort((a, b) => {
+    // 1. Urutkan per RT agar tidak meloncat wilayah
+    const rtA = parseInt(a.rt || "0", 10) || 0;
+    const rtB = parseInt(b.rt || "0", 10) || 0;
+    if (rtA !== rtB) {
+      return rtA - rtB;
+    }
+
+    // 2. Urutkan per Nomor KK
+    const kkA = (a.kk || "").trim();
+    const kkB = (b.kk || "").trim();
+
+    if (!kkA && kkB) return 1;
+    if (kkA && !kkB) return -1;
+    if (!kkA && !kkB) {
+      return a.namaLengkap.localeCompare(b.namaLengkap);
+    }
+
+    if (kkA !== kkB) {
+      return kkA.localeCompare(kkB);
+    }
+
+    // 3. JIKA NOMOR KK SAMA: Urutkan peran keluarga
+    const getFamilyRank = (v: Voter) => {
+      if (v.statusPerkawinan === "S" && v.jenisKelamin === "L") return 1; // Kepala Keluarga (Ayah/Suami)
+      if (v.statusPerkawinan === "S" && v.jenisKelamin === "P") return 2; // Istri / Ibu
+      if (v.statusPerkawinan === "P") return 3; // Pernah Kawin (Duda/Janda/Lansia)
+      if (v.statusPerkawinan === "B") return 4; // Belum Kawin (Anak-anak)
+      return 5;
+    };
+
+    const rankA = getFamilyRank(a);
+    const rankB = getFamilyRank(b);
+    if (rankA !== rankB) {
+      return rankA - rankB;
+    }
+
+    // 4. Jika peran sama (misal sesama anak "B"), urutkan usia tertua ke termuda (tanggalLahir)
+    const tglA = (a.tanggalLahir || "").trim();
+    const tglB = (b.tanggalLahir || "").trim();
+    if (tglA && tglB && tglA !== tglB) {
+      return tglA.localeCompare(tglB);
+    }
+
+    // 5. Fallback terakhir: Nama Lengkap
+    return a.namaLengkap.localeCompare(b.namaLengkap);
+  });
+}
+
 // ==========================================
 // 1. MODEL A.1: DAFTAR PEMILIH SEMENTARA (DPS)
 // [DENGAN 1 SUB-TABEL DI BAWAHNYA PADA SETIAP 1 DATA PEMILIH]
 // ==========================================
 
 export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA") {
-  const filtered = voters.filter(
-    (v) => v.statusAktif === "AKTIF" && (matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps))
+  const filtered = sortVotersByKk(
+    voters.filter(
+      (v) => v.statusAktif === "AKTIF" && (matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps))
+    )
   );
 
   const rows: (string | number)[][] = [];
@@ -137,8 +198,10 @@ export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA
 }
 
 export function exportModelA1Pdf(voters: Voter[], selectedTps: string = "SEMUA") {
-  const filtered = voters.filter(
-    (v) => v.statusAktif === "AKTIF" && (matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps))
+  const filtered = sortVotersByKk(
+    voters.filter(
+      (v) => v.statusAktif === "AKTIF" && (matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps))
+    )
   );
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });

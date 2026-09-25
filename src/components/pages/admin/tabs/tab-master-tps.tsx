@@ -4,11 +4,12 @@ import React from "react";
 import { Plus, FileSpreadsheet, MapPin, Edit, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge } from "@/components/ui";
-import { Voter, TPSItem } from "../types";
+import { Voter, TPSItem, DbStatus } from "../types";
 
 interface TabMasterTPSProps {
   tpsList: TPSItem[];
   voters: Voter[];
+  dbStatus?: DbStatus | null;
   onOpenAddTps: () => void;
   onOpenEditTps: (tps: TPSItem) => void;
   onDeleteTps: (tps: TPSItem) => void;
@@ -17,6 +18,7 @@ interface TabMasterTPSProps {
 export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
   tpsList,
   voters,
+  dbStatus,
   onOpenAddTps,
   onOpenEditTps,
   onDeleteTps,
@@ -70,11 +72,15 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {tpsList.map((t) => {
+          const dbTpsStat = dbStatus?.localStats?.tpsStats?.find(
+            (ts) => ts.tps === t.nomorTps || ts.namaTps === t.namaTps || ts.tps === t.rw
+          );
           const votersInTps = voters.filter(
             (v) =>
               v.statusAktif === "AKTIF" &&
               (v.rw === t.rw || v.tps.toLowerCase().includes(t.nomorTps.toLowerCase()) || v.rw.includes(t.nomorTps))
           );
+          const registeredCount = dbTpsStat ? dbTpsStat.aktif || dbTpsStat.total : votersInTps.length;
           return (
             <Card
               key={t.id}
@@ -119,7 +125,7 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                 <div>
                   <span className="text-slate-400 text-[10px] block">Pemilih Terdaftar:</span>
-                  <strong className="text-blue-700 font-black">{votersInTps.length} Orang</strong>
+                  <strong className="text-blue-700 font-black">{registeredCount} Orang</strong>
                 </div>
                 <div className="text-right">
                   <span className="text-slate-400 text-[10px] block">Status Wilayah:</span>

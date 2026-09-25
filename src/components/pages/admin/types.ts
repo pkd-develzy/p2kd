@@ -3,6 +3,7 @@ export interface Voter {
   nik: string;
   nikMasked: string;
   kk: string;
+  kkMasked?: string;
   namaLengkap: string;
   tempatLahir: string;
   tanggalLahir: string;

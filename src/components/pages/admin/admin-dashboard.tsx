@@ -247,6 +247,16 @@ export const AdminDashboard: React.FC = () => {
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("SEMUA");
   const [selectedAduanFilter, setSelectedAduanFilter] = useState("SEMUA");
 
+  // Instant 0ms RW Filter Switch with Background Synchronization
+  const handleSelectTpsFilter = useCallback((newTps: string) => {
+    setSelectedTpsFilter(newTps);
+    const effectiveNew = isAdmin ? newTps : assignedTps;
+    const cacheKey = `${effectiveNew}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      setVoters(rwVotersCacheRef.current[cacheKey]);
+    }
+  }, [isAdmin, assignedTps, selectedStatusFilter, setVoters]);
+
   // Modal States
   const [showAddVoterModal, setShowAddVoterModal] = useState(false);
   const [showEditVoterModal, setShowEditVoterModal] = useState(false);
@@ -556,31 +566,79 @@ export const AdminDashboard: React.FC = () => {
     router.replace("/admin");
   };
 
-  // --- CRUD HANDLERS ---
-  const handleSaveNewVoter = async (e: React.FormEvent) => {
+  // --- CRUD HANDLERS (OPTIMISTIC & ASYNCHRONOUS BACKGROUND SYNC) ---
+  const handleSaveNewVoter = (e: React.FormEvent) => {
     e.preventDefault();
     if (voterForm.nik.length !== 16) {
       toast.error("Validasi Gagal", "NIK harus berjumlah 16 digit angka.");
       return;
     }
 
-    try {
-      const res = await fetch("/api/admin/pemilih", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...voterForm, user: currentUser }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Pemilih Ditambahkan", `Data ${voterForm.namaLengkap} berhasil disimpan ke ${voterForm.tps}.`);
-        setShowAddVoterModal(false);
-        fetchData();
-      } else {
-        toast.error("Gagal Menyimpan", result.message);
-      }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
+    const tempId = `temp_${Date.now()}`;
+    const maskedNik = `${voterForm.nik.slice(0, 1)}*************${voterForm.nik.slice(-2)}`;
+    const maskedKk = voterForm.kk ? `${voterForm.kk.slice(0, 1)}*************${voterForm.kk.slice(-2)}` : "";
+
+    const optimisticVoter: Voter = {
+      id: tempId,
+      nik: voterForm.nik,
+      nikMasked: maskedNik,
+      kk: voterForm.kk,
+      kkMasked: maskedKk,
+      namaLengkap: voterForm.namaLengkap.trim().toUpperCase(),
+      tempatLahir: voterForm.tempatLahir.trim().toUpperCase(),
+      tanggalLahir: voterForm.tanggalLahir,
+      jenisKelamin: voterForm.jenisKelamin,
+      statusPerkawinan: voterForm.statusPerkawinan,
+      alamat: voterForm.alamat.trim().toUpperCase(),
+      rt: voterForm.rt || "01",
+      rw: voterForm.rw || "01",
+      desa: "Kalisalak",
+      kecamatan: "Margasari",
+      tps: voterForm.tps || `TPS ${voterForm.rw || "01"}`,
+      statusAktif: voterForm.statusAktif || "AKTIF",
+      alasanTms: voterForm.alasanTms || "",
+      tahap: "DPS",
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 1. Instant optimistic state & cache update (< 1ms)
+    setVoters((prev) => [optimisticVoter, ...prev]);
+    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      rwVotersCacheRef.current[cacheKey] = [optimisticVoter, ...rwVotersCacheRef.current[cacheKey]];
     }
+
+    // 2. Immediately close modal & provide instant feedback
+    setShowAddVoterModal(false);
+    toast.success("Pemilih Ditambahkan", `Data ${voterForm.namaLengkap} berhasil diproses.`);
+
+    // 3. Asynchronous background execution (zero UI delay)
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/pemilih", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...voterForm, user: currentUser }),
+        });
+        const result = await res.json();
+        if (result.success && result.data?.id) {
+          const realId = result.data.id;
+          setVoters((prev) =>
+            prev.map((v) => (v.id === tempId ? { ...v, id: realId } : v))
+          );
+          if (rwVotersCacheRef.current[cacheKey]) {
+            rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
+              v.id === tempId ? { ...v, id: realId } : v
+            );
+          }
+        } else if (!result.success) {
+          setVoters((prev) => prev.filter((v) => v.id !== tempId));
+          toast.error("Gagal Menyimpan di Server", result.message || "Data dibatalkan.");
+        }
+      } catch (err) {
+        console.error("Background save voter error:", err);
+      }
+    })();
   };
 
   const handleOpenEditVoter = (v: Voter) => {
@@ -604,31 +662,67 @@ export const AdminDashboard: React.FC = () => {
     setShowEditVoterModal(true);
   };
 
-  const handleSaveEditVoter = async (e: React.FormEvent) => {
+  const handleSaveEditVoter = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeVoter) return;
 
-    try {
-      const res = await fetch(`/api/admin/pemilih/${activeVoter.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...voterForm,
-          user: currentUser,
-          alasan: "Koreksi Data Manual Petugas",
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Data Diperbarui", `Perubahan data ${voterForm.namaLengkap} berhasil disimpan.`);
-        setShowEditVoterModal(false);
-        fetchData();
-      } else {
-        toast.error("Gagal Update", result.message);
-      }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Gagal memperbarui data.");
+    const previousVoter = activeVoter;
+    const updatedVoter: Voter = {
+      ...activeVoter,
+      nik: voterForm.nik,
+      kk: voterForm.kk,
+      namaLengkap: voterForm.namaLengkap.trim().toUpperCase(),
+      tempatLahir: voterForm.tempatLahir.trim().toUpperCase(),
+      tanggalLahir: voterForm.tanggalLahir,
+      jenisKelamin: voterForm.jenisKelamin,
+      statusPerkawinan: voterForm.statusPerkawinan,
+      alamat: voterForm.alamat.trim().toUpperCase(),
+      rt: voterForm.rt,
+      rw: voterForm.rw,
+      tps: voterForm.tps,
+      statusAktif: voterForm.statusAktif || "AKTIF",
+      alasanTms: voterForm.alasanTms || "",
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 1. Instant local state & cache update (< 1ms)
+    setVoters((prev) =>
+      prev.map((v) => (v.id === activeVoter.id ? updatedVoter : v))
+    );
+    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
+        v.id === activeVoter.id ? updatedVoter : v
+      );
     }
+
+    // 2. Immediately close modal & show success toast
+    setShowEditVoterModal(false);
+    toast.success("Data Diperbarui", `Perubahan data ${voterForm.namaLengkap} berhasil disimpan.`);
+
+    // 3. Asynchronous background execution (zero UI delay)
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/pemilih/${activeVoter.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...voterForm,
+            user: currentUser,
+            alasan: "Koreksi Data Manual Petugas",
+          }),
+        });
+        const result = await res.json();
+        if (!result.success) {
+          setVoters((prev) =>
+            prev.map((v) => (v.id === activeVoter.id ? previousVoter : v))
+          );
+          toast.error("Gagal Update di Server", result.message || "Data dikembalikan.");
+        }
+      } catch (err) {
+        console.error("Background update voter error:", err);
+      }
+    })();
   };
 
   const handleOpenTms = (v: Voter) => {
@@ -636,39 +730,60 @@ export const AdminDashboard: React.FC = () => {
     setShowTmsModal(true);
   };
 
-  const handleConfirmTms = async (alasan: string, catatan: string) => {
+  const handleConfirmTms = (alasan: string, catatan: string) => {
     if (!activeVoter) return;
-    try {
-      // Optimistic instant state update (< 1ms)
-      setVoters((prev) =>
-        prev.map((v) =>
-          v.id === activeVoter.id
-            ? {
-                ...v,
-                statusAktif: "TMS",
-                alasanTms: alasan,
-                coklitStatus: "TMS",
-                coklitCatatan: catatan,
-              }
-            : v
-        )
-      );
-      setShowTmsModal(false);
-      toast.warning("Status Diubah Menjadi TMS", `${activeVoter.namaLengkap} ditandai TMS (${alasan}).`);
+    const targetId = activeVoter.id;
+    const voterName = activeVoter.namaLengkap;
 
-      const queryParam = catatan ? `&catatan=${encodeURIComponent(catatan)}` : "";
-      const res = await fetch(`/api/admin/pemilih/${activeVoter.id}?mode=tms&alasan=${encodeURIComponent(alasan)}&user=${encodeURIComponent(currentUser)}${queryParam}`, {
-        method: "DELETE",
-      });
-      const result = await res.json();
-      if (!result.success) {
-        toast.error("Gagal", "Tidak dapat memproses TMS di server.");
-        fetchData();
-      }
-    } catch {
-      toast.error("Gagal", "Tidak dapat memproses TMS.");
-      fetchData();
+    // 1. Instant optimistic state & cache update (< 1ms)
+    setVoters((prev) =>
+      prev.map((v) =>
+        v.id === targetId
+          ? {
+              ...v,
+              statusAktif: "TMS",
+              alasanTms: alasan,
+              coklitStatus: "TMS",
+              coklitCatatan: catatan,
+            }
+          : v
+      )
+    );
+    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
+        v.id === targetId
+          ? {
+              ...v,
+              statusAktif: "TMS",
+              alasanTms: alasan,
+              coklitStatus: "TMS",
+              coklitCatatan: catatan,
+            }
+          : v
+      );
     }
+
+    // 2. Immediately close modal & show feedback
+    setShowTmsModal(false);
+    toast.warning("Status Diubah Menjadi TMS", `${voterName} ditandai TMS (${alasan}).`);
+
+    // 3. Asynchronous background execution
+    void (async () => {
+      try {
+        const queryParam = catatan ? `&catatan=${encodeURIComponent(catatan)}` : "";
+        const res = await fetch(
+          `/api/admin/pemilih/${targetId}?mode=tms&alasan=${encodeURIComponent(alasan)}&user=${encodeURIComponent(currentUser)}${queryParam}`,
+          { method: "DELETE" }
+        );
+        const result = await res.json();
+        if (!result.success) {
+          toast.error("Gagal di Server", "Tidak dapat memproses status TMS.");
+        }
+      } catch (err) {
+        console.error("Background TMS error:", err);
+      }
+    })();
   };
 
   const handleOpenMutasi = (v: Voter) => {
@@ -676,23 +791,46 @@ export const AdminDashboard: React.FC = () => {
     setShowMutasiModal(true);
   };
 
-  const handleConfirmMutasi = async (tpsBaru: string, rtBaru: string, rwBaru: string) => {
+  const handleConfirmMutasi = (tpsBaru: string, rtBaru: string, rwBaru: string) => {
     if (!activeVoter) return;
-    try {
-      const res = await fetch(`/api/admin/pemilih/${activeVoter.id}/mutasi`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tpsBaru, rtBaru, rwBaru, user: currentUser }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Mutasi Berhasil", `${activeVoter.namaLengkap} dipindahkan ke ${tpsBaru}.`);
-        setShowMutasiModal(false);
-        fetchData();
-      }
-    } catch {
-      toast.error("Gagal", "Tidak dapat memproses mutasi Tabung.");
+    const targetId = activeVoter.id;
+    const voterName = activeVoter.namaLengkap;
+
+    // 1. Instant optimistic state update (< 1ms)
+    setVoters((prev) =>
+      prev.map((v) =>
+        v.id === targetId
+          ? { ...v, tps: tpsBaru, rt: rtBaru, rw: rwBaru }
+          : v
+      )
+    );
+    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
+        v.id === targetId ? { ...v, tps: tpsBaru, rt: rtBaru, rw: rwBaru } : v
+      );
     }
+
+    // 2. Immediately close modal & show feedback
+    setShowMutasiModal(false);
+    toast.success("Mutasi Berhasil", `${voterName} dipindahkan ke ${tpsBaru}.`);
+
+    // 3. Asynchronous background execution
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/pemilih/${targetId}/mutasi`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tpsBaru, rtBaru, rwBaru, user: currentUser }),
+        });
+        const result = await res.json();
+        if (!result.success) {
+          toast.error("Gagal Mutasi di Server", "Tidak dapat memproses mutasi Tabung.");
+        }
+      } catch (err) {
+        console.error("Background mutasi error:", err);
+      }
+    })();
   };
 
   const handleDeleteVoter = async (v: Voter) => {
@@ -705,84 +843,102 @@ export const AdminDashboard: React.FC = () => {
     });
 
     if (approved) {
+      // 1. Instant optimistic state update (< 1ms)
+      setVoters((prev) => prev.filter((item) => item.id !== v.id));
+      const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+      if (rwVotersCacheRef.current[cacheKey]) {
+        rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].filter((item) => item.id !== v.id);
+      }
+      toast.success("Data Dihapus", `${v.namaLengkap} telah dihapus.`);
+
+      // 2. Asynchronous background execution
+      void (async () => {
+        try {
+          const res = await fetch(`/api/admin/pemilih/${v.id}?user=${encodeURIComponent(currentUser)}`, {
+            method: "DELETE",
+          });
+          const result = await res.json();
+          if (!result.success) {
+            toast.error("Gagal Hapus di Server", "Tidak dapat menghapus data.");
+          }
+        } catch (err) {
+          console.error("Background delete voter error:", err);
+        }
+      })();
+    }
+  };
+
+  // --- PROMOSI / ROLLBACK PEMILIH DPS <-> DPT (OPTIMISTIC NON-BLOCKING) ---
+  const handlePromoteToDpt = (ids: string[]) => {
+    if (!ids || ids.length === 0) return;
+    // 1. Optimistic instant UI update in 0ms
+    setVoters((prev) =>
+      prev.map((v) => (ids.includes(v.id) ? { ...v, tahap: "DPT" } : v))
+    );
+    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
+        ids.includes(v.id) ? { ...v, tahap: "DPT" } : v
+      );
+    }
+
+    toast.success("Verifikasi Masuk DPT", `${ids.length} data pemilih langsung dipindahkan ke DPT.`);
+
+    // 2. Asynchronous background sync
+    void (async () => {
       try {
-        const res = await fetch(`/api/admin/pemilih/${v.id}?user=${encodeURIComponent(currentUser)}`, {
-          method: "DELETE",
+        const res = await fetch("/api/admin/pemilih/promosi-dpt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids, targetTahap: "DPT", user: currentUser }),
         });
         const result = await res.json();
-        if (result.success) {
-          toast.success("Data Dihapus", `${v.namaLengkap} telah dihapus dari database.`);
-          fetchData();
+        if (!result.success) {
+          toast.error("Gagal Sinkronisasi DPT", result.message || "Tidak dapat memindahkan data di server.");
         }
-      } catch {
-        toast.error("Gagal", "Tidak dapat menghapus data.");
+      } catch (err) {
+        console.error("Background promote error:", err);
       }
-    }
+    })();
   };
 
-  // --- PROMOSI / ROLLBACK PEMILIH DPS <-> DPT ---
-  const handlePromoteToDpt = async (ids: string[]) => {
+  const handleRollbackToDps = (ids: string[]) => {
     if (!ids || ids.length === 0) return;
-    try {
-      // Optimistic instant UI update in 0ms
-      setVoters((prev) =>
-        prev.map((v) => (ids.includes(v.id) ? { ...v, tahap: "DPT" } : v))
+    // 1. Optimistic instant UI update in 0ms
+    setVoters((prev) =>
+      prev.map((v) => (ids.includes(v.id) ? { ...v, tahap: "DPS" } : v))
+    );
+    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
+        ids.includes(v.id) ? { ...v, tahap: "DPS" } : v
       );
-
-      toast.success(
-        "Verifikasi Masuk DPT",
-        `${ids.length} data pemilih langsung dipindahkan ke DPT.`
-      );
-
-      const res = await fetch("/api/admin/pemilih/promosi-dpt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids, targetTahap: "DPT", user: currentUser }),
-      });
-      const result = await res.json();
-      if (!result.success) {
-        toast.error("Gagal Sinkronisasi", result.message || "Tidak dapat memindahkan data di server.");
-        fetchData();
-      }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
-      fetchData();
     }
+
+    toast.warning("Dikembalikan ke DPS", `${ids.length} data pemilih dikembalikan ke DPS.`);
+
+    // 2. Asynchronous background sync
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/pemilih/promosi-dpt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids, targetTahap: "DPS", user: currentUser }),
+        });
+        const result = await res.json();
+        if (!result.success) {
+          toast.error("Gagal Rollback di Server", result.message || "Tidak dapat mengembalikan data.");
+        }
+      } catch (err) {
+        console.error("Background rollback error:", err);
+      }
+    })();
   };
 
-  const handleRollbackToDps = async (ids: string[]) => {
-    if (!ids || ids.length === 0) return;
-    try {
-      // Optimistic instant UI update in 0ms
-      setVoters((prev) =>
-        prev.map((v) => (ids.includes(v.id) ? { ...v, tahap: "DPS" } : v))
-      );
-
-      toast.warning(
-        "Dikembalikan ke DPS",
-        `${ids.length} data pemilih dikembalikan ke DPS untuk perbaikan.`
-      );
-
-      const res = await fetch("/api/admin/pemilih/promosi-dpt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids, targetTahap: "DPS", user: currentUser }),
-      });
-      const result = await res.json();
-      if (!result.success) {
-        toast.error("Gagal", result.message || "Tidak dapat mengembalikan data di server.");
-        fetchData();
-      }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
-      fetchData();
-    }
-  };
-
-  // --- ADUAN RESOLUTION (INSTANT OPTIMISTIC UI) ---
-  const handleApproveAduan = async (a: Aduan) => {
-    // 1. Instant Optimistic UI Update (< 1ms)
+  // --- ADUAN RESOLUTION (INSTANT OPTIMISTIC UI & BACKGROUND SYNC) ---
+  const handleApproveAduan = (a: Aduan) => {
     const targetKey = a.id || a.nomorAduan;
+    // 1. Instant Optimistic UI Update (< 1ms)
     setAduanList((prev) =>
       prev.map((item) =>
         item.id === targetKey || item.nomorAduan === a.nomorAduan
@@ -795,35 +951,35 @@ export const AdminDashboard: React.FC = () => {
           : item
       )
     );
+    toast.success("Aduan Disetujui", `Tiket ${a.nomorAduan} disetujui & data diselaraskan.`);
 
-    try {
-      const res = await fetch("/api/admin/aduan", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: targetKey,
-          status: "DISETUJUI",
-          catatan: "Disetujui oleh Petugas P2KD & Data Master Terkait Telah Diperbarui.",
-          user: currentUser,
-          autoUpdateMaster: true,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Aduan Disetujui", `Tiket ${a.nomorAduan} disetujui & data pemilih otomatis diselaraskan.`);
-      } else {
-        toast.error("Gagal", result.message || "Tidak dapat memproses aduan.");
-        fetchData();
+    // 2. Asynchronous background sync
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/aduan", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: targetKey,
+            status: "DISETUJUI",
+            catatan: "Disetujui oleh Petugas P2KD & Data Master Terkait Telah Diperbarui.",
+            user: currentUser,
+            autoUpdateMaster: true,
+          }),
+        });
+        const result = await res.json();
+        if (!result.success) {
+          toast.error("Gagal", result.message || "Tidak dapat memproses aduan di server.");
+        }
+      } catch (err) {
+        console.error("Background approve aduan error:", err);
       }
-    } catch {
-      toast.error("Gagal", "Tidak dapat memproses aduan.");
-      fetchData();
-    }
+    })();
   };
 
-  const handleRejectAduan = async (a: Aduan) => {
-    // 1. Instant Optimistic UI Update (< 1ms)
+  const handleRejectAduan = (a: Aduan) => {
     const targetKey = a.id || a.nomorAduan;
+    // 1. Instant Optimistic UI Update (< 1ms)
     setAduanList((prev) =>
       prev.map((item) =>
         item.id === targetKey || item.nomorAduan === a.nomorAduan
@@ -835,103 +991,121 @@ export const AdminDashboard: React.FC = () => {
           : item
       )
     );
+    toast.warning("Aduan Ditolak", `Tiket ${a.nomorAduan} telah ditolak.`);
 
-    try {
-      const res = await fetch("/api/admin/aduan", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: targetKey,
-          status: "DITOLAK",
-          catatan: "Data atau bukti pendukung tidak memenuhi syarat administrasi.",
-          user: currentUser,
-          autoUpdateMaster: false,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.warning("Aduan Ditolak", `Tiket ${a.nomorAduan} telah ditolak.`);
-      } else {
-        toast.error("Gagal", result.message || "Tidak dapat memproses penolakan aduan.");
-        fetchData();
+    // 2. Asynchronous background sync
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/aduan", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: targetKey,
+            status: "DITOLAK",
+            catatan: "Data atau bukti pendukung tidak memenuhi syarat administrasi.",
+            user: currentUser,
+            autoUpdateMaster: false,
+          }),
+        });
+        const result = await res.json();
+        if (!result.success) {
+          toast.error("Gagal", result.message || "Tidak dapat memproses penolakan aduan di server.");
+        }
+      } catch (err) {
+        console.error("Background reject aduan error:", err);
       }
-    } catch {
-      toast.error("Gagal", "Tidak dapat memproses penolakan aduan.");
-      fetchData();
-    }
+    })();
   };
 
-  const handleDeleteAduan = async (a: Aduan) => {
+  const handleDeleteAduan = (a: Aduan) => {
     const targetKey = a.id || a.nomorAduan;
     // 1. Instant Optimistic UI Update (< 1ms)
     setAduanList((prev) =>
       prev.filter((item) => item.id !== targetKey && item.nomorAduan !== a.nomorAduan)
     );
+    toast.success("Laporan Dihapus", `Laporan aduan ${a.nomorAduan} berhasil dihapus.`);
 
-    try {
-      const res = await fetch(`/api/admin/aduan?id=${encodeURIComponent(targetKey)}`, {
-        method: "DELETE",
-      });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Laporan Dihapus", `Laporan aduan ${a.nomorAduan} berhasil dihapus.`);
-      } else {
-        toast.error("Gagal Menghapus", result.message || "Tidak dapat menghapus aduan.");
-        fetchData();
+    // 2. Asynchronous background sync
+    void (async () => {
+      try {
+        const res = await fetch(`/api/admin/aduan?id=${encodeURIComponent(targetKey)}`, {
+          method: "DELETE",
+        });
+        const result = await res.json();
+        if (!result.success) {
+          toast.error("Gagal Menghapus", result.message || "Tidak dapat menghapus aduan di server.");
+        }
+      } catch (err) {
+        console.error("Background delete aduan error:", err);
       }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Tidak dapat menghapus aduan.");
-      fetchData();
-    }
+    })();
   };
 
-  // --- COKLIT HANDLER ---
-  const handleUpdateCoklitStatus = async (
+  // --- COKLIT HANDLER (INSTANT FEEDBACK & BACKGROUND SYNC) ---
+  const handleUpdateCoklitStatus = (
     voterId: string,
     status: "SESUAI" | "UBAH_DATA" | "TMS" | "BELUM_COKLIT",
     catatan?: string
   ) => {
-    try {
-      const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = new Date().toISOString().split("T")[0];
 
-      // Optimistic instant state update (< 1ms)
-      setVoters((prev) =>
-        prev.map((v) => {
-          if (v.id !== voterId) return v;
-          return {
-            ...v,
-            coklitStatus: status,
-            coklitTanggal: status === "BELUM_COKLIT" ? undefined : todayStr,
-            coklitCatatan: catatan,
-            coklitPetugas: status === "BELUM_COKLIT" ? undefined : currentUser,
-            statusAktif: status === "TMS" ? "TMS" : "AKTIF",
-            alasanTms: status === "TMS" ? catatan || "Dinyatakan TMS saat Coklit Lapangan" : undefined,
-            tahap: status === "SESUAI" || status === "UBAH_DATA" ? "DPT" : v.tahap,
-          };
-        })
-      );
-
-      const res = await fetch("/api/admin/coklit", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          voterId,
-          status,
-          catatan,
-          user: currentUser,
-        }),
+    // 1. Instant Optimistic state & cache update (< 1ms)
+    setVoters((prev) =>
+      prev.map((v) => {
+        if (v.id !== voterId) return v;
+        return {
+          ...v,
+          coklitStatus: status,
+          coklitTanggal: status === "BELUM_COKLIT" ? undefined : todayStr,
+          coklitCatatan: catatan,
+          coklitPetugas: status === "BELUM_COKLIT" ? undefined : currentUser,
+          statusAktif: status === "TMS" ? "TMS" : "AKTIF",
+          alasanTms: status === "TMS" ? catatan || "Dinyatakan TMS saat Coklit Lapangan" : undefined,
+          tahap: status === "SESUAI" || status === "UBAH_DATA" ? "DPT" : v.tahap,
+        };
+      })
+    );
+    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
+    if (rwVotersCacheRef.current[cacheKey]) {
+      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) => {
+        if (v.id !== voterId) return v;
+        return {
+          ...v,
+          coklitStatus: status,
+          coklitTanggal: status === "BELUM_COKLIT" ? undefined : todayStr,
+          coklitCatatan: catatan,
+          coklitPetugas: status === "BELUM_COKLIT" ? undefined : currentUser,
+          statusAktif: status === "TMS" ? "TMS" : "AKTIF",
+          alasanTms: status === "TMS" ? catatan || "Dinyatakan TMS saat Coklit Lapangan" : undefined,
+          tahap: status === "SESUAI" || status === "UBAH_DATA" ? "DPT" : v.tahap,
+        };
       });
-      const result = await res.json();
-      if (result.success) {
-        toast.success("Coklit Berhasil", result.message);
-      } else {
-        toast.error("Gagal", result.message);
-        fetchData();
-      }
-    } catch {
-      toast.error("Kesalahan Jaringan", "Gagal memperbarui status Coklit.");
-      fetchData();
     }
+
+    // 2. Immediate user feedback (0ms wait)
+    toast.success("Coklit Tercatat", "Status berhasil diperbarui.");
+
+    // 3. Asynchronous background execution
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/coklit", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            voterId,
+            status,
+            catatan,
+            user: currentUser,
+          }),
+        });
+        const result = await res.json();
+        if (!result.success) {
+          toast.error("Gagal Sinkronisasi Coklit", result.message);
+        }
+      } catch (err) {
+        console.error("Background coklit sync error:", err);
+      }
+    })();
   };
 
   // --- DPT LOCK ---
@@ -1019,20 +1193,25 @@ export const AdminDashboard: React.FC = () => {
     });
 
     if (approved) {
-      try {
-        const res = await fetch(`/api/admin/tps?id=${tps.id}&user=${encodeURIComponent(currentUser)}`, {
-          method: "DELETE",
-        });
-        const result = await res.json();
-        if (result.success) {
-          toast.success("Tabung Dihapus", result.message?.replace(/TPS/gi, "Tabung"));
-          fetchData();
-        } else {
-          toast.error("Gagal Menghapus Tabung", result.message?.replace(/TPS/gi, "Tabung"));
+      // 1. Instant optimistic removal (< 1ms)
+      setTpsList((prev) => prev.filter((item) => item.id !== tps.id));
+      toast.success("Tabung Dihapus", `${namaLabel} berhasil dihapus.`);
+
+      // 2. Asynchronous background deletion
+      void (async () => {
+        try {
+          const res = await fetch(`/api/admin/tps?id=${tps.id}&user=${encodeURIComponent(currentUser)}`, {
+            method: "DELETE",
+          });
+          const result = await res.json();
+          if (!result.success) {
+            toast.error("Gagal Menghapus Tabung di Server", result.message?.replace(/TPS/gi, "Tabung"));
+            fetchData();
+          }
+        } catch {
+          // Handled gracefully in background
         }
-      } catch {
-        toast.error("Kesalahan Jaringan", "Tidak dapat menghubungi server.");
-      }
+      })();
     }
   };
 
@@ -1142,7 +1321,10 @@ export const AdminDashboard: React.FC = () => {
               voters={voters}
               tpsList={tpsList}
               currentTps={currentCoklitTps}
-              setCurrentTps={setCurrentCoklitTps}
+              setCurrentTps={(tps) => {
+                setCurrentCoklitTps(tps);
+                handleSelectTpsFilter(tps);
+              }}
               isAdmin={isAdmin}
               onUpdateCoklitStatus={handleUpdateCoklitStatus}
               onOpenEditVoter={handleOpenEditVoter}
@@ -1177,7 +1359,7 @@ export const AdminDashboard: React.FC = () => {
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               selectedTpsFilter={selectedTpsFilter}
-              setSelectedTpsFilter={setSelectedTpsFilter}
+              setSelectedTpsFilter={handleSelectTpsFilter}
               selectedStatusFilter={selectedStatusFilter}
               setSelectedStatusFilter={setSelectedStatusFilter}
               isAdmin={isAdmin}
@@ -1217,7 +1399,7 @@ export const AdminDashboard: React.FC = () => {
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               selectedTpsFilter={selectedTpsFilter}
-              setSelectedTpsFilter={setSelectedTpsFilter}
+              setSelectedTpsFilter={handleSelectTpsFilter}
               selectedStatusFilter={selectedStatusFilter}
               setSelectedStatusFilter={setSelectedStatusFilter}
               isAdmin={isAdmin}
@@ -1255,6 +1437,7 @@ export const AdminDashboard: React.FC = () => {
             <TabMasterTPS
               tpsList={tpsList}
               voters={voters}
+              dbStatus={dbStatus}
               onOpenAddTps={() => {
                 const nextNum = String(tpsList.length + 1).padStart(2, "0");
                 setActiveTps({

@@ -416,18 +416,30 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
               </span>
               <span
                 className={`w-2 h-2 rounded-full ${
-                  dbStatus?.connected ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                  dbStatus === null
+                    ? "bg-blue-400 animate-pulse"
+                    : dbStatus?.connected
+                    ? "bg-emerald-400 animate-pulse"
+                    : "bg-amber-400"
                 }`}
               />
             </div>
             <div className="font-bold text-white text-xs">
-              {dbStatus?.connected ? "Database Server Terpusat P2KD" : "Sistem Basis Data Server"}
+              {dbStatus === null
+                ? "Menghubungkan Server..."
+                : dbStatus?.connected
+                ? "Database Server Terpusat P2KD"
+                : "Sistem Basis Data Server (Lokal)"}
             </div>
-            {dbStatus?.latencyMs && (
+            {dbStatus === null ? (
+              <div className="text-[9px] text-blue-400 font-mono font-medium">
+                Menginisialisasi 3 Server Database...
+              </div>
+            ) : dbStatus?.latencyMs ? (
               <div className="text-[9px] text-emerald-400 font-mono font-medium">
                 Respon Server: {dbStatus.latencyMs}ms • Realtime Aktif
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2">

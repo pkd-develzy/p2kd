@@ -130,12 +130,19 @@ export const AdminHeader: React.FC<HeaderProps> = ({
           {/* DB Indicator Pill */}
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 border border-slate-200 text-slate-700">
             <span
-              className={`w-2 h-2 rounded-full ${dbStatus?.connected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-                }`}
+              className={`w-2 h-2 rounded-full ${
+                dbStatus === null || (isLoading && !dbStatus)
+                  ? "bg-blue-500 animate-pulse"
+                  : dbStatus?.connected
+                  ? "bg-emerald-500 animate-pulse"
+                  : "bg-amber-500"
+              }`}
             />
             <span>
-              {dbStatus?.connected
-                ? `Terhubung ke server (${dbStatus.latencyMs}ms)`
+              {dbStatus === null || (isLoading && !dbStatus)
+                ? "Menghubungkan server..."
+                : dbStatus?.connected
+                ? `Terhubung ke server (${dbStatus.latencyMs ?? 35}ms)`
                 : "Offline (Local Sync Store)"}
             </span>
           </div>

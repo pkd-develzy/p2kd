@@ -53,6 +53,9 @@ const COLOR_PRESETS = [
   { name: "Amber Emas", value: "#78350f", bgClass: "bg-amber-900" },
 ];
 
+// In-memory client cache for instant 0ms tab switching
+let globalCachedCalonList: KandidatKades[] | null = null;
+
 export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
   isAdmin,
   userRole = "SUPER_ADMIN",
@@ -75,8 +78,8 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
     userSeksi === "SEKSI_PENJARINGAN" ||
     userSeksi === "SEKSI_PENYARINGAN";
 
-  const [calonList, setCalonList] = useState<KandidatKades[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [calonList, setCalonList] = useState<KandidatKades[]>(() => globalCachedCalonList || []);
+  const [loading, setLoading] = useState(() => !globalCachedCalonList);
   const [refreshing, setRefreshing] = useState(false);
 
   // Modal Calon State
@@ -145,6 +148,7 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
       });
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
+        globalCachedCalonList = json.data;
         setCalonList(json.data);
       } else {
         setCalonList([]);
@@ -191,6 +195,11 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
     let isMounted = true;
 
     const loadInitialData = async () => {
+      // If already cached in memory, use instant cache without reloading
+      if (globalCachedCalonList) {
+        return;
+      }
+
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token") : null;
         const [calonRes, configRes] = await Promise.all([
@@ -204,6 +213,7 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
 
         if (isMounted) {
           if (calonJson.success && Array.isArray(calonJson.data)) {
+            globalCachedCalonList = calonJson.data;
             setCalonList(calonJson.data);
           }
           if (configJson.success && configJson.data) {

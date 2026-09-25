@@ -34,13 +34,16 @@ interface TabManajemenBeritaProps {
   isAdmin?: boolean;
 }
 
+// In-memory client cache for instant 0ms tab switching
+let globalCachedBeritaList: MasterBerita[] | null = null;
+
 export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
   const toast = useToast();
   const { confirm } = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [articles, setArticles] = useState<MasterBerita[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState<MasterBerita[]>(() => globalCachedBeritaList || []);
+  const [loading, setLoading] = useState(() => !globalCachedBeritaList);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKategori, setSelectedKategori] = useState<string>("ALL");
 
@@ -124,6 +127,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
       });
       const json = await res.json();
       if (json.success && json.data) {
+        globalCachedBeritaList = json.data;
         setArticles(json.data);
       }
     } catch {
@@ -134,7 +138,11 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
   }, [toast, getAuthHeaders]);
 
   useEffect(() => {
+    if (globalCachedBeritaList && globalCachedBeritaList.length > 0) {
+      return;
+    }
     let isMounted = true;
+
     const token =
       typeof window !== "undefined"
         ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
@@ -146,6 +154,7 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
       .then((res) => res.json())
       .then((json) => {
         if (isMounted && json.success && json.data) {
+          globalCachedBeritaList = json.data;
           setArticles(json.data);
         }
       })

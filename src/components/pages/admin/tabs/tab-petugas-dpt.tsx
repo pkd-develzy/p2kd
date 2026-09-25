@@ -41,6 +41,9 @@ interface TabPetugasDptProps {
   userName?: string;
 }
 
+// In-memory client cache for instant 0ms tab switching
+let globalCachedPetugasList: MasterPetugasDpt[] | null = null;
+
 export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   isAdmin = true,
   userRole = "SUPER_ADMIN",
@@ -48,8 +51,8 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 }) => {
   const toast = useToast();
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
-  const [petugasList, setPetugasList] = useState<MasterPetugasDpt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [petugasList, setPetugasList] = useState<MasterPetugasDpt[]>(() => globalCachedPetugasList || []);
+  const [loading, setLoading] = useState(() => !globalCachedPetugasList || globalCachedPetugasList.length === 0);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [rwFilter, setRwFilter] = useState<string>("ALL");
@@ -99,14 +102,19 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
     });
   };
 
-  // Fetch Petugas List on initial load
+  // Fetch Petugas List on initial load (only if not already cached)
   useEffect(() => {
+    if (globalCachedPetugasList && globalCachedPetugasList.length > 0) {
+      return;
+    }
     let isMounted = true;
+
     fetch("/api/admin/petugas-dpt")
       .then((res) => res.json())
       .then((json) => {
         if (isMounted) {
           if (json.success && Array.isArray(json.data)) {
+            globalCachedPetugasList = json.data;
             setPetugasList(json.data);
           }
           setLoading(false);
@@ -129,6 +137,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       const res = await fetch("/api/admin/petugas-dpt?refresh=true");
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
+        globalCachedPetugasList = json.data;
         setPetugasList(json.data);
       }
     } catch (err) {

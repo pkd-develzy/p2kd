@@ -481,24 +481,15 @@ export const AdminDashboard: React.FC = () => {
       )
       .subscribe();
 
-    // B. Smart Fallback Polling (Every 45s, ONLY when tab is active/visible)
+    // B. Smart Fallback Polling (Every 180s, ONLY when tab is active/visible)
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         void fetchData();
       }
-    }, 45000);
-
-    // C. Re-fetch immediately when admin returns to tab
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void fetchData();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    }, 180000);
 
     return () => {
       clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
       supabase.removeChannel(channelMain);
       supabaseSeksi1.removeChannel(channelSeksi1);
       supabaseServer3.removeChannel(channelServer3);

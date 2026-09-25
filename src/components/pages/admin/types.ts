@@ -109,13 +109,26 @@ export interface DbStatus {
     pemilihCount?: number;
     anggotaCount?: number;
     tpsCount?: number;
+    petugasCount?: number;
   };
   localStats?: {
     totalPemilih?: number;
     totalAktif?: number;
     totalTms?: number;
+    totalDps?: number;
+    totalDpt?: number;
     totalTps?: number;
     totalAduan?: number;
+    totalPetugas?: number;
+    totalAnggota?: number;
+    totalAudit?: number;
+    tpsStats?: Array<{
+      tps: string;
+      namaTps: string;
+      total: number;
+      aktif: number;
+      tms: number;
+    }>;
   };
   tahapan?: {
     isDptLocked: boolean;

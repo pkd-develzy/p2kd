@@ -230,14 +230,14 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
               <select
                 value={selectedTpsFilter}
                 onChange={(e) => setSelectedTpsFilter(e.target.value)}
-                className="h-10 px-3 text-xs rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                className="h-10 px-3 text-xs rounded-xl border border-slate-200 bg-white font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-xs"
               >
-                <option value="SEMUA">Semua Wilayah RW (13 Wilayah RW)</option>
                 {tpsList.map((t) => (
                   <option key={t.id} value={t.nomorTps}>
-                    {t.namaTps} ({t.lokasi})
+                    Wilayah RW {t.nomorTps} ({t.namaTps} • {t.lokasi})
                   </option>
                 ))}
+                <option value="SEMUA">Semua Wilayah RW (13 RW • Beban Penuh)</option>
               </select>
             )}
 

@@ -91,7 +91,7 @@ export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA
     // 2. SUB-TABEL VERIFIKASI DI BAWAHNYA
     // PENTING: Jika tidak ada catatan, biarkan KOSONG (jangan ada teks asumtif otomatis)
     rows.push([
-      "   ↳ [SUB-TABEL VERIFIKASI COKLIT]",
+      "",
       "STATUS FAKTUAL",
       "KOREKSI ELEMEN DATA",
       "CATATAN LAPANGAN / BUKTI",
@@ -196,44 +196,42 @@ export function exportModelA1Pdf(voters: Voter[], selectedTps: string = "SEMUA")
     doc.text(`${idx + 1}.`, 16, y + 4.5);
     doc.text(`NIK: ${v.nik}`, 23, y + 4.5);
     doc.text(`KK: ${v.kk || "-"}`, 68, y + 4.5);
-    doc.text(`NAMA: ${v.namaLengkap}`, 110, y + 4.5);
-    doc.text(`JK: ${v.jenisKelamin}`, 180, y + 4.5);
-    doc.text(`LAHIR: ${v.tempatLahir}, ${v.tanggalLahir}`, 195, y + 4.5);
+    const namaTxt = v.namaLengkap.length > 28 ? v.namaLengkap.substring(0, 26) + ".." : v.namaLengkap;
+    doc.text(`NAMA: ${namaTxt}`, 110, y + 4.5);
+    doc.text(`JK: ${v.jenisKelamin}`, 178, y + 4.5);
+    const tempatLahirTxt = v.tempatLahir && v.tempatLahir.length > 13 ? v.tempatLahir.substring(0, 12) + "." : (v.tempatLahir || "-");
+    doc.text(`LAHIR: ${tempatLahirTxt}, ${v.tanggalLahir || "-"}`, 192, y + 4.5);
     doc.text(`ALAMAT: RT ${v.rt} / RW ${v.rw}`, 245, y + 4.5);
 
     // Garis Pemisah Sub-tabel
     doc.setDrawColor(226, 232, 240);
     doc.line(16, y + 7, 281, y + 7);
 
-    // Baris 2: Sub-Tabel Coklit
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(6.5);
-    doc.setTextColor(30, 58, 138);
-    doc.text("↳ SUB-TABEL VERIFIKASI FAKTUAL LAPANGAN:", 18, y + 11);
-
+    // Baris 2: Verifikasi & Coklit Lapangan (Tertata rapi tanpa bertabrakan)
     doc.setFont("helvetica", "normal");
     doc.setFontSize(6.5);
     doc.setTextColor(71, 85, 105);
 
     // Status Badge
     const statusTxt = v.coklitStatus === "SESUAI"
-      ? "[ ✓ SESUAI ]"
+      ? "[ V ] SESUAI"
       : v.coklitStatus === "UBAH_DATA"
-      ? "[ ✎ UBAH DATA ]"
+      ? "[ V ] UBAH DATA"
       : v.coklitStatus === "TMS"
-      ? "[ ✕ TMS ]"
+      ? "[ V ] TMS"
       : "[   ] SESUAI   [   ] UBAH   [   ] TMS";
-    doc.text(`Status: ${statusTxt}`, 80, y + 11);
-    doc.text(`Koreksi: ${v.coklitCatatan ? v.coklitCatatan : "........................................"}`, 130, y + 11);
-    doc.text(`Petugas: ${v.coklitPetugas || "...................."}`, 190, y + 11);
-    doc.text(`Tgl: ${v.coklitTanggal || "..../..../2026"}`, 230, y + 11);
-    doc.text("Paraf: [ ........... ]", 258, y + 11);
 
-    // Keterangan tambahan (KOSONG jika tidak ada TMS/koreksi khusus)
+    doc.text(`Status: ${statusTxt}`, 16, y + 11.5);
+    doc.text(`Koreksi: ${v.coklitCatatan ? v.coklitCatatan : "........................................"}`, 72, y + 11.5);
+    doc.text(`Petugas: ${v.coklitPetugas || "...................."}`, 135, y + 11.5);
+    doc.text(`Tgl: ${v.coklitTanggal || "..../..../2026"}`, 185, y + 11.5);
+    doc.text("Paraf: [ ........... ]", 228, y + 11.5);
+
+    // Baris 3: Catatan & Paraf Pemilih
     doc.setFontSize(6);
     const catatanExtra = v.alasanTms ? `Catatan TMS: ${v.alasanTms}` : "Catatan / Bukti Lapangan: ............................................................................................";
-    doc.text(catatanExtra, 18, y + 16.5);
-    doc.text("Paraf Pemilih: [ ........... ]", 245, y + 16.5);
+    doc.text(catatanExtra, 16, y + 16.5);
+    doc.text("Paraf Pemilih: [ ........... ]", 228, y + 16.5);
 
     y += 24;
   });

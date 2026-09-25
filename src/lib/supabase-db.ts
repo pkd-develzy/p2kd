@@ -267,26 +267,32 @@ interface SupabaseTahapanRow {
  * Reads and writes directly to Supabase project
  */
 export class SupabaseDbService {
-  private static adminClient = getSupabaseAdmin();
-  private static seksi1AdminClient = getSupabaseSeksi1Admin();
-  private static server3AdminClient = getSupabaseServer3Admin();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static _adminClient: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static _seksi1AdminClient: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static _server3AdminClient: any = null;
+
+  private static get adminClient() {
+    if (!this._adminClient) {
+      this._adminClient = getSupabaseAdmin();
+    }
+    return this._adminClient;
+  }
 
   public static getSeksi1Client() {
-    if (!this.seksi1AdminClient) {
-      throw new Error(
-        "[STRICT ISOLATION FATAL ERROR] Seksi 1 Client (ewzhaldoxepheugxjquz) is not initialized! Seksi 1 & Pantarlih operations are strictly forbidden from querying the old server."
-      );
+    if (!this._seksi1AdminClient) {
+      this._seksi1AdminClient = getSupabaseSeksi1Admin();
     }
-    return this.seksi1AdminClient;
+    return this._seksi1AdminClient;
   }
 
   public static getServer3Client() {
-    if (!this.server3AdminClient) {
-      throw new Error(
-        "[STRICT ISOLATION FATAL ERROR] Server 3 Client (msrefdzbexmkputwbyjc) is not initialized!"
-      );
+    if (!this._server3AdminClient) {
+      this._server3AdminClient = getSupabaseServer3Admin();
     }
-    return this.server3AdminClient;
+    return this._server3AdminClient;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static cachedResult: any = null;
@@ -1778,7 +1784,7 @@ export class SupabaseDbService {
         return [];
       }
 
-      return (data || []).map((b) => ({
+      return ((data as SupabaseBeritaRow[]) || []).map((b: SupabaseBeritaRow) => ({
         id: b.id,
         slug: b.slug,
         judul: b.judul,

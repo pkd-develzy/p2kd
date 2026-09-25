@@ -26,6 +26,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // 2. Server-Side Admin Supabase Instance (Service Role Key for elevated backend operations)
 export const getSupabaseAdmin = () => {
+  if (typeof window !== "undefined") {
+    return supabase;
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || supabaseUrl;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || supabaseServiceKey;
   if (!key) {
@@ -63,12 +66,13 @@ export const supabaseSeksi1 = createClient(supabaseSeksi1Url, supabaseSeksi1Anon
 });
 
 export const getSupabaseSeksi1Admin = () => {
+  if (typeof window !== "undefined") {
+    return supabaseSeksi1;
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_SEKSI1_URL || process.env.SUPABASE_SEKSI1_URL || supabaseSeksi1Url;
   const key = process.env.SUPABASE_SEKSI1_SERVICE_ROLE_KEY || process.env.SUPABASE_SEKSI1_SECRET_KEY || supabaseSeksi1ServiceKey;
   if (!key) {
-    throw new Error(
-      "[STRICT ISOLATION FATAL ERROR] SUPABASE_SEKSI1_SERVICE_ROLE_KEY is missing! Seksi 1 & Pantarlih database is strictly isolated and forbidden from querying the old server."
-    );
+    return supabaseSeksi1;
   }
   return createClient(url, key, {
     auth: {
@@ -102,12 +106,13 @@ export const supabaseServer3 = createClient(supabaseServer3Url, supabaseServer3A
 });
 
 export const getSupabaseServer3Admin = () => {
+  if (typeof window !== "undefined") {
+    return supabaseServer3;
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_SERVER3_URL || process.env.SUPABASE_SERVER3_URL || supabaseServer3Url;
   const key = process.env.SUPABASE_SERVER3_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVER3_SECRET_KEY || supabaseServer3ServiceKey;
   if (!key) {
-    throw new Error(
-      "[STRICT ISOLATION FATAL ERROR] SUPABASE_SERVER3_SERVICE_ROLE_KEY is missing! Panitia & Calon & Real Count database is strictly isolated."
-    );
+    return supabaseServer3;
   }
   return createClient(url, key, {
     auth: {

@@ -847,13 +847,24 @@ export class SupabaseDbService {
    */
   public static async fetchPemilihBatch(
     offset = 0,
-    limit = 1000
+    limit = 1000,
+    wilayahFilter?: string
   ): Promise<{ data: MasterPemilih[]; total: number; hasMore: boolean }> {
     try {
       const safeLimit = Math.min(1000, Math.max(1, limit));
-      const { data, count, error } = await this.getSeksi1Client()
+      let query = this.getSeksi1Client()
         .from("pemilih")
-        .select("*", { count: "exact" })
+        .select("*", { count: "exact" });
+
+      if (wilayahFilter && wilayahFilter !== "SEMUA") {
+        const cleanDigits = wilayahFilter.replace(/\D/g, "");
+        const formattedRw = cleanDigits.length === 1 ? `0${cleanDigits}` : cleanDigits;
+        query = query.or(
+          `rw.eq.${formattedRw},rw.eq.${cleanDigits},tps.ilike.%RW ${formattedRw}%,tps.ilike.%TPS ${formattedRw}%,tps.ilike.%Tabung ${formattedRw}%`
+        );
+      }
+
+      const { data, count, error } = await query
         .order("rw", { ascending: true })
         .order("no_kk", { ascending: true })
         .order("nama_lengkap", { ascending: true })
@@ -882,14 +893,25 @@ export class SupabaseDbService {
    * Fetch perubahan data pemilih setelah timestamp tertentu untuk Incremental Sync
    */
   public static async fetchPemilihChanges(
-    sinceTimestamp: string
+    sinceTimestamp: string,
+    wilayahFilter?: string
   ): Promise<{ updated: MasterPemilih[]; deletedIds: string[]; serverTimestamp: string }> {
     const serverTimestamp = new Date().toISOString();
     try {
-      const { data, error } = await this.getSeksi1Client()
+      let query = this.getSeksi1Client()
         .from("pemilih")
         .select("*")
-        .gt("updated_at", sinceTimestamp)
+        .gt("updated_at", sinceTimestamp);
+
+      if (wilayahFilter && wilayahFilter !== "SEMUA") {
+        const cleanDigits = wilayahFilter.replace(/\D/g, "");
+        const formattedRw = cleanDigits.length === 1 ? `0${cleanDigits}` : cleanDigits;
+        query = query.or(
+          `rw.eq.${formattedRw},rw.eq.${cleanDigits},tps.ilike.%RW ${formattedRw}%,tps.ilike.%TPS ${formattedRw}%,tps.ilike.%Tabung ${formattedRw}%`
+        );
+      }
+
+      const { data, error } = await query
         .order("updated_at", { ascending: true })
         .limit(1000);
 

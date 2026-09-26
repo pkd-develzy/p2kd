@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { SupabaseDbService } from "@/lib/supabase-db";
-import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
+import {
+  verifyAdminSession,
+  canAccessVoterData,
+  isDeveloper,
+  isKetuaP2KD,
+  isSeksiPemilih,
+} from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
   try {
@@ -20,6 +26,12 @@ export async function GET(req: Request) {
       );
     }
 
+    // Tentukan cakupan hak akses wilayah:
+    // Developer, Ketua P2KD, dan Seksi 1 memiliki hak akses penuh desa (all 13 RWs).
+    // Petugas Pantarlih RW dibatasi HANYA pada RW / TPS binaannya sendiri!
+    const isUniversal = isDeveloper(user) || isKetuaP2KD(user) || isSeksiPemilih(user);
+    const wilayahScope = isUniversal ? undefined : user.assignedTps || undefined;
+
     const { searchParams } = new URL(req.url);
     const syncType = searchParams.get("type") || "initial";
 
@@ -29,7 +41,7 @@ export async function GET(req: Request) {
       const limit = Math.min(1000, Math.max(100, parseInt(searchParams.get("limit") || "1000", 10)));
       const offset = batch * limit;
 
-      const batchResult = await SupabaseDbService.fetchPemilihBatch(offset, limit);
+      const batchResult = await SupabaseDbService.fetchPemilihBatch(offset, limit, wilayahScope);
 
       return NextResponse.json({
         success: true,
@@ -40,6 +52,7 @@ export async function GET(req: Request) {
         hasMore: batchResult.hasMore,
         data: batchResult.data,
         serverTimestamp: new Date().toISOString(),
+        wilayahScope: wilayahScope || "SEMUA",
       });
     }
 
@@ -65,13 +78,14 @@ export async function GET(req: Request) {
     // 3. Incremental Sync (Hanya data yang berubah sejak timestamp terakhir)
     if (syncType === "incremental") {
       const since = searchParams.get("since") || new Date(Date.now() - 3600000).toISOString();
-      const changes = await SupabaseDbService.fetchPemilihChanges(since);
+      const changes = await SupabaseDbService.fetchPemilihChanges(since, wilayahScope);
 
       return NextResponse.json({
         success: true,
         updated: changes.updated,
         deletedIds: changes.deletedIds,
         serverTimestamp: changes.serverTimestamp,
+        wilayahScope: wilayahScope || "SEMUA",
       });
     }
 

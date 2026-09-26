@@ -267,7 +267,8 @@ export const AdminDashboard: React.FC = () => {
     username: currentUser,
     role: computedUserRole,
     instansi: "p2kd_kalisalak",
-  }), [currentUser, computedUserRole]);
+    assignedTps: isFieldOfficer ? assignedTps : undefined,
+  }), [currentUser, computedUserRole, isFieldOfficer, assignedTps]);
 
   const namespace = React.useMemo(() => {
     return EncryptedLocalDb.buildNamespace(userContext);

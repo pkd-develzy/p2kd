@@ -29,6 +29,7 @@ import {
   AnggotaP2KD,
   SeksiP2KDType,
 } from "./types";
+import { PublicWebConfig } from "@/lib/data-store";
 
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
@@ -249,6 +250,7 @@ export const AdminDashboard: React.FC = () => {
   const [petugasCount, setPetugasCount] = useState<number>(() => initialCache?.petugasCount || 0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => initialCache?.auditLogs || []);
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(() => initialCache?.dbStatus || null);
+  const [webConfig, setWebConfig] = useState<PublicWebConfig | null>(() => initialCache?.webConfig || null);
   const [isDptLocked, setIsDptLocked] = useState<boolean>(() => Boolean(initialCache?.isDptLocked));
   const [lockHashSignature, setLockHashSignature] = useState<string>(() => initialCache?.lockHashSignature || "");
   const [nomorBeritaAcara, setNomorBeritaAcara] = useState<string>(() => initialCache?.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026");
@@ -398,6 +400,7 @@ export const AdminDashboard: React.FC = () => {
         resDb,
         resAnggota,
         resPetugas,
+        resConfig,
       ] = await Promise.all([
         fetch("/api/admin/aduan", { cache: "no-store" }),
         fetch("/api/admin/tps", { cache: "no-store" }),
@@ -405,6 +408,7 @@ export const AdminDashboard: React.FC = () => {
         fetch("/api/admin/db-status", { cache: "no-store" }),
         fetch("/api/admin/anggota", { cache: "no-store" }),
         fetch("/api/admin/petugas-dpt", { cache: "no-store" }),
+        fetch("/api/config", { cache: "no-store" }),
       ]);
 
       const [
@@ -414,6 +418,7 @@ export const AdminDashboard: React.FC = () => {
         dataDb,
         dataAnggota,
         dataPetugas,
+        dataConfig,
       ] = await Promise.all([
         resAduan.json(),
         resTps.json(),
@@ -421,7 +426,12 @@ export const AdminDashboard: React.FC = () => {
         resDb.json(),
         resAnggota.json(),
         resPetugas.json(),
+        resConfig.json(),
       ]);
+
+      if (dataConfig.success && dataConfig.data) {
+        setWebConfig(dataConfig.data);
+      }
 
       if (resAduan.status === 401 || resTps.status === 401) {
         toast.error("Sesi Berakhir", "Sesi autentikasi Anda telah berakhir. Silakan masuk kembali.");
@@ -589,6 +599,7 @@ export const AdminDashboard: React.FC = () => {
             anggotaList,
             auditLogs: isAdmin ? auditLogs : [],
             dbStatus,
+            webConfig,
             isDptLocked,
             lockHashSignature,
             nomorBeritaAcara,
@@ -607,6 +618,7 @@ export const AdminDashboard: React.FC = () => {
     anggotaList,
     auditLogs,
     dbStatus,
+    webConfig,
     isDptLocked,
     lockHashSignature,
     nomorBeritaAcara,
@@ -1329,6 +1341,7 @@ export const AdminDashboard: React.FC = () => {
                 jabatan: computedUserJabatan,
               }}
               dbStatus={dbStatus}
+              webConfig={webConfig}
             />
           )}
 
@@ -1547,7 +1560,10 @@ export const AdminDashboard: React.FC = () => {
           )}
 
           {effectiveActiveTab === "pengaturan_web" && (
-            <TabPengaturanWeb currentUser={{ namaLengkap: computedUserName, role: computedUserRole }} />
+            <TabPengaturanWeb
+              currentUser={{ namaLengkap: computedUserName, role: computedUserRole }}
+              onConfigSaved={(updated) => setWebConfig(updated)}
+            />
           )}
 
           {effectiveActiveTab === "calon" && (

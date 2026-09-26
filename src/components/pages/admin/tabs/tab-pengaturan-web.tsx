@@ -41,6 +41,7 @@ interface TabPengaturanWebProps {
     namaLengkap: string;
     role: string;
   };
+  onConfigSaved?: (config: PublicWebConfig) => void;
 }
 
 const defaultWebConfig: PublicWebConfig = {
@@ -69,7 +70,7 @@ const defaultWebConfig: PublicWebConfig = {
   popupInterval: 3,
 };
 
-export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser }) => {
+export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser, onConfigSaved }) => {
   const toast = useToast();
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
   const [config, setConfig] = useState<PublicWebConfig>(defaultWebConfig);
@@ -94,17 +95,26 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
     fileSize: "PDF Resmi",
   });
 
+  const getAuthHeaders = (): Record<string, string> => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+        : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   const fetchAllConfigAndAnnouncements = async () => {
     try {
       const [resConfig, resAnn] = await Promise.all([
-        fetch("/api/config"),
-        fetch("/api/pengumuman"),
+        fetch("/api/config", { cache: "no-store" }),
+        fetch("/api/pengumuman", { cache: "no-store" }),
       ]);
       const jsonConfig = await resConfig.json();
       const jsonAnn = await resAnn.json();
 
       if (jsonConfig.success && jsonConfig.data) {
         setConfig(jsonConfig.data);
+        onConfigSaved?.(jsonConfig.data);
       }
       if (jsonAnn.success && Array.isArray(jsonAnn.data)) {
         setPengumumanList(jsonAnn.data);
@@ -118,12 +128,18 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
 
   useEffect(() => {
     let active = true;
-    Promise.all([fetch("/api/config"), fetch("/api/pengumuman")])
+    Promise.all([
+      fetch("/api/config", { cache: "no-store" }),
+      fetch("/api/pengumuman", { cache: "no-store" }),
+    ])
       .then(async ([resConfig, resAnn]) => {
         const jsonConfig = await resConfig.json();
         const jsonAnn = await resAnn.json();
         if (active) {
-          if (jsonConfig.success && jsonConfig.data) setConfig(jsonConfig.data);
+          if (jsonConfig.success && jsonConfig.data) {
+            setConfig(jsonConfig.data);
+            onConfigSaved?.(jsonConfig.data);
+          }
           if (jsonAnn.success && Array.isArray(jsonAnn.data)) setPengumumanList(jsonAnn.data);
           setLoadingPengumuman(false);
         }
@@ -136,7 +152,7 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
     return () => {
       active = false;
     };
-  }, []);
+  }, [onConfigSaved]);
 
   const handleManualRefresh = async () => {
     setRefreshing(true);
@@ -151,7 +167,10 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
     try {
       const res = await fetch("/api/config", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
         body: JSON.stringify({
           data: config,
           user: currentUser.namaLengkap,
@@ -161,6 +180,7 @@ export const TabPengaturanWeb: React.FC<TabPengaturanWebProps> = ({ currentUser 
       if (json.success) {
         toast.success("Pengaturan Disimpan ke Database", "Konfigurasi website publik berhasil diperbarui secara realtime.");
         setConfig(json.data);
+        onConfigSaved?.(json.data);
       } else {
         toast.error("Gagal Menyimpan", json.message || "Terjadi kesalahan.");
       }

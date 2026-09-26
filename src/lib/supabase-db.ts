@@ -1849,7 +1849,7 @@ export class SupabaseDbService {
 
   public static async saveWebConfig(data: PublicWebConfig) {
     try {
-      await this.adminClient.from("web_config").upsert({
+      const payload: Record<string, unknown> = {
         id: "main_config",
         nama_desa: data.namaDesa,
         kecamatan: data.kecamatan,
@@ -1860,11 +1860,11 @@ export class SupabaseDbService {
         periode_masa_bakti: data.periodeMasaBakti,
         hari_h_tanggal: data.hariHTanggal,
         running_text: data.runningText,
-        is_running_text_active: data.isRunningTextActive,
-        is_cek_hak_pilih_open: data.isCekHakPilihOpen,
-        is_profil_calon_visible: data.isProfilCalonVisible,
-        is_real_count_public: data.isRealCountPublic,
-        is_aduan_open: data.isAduanOpen,
+        is_running_text_active: Boolean(data.isRunningTextActive),
+        is_cek_hak_pilih_open: Boolean(data.isCekHakPilihOpen),
+        is_profil_calon_visible: Boolean(data.isProfilCalonVisible),
+        is_real_count_public: Boolean(data.isRealCountPublic),
+        is_aduan_open: Boolean(data.isAduanOpen),
         kontak_wa_p2kd: data.kontakWaP2kd,
         jam_layanan: data.jamLayanan,
         alamat_sekretariat: data.alamatSekretariat,
@@ -1885,7 +1885,39 @@ export class SupabaseDbService {
         popup_auto_slide: data.popupAutoSlide !== undefined ? Boolean(data.popupAutoSlide) : true,
         popup_interval: Number(data.popupInterval) || 3,
         updated_at: new Date().toISOString(),
-      });
+      };
+
+      const { error } = await this.adminClient.from("web_config").upsert(payload);
+      if (error) {
+        console.warn("Supabase saveWebConfig primary upsert failed, retrying with core columns:", error.message);
+        const corePayload = {
+          id: "main_config",
+          nama_desa: data.namaDesa,
+          kecamatan: data.kecamatan,
+          kabupaten: data.kabupaten,
+          provinsi: data.provinsi,
+          lokasi_utama: data.lokasiUtama,
+          lokasi_maps_url: data.lokasiMapsUrl,
+          periode_masa_bakti: data.periodeMasaBakti,
+          hari_h_tanggal: data.hariHTanggal,
+          running_text: data.runningText,
+          is_running_text_active: Boolean(data.isRunningTextActive),
+          is_cek_hak_pilih_open: Boolean(data.isCekHakPilihOpen),
+          is_profil_calon_visible: Boolean(data.isProfilCalonVisible),
+          is_real_count_public: Boolean(data.isRealCountPublic),
+          is_aduan_open: Boolean(data.isAduanOpen),
+          kontak_wa_p2kd: data.kontakWaP2kd,
+          jam_layanan: data.jamLayanan,
+          alamat_sekretariat: data.alamatSekretariat,
+          total_rw: data.totalRw,
+          total_rt: data.totalRt,
+          updated_at: new Date().toISOString(),
+        };
+        const { error: coreError } = await this.adminClient.from("web_config").upsert(corePayload);
+        if (coreError) {
+          console.error("Supabase saveWebConfig core upsert failed:", coreError.message);
+        }
+      }
     } catch (err) {
       console.warn("Supabase saveWebConfig sync failed:", err);
     }

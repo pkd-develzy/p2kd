@@ -27,6 +27,7 @@ import {
   TabType,
   DbStatus,
 } from "../types";
+import { PublicWebConfig } from "@/lib/data-store";
 
 interface TabDashboardOverviewProps {
   voters: Voter[];
@@ -41,6 +42,7 @@ interface TabDashboardOverviewProps {
     jabatan: string;
   };
   dbStatus?: DbStatus | null;
+  webConfig?: PublicWebConfig | null;
 }
 
 export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
@@ -52,7 +54,15 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   onNavigateTab,
   currentUser,
   dbStatus,
+  webConfig,
 }) => {
+  // Dynamic Web Config & Identitas Wilayah
+  const lokasiUtama = webConfig?.lokasiUtama || "Lapangan Desa Kalisalak";
+  const periodeMasaBakti = webConfig?.periodeMasaBakti || "2027 – 2035";
+  const hariHTanggal = webConfig?.hariHTanggal || "3 Februari 2027";
+  const totalRw = webConfig?.totalRw || 13;
+  const totalRt = webConfig?.totalRt || 39;
+
   // 1. Data Pemilih Metrics (Mengutamakan Live Database Aggregate Stats 7.787)
   const cloudCount = dbStatus?.cloudStats?.pemilihCount || dbStatus?.localStats?.totalAktif || dbStatus?.localStats?.totalPemilih;
   const activeVoters = voters.filter((v) => v.statusAktif === "AKTIF");
@@ -90,10 +100,10 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 Pusat Kendali Eksekutif Pilkades Kalisalak
               </Badge>
               <span className="text-xs text-slate-400 font-medium">
-                • Periode 2027 – 2035
+                • Periode {periodeMasaBakti}
               </span>
               <span className="text-xs text-emerald-400 font-semibold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                Hari-H: 3 Februari 2027
+                Hari-H: {hariHTanggal}
               </span>
             </div>
 
@@ -145,9 +155,9 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
             <span className="text-[10px] font-bold text-slate-400 uppercase block tracking-wider">
               Pusat Pemungutan
             </span>
-            <div className="text-sm sm:text-base font-black text-white mt-0.5 flex items-center gap-1.5 truncate">
+            <div className="text-sm sm:text-base font-black text-white mt-0.5 flex items-center gap-1.5 truncate" title={lokasiUtama}>
               <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-              <span>Desa Kalisalak</span>
+              <span className="truncate">{lokasiUtama}</span>
             </div>
           </div>
 
@@ -156,7 +166,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               Cakupan Wilayah
             </span>
             <div className="text-sm sm:text-base font-black text-white mt-0.5">
-              13 RW • 39 RT
+              {totalRw} RW • {totalRt} RT
             </div>
           </div>
 

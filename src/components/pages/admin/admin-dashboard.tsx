@@ -7,12 +7,16 @@ import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { supabase, supabaseSeksi1, supabaseServer3 } from "@/lib/supabase";
 import { getAutoTabungByRtRw } from "@/lib/kalisalak-wilayah";
+import { clearDeviceSessionCache } from "@/lib/secure-device-cache";
+import { EncryptedLocalDb } from "@/lib/encrypted-local-db";
 import {
-  fetchPemilihPaged,
-  searchPemilih,
-  clearDeviceSessionCache,
-  invalidateVoterCache,
-} from "@/lib/secure-device-cache";
+  LocalPemilihRepository,
+  LocalTPSRepository,
+  LocalAnggotaRepository,
+  LocalAduanRepository,
+} from "@/lib/local-repositories";
+import { SyncEngine, SyncProgress } from "@/lib/sync-engine";
+import { ModalSyncProgress } from "./modals/modal-sync-progress";
 
 import {
   Voter,
@@ -249,34 +253,61 @@ export const AdminDashboard: React.FC = () => {
   const [lockHashSignature, setLockHashSignature] = useState<string>(() => initialCache?.lockHashSignature || "");
   const [nomorBeritaAcara, setNomorBeritaAcara] = useState<string>(() => initialCache?.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026");
 
-  // Filter States: Default strictly per RW (RW 01) to eliminate heavy 7,787 rows pileup in single load
+  // Filter States: Default strictly per RW (RW 01)
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTpsFilter, setSelectedTpsFilter] = useState(() => {
     if (!isAdmin && assignedTps && assignedTps !== "SEMUA") return assignedTps;
     return "01";
   });
-  const rwVotersCacheRef = React.useRef<Record<string, Voter[]>>({});
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("SEMUA");
   const [selectedAduanFilter, setSelectedAduanFilter] = useState("SEMUA");
 
-  // Instant 0ms RW Filter Switch with Background Synchronization via Encrypted IndexedDB
-  const handleSelectTpsFilter = useCallback(async (newTps: string) => {
-    setSelectedTpsFilter(newTps);
-    const effectiveNew = isAdmin ? newTps : assignedTps;
-    if (canAccessVoterDataUI) {
-      const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
-      const pagedRes = await fetchPemilihPaged(
-        0,
-        1000,
-        {
-          tps: effectiveNew,
-          statusAktif: selectedStatusFilter,
-        },
-        userContext
+  // User Security Context & Encrypted Namespace
+  const userContext = React.useMemo(() => ({
+    username: currentUser,
+    role: computedUserRole,
+    instansi: "p2kd_kalisalak",
+  }), [currentUser, computedUserRole]);
+
+  const namespace = React.useMemo(() => {
+    return EncryptedLocalDb.buildNamespace(userContext);
+  }, [userContext]);
+
+  // Initial Full Sync Modal & Progress States
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<SyncProgress>({
+    stage: "Menghubungkan ke server...",
+    detail: "Menyiapkan sistem keamanan & database lokal...",
+    current: 0,
+    total: 7787,
+    percent: 0,
+    isComplete: false,
+  });
+
+  const runFullSync = useCallback(async () => {
+    if (!canAccessVoterDataUI) return;
+    setIsSyncModalOpen(true);
+    const success = await SyncEngine.runInitialSync(userContext, (progress) => {
+      setSyncProgress(progress);
+    });
+
+    if (success) {
+      const allVoters = LocalPemilihRepository.getAll();
+      setVoters(allVoters);
+      setTimeout(() => {
+        setIsSyncModalOpen(false);
+      }, 800);
+      toast.success(
+        "Sinkronisasi Selesai",
+        `${allVoters.length.toLocaleString("id-ID")} data pemilih tersimpan aman secara lokal di perangkat Anda.`
       );
-      setVoters(pagedRes.data);
     }
-  }, [isAdmin, assignedTps, selectedStatusFilter, canAccessVoterDataUI, currentUser, computedUserRole]);
+  }, [canAccessVoterDataUI, userContext, toast]);
+
+  // Instant 0ms RW Filter Switch (Pure Local In-Memory Filtering)
+  const handleSelectTpsFilter = useCallback((newTps: string) => {
+    setSelectedTpsFilter(newTps);
+  }, []);
 
   // Modal States
   const [showAddVoterModal, setShowAddVoterModal] = useState(false);
@@ -356,8 +387,7 @@ export const AdminDashboard: React.FC = () => {
     alasanTms: "",
   });
 
-  // Fetch all initial data manually when triggered
-  const effectiveTps = isAdmin ? selectedTpsFilter : assignedTps;
+  // Fetch dashboard metadata manually when triggered
   const fetchData = useCallback(async () => {
     try {
       const [
@@ -398,21 +428,15 @@ export const AdminDashboard: React.FC = () => {
         return;
       }
 
+      // Selalu prioritaskan pembacaan data pemilih dari Local Repositories terenkripsi
       if (canAccessVoterDataUI) {
-        const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
-        const pagedRes = await fetchPemilihPaged(
-          0,
-          1000,
-          {
-            tps: effectiveTps,
-            statusAktif: selectedStatusFilter,
-          },
-          userContext
-        );
-        setVoters(pagedRes.data);
+        if (LocalPemilihRepository.isReady()) {
+          setVoters(LocalPemilihRepository.getAll());
+        }
       } else {
         setVoters([]);
       }
+
       if (dataAduan.success) setAduanList(dataAduan.data);
       if (dataTps.success) setTpsList(dataTps.data);
       if (dataAudit.success) setAuditLogs(dataAudit.data);
@@ -436,8 +460,6 @@ export const AdminDashboard: React.FC = () => {
       setIsLoading(false);
     }
   }, [
-    effectiveTps,
-    selectedStatusFilter,
     canAccessVoterDataUI,
     router,
     toast,
@@ -451,8 +473,6 @@ export const AdminDashboard: React.FC = () => {
     setLockHashSignature,
     setNomorBeritaAcara,
     setIsLoading,
-    currentUser,
-    computedUserRole,
   ]);
 
   const handleNavigateTab = useCallback(
@@ -470,60 +490,80 @@ export const AdminDashboard: React.FC = () => {
     [canAccessVoterDataUI, toast, setActiveTab]
   );
 
-  // 1. Initial Load & Dynamic Filter Changes
+  // 1. Initial Load: Prioritas baca dari Encrypted Local DB (0ms), jika kosong lakukan Full Initial Sync
   useEffect(() => {
     let isCancelled = false;
-    const runFetch = async () => {
+    const initializeLocalData = async () => {
+      if (!canAccessVoterDataUI) {
+        await fetchData();
+        return;
+      }
+
+      try {
+        const localCount = await LocalPemilihRepository.loadFromLocalDb(namespace);
+        if (!isCancelled && localCount > 0) {
+          // Data lokal terenkripsi ditemukan! Muat langsung ke memori (0ms)
+          setVoters(LocalPemilihRepository.getAll());
+          await fetchData();
+
+          // Jalankan background incremental sync secara senyap (hanya record yang berubah)
+          void SyncEngine.runIncrementalSync(userContext).then((hasChanges) => {
+            if (hasChanges && !isCancelled) {
+              setVoters(LocalPemilihRepository.getAll());
+            }
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn("Gagal memuat dari EncryptedLocalDb:", err);
+      }
+
+      // Jika belum ada data lokal, ambil metadata dan jalankan Initial Full Sync
       if (!isCancelled) {
         await fetchData();
+        await runFullSync();
       }
     };
-    runFetch();
+
+    void initializeLocalData();
     return () => {
       isCancelled = true;
     };
-  }, [fetchData]);
+  }, [canAccessVoterDataUI, namespace, userContext, fetchData, runFullSync]);
 
   // 2. Realtime Background Sync (Supabase Realtime Channel + Smart Visibility-Aware Fallback Polling)
   useEffect(() => {
+    const handleRemoteChange = () => {
+      if (canAccessVoterDataUI) {
+        void SyncEngine.runIncrementalSync(userContext).then((hasChanges) => {
+          if (hasChanges) {
+            setVoters(LocalPemilihRepository.getAll());
+          }
+        });
+      }
+      void fetchData();
+    };
+
     // A. Supabase Realtime Postgres Changes Channel (All 3 isolated servers)
     const channelMain = supabase
       .channel("admin-dashboard-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public" },
-        () => {
-          void fetchData();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public" }, handleRemoteChange)
       .subscribe();
 
     const channelSeksi1 = supabaseSeksi1
       .channel("admin-seksi1-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public" },
-        () => {
-          void fetchData();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public" }, handleRemoteChange)
       .subscribe();
 
     const channelServer3 = supabaseServer3
       .channel("admin-server3-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public" },
-        () => {
-          void fetchData();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public" }, handleRemoteChange)
       .subscribe();
 
     // B. Smart Fallback Polling (Every 180s, ONLY when tab is active/visible)
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
-        void fetchData();
+        handleRemoteChange();
       }
     }, 180000);
 
@@ -533,7 +573,7 @@ export const AdminDashboard: React.FC = () => {
       supabaseSeksi1.removeChannel(channelSeksi1);
       supabaseServer3.removeChannel(channelServer3);
     };
-  }, [fetchData]);
+  }, [canAccessVoterDataUI, userContext, fetchData]);
 
   // 3. Auto-persist Non-Sensitive Dashboard Data to LocalStorage (Instant 0ms on Browser Restart / Refresh)
   // PERHATIAN: Data pemilih SENSITIF TIDAK disimpan di localStorage (menggunakan IndexedDB terenkripsi).
@@ -571,77 +611,24 @@ export const AdminDashboard: React.FC = () => {
     nomorBeritaAcara,
   ]);
 
-  // 4. Server-Side Debounced Search via Encrypted Cache & PostgreSQL
-  const prevSearchTermRef = React.useRef("");
+  // 4. Multi-Tab Session Broadcast Listener (Instant Cross-Tab Logout)
   useEffect(() => {
-    if (!canAccessVoterDataUI) return;
-    const cleanSearch = searchTerm.trim();
-    if (!cleanSearch) {
-      if (prevSearchTermRef.current !== "") {
-        prevSearchTermRef.current = "";
-        const resetTimer = setTimeout(() => {
-          void fetchData();
-        }, 0);
-        return () => clearTimeout(resetTimer);
+    const unsub = EncryptedLocalDb.onLogoutBroadcast(() => {
+      LocalPemilihRepository.clear();
+      LocalTPSRepository.clear();
+      LocalAnggotaRepository.clear();
+      LocalAduanRepository.clear();
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_user_data");
+        localStorage.removeItem("p2kd_admin_dashboard_cache");
+        sessionStorage.removeItem("admin_token");
       }
-      return;
-    }
-
-    prevSearchTermRef.current = cleanSearch;
-    const timer = setTimeout(async () => {
-      const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
-      const results = await searchPemilih(cleanSearch, { tps: effectiveTps }, userContext);
-      setVoters(results);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchTerm, canAccessVoterDataUI, currentUser, computedUserRole, effectiveTps, fetchData]);
-
-  // 5. Cross-Tab Synchronization Listener (BroadcastChannel: Logout & Invalidation)
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
-
-    try {
-      const channel = new BroadcastChannel("p2kd_secure_vault_sync");
-      channel.onmessage = (event) => {
-        if (event.data?.type === "LOGOUT") {
-          localStorage.removeItem("admin_token");
-          localStorage.removeItem("admin_user_data");
-          localStorage.removeItem("p2kd_admin_dashboard_cache");
-          sessionStorage.removeItem("admin_token");
-          router.replace("/admin");
-        } else if (event.data?.type === "CACHE_INVALIDATED") {
-          void fetchData();
-        }
-      };
-
-      return () => {
-        channel.close();
-      };
-    } catch {
-      // Ignored if restricted
-    }
-  }, [router, fetchData]);
-
-  // 6. Background Preloader: Silently cache remaining RWs into encrypted IndexedDB during idle time
-  useEffect(() => {
-    if (!canAccessVoterDataUI) return;
-    const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
-
-    const preloadTimer = setTimeout(async () => {
-      const rwList = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"];
-      for (const rw of rwList) {
-        if (rw === effectiveTps) continue;
-        try {
-          await fetchPemilihPaged(0, 1000, { tps: rw, statusAktif: "SEMUA" }, userContext);
-        } catch {
-          // Silent fallback in background
-        }
-      }
-    }, 2000);
-
-    return () => clearTimeout(preloadTimer);
-  }, [canAccessVoterDataUI, currentUser, computedUserRole, effectiveTps]);
+      toast.info("Sesi Berakhir", "Sesi telah keluar dari tab lain.");
+      router.replace("/admin");
+    });
+    return unsub;
+  }, [router, toast]);
 
   // Logout Handler: Wajib menggunakan blok finally untuk menjamin penghapusan cache terenkripsi & kunci
   const handleLogout = async () => {
@@ -650,10 +637,17 @@ export const AdminDashboard: React.FC = () => {
     } catch {
       // Abaikan kegagalan jaringan saat logout
     } finally {
-      // 1. Hapus seluruh ciphertext & CryptoKey dari IndexedDB
+      // 1. Hapus seluruh ciphertext, sync_state, & session encryption key dari IndexedDB
+      await EncryptedLocalDb.clearSession();
       await clearDeviceSessionCache();
 
-      // 2. Hapus token sesi dari browser
+      // 2. Bersihkan seluruh in-memory local repositories
+      LocalPemilihRepository.clear();
+      LocalTPSRepository.clear();
+      LocalAnggotaRepository.clear();
+      LocalAduanRepository.clear();
+
+      // 3. Hapus token sesi dari browser
       if (typeof window !== "undefined") {
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_user_data");
@@ -702,11 +696,9 @@ export const AdminDashboard: React.FC = () => {
     };
 
     // 1. Instant optimistic state & cache update (< 1ms)
-    setVoters((prev) => [optimisticVoter, ...prev]);
-    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      rwVotersCacheRef.current[cacheKey] = [optimisticVoter, ...rwVotersCacheRef.current[cacheKey]];
-    }
+    // 1. Optimistic state & repository update (< 1ms)
+    void LocalPemilihRepository.upsert(optimisticVoter, namespace);
+    setVoters(LocalPemilihRepository.getAll());
 
     // 2. Immediately close modal & provide instant feedback
     setShowAddVoterModal(false);
@@ -723,17 +715,13 @@ export const AdminDashboard: React.FC = () => {
         const result = await res.json();
         if (result.success && result.data?.id) {
           const realId = result.data.id;
-          setVoters((prev) =>
-            prev.map((v) => (v.id === tempId ? { ...v, id: realId } : v))
-          );
-          if (rwVotersCacheRef.current[cacheKey]) {
-            rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
-              v.id === tempId ? { ...v, id: realId } : v
-            );
-          }
-          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
+          const finalizedVoter = { ...optimisticVoter, id: realId };
+          void LocalPemilihRepository.delete(tempId, namespace);
+          void LocalPemilihRepository.upsert(finalizedVoter, namespace);
+          setVoters(LocalPemilihRepository.getAll());
         } else if (!result.success) {
-          setVoters((prev) => prev.filter((v) => v.id !== tempId));
+          void LocalPemilihRepository.delete(tempId, namespace);
+          setVoters(LocalPemilihRepository.getAll());
           toast.error("Gagal Menyimpan di Server", result.message || "Data dibatalkan.");
         }
       } catch (err) {
@@ -786,16 +774,9 @@ export const AdminDashboard: React.FC = () => {
       updatedAt: new Date().toISOString(),
     };
 
-    // 1. Instant local state & cache update (< 1ms)
-    setVoters((prev) =>
-      prev.map((v) => (v.id === activeVoter.id ? updatedVoter : v))
-    );
-    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
-        v.id === activeVoter.id ? updatedVoter : v
-      );
-    }
+    // 1. Instant local state & repository update (< 1ms)
+    void LocalPemilihRepository.upsert(updatedVoter, namespace);
+    setVoters(LocalPemilihRepository.getAll());
 
     // 2. Immediately close modal & show success toast
     setShowEditVoterModal(false);
@@ -814,12 +795,9 @@ export const AdminDashboard: React.FC = () => {
           }),
         });
         const result = await res.json();
-        if (result.success) {
-          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
-        } else {
-          setVoters((prev) =>
-            prev.map((v) => (v.id === activeVoter.id ? previousVoter : v))
-          );
+        if (!result.success) {
+          void LocalPemilihRepository.upsert(previousVoter, namespace);
+          setVoters(LocalPemilihRepository.getAll());
           toast.error("Gagal Update di Server", result.message || "Data dikembalikan.");
         }
       } catch (err) {
@@ -838,34 +816,17 @@ export const AdminDashboard: React.FC = () => {
     const targetId = activeVoter.id;
     const voterName = activeVoter.namaLengkap;
 
-    // 1. Instant optimistic state & cache update (< 1ms)
-    setVoters((prev) =>
-      prev.map((v) =>
-        v.id === targetId
-          ? {
-              ...v,
-              statusAktif: "TMS",
-              alasanTms: alasan,
-              coklitStatus: "TMS",
-              coklitCatatan: catatan,
-            }
-          : v
-      )
-    );
-    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
-        v.id === targetId
-          ? {
-              ...v,
-              statusAktif: "TMS",
-              alasanTms: alasan,
-              coklitStatus: "TMS",
-              coklitCatatan: catatan,
-            }
-          : v
-      );
-    }
+    const updatedVoter: Voter = {
+      ...activeVoter,
+      statusAktif: "TMS",
+      alasanTms: alasan,
+      coklitStatus: "TMS",
+      coklitCatatan: catatan,
+    };
+
+    // 1. Instant optimistic state & repository update (< 1ms)
+    void LocalPemilihRepository.upsert(updatedVoter, namespace);
+    setVoters(LocalPemilihRepository.getAll());
 
     // 2. Immediately close modal & show feedback
     setShowTmsModal(false);
@@ -880,9 +841,9 @@ export const AdminDashboard: React.FC = () => {
           { method: "DELETE" }
         );
         const result = await res.json();
-        if (result.success) {
-          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
-        } else {
+        if (!result.success) {
+          void LocalPemilihRepository.upsert(activeVoter, namespace);
+          setVoters(LocalPemilihRepository.getAll());
           toast.error("Gagal di Server", "Tidak dapat memproses status TMS.");
         }
       } catch (err) {
@@ -901,20 +862,16 @@ export const AdminDashboard: React.FC = () => {
     const targetId = activeVoter.id;
     const voterName = activeVoter.namaLengkap;
 
-    // 1. Instant optimistic state update (< 1ms)
-    setVoters((prev) =>
-      prev.map((v) =>
-        v.id === targetId
-          ? { ...v, tps: tpsBaru, rt: rtBaru, rw: rwBaru }
-          : v
-      )
-    );
-    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
-        v.id === targetId ? { ...v, tps: tpsBaru, rt: rtBaru, rw: rwBaru } : v
-      );
-    }
+    const updatedVoter: Voter = {
+      ...activeVoter,
+      tps: tpsBaru,
+      rt: rtBaru,
+      rw: rwBaru,
+    };
+
+    // 1. Instant optimistic state & repository update (< 1ms)
+    void LocalPemilihRepository.upsert(updatedVoter, namespace);
+    setVoters(LocalPemilihRepository.getAll());
 
     // 2. Immediately close modal & show feedback
     setShowMutasiModal(false);
@@ -929,9 +886,9 @@ export const AdminDashboard: React.FC = () => {
           body: JSON.stringify({ tpsBaru, rtBaru, rwBaru, user: currentUser }),
         });
         const result = await res.json();
-        if (result.success) {
-          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
-        } else {
+        if (!result.success) {
+          void LocalPemilihRepository.upsert(activeVoter, namespace);
+          setVoters(LocalPemilihRepository.getAll());
           toast.error("Gagal Mutasi di Server", "Tidak dapat memproses mutasi Tabung.");
         }
       } catch (err) {
@@ -950,12 +907,9 @@ export const AdminDashboard: React.FC = () => {
     });
 
     if (approved) {
-      // 1. Instant optimistic state update (< 1ms)
-      setVoters((prev) => prev.filter((item) => item.id !== v.id));
-      const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-      if (rwVotersCacheRef.current[cacheKey]) {
-        rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].filter((item) => item.id !== v.id);
-      }
+      // 1. Instant optimistic state & repository update (< 1ms)
+      void LocalPemilihRepository.delete(v.id, namespace);
+      setVoters(LocalPemilihRepository.getAll());
       toast.success("Data Dihapus", `${v.namaLengkap} telah dihapus.`);
 
       // 2. Asynchronous background execution
@@ -965,9 +919,9 @@ export const AdminDashboard: React.FC = () => {
             method: "DELETE",
           });
           const result = await res.json();
-          if (result.success) {
-            await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
-          } else {
+          if (!result.success) {
+            void LocalPemilihRepository.upsert(v, namespace);
+            setVoters(LocalPemilihRepository.getAll());
             toast.error("Gagal Hapus di Server", "Tidak dapat menghapus data.");
           }
         } catch (err) {
@@ -980,16 +934,10 @@ export const AdminDashboard: React.FC = () => {
   // --- PROMOSI / ROLLBACK PEMILIH DPS <-> DPT (OPTIMISTIC NON-BLOCKING) ---
   const handlePromoteToDpt = (ids: string[]) => {
     if (!ids || ids.length === 0) return;
-    // 1. Optimistic instant UI update in 0ms
-    setVoters((prev) =>
-      prev.map((v) => (ids.includes(v.id) ? { ...v, tahap: "DPT" } : v))
-    );
-    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
-        ids.includes(v.id) ? { ...v, tahap: "DPT" } : v
-      );
-    }
+    const targetVoters = LocalPemilihRepository.getAll().filter((v) => ids.includes(v.id));
+    const updatedList = targetVoters.map((v) => ({ ...v, tahap: "DPT" as const }));
+    void LocalPemilihRepository.upsertBatch(updatedList, namespace);
+    setVoters(LocalPemilihRepository.getAll());
 
     toast.success("Verifikasi Masuk DPT", `${ids.length} data pemilih langsung dipindahkan ke DPT.`);
 
@@ -1002,9 +950,7 @@ export const AdminDashboard: React.FC = () => {
           body: JSON.stringify({ ids, targetTahap: "DPT", user: currentUser }),
         });
         const result = await res.json();
-        if (result.success) {
-          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
-        } else {
+        if (!result.success) {
           toast.error("Gagal Sinkronisasi DPT", result.message || "Tidak dapat memindahkan data di server.");
         }
       } catch (err) {
@@ -1015,16 +961,10 @@ export const AdminDashboard: React.FC = () => {
 
   const handleRollbackToDps = (ids: string[]) => {
     if (!ids || ids.length === 0) return;
-    // 1. Optimistic instant UI update in 0ms
-    setVoters((prev) =>
-      prev.map((v) => (ids.includes(v.id) ? { ...v, tahap: "DPS" } : v))
-    );
-    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) =>
-        ids.includes(v.id) ? { ...v, tahap: "DPS" } : v
-      );
-    }
+    const targetVoters = LocalPemilihRepository.getAll().filter((v) => ids.includes(v.id));
+    const updatedList = targetVoters.map((v) => ({ ...v, tahap: "DPS" as const }));
+    void LocalPemilihRepository.upsertBatch(updatedList, namespace);
+    setVoters(LocalPemilihRepository.getAll());
 
     toast.warning("Dikembalikan ke DPS", `${ids.length} data pemilih dikembalikan ke DPS.`);
 
@@ -1037,9 +977,7 @@ export const AdminDashboard: React.FC = () => {
           body: JSON.stringify({ ids, targetTahap: "DPS", user: currentUser }),
         });
         const result = await res.json();
-        if (result.success) {
-          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
-        } else {
+        if (!result.success) {
           toast.error("Gagal Rollback di Server", result.message || "Tidak dapat mengembalikan data.");
         }
       } catch (err) {
@@ -1162,37 +1100,21 @@ export const AdminDashboard: React.FC = () => {
   ) => {
     const todayStr = new Date().toISOString().split("T")[0];
 
-    // 1. Instant Optimistic state & cache update (< 1ms)
-    setVoters((prev) =>
-      prev.map((v) => {
-        if (v.id !== voterId) return v;
-        return {
-          ...v,
-          coklitStatus: status,
-          coklitTanggal: status === "BELUM_COKLIT" ? undefined : todayStr,
-          coklitCatatan: catatan,
-          coklitPetugas: status === "BELUM_COKLIT" ? undefined : currentUser,
-          statusAktif: status === "TMS" ? "TMS" : "AKTIF",
-          alasanTms: status === "TMS" ? catatan || "Dinyatakan TMS saat Coklit Lapangan" : undefined,
-          tahap: status === "SESUAI" || status === "UBAH_DATA" ? "DPT" : v.tahap,
-        };
-      })
-    );
-    const cacheKey = `${effectiveTps}_${selectedStatusFilter}`;
-    if (rwVotersCacheRef.current[cacheKey]) {
-      rwVotersCacheRef.current[cacheKey] = rwVotersCacheRef.current[cacheKey].map((v) => {
-        if (v.id !== voterId) return v;
-        return {
-          ...v,
-          coklitStatus: status,
-          coklitTanggal: status === "BELUM_COKLIT" ? undefined : todayStr,
-          coklitCatatan: catatan,
-          coklitPetugas: status === "BELUM_COKLIT" ? undefined : currentUser,
-          statusAktif: status === "TMS" ? "TMS" : "AKTIF",
-          alasanTms: status === "TMS" ? catatan || "Dinyatakan TMS saat Coklit Lapangan" : undefined,
-          tahap: status === "SESUAI" || status === "UBAH_DATA" ? "DPT" : v.tahap,
-        };
-      });
+    // 1. Instant Optimistic state & repository update (< 1ms)
+    const target = LocalPemilihRepository.getAll().find((v) => v.id === voterId);
+    if (target) {
+      const updatedTarget: Voter = {
+        ...target,
+        coklitStatus: status,
+        coklitTanggal: status === "BELUM_COKLIT" ? undefined : todayStr,
+        coklitCatatan: catatan,
+        coklitPetugas: status === "BELUM_COKLIT" ? undefined : currentUser,
+        statusAktif: status === "TMS" ? "TMS" : "AKTIF",
+        alasanTms: status === "TMS" ? catatan || "Dinyatakan TMS saat Coklit Lapangan" : undefined,
+        tahap: status === "SESUAI" || status === "UBAH_DATA" ? "DPT" : target.tahap,
+      };
+      void LocalPemilihRepository.upsert(updatedTarget, namespace);
+      setVoters(LocalPemilihRepository.getAll());
     }
 
     // 2. Immediate user feedback (0ms wait)
@@ -1212,9 +1134,7 @@ export const AdminDashboard: React.FC = () => {
           }),
         });
         const result = await res.json();
-        if (result.success) {
-          await invalidateVoterCache({ username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" });
-        } else {
+        if (!result.success) {
           toast.error("Gagal Sinkronisasi Coklit", result.message);
         }
       } catch (err) {
@@ -1722,6 +1642,13 @@ export const AdminDashboard: React.FC = () => {
             setShowChangePasswordModal(false);
           }
         }}
+      />
+
+      <ModalSyncProgress
+        isOpen={isSyncModalOpen}
+        progress={syncProgress}
+        onRetry={runFullSync}
+        onClose={() => setIsSyncModalOpen(false)}
       />
 
       {/* 4. Native Mobile Bottom Navigation Bar for Field Officers */}

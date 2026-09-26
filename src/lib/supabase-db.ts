@@ -843,6 +843,88 @@ export class SupabaseDbService {
   }
 
   /**
+   * Fetch batch pemilih (default 1000 record per batch) untuk Initial Full Sync
+   */
+  public static async fetchPemilihBatch(
+    offset = 0,
+    limit = 1000
+  ): Promise<{ data: MasterPemilih[]; total: number; hasMore: boolean }> {
+    try {
+      const safeLimit = Math.min(1000, Math.max(1, limit));
+      const { data, count, error } = await this.getSeksi1Client()
+        .from("pemilih")
+        .select("*", { count: "exact" })
+        .order("rw", { ascending: true })
+        .order("no_kk", { ascending: true })
+        .order("nama_lengkap", { ascending: true })
+        .range(offset, offset + safeLimit - 1);
+
+      if (error || !data) {
+        return { data: [], total: 0, hasMore: false };
+      }
+
+      const total = count ?? data.length;
+      const mapped = (data as SupabasePemilihRow[]).map((p) => this.mapSupabasePemilihRow(p));
+      const hasMore = offset + mapped.length < total;
+
+      return {
+        data: mapped,
+        total,
+        hasMore,
+      };
+    } catch (err) {
+      console.warn("fetchPemilihBatch error:", err);
+      return { data: [], total: 0, hasMore: false };
+    }
+  }
+
+  /**
+   * Fetch perubahan data pemilih setelah timestamp tertentu untuk Incremental Sync
+   */
+  public static async fetchPemilihChanges(
+    sinceTimestamp: string
+  ): Promise<{ updated: MasterPemilih[]; deletedIds: string[]; serverTimestamp: string }> {
+    const serverTimestamp = new Date().toISOString();
+    try {
+      const { data, error } = await this.getSeksi1Client()
+        .from("pemilih")
+        .select("*")
+        .gt("updated_at", sinceTimestamp)
+        .order("updated_at", { ascending: true })
+        .limit(1000);
+
+      const updated = error || !data ? [] : (data as SupabasePemilihRow[]).map((p) => this.mapSupabasePemilihRow(p));
+
+      let deletedIds: string[] = [];
+      try {
+        const { data: auditData } = await this.getServer3Client()
+          .from("audit_log")
+          .select("detail")
+          .eq("aksi", "HAPUS_PEMILIH")
+          .gt("waktu", sinceTimestamp);
+
+        if (auditData) {
+          const rawIds = (auditData as Array<{ detail?: { voterId?: string; id?: string } }>).map(
+            (a) => a.detail?.voterId || a.detail?.id
+          );
+          deletedIds = rawIds.filter((id): id is string => typeof id === "string" && id.length > 0);
+        }
+      } catch {
+        // Fallback
+      }
+
+      return {
+        updated,
+        deletedIds,
+        serverTimestamp,
+      };
+    } catch (err) {
+      console.warn("fetchPemilihChanges error:", err);
+      return { updated: [], deletedIds: [], serverTimestamp };
+    }
+  }
+
+  /**
    * Server-Side Search di PostgreSQL/Supabase:
    * - NIK 16 digit: Exact lookup
    * - No KK 16 digit: Exact lookup

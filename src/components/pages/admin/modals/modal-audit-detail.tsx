@@ -204,7 +204,7 @@ export const ModalAuditDetail: React.FC<ModalAuditDetailProps> = ({
                 </div>
                 <div className="flex justify-between items-center py-1">
                   <span className="text-slate-500">Peramban (Browser):</span>
-                  <span className="font-medium text-slate-700 truncate max-w-[170px]" title={log.browser || "Google Chrome"}>
+                  <span className="font-medium text-slate-700 truncate max-w-42.5" title={log.browser || "Google Chrome"}>
                     {log.browser || "Google Chrome 124.0 (x64)"}
                   </span>
                 </div>

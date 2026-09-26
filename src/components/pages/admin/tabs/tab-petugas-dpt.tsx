@@ -27,10 +27,11 @@ import {
   Edit3,
   Save,
   Info,
+  Building2,
 } from "lucide-react";
 import { MasterPetugasDpt, PetugasStatus } from "@/lib/data-store";
 import { downloadPetugasPdf } from "@/lib/petugas-pdf-generator";
-import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK } from "@/lib/kalisalak-wilayah";
+import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK, normalizeWilayahCode } from "@/lib/kalisalak-wilayah";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Card, Badge, PaginationControl, ConfirmDialog } from "@/components/ui";
@@ -52,6 +53,21 @@ function formatRwValue(val: string | undefined | null): string {
   const num = parseInt(digits, 10);
   const formatted = num < 10 ? `0${num}` : `${num}`;
   return `RW ${formatted}`;
+}
+
+// Helper to extract 2-digit RW code ("01" - "13") from penugasan or domisili
+export function getPetugasRwCode(item: MasterPetugasDpt): string {
+  if (item.assignedWilayah) {
+    const digits = item.assignedWilayah.replace(/\D/g, "");
+    if (digits) {
+      const num = parseInt(digits, 10);
+      return num < 10 ? `0${num}` : `${num}`;
+    }
+  }
+  const digits = (item.rw || "").replace(/\D/g, "");
+  if (!digits) return "01";
+  const num = parseInt(digits, 10);
+  return num < 10 ? `0${num}` : `${num}`;
 }
 
 // Helper to read initial cache from memory or localStorage for instant 0ms load
@@ -183,6 +199,53 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
     }
   };
 
+  // View mode for RW Coverage Grid: "ALL" | "FILLED" | "EMPTY"
+  const [rwViewMode, setRwViewMode] = useState<"ALL" | "FILLED" | "EMPTY">("ALL");
+
+  // RW Coverage Metrics & Breakdown across all 13 RWs
+  const rwCoverageData = useMemo(() => {
+    return DAFTAR_RW_KALISALAK.map((rwObj) => {
+      const rwCode = rwObj.value; // "01" - "13"
+      const officers = petugasList.filter((p) => {
+        const targetRw = getPetugasRwCode(p);
+        return targetRw === rwCode;
+      });
+
+      const total = officers.length;
+      const ditetapkan = officers.filter((p) => p.status === "DITETAPKAN").length;
+      const lolos = officers.filter((p) => p.status === "LOLOS").length;
+      const menunggu = officers.filter((p) => p.status === "MENUNGGU_VERIFIKASI").length;
+      const klarifikasi = officers.filter((p) => p.status === "PERLU_KLARIFIKASI").length;
+      const isFilled = total > 0;
+
+      return {
+        rwCode,
+        rwLabel: rwObj.label,
+        defaultTps: rwObj.defaultTps,
+        officers,
+        total,
+        ditetapkan,
+        lolos,
+        menunggu,
+        klarifikasi,
+        isFilled,
+      };
+    });
+  }, [petugasList]);
+
+  const filledRwCount = useMemo(
+    () => rwCoverageData.filter((r) => r.isFilled).length,
+    [rwCoverageData]
+  );
+  const emptyRwCount = useMemo(
+    () => rwCoverageData.filter((r) => !r.isFilled).length,
+    [rwCoverageData]
+  );
+  const emptyRwList = useMemo(
+    () => rwCoverageData.filter((r) => !r.isFilled),
+    [rwCoverageData]
+  );
+
   // Filtered List
   const filteredList = useMemo(() => {
     return petugasList.filter((item) => {
@@ -194,7 +257,13 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         item.dusun.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchStatus = statusFilter === "ALL" || item.status === statusFilter;
-      const matchRw = rwFilter === "ALL" || item.rw === rwFilter;
+
+      const targetRw = getPetugasRwCode(item);
+      const domisiliRw = normalizeWilayahCode(item.rw);
+      const matchRw =
+        rwFilter === "ALL" ||
+        targetRw === rwFilter ||
+        domisiliRw === rwFilter;
 
       return matchSearch && matchStatus && matchRw;
     });
@@ -642,6 +711,239 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         </Card>
       </div>
 
+      {/* Status Keterisian Petugas per Wilayah RW (13 RW Desa Kalisalak) */}
+      <Card className="p-5 bg-white border-slate-200 shadow-xs rounded-2xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-blue-100 text-blue-700">
+                <Building2 className="w-4 h-4" />
+              </span>
+              <h3 className="text-base font-black text-slate-900 tracking-tight">
+                Status Keterisian Petugas per Wilayah RW
+              </h3>
+              <Badge className="bg-slate-100 text-slate-700 border-slate-200 text-[10px] font-bold">
+                13 RW Desa Kalisalak
+              </Badge>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Monitoring sebaran cakupan petugas Pantarlih DPT di setiap RW. Klik salah satu kotak RW untuk langsung memfilter daftar pendaftar di bawah.
+            </p>
+          </div>
+
+          {/* Quick Filter Buttons / Tabs */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setRwViewMode("ALL")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                rwViewMode === "ALL"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+              }`}
+            >
+              <span>Semua RW</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  rwViewMode === "ALL" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                13
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRwViewMode("FILLED")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                rwViewMode === "FILLED"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200"
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Sudah Ada Petugas</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  rwViewMode === "FILLED" ? "bg-white/20 text-white" : "bg-emerald-200 text-emerald-800"
+                }`}
+              >
+                {filledRwCount} RW
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setRwViewMode("EMPTY")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                rwViewMode === "EMPTY"
+                  ? "bg-rose-600 text-white shadow-sm"
+                  : "bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200"
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5" />
+              <span>Belum Ada Petugas</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                  rwViewMode === "EMPTY" ? "bg-white/20 text-white" : "bg-rose-200 text-rose-800"
+                }`}
+              >
+                {emptyRwCount} RW
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Alert Banner if any RW is empty */}
+        {emptyRwCount > 0 && (
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-rose-800">
+            <div className="flex items-start sm:items-center gap-2.5">
+              <span className="p-1.5 rounded-lg bg-rose-200 text-rose-800 shrink-0">
+                <AlertTriangle className="w-4 h-4" />
+              </span>
+              <div>
+                <span className="font-bold">Kekurangan Petugas Lapangan: </span>
+                <span>
+                  Terdapat <strong>{emptyRwCount} Wilayah RW</strong> yang belum memiliki petugas pendataan Pantarlih, yaitu:{" "}
+                  <strong className="text-rose-900 bg-rose-100 px-1.5 py-0.5 rounded">
+                    {emptyRwList.map((r) => r.rwLabel).join(", ")}
+                  </strong>
+                  . Panitia dapat segera mengarahkan pendaftar baru atau melakukan penugasan wilayah silang.
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRwViewMode("EMPTY");
+                if (emptyRwList.length > 0) {
+                  setRwFilter(emptyRwList[0].rwCode);
+                  setCurrentPage(1);
+                }
+              }}
+              className="text-[11px] font-bold text-rose-700 hover:text-rose-900 underline shrink-0 cursor-pointer self-end sm:self-auto"
+            >
+              Filter RW Kosong ({emptyRwList.map((r) => r.rwLabel).join(", ")})
+            </button>
+          </div>
+        )}
+
+        {/* 13 RW Interactive Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          {rwCoverageData
+            .filter((rwItem) => {
+              if (rwViewMode === "FILLED") return rwItem.isFilled;
+              if (rwViewMode === "EMPTY") return !rwItem.isFilled;
+              return true;
+            })
+            .map((rwItem) => {
+              const isSelected = rwFilter === rwItem.rwCode;
+              return (
+                <div
+                  key={rwItem.rwCode}
+                  onClick={() => {
+                    // Toggle selection: if already selected, reset to ALL, else select this RW
+                    if (isSelected) {
+                      setRwFilter("ALL");
+                    } else {
+                      setRwFilter(rwItem.rwCode);
+                      setCurrentPage(1);
+                    }
+                  }}
+                  className={`relative p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between select-none ${
+                    isSelected
+                      ? "ring-2 ring-blue-500 border-blue-500 bg-blue-50/60 shadow-md transform -translate-y-0.5"
+                      : rwItem.isFilled
+                      ? "bg-white border-slate-200 hover:border-blue-300 hover:shadow-xs"
+                      : "bg-rose-50/40 border-rose-200 hover:border-rose-400 hover:bg-rose-50/80"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-1 mb-1.5">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 block leading-tight">
+                        TPS {rwItem.defaultTps}
+                      </span>
+                      <h4 className="text-sm font-black text-slate-900 leading-tight">
+                        {rwItem.rwLabel}
+                      </h4>
+                    </div>
+
+                    {rwItem.isFilled ? (
+                      <span className="p-1 rounded-full bg-emerald-100 text-emerald-700 shrink-0" title="Sudah ada petugas">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      </span>
+                    ) : (
+                      <span className="p-1 rounded-full bg-rose-100 text-rose-700 shrink-0" title="Belum ada petugas">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="mt-1">
+                    {rwItem.isFilled ? (
+                      <div>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-xs font-black text-emerald-700">
+                            {rwItem.total} Petugas
+                          </span>
+                          {rwItem.ditetapkan > 0 && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                              Ditetapkan
+                            </span>
+                          )}
+                        </div>
+                        <p
+                          className="text-[10px] text-slate-500 truncate mt-0.5"
+                          title={rwItem.officers.map((o) => o.namaLengkap).join(", ")}
+                        >
+                          {rwItem.officers.map((o) => o.namaLengkap).join(", ")}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600">
+                          Belum Ada Petugas
+                        </span>
+                        <p className="text-[9px] text-rose-500 font-medium mt-0.5">
+                          0 Pendaftar
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {isSelected && (
+                    <div className="mt-2 pt-1 border-t border-blue-200 flex items-center justify-between text-[10px] text-blue-700 font-bold">
+                      <span>Aktif difilter</span>
+                      <span>✕</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+
+        {/* Selected RW quick filter indicator */}
+        {rwFilter !== "ALL" && (
+          <div className="flex flex-wrap items-center justify-between bg-blue-50 px-3.5 py-2.5 rounded-xl border border-blue-200 text-xs gap-2">
+            <span className="text-blue-900 font-medium">
+              Menampilkan filter data untuk: <strong>RW {rwFilter}</strong> ({
+                rwCoverageData.find((r) => r.rwCode === rwFilter)?.total || 0
+              } Petugas terdaftar)
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setRwFilter("ALL");
+                setCurrentPage(1);
+              }}
+              className="text-blue-700 font-bold hover:text-blue-900 underline cursor-pointer"
+            >
+              Reset Filter Wilayah (Tampilkan Semua)
+            </button>
+          </div>
+        )}
+      </Card>
+
       {/* Filter and Search Bar */}
       <Card className="p-4 bg-white border-slate-200 shadow-xs rounded-2xl space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
         {/* Search */}
@@ -667,7 +969,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
               setStatusFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500 transition-all"
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500 transition-all cursor-pointer"
           >
             <option value="ALL">Semua Status</option>
             <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
@@ -677,21 +979,26 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
             <option value="TIDAK_LOLOS">Tidak Lolos</option>
           </select>
 
-          {/* RW Filter */}
+          {/* RW Filter with live coverage status */}
           <select
             value={rwFilter}
             onChange={(e) => {
               setRwFilter(e.target.value);
               setCurrentPage(1);
             }}
-            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500 transition-all"
+            className="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none focus:border-blue-500 transition-all cursor-pointer"
           >
-            <option value="ALL">Semua Wilayah RW</option>
-            {DAFTAR_RW_KALISALAK.map((rw) => (
-              <option key={rw.value} value={rw.value}>
-                {rw.label}
-              </option>
-            ))}
+            <option value="ALL">Semua Wilayah RW ({petugasList.length} Pendaftar)</option>
+            {DAFTAR_RW_KALISALAK.map((rw) => {
+              const cov = rwCoverageData.find((c) => c.rwCode === rw.value);
+              const count = cov ? cov.total : 0;
+              const statusTxt = count === 0 ? "⚠️ Belum Ada Petugas" : `${count} Petugas`;
+              return (
+                <option key={rw.value} value={rw.value}>
+                  {rw.label} — {statusTxt}
+                </option>
+              );
+            })}
           </select>
         </div>
       </Card>
@@ -722,8 +1029,45 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                 </tr>
               ) : filteredList.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    Tidak ada data pendaftar yang cocok dengan filter.
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <div className="max-w-md mx-auto space-y-2.5">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+                        <AlertTriangle className="w-6 h-6" />
+                      </div>
+                      <p className="font-bold text-slate-800 text-sm">
+                        {rwFilter !== "ALL"
+                          ? `Belum Ada Petugas Terdaftar di Wilayah RW ${rwFilter}`
+                          : "Tidak ada data pendaftar yang cocok dengan filter pencarian."}
+                      </p>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        {rwFilter !== "ALL"
+                          ? `Wilayah RW ${rwFilter} belum memiliki pendaftar atau petugas yang ditugaskan. Panitia dapat membuka form pendaftaran publik atau menugaskan petugas secara silang.`
+                          : "Coba sesuaikan kata kunci pencarian atau reset filter status."}
+                      </p>
+                      {rwFilter !== "ALL" && (
+                        <div className="pt-2 flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRwFilter("ALL");
+                              setCurrentPage(1);
+                            }}
+                            className="px-3.5 py-2 rounded-xl bg-blue-50 text-blue-700 font-bold text-xs hover:bg-blue-100 transition-all cursor-pointer"
+                          >
+                            Tampilkan Semua RW
+                          </button>
+                          <a
+                            href="/daftarpantarlih"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3.5 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-500 transition-all inline-flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Buka Form Pendaftaran</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -747,10 +1091,25 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         <span className="font-mono text-[11px] text-slate-400">{item.nik}</span>
                       </td>
                       <td className="py-3 px-3.5">
-                        <span className="font-semibold text-slate-800 block">
-                          RW {item.rw} / RT {item.rt}
-                        </span>
-                        <span className="text-[11px] text-slate-500">Desa Kalisalak</span>
+                        {item.assignedWilayah ? (
+                          <>
+                            <span className="font-bold text-blue-700 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-blue-500 shrink-0" />
+                              {item.assignedWilayah} (Tugas)
+                            </span>
+                            <span className="text-[11px] text-slate-500 block">
+                              Domisili: RW {item.rw} / RT {item.rt}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-semibold text-slate-800 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              RW {item.rw} / RT {item.rt}
+                            </span>
+                            <span className="text-[11px] text-slate-500 block">Desa Kalisalak</span>
+                          </>
+                        )}
                       </td>
                       <td className="py-3 px-3.5">
                         <a

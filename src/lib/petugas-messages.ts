@@ -45,7 +45,7 @@ export function generatePetugasWhatsAppMessage(
   switch (status) {
     case "PERLU_KLARIFIKASI":
       return (
-        `Yth. Sdr/i *${namaLengkap}*,\n\n` +
+        `Yth. Bpk/Ibu *${namaLengkap}*,\n\n` +
         `Panitia Pemilihan Kepala Desa (P2KD) Kalisalak 2026/2027 menginformasikan bahwa berkas pendaftaran Petugas Pendataan DPT Anda (No. Reg: *${nomorRegistrasi}*) memerlukan *KLARIFIKASI TAMBAHAN*.\n\n` +
         `*Hal yang Perlu Dikonfirmasi:*\n${catatanPanitia || "Terdapat data administrasi atau catatan integritas yang perlu dikonfirmasi langsung dengan Panitia."}\n\n` +
         `*Tindakan yang Harus Dilakukan:*\n` +
@@ -59,7 +59,7 @@ export function generatePetugasWhatsAppMessage(
 
     case "LOLOS":
       return (
-        `Yth. Sdr/i *${namaLengkap}*,\n\n` +
+        `Yth. Bpk/Ibu *${namaLengkap}*,\n\n` +
         `KABAR BAIK! Panitia Pemilihan Kepala Desa (P2KD) Kalisalak 2026/2027 mengumumkan bahwa berkas pendaftaran Petugas Pendataan DPT Anda (No. Reg: *${nomorRegistrasi}*) secara resmi dinyatakan:\n\n` +
         `🎉 *LOLOS SELEKSI ADMINISTRASI*\n\n` +
         `*Rincian Wilayah Penugasan:*\n` +
@@ -76,7 +76,7 @@ export function generatePetugasWhatsAppMessage(
 
     case "DITETAPKAN":
       return (
-        `Yth. Sdr/i *${namaLengkap}*,\n\n` +
+        `Yth. Bpk/Ibu *${namaLengkap}*,\n\n` +
         `SELAMAT! Berdasarkan Keputusan Resmi Panitia Pemilihan Kepala Desa (P2KD) Kalisalak 2026/2027, Anda telah resmi:\n\n` +
         `🎖️ *DITETAPKAN SEBAGAI PETUGAS PENDATAAN DPT (PANTARLIH)*\n\n` +
         `*Rincian Penugasan Resmi:*\n` +
@@ -96,7 +96,7 @@ export function generatePetugasWhatsAppMessage(
 
     case "TIDAK_LOLOS":
       return (
-        `Yth. Sdr/i *${namaLengkap}*,\n\n` +
+        `Yth. Bpk/Ibu *${namaLengkap}*,\n\n` +
         `Panitia Pemilihan Kepala Desa (P2KD) Desa Kalisalak 2026/2027 menyampaikan terima kasih dan apresiasi yang setinggi-tingginya atas partisipasi dan kesediaan Anda mendaftar sebagai Petugas Pendataan DPT (No. Reg: *${nomorRegistrasi}*).\n\n` +
         `Melalui pesan ini, kami menyampaikan *permohonan maaf yang sebesar-besarnya* bahwa setelah melalui proses verifikasi berkas dan penyesuaian kuota wilayah, Anda *belum dapat kami tetapkan* sebagai petugas pada Pilkades Kalisalak periode ini.\n\n` +
         `*Catatan Panitia:*\n${catatanPanitia || "Kuota kebutuhan wilayah telah terpenuhi atau terdapat kriteria administrasi yang belum terpenuhi."}\n\n` +
@@ -108,7 +108,7 @@ export function generatePetugasWhatsAppMessage(
     case "MENUNGGU_VERIFIKASI":
     default:
       return (
-        `Halo Sdr/i *${namaLengkap}*,\n\n` +
+        `Halo Bpk/Ibu *${namaLengkap}*,\n\n` +
         `Berkas pendaftaran Petugas Pendataan DPT Pilkades Desa Kalisalak 2026/2027 Anda (No. Reg: *${nomorRegistrasi}*) telah kami terima dan saat ini berstatus: *MENUNGGU VERIFIKASI*.\n\n` +
         `Panitia sedang melakukan peninjauan administrasi dan uji integritas netralitas. Pantau status pendaftaran Anda secara berkala melalui portal resmi:\n` +
         `https://www.p2kdkalisalak.my.id/daftarpantarlih\n\n` +

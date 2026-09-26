@@ -28,6 +28,8 @@ import {
   Save,
   Info,
   Building2,
+  Copy,
+  Send,
 } from "lucide-react";
 import { MasterPetugasDpt, PetugasStatus } from "@/lib/data-store";
 import { downloadPetugasPdf } from "@/lib/petugas-pdf-generator";
@@ -35,6 +37,12 @@ import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK, normalizeWilayahCode } from "
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Card, Badge, PaginationControl, ConfirmDialog } from "@/components/ui";
+import {
+  getDefaultCatatanPanitia,
+  generatePetugasWhatsAppMessage,
+  TELEGRAM_GROUP_URL,
+  TELEGRAM_PLAYSTORE_URL,
+} from "@/lib/petugas-messages";
 
 interface TabPetugasDptProps {
   isAdmin?: boolean;
@@ -470,29 +478,44 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   };
 
   // Generate WhatsApp Notification URL with personalized text
-  const getWhatsAppNotificationUrl = (item: MasterPetugasDpt) => {
+  const getWhatsAppNotificationUrl = (
+    item: MasterPetugasDpt,
+    customStatus?: PetugasStatus,
+    customWilayah?: string,
+    customCatatan?: string
+  ) => {
     const waClean = item.nomorWa.replace(/\D/g, "");
     const waNumber = waClean.startsWith("0") ? `62${waClean.slice(1)}` : waClean;
+    const status = customStatus || item.status;
+    const assignedWilayah = customWilayah || item.assignedWilayah || formatRwValue(item.rw);
+    const catatanPanitia = customCatatan !== undefined ? customCatatan : item.catatanPanitia;
 
-    let pesan = "";
-    switch (item.status) {
-      case "LOLOS":
-        pesan = `Halo Sdr/i *${item.namaLengkap}*,\n\nPanitia Pemilihan Kepala Desa (P2KD) Kalisalak 2026/2027 menginformasikan bahwa berkas pendaftaran Petugas Pendataan DPT Anda (No. Reg: *${item.nomorRegistrasi}*) dinyatakan *LOLOS VERIFIKASI ADMINISTRASI*.\n\nCatatan Panitia: ${item.catatanPanitia || "Berkas telah diverifikasi memenuhi syarat."}\nWilayah Penugasan: ${item.assignedWilayah || "RW " + item.rw}\n\nJadwal bimbingan teknis (Bimtek) akan diumumkan segera. Mohon pantau status resmi Anda di:\nhttps://www.p2kdkalisalak.my.id/daftarpantarlih\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
-        break;
-      case "DITETAPKAN":
-        pesan = `Selamat Sdr/i *${item.namaLengkap}*!\n\nAnda telah resmi *DITETAPKAN* sebagai Petugas Pendataan DPT (Pantarlih) Pilkades Kalisalak 2026/2027 untuk wilayah penugasan: *${item.assignedWilayah || "RW " + item.rw}*.\n\nNo. Registrasi: *${item.nomorRegistrasi}*\nCatatan Panitia: ${item.catatanPanitia || "Selamat bertugas menjaga hak pilih warga."}\n\nSilakan unduh dokumen berkas resmi Anda di:\nhttps://www.p2kdkalisalak.my.id/daftarpantarlih\n\n_Panitia P2KD Desa Kalisalak_`;
-        break;
-      case "PERLU_KLARIFIKASI":
-        pesan = `Yth. Sdr/i *${item.namaLengkap}*,\n\nPanitia P2KD Desa Kalisalak mengundang Anda untuk memberikan klarifikasi berkas pendaftaran Petugas Pendataan DPT (No. Reg: *${item.nomorRegistrasi}*).\n\nCatatan Panitia: ${item.catatanPanitia || "Mohon konfirmasi terkait data pendaftaran Anda."}\n\nSilakan segera menghubungi Sekretariat P2KD di Balai Desa Kalisalak.\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
-        break;
-      case "TIDAK_LOLOS":
-        pesan = `Yth. Sdr/i *${item.namaLengkap}*,\n\nTerima kasih atas partisipasi Anda dalam pendaftaran Petugas Pendataan DPT Pilkades Kalisalak (No. Reg: *${item.nomorRegistrasi}*). Berdasarkan verifikasi berkas, Anda dinyatakan *belum memenuhi syarat* untuk tahapan kali ini.\n\nCatatan: ${item.catatanPanitia || "-"}\n\nTerima kasih atas kepedulian Anda terhadap suksesnya Pilkades Kalisalak.\n_Panitia P2KD Desa Kalisalak_`;
-        break;
-      default:
-        pesan = `Halo Sdr/i *${item.namaLengkap}*,\n\nBerkas pendaftaran Petugas Pendataan DPT Pilkades Kalisalak Anda (No. Reg: *${item.nomorRegistrasi}*) telah kami terima dan saat ini berstatus: *MENUNGGU VERIFIKASI*.\n\nPantau status pendaftaran secara berkala di:\nhttps://www.p2kdkalisalak.my.id/daftarpantarlih\n\nTerima kasih.\n_Panitia P2KD Desa Kalisalak_`;
-    }
+    const pesan = generatePetugasWhatsAppMessage(status, {
+      namaLengkap: item.namaLengkap,
+      nomorRegistrasi: item.nomorRegistrasi,
+      assignedWilayah,
+      catatanPanitia,
+    });
 
     return `https://wa.me/${waNumber}?text=${encodeURIComponent(pesan)}`;
+  };
+
+  const getWhatsAppNotificationText = (
+    item: MasterPetugasDpt,
+    customStatus?: PetugasStatus,
+    customWilayah?: string,
+    customCatatan?: string
+  ) => {
+    const status = customStatus || item.status;
+    const assignedWilayah = customWilayah || item.assignedWilayah || formatRwValue(item.rw);
+    const catatanPanitia = customCatatan !== undefined ? customCatatan : item.catatanPanitia;
+
+    return generatePetugasWhatsAppMessage(status, {
+      namaLengkap: item.namaLengkap,
+      nomorRegistrasi: item.nomorRegistrasi,
+      assignedWilayah,
+      catatanPanitia,
+    });
   };
 
   // Export filtered applicants list to CSV (Excel-ready UTF-8)
@@ -1532,7 +1555,12 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         <label className="text-[11px] font-bold text-slate-700">Status Pendaftar:</label>
                         <select
                           value={editStatus}
-                          onChange={(e) => setEditStatus(e.target.value as PetugasStatus)}
+                          onChange={(e) => {
+                            const newStatus = e.target.value as PetugasStatus;
+                            setEditStatus(newStatus);
+                            const currentTargetWilayah = editFormData.assignedWilayah || editWilayah || (selectedPetugas ? `RW ${selectedPetugas.rw}` : "RW 01");
+                            setEditCatatan(getDefaultCatatanPanitia(newStatus, currentTargetWilayah));
+                          }}
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
                         >
                           <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
@@ -1551,6 +1579,9 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                             const val = e.target.value;
                             setEditWilayah(val);
                             setEditFormData({ ...editFormData, assignedWilayah: val });
+                            if (editStatus === "LOLOS" || editStatus === "DITETAPKAN") {
+                              setEditCatatan(getDefaultCatatanPanitia(editStatus, val));
+                            }
                           }}
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
                         >
@@ -1563,7 +1594,21 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                       </div>
 
                       <div className="sm:col-span-2 space-y-1">
-                        <label className="text-[11px] font-bold text-slate-700">Catatan / Instruksi Panitia:</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-slate-700">Catatan / Instruksi Panitia:</label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentTargetWilayah = editFormData.assignedWilayah || editWilayah || (selectedPetugas ? `RW ${selectedPetugas.rw}` : "RW 01");
+                              const note = getDefaultCatatanPanitia(editStatus, currentTargetWilayah);
+                              setEditCatatan(note);
+                              toast.info("Template Dimuat", "Catatan telah diisi dengan template resmi status ini.");
+                            }}
+                            className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                          >
+                            Muat Ulang Template Catatan
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={editCatatan}
@@ -1727,7 +1772,12 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         </label>
                         <select
                           value={editStatus}
-                          onChange={(e) => setEditStatus(e.target.value as PetugasStatus)}
+                          onChange={(e) => {
+                            const newStatus = e.target.value as PetugasStatus;
+                            setEditStatus(newStatus);
+                            const currentTargetWilayah = editWilayah || `RW ${selectedPetugas.rw}`;
+                            setEditCatatan(getDefaultCatatanPanitia(newStatus, currentTargetWilayah));
+                          }}
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
                         >
                           <option value="MENUNGGU_VERIFIKASI">Menunggu Verifikasi</option>
@@ -1745,7 +1795,13 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         </label>
                         <select
                           value={formatRwValue(editWilayah)}
-                          onChange={(e) => setEditWilayah(e.target.value)}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditWilayah(val);
+                            if (editStatus === "LOLOS" || editStatus === "DITETAPKAN") {
+                              setEditCatatan(getDefaultCatatanPanitia(editStatus, val));
+                            }
+                          }}
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:border-blue-500 outline-none font-bold text-slate-800"
                         >
                           {DAFTAR_RW_KALISALAK.map((rw) => (
@@ -1758,17 +1814,153 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 
                       {/* Catatan Panitia */}
                       <div className="space-y-1 sm:col-span-2">
-                        <label className="font-semibold text-slate-700 text-xs">
-                          Catatan / Instruksi Panitia (Dapat dilihat pendaftar saat cek status):
-                        </label>
+                        <div className="flex items-center justify-between">
+                          <label className="font-semibold text-slate-700 text-xs">
+                            Catatan / Instruksi Panitia (Dapat dilihat pendaftar saat cek status):
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const note = getDefaultCatatanPanitia(editStatus, editWilayah || `RW ${selectedPetugas.rw}`);
+                              setEditCatatan(note);
+                              toast.info("Template Dimuat", "Catatan telah diisi dengan template resmi status ini.");
+                            }}
+                            className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                          >
+                            Muat Ulang Template Catatan
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={editCatatan}
                           onChange={(e) => setEditCatatan(e.target.value)}
-                          placeholder="Contoh: Berkas telah diverifikasi sah. Silakan hadir Bimtek hari Sabtu pkl 09.00 di Balai Desa."
+                          placeholder="Catatan resmi panitia untuk pendaftar..."
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none text-xs"
                         />
                       </div>
+                    </div>
+
+                    {/* Status Info Guidance Box for Selected Status */}
+                    {editStatus === "DITETAPKAN" && (
+                      <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-300 text-xs space-y-2.5">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <strong className="text-emerald-900 flex items-center gap-1.5 font-bold">
+                            <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+                            Ditetapkan Sebagai Petugas Pantarlih ({formatRwValue(editWilayah)})
+                          </strong>
+                          <span className="text-[10px] bg-emerald-200 text-emerald-900 font-bold px-2 py-0.5 rounded-full">
+                            Wajib Masuk Telegram
+                          </span>
+                        </div>
+                        <p className="text-emerald-800 leading-relaxed">
+                          Pendaftar resmi ditetapkan sebagai Pantarlih. Pesan notifikasi WA dan portal cek status mewajibkan pendaftar bergabung ke Grup Telegram Resmi Petugas untuk Bimtek dan koordinasi.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <a
+                            href={TELEGRAM_GROUP_URL}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 transition-all"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Buka Grup Telegram</span>
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(TELEGRAM_GROUP_URL);
+                              toast.success("Tautan Disalin", "Tautan Grup Telegram berhasil disalin ke clipboard.");
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <Copy className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Salin Tautan Grup</span>
+                          </button>
+                          <a
+                            href={TELEGRAM_PLAYSTORE_URL}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            title="Unduh Telegram di Google Play Store"
+                          >
+                            <Download className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Unduh Telegram</span>
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {editStatus === "LOLOS" && (
+                      <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs space-y-1">
+                        <strong className="text-blue-900 flex items-center gap-1.5 font-bold">
+                          <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0" />
+                          Lolos Seleksi Administrasi — Calon Petugas Wilayah {formatRwValue(editWilayah)}
+                        </strong>
+                        <p className="text-blue-800 leading-relaxed">
+                          Pendaftar dinyatakan memenuhi seluruh syarat administrasi dan surat pernyataan integritas. Diarahkan menunggu jadwal penetapan resmi dan Bimtek.
+                        </p>
+                      </div>
+                    )}
+
+                    {editStatus === "PERLU_KLARIFIKASI" && (
+                      <div className="p-3.5 rounded-xl bg-orange-50 border border-orange-200 text-xs space-y-1">
+                        <strong className="text-orange-900 flex items-center gap-1.5 font-bold">
+                          <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
+                          Perlu Klarifikasi Berkas & Integritas
+                        </strong>
+                        <p className="text-orange-800 leading-relaxed">
+                          Pendaftar akan menerima instruksi untuk hadir langsung ke Sekretariat P2KD Balai Desa Kalisalak membawa dokumen identitas asli (KTP-el & KK).
+                        </p>
+                      </div>
+                    )}
+
+                    {editStatus === "TIDAK_LOLOS" && (
+                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-1">
+                        <strong className="text-rose-900 flex items-center gap-1.5 font-bold">
+                          <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                          Tidak Lolos (Permohonan Maaf & Apresiasi Profesional)
+                        </strong>
+                        <p className="text-rose-800 leading-relaxed">
+                          Pesan penolakan dirancang santun, profesional, menghargai partisipasi warga, serta menyampaikan permohonan maaf atas keterbatasan kuota wilayah.
+                        </p>
+                      </div>
+                    )}
+
+                    {editStatus === "MENUNGGU_VERIFIKASI" && (
+                      <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs space-y-1">
+                        <strong className="text-amber-900 flex items-center gap-1.5 font-bold">
+                          <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                          Status Menunggu Verifikasi
+                        </strong>
+                        <p className="text-amber-800 leading-relaxed">
+                          Berkas dalam antrean verifikasi administrasi dan uji netralitas oleh Panitia P2KD.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Preview Live Pesan WhatsApp */}
+                    <div className="p-3 bg-slate-100 rounded-xl border border-slate-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                          <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                          Pratinjau Pesan WhatsApp ({selectedPetugas.nomorWa}):
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const txt = getWhatsAppNotificationText(selectedPetugas, editStatus, editWilayah, editCatatan);
+                            navigator.clipboard.writeText(txt);
+                            toast.success("Teks Disalin", "Format pesan WhatsApp berhasil disalin ke clipboard.");
+                          }}
+                          className="text-[10px] font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" />
+                          <span>Salin Teks WA</span>
+                        </button>
+                      </div>
+                      <pre className="text-[11px] font-sans text-slate-700 bg-white p-3 rounded-lg border border-slate-200 whitespace-pre-wrap max-h-36 overflow-y-auto leading-relaxed">
+                        {getWhatsAppNotificationText(selectedPetugas, editStatus, editWilayah, editCatatan)}
+                      </pre>
                     </div>
                   </div>
                 </>
@@ -1797,7 +1989,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                 </button>
 
                 <a
-                  href={getWhatsAppNotificationUrl(selectedPetugas)}
+                  href={getWhatsAppNotificationUrl(selectedPetugas, editStatus, editWilayah, editCatatan)}
                   target="_blank"
                   rel="noreferrer"
                   className="px-3 py-2 rounded-xl text-xs font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 flex items-center gap-1.5 transition-all"

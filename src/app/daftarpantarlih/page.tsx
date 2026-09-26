@@ -23,11 +23,13 @@ import {
   Edit3,
   Save,
   X,
+  Send,
 } from "lucide-react";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK } from "@/lib/kalisalak-wilayah";
 import { MasterPetugasDpt } from "@/lib/data-store";
 import { downloadPetugasPdf } from "@/lib/petugas-pdf-generator";
+import { TELEGRAM_GROUP_URL, TELEGRAM_PLAYSTORE_URL } from "@/lib/petugas-messages";
 
 const formatTanggalWaktu = (val?: string) => {
   if (!val) return "-";
@@ -1230,6 +1232,173 @@ export default function PendaftaranPetugasPage() {
                     {renderStatusBadge(statusResult.status)}
                   </div>
                 </div>
+
+                {/* STATUS GUIDANCE & ACTION BOX */}
+                {statusResult.status === "DITETAPKAN" && (
+                  <div className="p-5 rounded-2xl bg-linear-to-br from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border-2 border-emerald-500/40 space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-emerald-600 text-white shrink-0 shadow-md shadow-emerald-600/30">
+                        <Sparkles className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
+                          Keputusan Resmi Panitia P2KD Kalisalak
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-emerald-950">
+                          Selamat! Anda Resmi Ditetapkan Sebagai Petugas Pantarlih
+                        </h3>
+                        <p className="text-xs text-emerald-900 leading-relaxed">
+                          Anda resmi mengemban amanah sebagai Petugas Pemutakhiran Data Pemilih (Pantarlih) untuk{" "}
+                          <strong>{statusResult.assignedWilayah || `RW ${statusResult.rw}`} Desa Kalisalak</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Mandatory Telegram Group Box */}
+                    <div className="p-4 rounded-xl bg-white border border-emerald-300 shadow-xs space-y-3">
+                      <div className="flex items-center gap-2 text-emerald-900">
+                        <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black text-xs border border-emerald-300">
+                          WAJIB
+                        </span>
+                        <strong className="text-xs sm:text-sm font-bold">
+                          Bergabung ke Grup Telegram Resmi Petugas Pantarlih
+                        </strong>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        Seluruh koordinasi teknis, materi Bimbingan Teknis (Bimtek), pembagian wilayah coklit, jadwal lapangan, dan distribusi logistik <strong>wajib diikuti</strong> melalui grup Telegram resmi berikut:
+                      </p>
+
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 pt-1">
+                        <a
+                          href={TELEGRAM_GROUP_URL}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-600/25 transition-all hover:scale-[1.01]"
+                        >
+                          <Send className="w-4 h-4" />
+                          <span>Masuk Grup Telegram Resmi</span>
+                        </a>
+
+                        <a
+                          href={TELEGRAM_PLAYSTORE_URL}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                          title="Unduh Telegram di Google Play Store jika belum memiliki aplikasi"
+                        >
+                          <Download className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Belum Punya Aplikasi? Unduh Telegram</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {statusResult.status === "LOLOS" && (
+                  <div className="p-5 rounded-2xl bg-linear-to-br from-blue-500/10 via-blue-500/5 to-indigo-500/10 border-2 border-blue-500/30 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-blue-600 text-white shrink-0 shadow-md shadow-blue-600/30">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-blue-800 uppercase tracking-wider">
+                          Pengumuman Hasil Seleksi Administrasi
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-blue-950">
+                          Selamat! Berkas Anda Dinyatakan Lolos Seleksi Administrasi
+                        </h3>
+                        <p className="text-xs text-blue-900 leading-relaxed">
+                          Seluruh berkas administrasi dan surat pernyataan integritas Anda telah diverifikasi memenuhi syarat sebagai Calon Petugas Pantarlih untuk{" "}
+                          <strong>{statusResult.assignedWilayah || `RW ${statusResult.rw}`} Desa Kalisalak</strong>.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-white/80 rounded-xl border border-blue-200 text-xs text-blue-950 space-y-1">
+                      <span className="font-bold flex items-center gap-1.5 text-blue-800">
+                        <Info className="w-3.5 h-3.5 text-blue-600" /> Tahapan Selanjutnya:
+                      </span>
+                      <p className="text-slate-600 pl-5">
+                        Menunggu tahapan Penetapan Resmi Petugas dan Bimbingan Teknis (Bimtek) Coklit Lapangan oleh Panitia P2KD. Silakan pantau pengumuman resmi berkala di halaman ini.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {statusResult.status === "PERLU_KLARIFIKASI" && (
+                  <div className="p-5 rounded-2xl bg-linear-to-br from-orange-500/10 via-amber-500/5 to-amber-500/10 border-2 border-orange-500/40 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-orange-600 text-white shrink-0 shadow-md shadow-orange-600/30">
+                        <AlertTriangle className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-orange-800 uppercase tracking-wider">
+                          Pemberitahuan Klarifikasi Panitia
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-orange-950">
+                          Berkas Pendaftaran Memerlukan Klarifikasi Tambahan
+                        </h3>
+                        <p className="text-xs text-orange-900 leading-relaxed">
+                          Terdapat data administrasi atau catatan integritas yang perlu dikonfirmasi langsung oleh Panitia P2KD untuk memastikan netralitas dan validitas pendaftar.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-3.5 bg-white rounded-xl border border-orange-200 text-xs text-slate-700 space-y-2">
+                      <strong className="text-orange-900 block font-bold">
+                        Instruksi Tindak Lanjut Pendaftar:
+                      </strong>
+                      <ol className="list-decimal pl-5 space-y-1 text-slate-600">
+                        <li>Segera hadir ke Sekretariat P2KD di Balai Desa Kalisalak pada jam kerja layanan.</li>
+                        <li>Membawa dokumen identitas asli (KTP-el dan Kartu Keluarga).</li>
+                        <li>Konfirmasikan kepada panitia terkait nomor registrasi pendaftaran Anda (<strong>{statusResult.nomorRegistrasi}</strong>).</li>
+                      </ol>
+                    </div>
+                  </div>
+                )}
+
+                {statusResult.status === "TIDAK_LOLOS" && (
+                  <div className="p-5 rounded-2xl bg-linear-to-br from-rose-500/10 via-slate-500/5 to-slate-500/10 border-2 border-rose-500/20 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-rose-600 text-white shrink-0 shadow-md shadow-rose-600/20">
+                        <XCircle className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          Pemberitahuan Resmi Panitia P2KD
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-slate-900">
+                          Permohonan Maaf & Terima Kasih Atas Partisipasi Anda
+                        </h3>
+                        <p className="text-xs text-slate-600 leading-relaxed">
+                          Panitia Pemilihan Kepala Desa (P2KD) Kalisalak menyampaikan terima kasih dan apresiasi yang setinggi-tingginya atas kesediaan dan kepedulian Anda mendaftar sebagai Petugas Pendataan DPT.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="p-3.5 bg-white/90 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
+                      Berdasarkan hasil verifikasi berkas dan penyesuaian kuota kebutuhan wilayah, kami memohon maaf yang sebesar-besarnya bahwa pada periode Pilkades kali ini Anda <strong>belum dapat ditetapkan</strong> sebagai petugas. Keputusan ini tidak mengurangi rasa hormat kami, dan kami sangat mengharapkan partisipasi aktif Anda dalam tahapan pesta demokrasi Desa Kalisalak berikutnya.
+                    </div>
+                  </div>
+                )}
+
+                {statusResult.status === "MENUNGGU_VERIFIKASI" && (
+                  <div className="p-5 rounded-2xl bg-linear-to-br from-amber-500/10 via-amber-500/5 to-yellow-500/10 border border-amber-300 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-amber-500 text-white shrink-0 shadow-md shadow-amber-500/20">
+                        <Clock className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">
+                          Status Antrean Verifikasi
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-amber-950">
+                          Berkas Sedang Ditinjau oleh Tim Panitia P2KD
+                        </h3>
+                        <p className="text-xs text-amber-900 leading-relaxed">
+                          Berkas pendaftaran Anda telah berhasil tersimpan di sistem P2KD Kalisalak. Saat ini panitia sedang melakukan verifikasi kelengkapan berkas administrasi dan uji integritas netralitas secara bertahap.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Catatan Panitia jika ada */}
                 {statusResult.catatanPanitia && (

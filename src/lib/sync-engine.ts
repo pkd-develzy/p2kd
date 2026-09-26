@@ -73,15 +73,30 @@ export class SyncEngine {
       if (metaRes.ok) {
         const metaJson = await metaRes.json();
         if (metaJson.success && metaJson.data) {
-          const { tpsList, anggotaList, aduanList, beritaList, pengumumanList, kandidatList } = metaJson.data;
+          const { tpsList, anggotaList, aduanList, beritaList, pengumumanList, kandidatList, petugasDptList } = metaJson.data;
 
           if (Array.isArray(tpsList)) await LocalTPSRepository.setAll(tpsList as TPSItem[], namespace);
           if (Array.isArray(anggotaList)) await LocalAnggotaRepository.setAll(anggotaList as AnggotaP2KD[], namespace);
           if (Array.isArray(aduanList)) await LocalAduanRepository.setAll(aduanList as Aduan[], namespace);
 
-          if (Array.isArray(beritaList)) await EncryptedLocalDb.putEncryptedBatch(namespace, "BERITA", beritaList);
+          if (Array.isArray(beritaList)) {
+            await EncryptedLocalDb.putEncryptedBatch(namespace, "BERITA", beritaList);
+            if (typeof window !== "undefined") {
+              try { localStorage.setItem("p2kd_berita_cache", JSON.stringify(beritaList)); } catch {}
+            }
+          }
           if (Array.isArray(pengumumanList)) await EncryptedLocalDb.putEncryptedBatch(namespace, "PENGUMUMAN", pengumumanList);
-          if (Array.isArray(kandidatList)) await EncryptedLocalDb.putEncryptedBatch(namespace, "KANDIDAT", kandidatList);
+          if (Array.isArray(kandidatList)) {
+            await EncryptedLocalDb.putEncryptedBatch(namespace, "KANDIDAT", kandidatList);
+            if (typeof window !== "undefined") {
+              try { localStorage.setItem("p2kd_calon_kades_cache", JSON.stringify(kandidatList)); } catch {}
+            }
+          }
+          if (Array.isArray(petugasDptList)) {
+            if (typeof window !== "undefined") {
+              try { localStorage.setItem("p2kd_petugas_dpt_cache", JSON.stringify(petugasDptList)); } catch {}
+            }
+          }
         }
       }
 

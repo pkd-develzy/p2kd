@@ -452,7 +452,14 @@ export const AdminDashboard: React.FC = () => {
       if (dataTps.success) setTpsList(dataTps.data);
       if (dataAudit.success) setAuditLogs(dataAudit.data);
       if (dataAnggota.success) setAnggotaList(dataAnggota.data);
-      if (dataPetugas?.success && Array.isArray(dataPetugas.data)) setPetugasCount(dataPetugas.data.length);
+      if (dataPetugas?.success && Array.isArray(dataPetugas.data)) {
+        setPetugasCount(dataPetugas.data.length);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("p2kd_petugas_dpt_cache", JSON.stringify(dataPetugas.data));
+          } catch {}
+        }
+      }
       if (dataDb.success) {
         setDbStatus(dataDb.data);
         if (dataDb.data.tahapan) {
@@ -635,6 +642,9 @@ export const AdminDashboard: React.FC = () => {
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_user_data");
         localStorage.removeItem("p2kd_admin_dashboard_cache");
+        localStorage.removeItem("p2kd_petugas_dpt_cache");
+        localStorage.removeItem("p2kd_calon_kades_cache");
+        localStorage.removeItem("p2kd_berita_cache");
         sessionStorage.removeItem("admin_token");
       }
       toast.info("Sesi Berakhir", "Sesi telah keluar dari tab lain.");
@@ -660,11 +670,14 @@ export const AdminDashboard: React.FC = () => {
       LocalAnggotaRepository.clear();
       LocalAduanRepository.clear();
 
-      // 3. Hapus token sesi dari browser
+      // 3. Hapus token sesi dan cache modul dari browser
       if (typeof window !== "undefined") {
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_user_data");
         localStorage.removeItem("p2kd_admin_dashboard_cache");
+        localStorage.removeItem("p2kd_petugas_dpt_cache");
+        localStorage.removeItem("p2kd_calon_kades_cache");
+        localStorage.removeItem("p2kd_berita_cache");
         sessionStorage.removeItem("admin_token");
       }
 

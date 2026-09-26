@@ -56,6 +56,23 @@ const COLOR_PRESETS = [
 // In-memory client cache for instant 0ms tab switching
 let globalCachedCalonList: KandidatKades[] | null = null;
 
+const getInitialCalonList = (): KandidatKades[] => {
+  if (globalCachedCalonList && globalCachedCalonList.length > 0) return globalCachedCalonList;
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("p2kd_calon_kades_cache");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          globalCachedCalonList = parsed;
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+  return [];
+};
+
 export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
   isAdmin,
   userRole = "SUPER_ADMIN",
@@ -78,8 +95,8 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
     userSeksi === "SEKSI_PENJARINGAN" ||
     userSeksi === "SEKSI_PENYARINGAN";
 
-  const [calonList, setCalonList] = useState<KandidatKades[]>(() => globalCachedCalonList || []);
-  const [loading, setLoading] = useState(() => !globalCachedCalonList);
+  const [calonList, setCalonList] = useState<KandidatKades[]>(getInitialCalonList);
+  const [loading, setLoading] = useState(() => getInitialCalonList().length === 0);
   const [refreshing, setRefreshing] = useState(false);
 
   // Modal Calon State
@@ -150,6 +167,11 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
       if (json.success && Array.isArray(json.data)) {
         globalCachedCalonList = json.data;
         setCalonList(json.data);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("p2kd_calon_kades_cache", JSON.stringify(json.data));
+          } catch {}
+        }
       } else {
         setCalonList([]);
       }
@@ -195,11 +217,6 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
     let isMounted = true;
 
     const loadInitialData = async () => {
-      // If already cached in memory, use instant cache without reloading
-      if (globalCachedCalonList) {
-        return;
-      }
-
       try {
         const token = typeof window !== "undefined" ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token") : null;
         const [calonRes, configRes] = await Promise.all([
@@ -215,6 +232,11 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
           if (calonJson.success && Array.isArray(calonJson.data)) {
             globalCachedCalonList = calonJson.data;
             setCalonList(calonJson.data);
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem("p2kd_calon_kades_cache", JSON.stringify(calonJson.data));
+              } catch {}
+            }
           }
           if (configJson.success && configJson.data) {
             if (Array.isArray(configJson.data.syaratCalonList) && configJson.data.syaratCalonList.length > 0) {

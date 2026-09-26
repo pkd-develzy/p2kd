@@ -54,6 +54,26 @@ function formatRwValue(val: string | undefined | null): string {
   return `RW ${formatted}`;
 }
 
+// Helper to read initial cache from memory or localStorage for instant 0ms load
+const getInitialPetugasList = (): MasterPetugasDpt[] => {
+  if (globalCachedPetugasList && globalCachedPetugasList.length > 0) {
+    return globalCachedPetugasList;
+  }
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("p2kd_petugas_dpt_cache");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          globalCachedPetugasList = parsed;
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+  return [];
+};
+
 export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   isAdmin = true,
   userRole = "SUPER_ADMIN",
@@ -61,8 +81,8 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 }) => {
   const toast = useToast();
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
-  const [petugasList, setPetugasList] = useState<MasterPetugasDpt[]>(() => globalCachedPetugasList || []);
-  const [loading, setLoading] = useState(() => !globalCachedPetugasList || globalCachedPetugasList.length === 0);
+  const [petugasList, setPetugasList] = useState<MasterPetugasDpt[]>(getInitialPetugasList);
+  const [loading, setLoading] = useState(() => getInitialPetugasList().length === 0);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [rwFilter, setRwFilter] = useState<string>("ALL");
@@ -112,26 +132,27 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
     });
   };
 
-  // Fetch Petugas List on initial load (only if not already cached)
+  // Fetch Petugas List on initial load (with instant cache first, background silent update)
   useEffect(() => {
-    if (globalCachedPetugasList && globalCachedPetugasList.length > 0) {
-      return;
-    }
     let isMounted = true;
 
     fetch("/api/admin/petugas-dpt")
       .then((res) => res.json())
       .then((json) => {
-        if (isMounted) {
-          if (json.success && Array.isArray(json.data)) {
-            globalCachedPetugasList = json.data;
-            setPetugasList(json.data);
+        if (isMounted && json.success && Array.isArray(json.data)) {
+          globalCachedPetugasList = json.data;
+          setPetugasList(json.data);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("p2kd_petugas_dpt_cache", JSON.stringify(json.data));
+            } catch {}
           }
-          setLoading(false);
         }
       })
       .catch((err) => {
         console.error("Gagal mengambil data petugas:", err);
+      })
+      .finally(() => {
         if (isMounted) setLoading(false);
       });
 
@@ -149,6 +170,11 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       if (json.success && Array.isArray(json.data)) {
         globalCachedPetugasList = json.data;
         setPetugasList(json.data);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("p2kd_petugas_dpt_cache", JSON.stringify(json.data));
+          } catch {}
+        }
       }
     } catch (err) {
       console.error("Gagal mengambil data petugas:", err);

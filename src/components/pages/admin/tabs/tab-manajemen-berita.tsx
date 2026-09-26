@@ -37,13 +37,30 @@ interface TabManajemenBeritaProps {
 // In-memory client cache for instant 0ms tab switching
 let globalCachedBeritaList: MasterBerita[] | null = null;
 
+const getInitialBeritaList = (): MasterBerita[] => {
+  if (globalCachedBeritaList && globalCachedBeritaList.length > 0) return globalCachedBeritaList;
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("p2kd_berita_cache");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          globalCachedBeritaList = parsed;
+          return parsed;
+        }
+      }
+    } catch {}
+  }
+  return [];
+};
+
 export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
   const toast = useToast();
   const { confirm } = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [articles, setArticles] = useState<MasterBerita[]>(() => globalCachedBeritaList || []);
-  const [loading, setLoading] = useState(() => !globalCachedBeritaList);
+  const [articles, setArticles] = useState<MasterBerita[]>(getInitialBeritaList);
+  const [loading, setLoading] = useState(() => getInitialBeritaList().length === 0);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedKategori, setSelectedKategori] = useState<string>("ALL");
 
@@ -129,6 +146,11 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
       if (json.success && json.data) {
         globalCachedBeritaList = json.data;
         setArticles(json.data);
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("p2kd_berita_cache", JSON.stringify(json.data));
+          } catch {}
+        }
       }
     } catch {
       toast.error("Gagal Memuat", "Tidak dapat mengambil daftar berita dari server.");
@@ -138,9 +160,6 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
   }, [toast, getAuthHeaders]);
 
   useEffect(() => {
-    if (globalCachedBeritaList && globalCachedBeritaList.length > 0) {
-      return;
-    }
     let isMounted = true;
 
     const token =
@@ -156,6 +175,11 @@ export const TabManajemenBerita: React.FC<TabManajemenBeritaProps> = () => {
         if (isMounted && json.success && json.data) {
           globalCachedBeritaList = json.data;
           setArticles(json.data);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("p2kd_berita_cache", JSON.stringify(json.data));
+            } catch {}
+          }
         }
       })
       .catch(() => {

@@ -1480,13 +1480,13 @@ export const AdminDashboard: React.FC = () => {
                   id: "",
                   kodeTps: `TABUNG-${nextNum}`,
                   nomorTps: nextNum,
-                  namaTps: `TPS ${nextNum}`,
+                  namaTps: `Wilayah RW ${nextNum}`,
                   namaTabung: `Tabung RW ${nextNum}`,
-                  lokasi: `Balai Pertemuan RW ${nextNum}, Desa Kalisalak`,
-                  alamat: `Wilayah RW ${nextNum}, Desa Kalisalak`,
-                  rt: "01, 02, 03",
+                  lokasi: "Lapangan Desa Kalisalak",
+                  alamat: "Desa Kalisalak, Kec. Margasari, Kab. Tegal",
+                  rt: "RT 01, RT 02, RT 03",
                   rw: nextNum,
-                  kuotaMaksimal: 700,
+                  kuotaMaksimal: 850,
                   status: "AKTIF",
                 });
                 setShowEditTpsModal(true);

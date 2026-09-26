@@ -26,19 +26,19 @@ interface ApiTpsStat {
 }
 
 const DEFAULT_DPS_ROWS: DpsRow[] = [
-  { id: 1, rw: "RW 01", dusun: "Desa Kalisalak", tps: "TPS 01", lokasi: "Wilayah RW 01", jmlPemilih: 612, laki: 309, perempuan: 303 },
-  { id: 2, rw: "RW 02", dusun: "Desa Kalisalak", tps: "TPS 02", lokasi: "Wilayah RW 02", jmlPemilih: 588, laki: 298, perempuan: 290 },
-  { id: 3, rw: "RW 03", dusun: "Desa Kalisalak", tps: "TPS 03", lokasi: "Wilayah RW 03", jmlPemilih: 605, laki: 306, perempuan: 299 },
-  { id: 4, rw: "RW 04", dusun: "Desa Kalisalak", tps: "TPS 04", lokasi: "Wilayah RW 04", jmlPemilih: 594, laki: 301, perempuan: 293 },
-  { id: 5, rw: "RW 05", dusun: "Desa Kalisalak", tps: "TPS 05", lokasi: "Wilayah RW 05", jmlPemilih: 620, laki: 314, perempuan: 306 },
-  { id: 6, rw: "RW 06", dusun: "Desa Kalisalak", tps: "TPS 06", lokasi: "Wilayah RW 06", jmlPemilih: 580, laki: 293, perempuan: 287 },
-  { id: 7, rw: "RW 07", dusun: "Desa Kalisalak", tps: "TPS 07", lokasi: "Wilayah RW 07", jmlPemilih: 615, laki: 311, perempuan: 304 },
-  { id: 8, rw: "RW 08", dusun: "Desa Kalisalak", tps: "TPS 08", lokasi: "Wilayah RW 08", jmlPemilih: 590, laki: 298, perempuan: 292 },
-  { id: 9, rw: "RW 09", dusun: "Desa Kalisalak", tps: "TPS 09", lokasi: "Wilayah RW 09", jmlPemilih: 602, laki: 305, perempuan: 297 },
-  { id: 10, rw: "RW 10", dusun: "Desa Kalisalak", tps: "TPS 10", lokasi: "Wilayah RW 10", jmlPemilih: 585, laki: 296, perempuan: 289 },
-  { id: 11, rw: "RW 11", dusun: "Desa Kalisalak", tps: "TPS 11", lokasi: "Wilayah RW 11", jmlPemilih: 610, laki: 308, perempuan: 302 },
-  { id: 12, rw: "RW 12", dusun: "Desa Kalisalak", tps: "TPS 12", lokasi: "Wilayah RW 12", jmlPemilih: 596, laki: 302, perempuan: 294 },
-  { id: 13, rw: "RW 13", dusun: "Desa Kalisalak", tps: "TPS 13", lokasi: "Wilayah RW 13", jmlPemilih: 590, laki: 292, perempuan: 298 },
+  { id: 1, rw: "RW 01", dusun: "Desa Kalisalak", tps: "TPS 01", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 596, laki: 279, perempuan: 317 },
+  { id: 2, rw: "RW 02", dusun: "Desa Kalisalak", tps: "TPS 02", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 495, laki: 243, perempuan: 252 },
+  { id: 3, rw: "RW 03", dusun: "Desa Kalisalak", tps: "TPS 03", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 565, laki: 283, perempuan: 282 },
+  { id: 4, rw: "RW 04", dusun: "Desa Kalisalak", tps: "TPS 04", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 647, laki: 329, perempuan: 318 },
+  { id: 5, rw: "RW 05", dusun: "Desa Kalisalak", tps: "TPS 05", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 708, laki: 362, perempuan: 346 },
+  { id: 6, rw: "RW 06", dusun: "Desa Kalisalak", tps: "TPS 06", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 488, laki: 242, perempuan: 246 },
+  { id: 7, rw: "RW 07", dusun: "Desa Kalisalak", tps: "TPS 07", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 510, laki: 255, perempuan: 255 },
+  { id: 8, rw: "RW 08", dusun: "Desa Kalisalak", tps: "TPS 08", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 520, laki: 268, perempuan: 252 },
+  { id: 9, rw: "RW 09", dusun: "Desa Kalisalak", tps: "TPS 09", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 617, laki: 315, perempuan: 302 },
+  { id: 10, rw: "RW 10", dusun: "Desa Kalisalak", tps: "TPS 10", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 639, laki: 325, perempuan: 314 },
+  { id: 11, rw: "RW 11", dusun: "Desa Kalisalak", tps: "TPS 11", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 729, laki: 376, perempuan: 353 },
+  { id: 12, rw: "RW 12", dusun: "Desa Kalisalak", tps: "TPS 12", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 527, laki: 267, perempuan: 260 },
+  { id: 13, rw: "RW 13", dusun: "Desa Kalisalak", tps: "TPS 13", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 746, laki: 389, perempuan: 357 },
 ];
 
 export const DpsTable: React.FC = () => {

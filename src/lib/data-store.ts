@@ -2211,19 +2211,19 @@ class SystemDataStore {
     const totalBalon = this.balonList.length;
 
     const defaultDistribution = [
-      { total: 612, laki: 309, perempuan: 303 },
-      { total: 588, laki: 298, perempuan: 290 },
-      { total: 605, laki: 306, perempuan: 299 },
-      { total: 594, laki: 301, perempuan: 293 },
-      { total: 620, laki: 314, perempuan: 306 },
-      { total: 580, laki: 293, perempuan: 287 },
-      { total: 615, laki: 311, perempuan: 304 },
-      { total: 590, laki: 298, perempuan: 292 },
-      { total: 602, laki: 305, perempuan: 297 },
-      { total: 585, laki: 296, perempuan: 289 },
-      { total: 610, laki: 308, perempuan: 302 },
-      { total: 596, laki: 302, perempuan: 294 },
-      { total: 590, laki: 292, perempuan: 298 },
+      { total: 596, laki: 279, perempuan: 317 }, // RW 01
+      { total: 495, laki: 243, perempuan: 252 }, // RW 02
+      { total: 565, laki: 283, perempuan: 282 }, // RW 03
+      { total: 647, laki: 329, perempuan: 318 }, // RW 04
+      { total: 708, laki: 362, perempuan: 346 }, // RW 05
+      { total: 488, laki: 242, perempuan: 246 }, // RW 06
+      { total: 510, laki: 255, perempuan: 255 }, // RW 07
+      { total: 520, laki: 268, perempuan: 252 }, // RW 08
+      { total: 617, laki: 315, perempuan: 302 }, // RW 09
+      { total: 639, laki: 325, perempuan: 314 }, // RW 10
+      { total: 729, laki: 376, perempuan: 353 }, // RW 11
+      { total: 527, laki: 267, perempuan: 260 }, // RW 12
+      { total: 746, laki: 389, perempuan: 357 }, // RW 13
     ];
 
     const sourceTps = this.getTpsList();

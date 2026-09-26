@@ -916,10 +916,10 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                           )}
                         </div>
                         <p
-                          className="text-[10px] text-slate-500 truncate mt-0.5"
-                          title={rwItem.officers.map((o) => o.namaLengkap).join(", ")}
+                          className="text-[10px] text-slate-700 font-semibold uppercase truncate mt-0.5 tracking-tight"
+                          title={rwItem.officers.map((o) => o.namaLengkap.toUpperCase()).join(", ")}
                         >
-                          {rwItem.officers.map((o) => o.namaLengkap).join(", ")}
+                          {rwItem.officers.map((o) => o.namaLengkap.toUpperCase()).join(", ")}
                         </p>
                       </div>
                     ) : (
@@ -951,7 +951,10 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
             <span className="text-blue-900 font-medium">
               Menampilkan filter data untuk: <strong>RW {rwFilter}</strong> ({
                 rwCoverageData.find((r) => r.rwCode === rwFilter)?.total || 0
-              } Petugas terdaftar)
+              } Petugas terdaftar
+              {rwCoverageData.find((r) => r.rwCode === rwFilter)?.officers?.length ? (
+                <>: <strong className="uppercase">{rwCoverageData.find((r) => r.rwCode === rwFilter)?.officers.map((o) => o.namaLengkap.toUpperCase()).join(", ")}</strong></>
+              ) : null})
             </span>
             <button
               type="button"
@@ -1110,7 +1113,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         {item.nomorRegistrasi}
                       </td>
                       <td className="py-3 px-3.5">
-                        <strong className="text-slate-900 block">{item.namaLengkap}</strong>
+                        <strong className="text-slate-900 block uppercase">{item.namaLengkap}</strong>
                         <span className="font-mono text-[11px] text-slate-400">{item.nik}</span>
                       </td>
                       <td className="py-3 px-3.5">
@@ -1631,7 +1634,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
                       <div>
                         <span className="text-[10px] text-slate-400 block uppercase font-bold">Nama Lengkap</span>
-                        <strong className="text-slate-900">{selectedPetugas.namaLengkap}</strong>
+                        <strong className="text-slate-900 uppercase">{selectedPetugas.namaLengkap}</strong>
                       </div>
                       <div>
                         <span className="text-[10px] text-slate-400 block uppercase font-bold">NIK</span>

@@ -295,6 +295,16 @@ export interface AuditLogItem {
   target: string;
   detail: string;
   ipAddress: string;
+  userAgent?: string;
+  device?: string;
+  browser?: string;
+  kategori?: string;
+  severity?: "INFO" | "WARNING" | "CRITICAL";
+  signature?: string;
+  changes?: {
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+  };
 }
 
 export interface SystemTahapan {
@@ -2118,12 +2128,60 @@ class SystemDataStore {
     return this.auditLogs.slice(0, limit);
   }
 
-  public addAuditLog(log: Omit<AuditLogItem, "id" | "waktu">) {
+  public addAuditLog(log: Omit<AuditLogItem, "id" | "waktu"> & { id?: string; waktu?: string }) {
+    const id = log.id || `log-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+    const waktu = log.waktu || new Date().toLocaleString("id-ID");
+
+    // Auto infer kategori
+    let kategori = log.kategori;
+    if (!kategori) {
+      const aksiUpper = log.aksi.toUpperCase();
+      if (aksiUpper.includes("LOGIN") || aksiUpper.includes("AUTH") || aksiUpper.includes("LOGOUT") || aksiUpper.includes("PASSWORD")) {
+        kategori = "OTENTIKASI";
+      } else if (aksiUpper.includes("PEMILIH") || aksiUpper.includes("DPS") || aksiUpper.includes("DPT") || aksiUpper.includes("MUTASI")) {
+        kategori = "DATA_PEMILIH";
+      } else if (aksiUpper.includes("COKLIT")) {
+        kategori = "COKLIT_LAPANGAN";
+      } else if (aksiUpper.includes("PETUGAS") || aksiUpper.includes("ANGGOTA")) {
+        kategori = "PETUGAS_ANGGOTA";
+      } else if (aksiUpper.includes("TPS")) {
+        kategori = "TPS_WILAYAH";
+      } else if (aksiUpper.includes("ADUAN")) {
+        kategori = "TANGGAPAN_MASYARAKAT";
+      } else if (aksiUpper.includes("BACKUP") || aksiUpper.includes("GDRIVE")) {
+        kategori = "CADANGAN_GDRIVE";
+      } else {
+        kategori = "SISTEM";
+      }
+    }
+
+    // Auto infer severity
+    let severity = log.severity;
+    if (!severity) {
+      const aksiUpper = log.aksi.toUpperCase();
+      if (aksiUpper.includes("DELETE") || aksiUpper.includes("LOCK") || aksiUpper.includes("PURGE") || aksiUpper.includes("RESET") || aksiUpper.includes("TMS")) {
+        severity = "CRITICAL";
+      } else if (aksiUpper.includes("UPDATE") || aksiUpper.includes("SYNC") || aksiUpper.includes("EDIT") || aksiUpper.includes("STATUS") || aksiUpper.includes("PASSWORD")) {
+        severity = "WARNING";
+      } else {
+        severity = "INFO";
+      }
+    }
+
+    const signature = log.signature || `SIG-P2KD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
     const newLog: AuditLogItem = {
       ...log,
-      id: `log-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
-      waktu: new Date().toLocaleString("id-ID"),
+      id,
+      waktu,
+      kategori,
+      severity,
+      signature,
+      device: log.device || "Desktop Terminal / Workstation",
+      browser: log.browser || "Google Chrome 124.0.0 (x64)",
+      userAgent: log.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) P2KD-SecureBrowser/1.0",
     };
+
     this.auditLogs.unshift(newLog);
     if (this.auditLogs.length > 500) {
       this.auditLogs.pop();

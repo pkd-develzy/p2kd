@@ -97,6 +97,16 @@ export interface AuditLog {
   target: string;
   detail: string;
   ipAddress: string;
+  userAgent?: string;
+  device?: string;
+  browser?: string;
+  kategori?: string;
+  severity?: "INFO" | "WARNING" | "CRITICAL";
+  signature?: string;
+  changes?: {
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+  };
 }
 
 export interface DbStatus {

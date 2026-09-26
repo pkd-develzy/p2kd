@@ -17,6 +17,7 @@ import {
   Clock,
   Printer,
   UserCheck,
+  MessageSquare,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui";
@@ -244,8 +245,8 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               Tabung Suara
             </span>
             <div className="text-2xl font-black text-slate-900">{tpsList.length} Tabung</div>
-            <span className="text-[10px] text-indigo-600 font-semibold block">
-              Desa Kalisalak
+            <span className="text-[10px] text-indigo-600 font-semibold block truncate" title={lokasiUtama}>
+              {lokasiUtama}
             </span>
           </div>
         </Card>
@@ -290,6 +291,28 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
             <div className="text-2xl font-black text-emerald-600">{persentaseCoklit}%</div>
             <span className="text-[10px] text-emerald-700 font-semibold block">
               {coklitSelesai} dari {totalAktif.toLocaleString()} Pemilih
+            </span>
+          </div>
+        </Card>
+
+        {/* KPI 6: Aduan Warga (Menghilangkan kekosongan kolom ke-6) */}
+        <Card
+          onClick={() => onNavigateTab("aduan")}
+          className="p-4 bg-white border-slate-200 hover:border-purple-300 hover:shadow-md transition-all cursor-pointer rounded-2xl group space-y-1.5"
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-purple-50 text-purple-700 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+              <MessageSquare className="w-4 h-4" />
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-purple-600 group-hover:translate-x-0.5 transition-all" />
+          </div>
+          <div>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              Aduan Warga
+            </span>
+            <div className="text-2xl font-black text-purple-600">{aduanList.length} Aduan</div>
+            <span className="text-[10px] text-slate-500 font-medium block">
+              {aduanMenunggu} Menunggu Verifikasi
             </span>
           </div>
         </Card>

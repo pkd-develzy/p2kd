@@ -37,6 +37,7 @@ import { DAFTAR_RW_KALISALAK, DAFTAR_RT_KALISALAK, normalizeWilayahCode } from "
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Card, Badge, PaginationControl, ConfirmDialog } from "@/components/ui";
+import * as XLSX from "xlsx";
 import {
   getDefaultCatatanPanitia,
   generatePetugasWhatsAppMessage,
@@ -518,66 +519,92 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
     });
   };
 
-  // Export filtered applicants list to CSV (Excel-ready UTF-8)
-  const exportToCsv = () => {
-    if (filteredList.length === 0) return;
+  // Export filtered applicants list to Microsoft Excel (.xlsx)
+  const exportToExcel = () => {
+    if (filteredList.length === 0) {
+      toast.error("Tidak Ada Data", "Tidak ada data pendaftar untuk diekspor.");
+      return;
+    }
 
     const headers = [
-      "No",
-      "No. Registrasi",
-      "Nama Lengkap",
+      "NO",
+      "NO. REGISTRASI",
+      "NAMA LENGKAP",
       "NIK",
-      "Nomor KK",
-      "Tempat Lahir",
-      "Tanggal Lahir",
-      "Jenis Kelamin",
-      "Alamat",
+      "NOMOR KK",
+      "TEMPAT LAHIR",
+      "TANGGAL LAHIR",
+      "JENIS KELAMIN",
+      "ALAMAT LENGKAP",
       "RT",
       "RW",
-      "Desa",
-      "Nomor WhatsApp",
-      "Status",
-      "Wilayah Penugasan",
-      "Calon Kades?",
-      "Tim Sukses?",
-      "Kepentingan Calon?",
-      "Catatan Panitia",
-      "Tanggal Pendaftaran",
+      "DESA",
+      "NOMOR WHATSAPP",
+      "STATUS VERIFIKASI",
+      "WILAYAH TUGAS",
+      "CALON KADES?",
+      "TIM SUKSES?",
+      "KEPENTINGAN CALON?",
+      "CATATAN PANITIA",
+      "TANGGAL REGISTRASI",
     ];
 
-    const rows = filteredList.map((item, idx) => [
+    const dataRows = filteredList.map((item, idx) => [
       idx + 1,
       item.nomorRegistrasi,
-      `"${item.namaLengkap.replace(/"/g, '""')}"`,
-      `'${item.nik}`,
-      `'${item.noKk}`,
-      `"${item.tempatLahir.replace(/"/g, '""')}"`,
+      item.namaLengkap.toUpperCase(),
+      item.nik,
+      item.noKk,
+      item.tempatLahir,
       item.tanggalLahir,
       item.jenisKelamin === "L" ? "Laki-laki" : "Perempuan",
-      `"${item.alamat.replace(/"/g, '""')}"`,
+      item.alamat,
       item.rt,
       item.rw,
       "Desa Kalisalak",
-      `'${item.nomorWa}`,
+      item.nomorWa,
       item.status,
       item.assignedWilayah || `RW ${item.rw}`,
       item.isCalonKades ? "Ya" : "Tidak",
       item.isTimSukses ? "Ya" : "Tidak",
       item.isKepentinganCalon ? "Ya" : "Tidak",
-      `"${(item.catatanPanitia || "-").replace(/"/g, '""')}"`,
+      item.catatanPanitia || "-",
       formatTanggalWaktu(item.tanggalPendaftaran),
     ]);
 
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Rekap_Petugas_DPT_Kalisalak_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataRows]);
+
+    // Format column widths for Excel
+    worksheet["!cols"] = [
+      { wch: 6 },  // NO
+      { wch: 22 }, // NO REGISTRASI
+      { wch: 32 }, // NAMA LENGKAP
+      { wch: 20 }, // NIK
+      { wch: 20 }, // NOMOR KK
+      { wch: 18 }, // TEMPAT LAHIR
+      { wch: 14 }, // TGL LAHIR
+      { wch: 14 }, // JENIS KELAMIN
+      { wch: 35 }, // ALAMAT LENGKAP
+      { wch: 6 },  // RT
+      { wch: 6 },  // RW
+      { wch: 16 }, // DESA
+      { wch: 18 }, // NO WA
+      { wch: 24 }, // STATUS VERIFIKASI
+      { wch: 18 }, // WILAYAH TUGAS
+      { wch: 14 }, // CALON KADES
+      { wch: 14 }, // TIM SUKSES
+      { wch: 20 }, // KEPENTINGAN CALON
+      { wch: 40 }, // CATATAN PANITIA
+      { wch: 22 }, // TANGGAL REGISTRASI
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Petugas Pantarlih");
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const fileName = `Rekap_Petugas_DPT_Kalisalak_${dateStr}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    toast.success("Ekspor Excel Berhasil", `Data ${filteredList.length} pendaftar berhasil diekspor ke file '${fileName}'.`);
   };
 
   return (
@@ -609,13 +636,13 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
               type="button"
-              onClick={exportToCsv}
+              onClick={exportToExcel}
               disabled={filteredList.length === 0}
               className="px-4 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs flex items-center gap-2 backdrop-blur-md transition-all shadow-sm cursor-pointer disabled:opacity-50"
-              title="Unduh Rekap Data Petugas (Format Excel / CSV)"
+              title="Unduh Rekap Data Petugas (Format Microsoft Excel .xlsx)"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <span>Ekspor Data (.csv)</span>
+              <span>Ekspor Data (.xlsx)</span>
             </button>
 
             <button

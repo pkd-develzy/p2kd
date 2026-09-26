@@ -435,7 +435,7 @@ export async function fetchPemilihPaged(
   filter?: { tps?: string; statusAktif?: string; tahap?: string },
   userContext?: { username?: string; role?: string; instansi?: string }
 ): Promise<PagedVotersResult> {
-  const safeLimit = Math.min(200, Math.max(1, limit));
+  const safeLimit = Math.min(1000, Math.max(1, limit));
   const namespace = SecureDeviceCache.buildNamespace(userContext);
   const cacheKey = `paged:offset_${offset}:limit_${safeLimit}:tps_${filter?.tps || "ALL"}:status_${filter?.statusAktif || "ALL"}:tahap_${filter?.tahap || "ALL"}`;
 

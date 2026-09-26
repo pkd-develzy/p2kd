@@ -798,7 +798,7 @@ export class SupabaseDbService {
     filter?: { tps?: string; statusAktif?: string; tahap?: string }
   ): Promise<{ data: MasterPemilih[]; total: number }> {
     try {
-      const safeLimit = Math.min(200, Math.max(1, limit));
+      const safeLimit = Math.min(1000, Math.max(1, limit));
       let q = this.getSeksi1Client()
         .from("pemilih")
         .select("*", { count: "exact" })
@@ -808,7 +808,16 @@ export class SupabaseDbService {
         .range(offset, offset + safeLimit - 1);
 
       if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
-        q = q.eq("tps", filter.tps);
+        const digits = filter.tps.replace(/\D/g, "");
+        if (digits) {
+          const num = parseInt(digits, 10);
+          const formatted2Digit = num < 10 ? `0${num}` : `${num}`;
+          q = q.or(
+            `rw.eq.${formatted2Digit},rw.eq.${num},tps.ilike.%${filter.tps}%,tps.ilike.%RW ${formatted2Digit}%,tps.ilike.%TPS ${formatted2Digit}%`
+          );
+        } else {
+          q = q.or(`tps.ilike.%${filter.tps}%,rw.ilike.%${filter.tps}%`);
+        }
       }
       if (filter?.statusAktif && filter.statusAktif !== "SEMUA" && !filter.statusAktif.toUpperCase().includes("SEMUA")) {
         q = q.eq("status_aktif", filter.statusAktif);
@@ -856,7 +865,16 @@ export class SupabaseDbService {
         .limit(limit);
 
       if (options?.tps && options.tps !== "SEMUA" && !options.tps.toUpperCase().includes("SEMUA")) {
-        q = q.eq("tps", options.tps);
+        const digits = options.tps.replace(/\D/g, "");
+        if (digits) {
+          const num = parseInt(digits, 10);
+          const formatted2Digit = num < 10 ? `0${num}` : `${num}`;
+          q = q.or(
+            `rw.eq.${formatted2Digit},rw.eq.${num},tps.ilike.%${options.tps}%,tps.ilike.%RW ${formatted2Digit}%,tps.ilike.%TPS ${formatted2Digit}%`
+          );
+        } else {
+          q = q.or(`tps.ilike.%${options.tps}%,rw.ilike.%${options.tps}%`);
+        }
       }
 
       const digitsOnly = clean.replace(/\D/g, "");

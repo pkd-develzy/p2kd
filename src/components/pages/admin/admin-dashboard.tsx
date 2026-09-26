@@ -267,7 +267,7 @@ export const AdminDashboard: React.FC = () => {
       const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
       const pagedRes = await fetchPemilihPaged(
         0,
-        100,
+        1000,
         {
           tps: effectiveNew,
           statusAktif: selectedStatusFilter,
@@ -402,7 +402,7 @@ export const AdminDashboard: React.FC = () => {
         const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
         const pagedRes = await fetchPemilihPaged(
           0,
-          100,
+          1000,
           {
             tps: effectiveTps,
             statusAktif: selectedStatusFilter,
@@ -622,6 +622,26 @@ export const AdminDashboard: React.FC = () => {
       // Ignored if restricted
     }
   }, [router, fetchData]);
+
+  // 6. Background Preloader: Silently cache remaining RWs into encrypted IndexedDB during idle time
+  useEffect(() => {
+    if (!canAccessVoterDataUI) return;
+    const userContext = { username: currentUser, role: computedUserRole, instansi: "p2kd_kalisalak" };
+
+    const preloadTimer = setTimeout(async () => {
+      const rwList = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13"];
+      for (const rw of rwList) {
+        if (rw === effectiveTps) continue;
+        try {
+          await fetchPemilihPaged(0, 1000, { tps: rw, statusAktif: "SEMUA" }, userContext);
+        } catch {
+          // Silent fallback in background
+        }
+      }
+    }, 2000);
+
+    return () => clearTimeout(preloadTimer);
+  }, [canAccessVoterDataUI, currentUser, computedUserRole, effectiveTps]);
 
   // Logout Handler: Wajib menggunakan blok finally untuk menjamin penghapusan cache terenkripsi & kunci
   const handleLogout = async () => {

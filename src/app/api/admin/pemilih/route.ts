@@ -59,8 +59,10 @@ export async function GET(req: Request) {
     const cleanTahap = tahap && tahap !== "SEMUA" && !tahap.toUpperCase().includes("SEMUA") ? tahap : undefined;
     const offsetParam = searchParams.get("offset");
 
-    // Batas aman: default 100, max 200
-    const limit = limitParam ? Math.min(200, Math.max(1, parseInt(limitParam, 10))) : 100;
+    // Batas aman: default 1000 untuk filter wilayah RW, atau sesuai limitParam (max 1000)
+    const limit = limitParam
+      ? Math.min(1000, Math.max(1, parseInt(limitParam, 10)))
+      : (cleanTps ? 1000 : 100);
 
     // 1. Search Query: Server-side search di PostgreSQL/Supabase (< 30ms)
     if (search && search.trim().length > 0) {

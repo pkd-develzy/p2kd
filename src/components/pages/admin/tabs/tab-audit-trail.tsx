@@ -29,6 +29,7 @@ import {
   recordBackupExecuted,
 } from "@/lib/gdrive-backup";
 import { ModalAuditDetail } from "../modals/modal-audit-detail";
+import { ModalGdriveWebhook } from "../modals/modal-gdrive-webhook";
 
 interface TabAuditTrailProps {
   auditLogs: AuditLog[];
@@ -45,6 +46,7 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
   // Status backup GDrive 48 jam
   const [backupSchedule, setBackupSchedule] = useState(() => getBackupScheduleStatus());
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [showWebhookModal, setShowWebhookModal] = useState(false);
   const [backupMessage, setBackupMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -55,17 +57,49 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
     setIsBackingUp(true);
     setBackupMessage(null);
     try {
+      const storedWebhook =
+        typeof window !== "undefined"
+          ? localStorage.getItem("p2kd_gdrive_webhook_url") || ""
+          : "";
+
       const res = await fetch("/api/admin/audit/backup", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ webhookUrl: storedWebhook }),
       });
       const data = await res.json();
       if (data.success) {
         recordBackupExecuted(Date.now());
         setBackupSchedule(getBackupScheduleStatus());
-        setBackupMessage({
-          type: "success",
-          text: `Cadangan 48 Jam berhasil dibuat (${data.metadata?.totalRecords || auditLogs.length} data). Tersinkron ke Google Drive.`,
-        });
+
+        if (data.uploadStatus === "UPLOADED_TO_GDRIVE") {
+          setBackupMessage({
+            type: "success",
+            text: `Cadangan 48 Jam BERHASIL langsung terunggah ke Google Drive Folder (${data.metadata?.totalRecords} log aktivitas). Berkas baru langsung ada di folder Drive.`,
+          });
+        } else {
+          // Otomatis download file JSON ke komputer pengguna
+          const payload = data.backupPackage || { metadata: data.metadata, auditTrail: auditLogs };
+          const blob = new Blob([JSON.stringify(payload, null, 2)], {
+            type: "application/json",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = data.metadata?.targetFileName || `P2KD_AUDIT_LOG_48H_${Date.now()}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          // Buka folder Google Drive di tab baru
+          window.open(GDRIVE_CONFIG.FOLDER_URL, "_blank");
+
+          setBackupMessage({
+            type: "success",
+            text: `Berkas arsip (${data.metadata?.targetFileName}) tervalidasi SHA-256 otomatis terunduh ke komputer Anda dan folder Google Drive dibuka. Untuk unggah otomatis langsung tanpa download manual, klik tombol 'Integrasi Webhook GDrive'.`,
+          });
+        }
       } else {
         setBackupMessage({
           type: "error",
@@ -211,6 +245,16 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
               <span>Buka GDrive</span>
               <ExternalLink className="w-3 h-3 text-slate-400" />
             </a>
+
+            <button
+              onClick={() => setShowWebhookModal(true)}
+              type="button"
+              className="px-3.5 py-2.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all shadow-sm cursor-pointer"
+              title="Hubungkan Google Apps Script Webhook agar file langsung masuk otomatis ke folder Google Drive"
+            >
+              <HardDrive className="w-4 h-4 text-amber-400" />
+              <span>Integrasi Webhook GDrive</span>
+            </button>
 
             <a
               href="/api/admin/audit/backup"
@@ -523,6 +567,19 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
         log={selectedLogForDetail}
         isOpen={!!selectedLogForDetail}
         onClose={() => setSelectedLogForDetail(null)}
+      />
+
+      {/* Modal Integrasi Webhook Google Drive */}
+      <ModalGdriveWebhook
+        isOpen={showWebhookModal}
+        onClose={() => setShowWebhookModal(false)}
+        onSaved={() => {
+          setShowWebhookModal(false);
+          setBackupMessage({
+            type: "success",
+            text: "Webhook Google Apps Script berhasil dihubungkan! File backup sekarang akan otomatis terkirim dan langsung muncul di folder Google Drive.",
+          });
+        }}
       />
     </div>
   );

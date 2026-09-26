@@ -44,6 +44,16 @@ interface TabPetugasDptProps {
 // In-memory client cache for instant 0ms tab switching
 let globalCachedPetugasList: MasterPetugasDpt[] | null = null;
 
+// Helper to normalize and format RW string to standard 'RW XX'
+function formatRwValue(val: string | undefined | null): string {
+  if (!val) return "RW 01";
+  const digits = val.replace(/\D/g, "");
+  if (!digits) return "RW 01";
+  const num = parseInt(digits, 10);
+  const formatted = num < 10 ? `0${num}` : `${num}`;
+  return `RW ${formatted}`;
+}
+
 export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   isAdmin = true,
   userRole = "SUPER_ADMIN",
@@ -184,11 +194,12 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 
   // Open Detail Modal
   const handleOpenDetail = (p: MasterPetugasDpt, startInEdit = false) => {
+    const initialWilayah = formatRwValue(p.assignedWilayah || `RW ${p.rw}`);
     setSelectedPetugas(p);
     setIsEditMode(startInEdit);
     setEditStatus(p.status);
     setEditCatatan(p.catatanPanitia || "");
-    setEditWilayah(p.assignedWilayah || `RW ${p.rw}`);
+    setEditWilayah(initialWilayah);
     setEditFormData({
       namaLengkap: p.namaLengkap || "",
       nik: p.nik || "",
@@ -201,7 +212,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       rt: p.rt || "01",
       rw: p.rw || "01",
       dusun: p.dusun || "Desa Kalisalak",
-      assignedWilayah: p.assignedWilayah || `RW ${p.rw}`,
+      assignedWilayah: initialWilayah,
       isCalonKades: Boolean(p.isCalonKades),
       keteranganCalonKades: p.keteranganCalonKades || "",
       isTimSukses: Boolean(p.isTimSukses),
@@ -1148,17 +1159,22 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-slate-700">Penugasan Wilayah Kerja:</label>
-                        <input
-                          type="text"
-                          value={editWilayah}
+                        <label className="text-[11px] font-bold text-slate-700">Penugasan Wilayah Kerja (RW):</label>
+                        <select
+                          value={formatRwValue(editWilayah)}
                           onChange={(e) => {
-                            setEditWilayah(e.target.value);
-                            setEditFormData({ ...editFormData, assignedWilayah: e.target.value });
+                            const val = e.target.value;
+                            setEditWilayah(val);
+                            setEditFormData({ ...editFormData, assignedWilayah: val });
                           }}
-                          placeholder="Contoh: RW 03"
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:border-blue-500 outline-none"
-                        />
+                        >
+                          {DAFTAR_RW_KALISALAK.map((rw) => (
+                            <option key={rw.value} value={`RW ${rw.value}`}>
+                              {rw.label} (Wilayah Tabung TPS {rw.defaultTps})
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="sm:col-span-2 space-y-1">
@@ -1342,13 +1358,17 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         <label className="font-semibold text-slate-700 text-xs">
                           Penugasan Wilayah Kerja (RW):
                         </label>
-                        <input
-                          type="text"
-                          value={editWilayah}
+                        <select
+                          value={formatRwValue(editWilayah)}
                           onChange={(e) => setEditWilayah(e.target.value)}
-                          placeholder="Contoh: RW 02"
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none font-semibold text-slate-800"
-                        />
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:border-blue-500 outline-none font-bold text-slate-800"
+                        >
+                          {DAFTAR_RW_KALISALAK.map((rw) => (
+                            <option key={rw.value} value={`RW ${rw.value}`}>
+                              {rw.label} (Wilayah Tabung TPS {rw.defaultTps})
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       {/* Catatan Panitia */}

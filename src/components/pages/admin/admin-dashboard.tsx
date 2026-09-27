@@ -875,7 +875,17 @@ export const AdminDashboard: React.FC = () => {
           if (!row || !row.id) return;
           const newLog: AuditLog = {
             id: row.id,
-            waktu: new Date(row.created_at || Date.now()).toLocaleString("id-ID"),
+            waktu:
+              new Date(row.created_at || Date.now()).toLocaleString("id-ID", {
+                timeZone: "Asia/Jakarta",
+                day: "numeric",
+                month: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false,
+              }).replace(/\./g, ":") + " WIB",
             user: row.user_name || "Sistem",
             role: row.role || "SYSTEM",
             aksi: row.aksi || "UNKNOWN",
@@ -913,6 +923,30 @@ export const AdminDashboard: React.FC = () => {
       supabaseServer3.removeChannel(channelAuditInstant);
     };
   }, [canAccessVoterDataUI, userContext, fetchData]);
+
+  // Dedicated fast 10s auto-refresh polling when viewing Audit Trail (Ensures 100% Realtime WIB updates)
+  useEffect(() => {
+    if (effectiveActiveTab !== "audit" || !isDeveloper) return;
+
+    const pollAudit = async () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        try {
+          const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
+          const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+          const res = await fetch("/api/admin/audit", { cache: "no-store", headers: authHeaders });
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            setAuditLogs(json.data);
+          }
+        } catch {
+          // Handled gracefully in background
+        }
+      }
+    };
+
+    const auditPollInterval = setInterval(pollAudit, 10000);
+    return () => clearInterval(auditPollInterval);
+  }, [effectiveActiveTab, isDeveloper]);
 
   // 3. Auto-persist Non-Sensitive Dashboard Data to LocalStorage (Instant 0ms on Browser Restart / Refresh)
   // PERHATIAN: Data pemilih SENSITIF TIDAK disimpan di localStorage (menggunakan IndexedDB terenkripsi).
@@ -1950,7 +1984,11 @@ export const AdminDashboard: React.FC = () => {
           )}
 
           {effectiveActiveTab === "audit" && isDeveloper && (
-            <TabAuditTrail auditLogs={auditLogs} />
+            <TabAuditTrail
+              auditLogs={auditLogs}
+              onRefresh={fetchData}
+              isLoading={isLoading}
+            />
           )}
 
           {effectiveActiveTab === "pengaturan_web" && (

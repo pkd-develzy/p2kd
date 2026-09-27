@@ -2435,7 +2435,18 @@ class SystemDataStore {
 
   public addAuditLog(log: Omit<AuditLogItem, "id" | "waktu"> & { id?: string; waktu?: string }) {
     const id = log.id || `log-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
-    const waktu = log.waktu || new Date().toLocaleString("id-ID");
+    const waktu =
+      log.waktu ||
+      new Date().toLocaleString("id-ID", {
+        timeZone: "Asia/Jakarta",
+        day: "numeric",
+        month: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).replace(/\./g, ":") + " WIB";
 
     // Auto infer kategori
     let kategori = log.kategori;

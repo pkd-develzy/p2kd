@@ -586,7 +586,17 @@ export class SupabaseDbService {
           target: l.entity || "SYSTEM",
           detail: l.detail,
           ipAddress: l.ip_address || "127.0.0.1",
-          waktu: new Date(l.created_at || Date.now()).toLocaleString("id-ID"),
+          waktu:
+            new Date(l.created_at || Date.now()).toLocaleString("id-ID", {
+              timeZone: "Asia/Jakarta",
+              day: "numeric",
+              month: "numeric",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            }).replace(/\./g, ":") + " WIB",
           kategori,
           severity,
           device: "Desktop / Workstation",

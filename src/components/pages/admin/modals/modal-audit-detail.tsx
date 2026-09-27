@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { AuditLog } from "../types";
 import { GDRIVE_CONFIG } from "@/lib/gdrive-backup";
+import { formatWIB } from "@/lib/utils";
 
 interface ModalAuditDetailProps {
   log: AuditLog | null;
@@ -129,7 +130,7 @@ export const ModalAuditDetail: React.FC<ModalAuditDetailProps> = ({
             </div>
             <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
               <Clock className="w-4 h-4 text-blue-600" />
-              <span>{log.waktu}</span>
+              <span className="font-mono">{formatWIB(log.waktu)}</span>
             </div>
           </div>
 

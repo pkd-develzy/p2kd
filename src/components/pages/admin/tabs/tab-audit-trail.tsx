@@ -30,12 +30,19 @@ import {
 } from "@/lib/gdrive-backup";
 import { ModalAuditDetail } from "../modals/modal-audit-detail";
 import { ModalGdriveWebhook } from "../modals/modal-gdrive-webhook";
+import { formatWIB } from "@/lib/utils";
 
 interface TabAuditTrailProps {
   auditLogs: AuditLog[];
+  onRefresh?: () => Promise<void> | void;
+  isLoading?: boolean;
 }
 
-export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
+export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
+  auditLogs,
+  onRefresh,
+  isLoading = false,
+}) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,8 +209,12 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
               <span className="text-xs text-slate-400 font-medium">
                 • {auditLogs.length} Total Aktivitas Terekam
               </span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
-                <CheckCircle2 className="w-3 h-3" /> Immutable & SHA-256 Verified
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Live Realtime Stream (WIB)</span>
+              </span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-500/30">
+                <CheckCircle2 className="w-3 h-3" /> Immutable SHA-256
               </span>
             </div>
 
@@ -219,6 +230,19 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
 
           {/* Quick Action Controls */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {onRefresh && (
+              <button
+                onClick={() => onRefresh()}
+                disabled={isLoading}
+                type="button"
+                className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                title="Segarkan data log aktivitas sekarang (WIB)"
+              >
+                <RefreshCw className={`w-4 h-4 text-white ${isLoading ? "animate-spin" : ""}`} />
+                <span>{isLoading ? "Menyinkronkan..." : "Segarkan Log"}</span>
+              </button>
+            )}
+
             <button
               onClick={handleTriggerBackupNow}
               disabled={isBackingUp}
@@ -520,7 +544,7 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({ auditLogs }) => {
                   <div className="text-right">
                     <div className="text-xs font-bold text-slate-700 flex items-center md:justify-end gap-1">
                       <Clock className="w-3 h-3 text-slate-400" />
-                      <span>{log.waktu}</span>
+                      <span className="font-mono">{formatWIB(log.waktu)}</span>
                     </div>
                     <div className="text-[11px] text-slate-500 flex items-center md:justify-end gap-1 mt-0.5">
                       <User className="w-3 h-3 text-slate-400" />

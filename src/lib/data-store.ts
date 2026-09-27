@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { maskNIK, maskKK, hashPassword } from "./encryption";
 import { SupabaseDbService } from "./supabase-db";
 import { getAutoTabungByRtRw } from "./kalisalak-wilayah";
+import { parseClientSource } from "./utils";
 
 export interface MasterPemilih {
   id: string;
@@ -2486,6 +2487,25 @@ class SystemDataStore {
 
     const signature = log.signature || `SIG-P2KD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
+    // Deteksi cerdas sumber akses: Apakah dari Aplikasi Android (APK) atau Browser Web
+    const userAgent =
+      log.userAgent ||
+      (typeof window !== "undefined" && window.navigator ? window.navigator.userAgent : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) P2KD-SecureBrowser/1.0");
+
+    const clientInfo = parseClientSource({
+      userAgent,
+      browser: log.browser,
+      device: log.device,
+      detail: log.detail,
+    });
+
+    const device = log.device || clientInfo.deviceLabel;
+    const browser =
+      log.browser ||
+      (clientInfo.isApp
+        ? "Aplikasi Android (APK v2.25.01)"
+        : `${clientInfo.browserName} (${clientInfo.platform})`);
+
     const newLog: AuditLogItem = {
       ...log,
       id,
@@ -2493,9 +2513,9 @@ class SystemDataStore {
       kategori,
       severity,
       signature,
-      device: log.device || "Desktop Terminal / Workstation",
-      browser: log.browser || "Google Chrome 124.0.0 (x64)",
-      userAgent: log.userAgent || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) P2KD-SecureBrowser/1.0",
+      device,
+      browser,
+      userAgent,
     };
 
     this.auditLogs.unshift(newLog);

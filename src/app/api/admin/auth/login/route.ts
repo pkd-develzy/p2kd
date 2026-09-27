@@ -19,12 +19,13 @@ export async function POST(req: Request) {
     // Canonical Server-Side Cloudflare Turnstile Siteverify (Allow seamless quick-unlock when returning to active session)
     const isQuickUnlock = turnstileToken === "bypass_quick_unlock";
 
-    if (!isQuickUnlock) {
-      const clientIp =
-        req.headers.get("cf-connecting-ip") ||
-        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-        "";
+    const clientIp =
+      req.headers.get("cf-connecting-ip") ||
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      "127.0.0.1";
+    const userAgent = req.headers.get("user-agent") || undefined;
 
+    if (!isQuickUnlock) {
       const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "login");
       if (!turnstileCheck.success) {
         return NextResponse.json(
@@ -110,7 +111,8 @@ export async function POST(req: Request) {
         entity: "AUTH",
         target: username,
         detail: "Percobaan login gagal: Akun tidak terdaftar di database.",
-        ipAddress: "127.0.0.1",
+        ipAddress: clientIp,
+        userAgent,
       });
 
       return NextResponse.json(
@@ -139,7 +141,8 @@ export async function POST(req: Request) {
         entity: "AUTH",
         target: matched.namaLengkap,
         detail: `Percobaan login gagal untuk akun ${matched.username}: Kata sandi salah.`,
-        ipAddress: "127.0.0.1",
+        ipAddress: clientIp,
+        userAgent,
       });
 
       return NextResponse.json(
@@ -180,7 +183,8 @@ export async function POST(req: Request) {
       entity: "AUTH",
       target: matched.namaLengkap,
       detail: `Petugas berhasil login ke sistem (${matched.jabatan}).`,
-      ipAddress: "127.0.0.1",
+      ipAddress: clientIp,
+      userAgent,
     });
 
     const isDefault =

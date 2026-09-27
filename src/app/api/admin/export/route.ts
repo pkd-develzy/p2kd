@@ -9,6 +9,7 @@ import {
   isKetuaP2KD,
   isSeksiPemilih,
 } from "@/lib/auth-middleware";
+import { parseClientSource } from "@/lib/utils";
 
 export async function GET(req: Request) {
   try {
@@ -274,29 +275,44 @@ export async function GET(req: Request) {
 
     // 6. AUDIT TRAIL
     else if (type === "AUDIT") {
-      const dataRows = auditLogs.map((log, idx) => ({
-        "No": idx + 1,
-        "Waktu Transaksi": log.waktu,
-        "Username": log.user,
-        "Peran / Role": log.role,
-        "Jenis Aksi": log.aksi,
-        "Entitas": log.entity,
-        "Target Aksi": log.target,
-        "Rincian Aktivitas": log.detail,
-        "Alamat IP": log.ipAddress,
-      }));
+      const dataRows = auditLogs.map((log, idx) => {
+        const clientInfo = parseClientSource({
+          userAgent: log.userAgent,
+          browser: log.browser,
+          device: log.device,
+          detail: log.detail,
+        });
+
+        return {
+          "No": idx + 1,
+          "Waktu Transaksi": log.waktu,
+          "Sumber Akses": clientInfo.isApp ? "Aplikasi Android (APK v2.25.01)" : `Browser Web (${clientInfo.browserName})`,
+          "Username": log.user,
+          "Peran / Role": log.role,
+          "Jenis Aksi": log.aksi,
+          "Entitas": log.entity,
+          "Target Aksi": log.target,
+          "Rincian Aktivitas": log.detail,
+          "Perangkat / Device": log.device || clientInfo.deviceLabel,
+          "Browser / Engine": log.browser || clientInfo.browserName,
+          "Alamat IP": log.ipAddress,
+        };
+      });
 
       const worksheet = XLSX.utils.json_to_sheet(dataRows);
       worksheet["!cols"] = [
         { wch: 5 },
         { wch: 20 },
+        { wch: 30 },
         { wch: 18 },
         { wch: 16 },
         { wch: 20 },
         { wch: 14 },
         { wch: 30 },
         { wch: 50 },
-        { wch: 14 },
+        { wch: 25 },
+        { wch: 25 },
+        { wch: 16 },
       ];
 
       XLSX.utils.book_append_sheet(workbook, worksheet, "Audit Trail Aktivitas");

@@ -16,10 +16,12 @@ import {
   Info,
   CheckCircle2,
   ExternalLink,
+  Smartphone,
+  LayoutGrid,
 } from "lucide-react";
 import { AuditLog } from "../types";
 import { GDRIVE_CONFIG } from "@/lib/gdrive-backup";
-import { formatWIB } from "@/lib/utils";
+import { formatWIB, parseClientSource } from "@/lib/utils";
 
 interface ModalAuditDetailProps {
   log: AuditLog | null;
@@ -121,18 +123,41 @@ export const ModalAuditDetail: React.FC<ModalAuditDetailProps> = ({
         {/* Content Body */}
         <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1 text-slate-800">
           {/* Status & Kategori Banner */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {getSeverityBadge(log.severity)}
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700">
-                {getCategoryLabel(log.kategori)}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <Clock className="w-4 h-4 text-blue-600" />
-              <span className="font-mono">{formatWIB(log.waktu)}</span>
-            </div>
-          </div>
+          {(() => {
+            const clientInfo = parseClientSource({
+              userAgent: log.userAgent,
+              browser: log.browser,
+              device: log.device,
+              detail: log.detail,
+            });
+
+            return (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {getSeverityBadge(log.severity)}
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-200 text-slate-700">
+                    {getCategoryLabel(log.kategori)}
+                  </span>
+                  {/* Badge Sumber Akses: Aplikasi vs Browser */}
+                  {clientInfo.isApp ? (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                      <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
+                      Aplikasi Android (APK v2.25.01)
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-300 flex items-center gap-1.5 shadow-2xs">
+                      <Globe className="w-3.5 h-3.5 text-sky-600" />
+                      Browser Web ({clientInfo.browserName})
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                  <Clock className="w-4 h-4 text-blue-600" />
+                  <span className="font-mono">{formatWIB(log.waktu)}</span>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Action Code & Human Description */}
           <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
@@ -156,62 +181,95 @@ export const ModalAuditDetail: React.FC<ModalAuditDetailProps> = ({
           </div>
 
           {/* Operator & Network Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Operator Card */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-600" />
-                Identitas Pelaksana (Operator)
-              </h4>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Nama Akun:</span>
-                  <span className="font-bold text-slate-900">{log.user}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Peran / Hak Akses:</span>
-                  <span className="font-semibold px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-800">
-                    {log.role}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-500">Otoritas Validasi:</span>
-                  <span className="text-emerald-700 font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi Sesi
-                  </span>
-                </div>
-              </div>
-            </div>
+          {(() => {
+            const clientInfo = parseClientSource({
+              userAgent: log.userAgent,
+              browser: log.browser,
+              device: log.device,
+              detail: log.detail,
+            });
 
-            {/* Network & Environment */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-emerald-600" />
-                Jejak Jaringan & Perangkat
-              </h4>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Alamat IP:</span>
-                  <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                    {log.ipAddress || "127.0.0.1"}
-                  </span>
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Operator Card */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-600" />
+                    Identitas Pelaksana (Operator)
+                  </h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                      <span className="text-slate-500">Nama Akun:</span>
+                      <span className="font-bold text-slate-900">{log.user}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                      <span className="text-slate-500">Peran / Hak Akses:</span>
+                      <span className="font-semibold px-2 py-0.5 rounded-full text-[11px] bg-blue-100 text-blue-800">
+                        {log.role}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-slate-500">Otoritas Validasi:</span>
+                      <span className="text-emerald-700 font-medium flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Terverifikasi Sesi
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Perangkat / OS:</span>
-                  <span className="font-semibold text-slate-800 flex items-center gap-1">
-                    <Monitor className="w-3.5 h-3.5 text-slate-400" />
-                    {log.device || "Desktop Terminal / Workstation"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="text-slate-500">Peramban (Browser):</span>
-                  <span className="font-medium text-slate-700 truncate max-w-42.5" title={log.browser || "Google Chrome"}>
-                    {log.browser || "Google Chrome 124.0 (x64)"}
-                  </span>
+
+                {/* Network & Environment */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-emerald-600" />
+                      Jejak Jaringan & Perangkat
+                    </span>
+                    {clientInfo.isApp ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                        <Smartphone className="w-3 h-3 text-emerald-600" /> Aplikasi APK
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 border border-sky-300 flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-sky-600" /> Browser Web
+                      </span>
+                    )}
+                  </h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                      <span className="text-slate-500">Sumber Akses:</span>
+                      <span className={`font-bold px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1.5 ${
+                        clientInfo.isApp
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : "bg-sky-100 text-sky-800 border border-sky-300"
+                      }`}>
+                        {clientInfo.isApp ? <Smartphone className="w-3.5 h-3.5 text-emerald-700" /> : <Globe className="w-3.5 h-3.5 text-sky-700" />}
+                        {clientInfo.isApp ? "Aplikasi Android (APK v2.25.01)" : `Browser Web (${clientInfo.browserName})`}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                      <span className="text-slate-500">Alamat IP:</span>
+                      <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
+                        {log.ipAddress || "127.0.0.1"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                      <span className="text-slate-500">Perangkat / OS:</span>
+                      <span className="font-semibold text-slate-800 flex items-center gap-1">
+                        {clientInfo.isApp ? <Smartphone className="w-3.5 h-3.5 text-emerald-600" /> : <Monitor className="w-3.5 h-3.5 text-slate-400" />}
+                        {log.device || clientInfo.deviceLabel}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-slate-500">Peramban (Browser) / Client:</span>
+                      <span className="font-medium text-slate-700 truncate max-w-[200px]" title={log.browser || clientInfo.browserName}>
+                        {clientInfo.isApp ? "P2KD Mobile App Engine (APK)" : (log.browser || clientInfo.browserName)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* User Agent Full String */}
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">

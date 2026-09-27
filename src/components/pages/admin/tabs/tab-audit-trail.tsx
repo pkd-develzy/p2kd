@@ -19,6 +19,9 @@ import {
   CheckCircle2,
   RefreshCw,
   Eye,
+  Smartphone,
+  Globe,
+  LayoutGrid,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge, PaginationControl } from "@/components/ui";
@@ -30,7 +33,7 @@ import {
 } from "@/lib/gdrive-backup";
 import { ModalAuditDetail } from "../modals/modal-audit-detail";
 import { ModalGdriveWebhook } from "../modals/modal-gdrive-webhook";
-import { formatWIB } from "@/lib/utils";
+import { formatWIB, parseClientSource } from "@/lib/utils";
 
 interface TabAuditTrailProps {
   auditLogs: AuditLog[];
@@ -48,7 +51,28 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedSeverity, setSelectedSeverity] = useState("ALL");
+  const [selectedSource, setSelectedSource] = useState<"ALL" | "APLIKASI_APK" | "BROWSER_WEB">("ALL");
   const [selectedLogForDetail, setSelectedLogForDetail] = useState<AuditLog | null>(null);
+
+  // Perhitungan statistik sumber akses (APK vs Browser)
+  const sourceCounts = useMemo(() => {
+    let apk = 0;
+    let browser = 0;
+    for (const log of auditLogs) {
+      const src = parseClientSource({
+        userAgent: log.userAgent,
+        browser: log.browser,
+        device: log.device,
+        detail: log.detail,
+      });
+      if (src.type === "APLIKASI_APK") {
+        apk++;
+      } else {
+        browser++;
+      }
+    }
+    return { apk, browser, total: auditLogs.length };
+  }, [auditLogs]);
 
   // Status backup GDrive 48 jam
   const [backupSchedule, setBackupSchedule] = useState(() => getBackupScheduleStatus());
@@ -138,6 +162,18 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
         if (selectedCategory === "BACKUP" && !cat.includes("CADANGAN") && !cat.includes("GDRIVE") && !log.aksi.includes("BACKUP")) return false;
       }
 
+      // Filter Sumber Akses (Aplikasi APK vs Browser Web)
+      if (selectedSource !== "ALL") {
+        const src = parseClientSource({
+          userAgent: log.userAgent,
+          browser: log.browser,
+          device: log.device,
+          detail: log.detail,
+        });
+        if (selectedSource === "APLIKASI_APK" && src.type !== "APLIKASI_APK") return false;
+        if (selectedSource === "BROWSER_WEB" && src.type === "APLIKASI_APK") return false;
+      }
+
       // Filter Severity
       if (selectedSeverity !== "ALL") {
         if ((log.severity || "INFO") !== selectedSeverity) return false;
@@ -152,17 +188,62 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
         const matchDetail = (log.detail || "").toLowerCase().includes(q);
         const matchIp = (log.ipAddress || "").toLowerCase().includes(q);
         const matchId = (log.id || "").toLowerCase().includes(q);
-        if (!matchUser && !matchAksi && !matchTarget && !matchDetail && !matchIp && !matchId) {
+        const matchDevice = (log.device || "").toLowerCase().includes(q);
+        const matchBrowser = (log.browser || "").toLowerCase().includes(q);
+        if (!matchUser && !matchAksi && !matchTarget && !matchDetail && !matchIp && !matchId && !matchDevice && !matchBrowser) {
           return false;
         }
       }
 
       return true;
     });
-  }, [auditLogs, selectedCategory, selectedSeverity, searchQuery]);
+  }, [auditLogs, selectedCategory, selectedSeverity, selectedSource, searchQuery]);
 
   const startIdx = (currentPage - 1) * pageSize;
   const pagedLogs = filteredLogs.slice(startIdx, startIdx + pageSize);
+
+  const renderClientSourceBadge = (log: AuditLog) => {
+    const src = parseClientSource({
+      userAgent: log.userAgent,
+      browser: log.browser,
+      device: log.device,
+      detail: log.detail,
+    });
+
+    if (src.type === "APLIKASI_APK") {
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 shadow-2xs"
+          title="Aksi dijalankan langsung dari Aplikasi Android (.APK v2.25.01)"
+        >
+          <Smartphone className="w-3 h-3 text-emerald-600 shrink-0" />
+          Aplikasi Android (APK)
+        </span>
+      );
+    }
+
+    if (src.type === "APLIKASI_PWA") {
+      return (
+        <span
+          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 shadow-2xs"
+          title="Aksi dijalankan dari Aplikasi Web PWA"
+        >
+          <LayoutGrid className="w-3 h-3 text-indigo-600 shrink-0" />
+          Aplikasi Web (PWA)
+        </span>
+      );
+    }
+
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-800 border border-sky-300 shadow-2xs"
+        title={`Aksi dijalankan melalui Browser Web (${src.browserName} - ${src.platform})`}
+      >
+        <Globe className="w-3 h-3 text-sky-600 shrink-0" />
+        Browser Web
+      </span>
+    );
+  };
 
   const getSeverityBadge = (severity?: string) => {
     switch (severity) {
@@ -209,6 +290,14 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
               </Badge>
               <span className="text-xs text-slate-400 font-medium">
                 • {auditLogs.length} Total Aktivitas Terekam
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                <Smartphone className="w-3 h-3 text-emerald-400" />
+                <span>{sourceCounts.apk} dari Aplikasi APK</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-400 bg-sky-950/60 px-2.5 py-0.5 rounded-full border border-sky-500/30">
+                <Globe className="w-3 h-3 text-sky-400" />
+                <span>{sourceCounts.browser} dari Browser Web</span>
               </span>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -468,6 +557,62 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
             </button>
           ))}
         </div>
+
+        {/* Source Pills (Aplikasi APK vs Browser Web) */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100 text-xs">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+            Sumber Akses:
+          </span>
+          <button
+            onClick={() => {
+              setSelectedSource("ALL");
+              setCurrentPage(1);
+            }}
+            type="button"
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedSource === "ALL"
+                ? "bg-blue-900 text-white shadow-xs"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-600"
+            }`}
+          >
+            <span>Semua Sumber</span>
+            <span className="text-[10px] opacity-80">({sourceCounts.total})</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedSource("APLIKASI_APK");
+              setCurrentPage(1);
+            }}
+            type="button"
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedSource === "APLIKASI_APK"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200"
+            }`}
+          >
+            <Smartphone className="w-3.5 h-3.5" />
+            <span>Aplikasi Android APK</span>
+            <span className="text-[10px] font-bold">({sourceCounts.apk})</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setSelectedSource("BROWSER_WEB");
+              setCurrentPage(1);
+            }}
+            type="button"
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedSource === "BROWSER_WEB"
+                ? "bg-sky-600 text-white shadow-xs"
+                : "bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200"
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Browser Web</span>
+            <span className="text-[10px] font-bold">({sourceCounts.browser})</span>
+          </button>
+        </div>
       </Card>
 
       {/* Audit Log Table */}
@@ -506,72 +651,91 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
               </button>
             </div>
           ) : (
-            pagedLogs.map((log) => (
-              <div
-                key={log.id}
-                onClick={() => setSelectedLogForDetail(log)}
-                className="p-4 hover:bg-blue-50/40 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer group"
-                title="Klik untuk melihat rincian mendalam aktivitas ini"
-              >
-                {/* Left side: Action code, severity, target, detail */}
-                <div className="space-y-1.5 flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
-                      {log.aksi}
-                    </span>
-                    {getSeverityBadge(log.severity)}
-                    <span className="text-slate-300">•</span>
-                    <span className="font-bold text-slate-900 text-xs truncate max-w-xs">
-                      {log.target || log.entity || "SYSTEM"}
-                    </span>
-                  </div>
+            pagedLogs.map((log) => {
+              const src = parseClientSource({
+                userAgent: log.userAgent,
+                browser: log.browser,
+                device: log.device,
+                detail: log.detail,
+              });
 
-                  <p className="text-slate-600 text-xs leading-relaxed line-clamp-2">
-                    {log.detail}
-                  </p>
-
-                  {/* Forensic pills */}
-                  <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1 font-mono text-slate-500">
-                      IP: <strong>{log.ipAddress || "127.0.0.1"}</strong>
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1 text-slate-500">
-                      <Monitor className="w-3 h-3 text-slate-400" />
-                      {log.device || "Desktop Terminal"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Right side: Timestamp, User & Action Button */}
-                <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center shrink-0 space-y-1 gap-2">
-                  <div className="text-right">
-                    <div className="text-xs font-bold text-slate-700 flex items-center md:justify-end gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <span className="font-mono">{formatWIB(log.waktu)}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500 flex items-center md:justify-end gap-1 mt-0.5">
-                      <User className="w-3 h-3 text-slate-400" />
-                      <span>
-                        <strong className="text-slate-800">{log.user}</strong> ({log.role})
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedLogForDetail(log);
-                    }}
-                    className="px-3 py-1 rounded-xl bg-slate-100 group-hover:bg-blue-600 group-hover:text-white text-slate-600 text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-2xs"
+              return (
+                  <div
+                    key={log.id}
+                    onClick={() => setSelectedLogForDetail(log)}
+                    className="p-4 hover:bg-blue-50/40 transition-colors flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer group"
+                    title="Klik untuk melihat rincian mendalam aktivitas ini"
                   >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>Rincian</span>
-                  </button>
-                </div>
-              </div>
-            ))
+                    {/* Left side: Action code, severity, client source badge, target, detail */}
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                          {log.aksi}
+                        </span>
+                        {getSeverityBadge(log.severity)}
+                        {renderClientSourceBadge(log)}
+                        <span className="text-slate-300">•</span>
+                        <span className="font-bold text-slate-900 text-xs truncate max-w-xs">
+                          {log.target || log.entity || "SYSTEM"}
+                        </span>
+                      </div>
+
+                      <p className="text-slate-600 text-xs leading-relaxed line-clamp-2">
+                        {log.detail}
+                      </p>
+
+                      {/* Forensic pills */}
+                      <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
+                        <span className="flex items-center gap-1 font-mono text-slate-500">
+                          IP: <strong>{log.ipAddress || "127.0.0.1"}</strong>
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 text-slate-600">
+                          {src.isApp ? (
+                            <Smartphone className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          ) : (
+                            <Monitor className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          )}
+                          <span className="font-medium">{log.device || src.deviceLabel}</span>
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 text-slate-600 truncate max-w-xs" title={log.browser || src.browserName}>
+                          <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                          <span>{src.isApp ? "P2KD App Native (APK)" : (log.browser || src.browserName)}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Right side: Timestamp, User & Action Button */}
+                    <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center shrink-0 space-y-1 gap-2">
+                      <div className="text-right">
+                        <div className="text-xs font-bold text-slate-700 flex items-center md:justify-end gap-1">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span className="font-mono">{formatWIB(log.waktu)}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 flex items-center md:justify-end gap-1 mt-0.5">
+                          <User className="w-3 h-3 text-slate-400" />
+                          <span>
+                            <strong className="text-slate-800">{log.user}</strong> ({log.role})
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLogForDetail(log);
+                        }}
+                        className="px-3 py-1 rounded-xl bg-slate-100 group-hover:bg-blue-600 group-hover:text-white text-slate-600 text-[11px] font-bold flex items-center gap-1.5 transition-all shadow-2xs"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Rincian</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
           )}
         </div>
 

@@ -148,7 +148,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const isDeveloper = matched.username.toLowerCase() === "develzy" || matched.role === "DEVELOPER";
+    const isDeveloper =
+      matched.username.toLowerCase() === "develzy" ||
+      matched.username.toLowerCase() === "developer" ||
+      matched.role === "DEVELOPER" ||
+      (Boolean(matched.jabatan) && matched.jabatan.toLowerCase().includes("developer"));
     const isKetua =
       matched.username.toLowerCase() === "khasanudin" ||
       matched.username.toLowerCase() === "admin_kalisalak" ||

@@ -21,6 +21,7 @@ import {
   Globe,
   Newspaper,
   Vote,
+  Terminal,
 } from "lucide-react";
 import { Logo } from "@/components/ui";
 import { TabType, DbStatus, SeksiP2KDType } from "./types";
@@ -41,6 +42,7 @@ interface SidebarProps {
   petugasCount?: number;
   dbStatus: DbStatus | null;
   isAdmin: boolean;
+  isDeveloper?: boolean;
   userRole?: string; // SUPER_ADMIN, SEKSI_PEMILIH, SEKSI_PENJARINGAN, SEKSI_PENYARINGAN, SEKSI_PUNGUT_HITUNG, SEKSI_LOGISTIK_PUBLIKASI, PETUGAS_TPS
   userSeksi?: SeksiP2KDType;
   userName?: string;
@@ -66,6 +68,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
   petugasCount = 0,
   dbStatus,
   isAdmin,
+  isDeveloper: isDeveloperProp,
   userRole = "SUPER_ADMIN",
   userSeksi = "PIMPINAN",
   userName = "Petugas P2KD",
@@ -74,7 +77,13 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
   onLogout,
   onLockScreen,
 }) => {
-  const isDeveloper = userName?.toLowerCase() === "develzy" || userRole?.toUpperCase() === "DEVELOPER";
+  const isDeveloper =
+    Boolean(isDeveloperProp) ||
+    userName?.toLowerCase().includes("develzy") ||
+    userName?.toLowerCase().includes("developer") ||
+    userRole?.toUpperCase() === "DEVELOPER" ||
+    userJabatan?.toLowerCase().includes("developer") ||
+    userJabatan?.toLowerCase().includes("system architect");
   // Clear, cohesive, logical menu structure based on Pilkades tahapan
   const menuGroups = [
     {
@@ -255,7 +264,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           icon: History,
           badge: `${auditCount} Log`,
           badgeColor: "bg-slate-800 text-slate-200 border-slate-700",
-          allowedRoles: ["SUPER_ADMIN"],
+          allowedRoles: ["SUPER_ADMIN", "DEVELOPER"],
         },
       ],
     },
@@ -296,14 +305,16 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div
                 className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
-                  isAdmin
+                  isDeveloper
+                    ? "bg-purple-600/30 border border-purple-400/50 text-purple-300 shadow-xs"
+                    : isAdmin
                     ? "bg-blue-600/30 border border-blue-400/50 text-blue-300 shadow-xs"
                     : userRole === "PETUGAS_TPS"
                     ? "bg-emerald-600/30 border border-emerald-400/50 text-emerald-300"
                     : "bg-indigo-600/30 border border-indigo-400/50 text-indigo-300"
                 }`}
               >
-                {isAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                {isDeveloper ? <Terminal className="w-4 h-4" /> : isAdmin ? <ShieldCheck className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
               </div>
               <div className="overflow-hidden">
                 <span className="text-xs font-bold text-white block truncate">
@@ -317,21 +328,25 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
 
             <span
               className={`text-[9px] px-2 py-0.5 rounded-full font-extrabold uppercase shrink-0 border ${
-                isAdmin
+                isDeveloper
+                  ? "bg-purple-900/80 text-purple-200 border-purple-600/70"
+                  : isAdmin
                   ? "bg-blue-900/80 text-blue-200 border-blue-600/70"
                   : userRole === "PETUGAS_TPS"
                   ? "bg-emerald-900/80 text-emerald-200 border-emerald-600/70"
                   : "bg-indigo-900/80 text-indigo-200 border-indigo-600/70"
               }`}
             >
-              {isAdmin ? "SUPERADMIN" : userRole === "PETUGAS_TPS" ? (assignedTps || "PETUGAS").replace(/TPS/gi, "Tabung") : "SEKSI"}
+              {isDeveloper ? "DEVELOPER" : isAdmin ? "SUPERADMIN" : userRole === "PETUGAS_TPS" ? (assignedTps || "PETUGAS").replace(/TPS/gi, "Tabung") : "SEKSI"}
             </span>
           </div>
 
           {/* Role Status Tagline */}
           <div className="text-[10px] text-slate-200 font-medium bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 flex items-center justify-between">
             <span className="truncate">
-              {isAdmin
+              {isDeveloper
+                ? "💻 Mode Core Developer: Akses Penuh Sistem & Audit"
+                : isAdmin
                 ? "👁️ Mode Pimpinan: Semua Seksi Aktif"
                 : userRole === "PETUGAS_TPS"
                 ? `📍 Operasional Khusus ${(assignedTps || "Tabung").replace(/TPS/gi, "Tabung")}`

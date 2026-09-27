@@ -78,7 +78,13 @@ export const AdminDashboard: React.FC = () => {
   const userParam = searchParams.get("user") || storedUser?.username || "";
 
   // 1. Strict RBAC Resolution: Developer, Ketua P2KD, Seksi 1, and Pantarlih
-  const isDeveloperUser = userParam.toLowerCase() === "develzy" || roleParam === "developer";
+  const isDeveloperUser =
+    userParam.toLowerCase() === "develzy" ||
+    userParam.toLowerCase() === "developer" ||
+    roleParam === "developer" ||
+    storedUser?.role?.toLowerCase() === "developer" ||
+    storedUser?.username?.toLowerCase() === "develzy" ||
+    storedUser?.username?.toLowerCase() === "developer";
   const isKetuaUser =
     userParam.toLowerCase() === "admin_kalisalak" ||
     userParam.toLowerCase() === "khasanudin" ||
@@ -149,10 +155,11 @@ export const AdminDashboard: React.FC = () => {
       ? `Pantarlih Lapangan (${assignedTps})`
       : "Anggota Tim Seksi P2KD";
 
-    if (userParam === "develzy") {
-      nama = "Develzy (Developer)";
-      jabatan = "System Architect & Technical Core Developer";
-      role = "SUPER_ADMIN";
+    if (isDeveloperUser || userParam.toLowerCase() === "develzy") {
+      nama = storedUser?.nama || "Develzy (Developer)";
+      jabatan = storedUser?.jabatan || "System Architect & Technical Core Developer";
+      role = "DEVELOPER";
+      seksi = "PIMPINAN";
     }
 
     // Specific role mapping
@@ -199,7 +206,7 @@ export const AdminDashboard: React.FC = () => {
     }
 
     return { role, seksi, nama, jabatan };
-  }, [isKetuaOrDev, isFieldOfficer, roleParam, userParam, storedUser, assignedTps]);
+  }, [isKetuaOrDev, isDeveloperUser, isFieldOfficer, roleParam, userParam, storedUser, assignedTps]);
 
   const computedUserRole = resolvedProfile.role;
   const computedUserSeksi = resolvedProfile.seksi;
@@ -215,7 +222,12 @@ export const AdminDashboard: React.FC = () => {
     ? "calon"
     : "dashboard";
 
-  const isDeveloper = userParam.toLowerCase() === "develzy" || computedUserRole === "DEVELOPER";
+  const isDeveloper =
+    isDeveloperUser ||
+    userParam.toLowerCase() === "develzy" ||
+    userParam.toLowerCase() === "developer" ||
+    computedUserRole === "DEVELOPER" ||
+    (storedUser?.role || "").toUpperCase() === "DEVELOPER";
 
   const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
   const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "tps"];
@@ -1614,6 +1626,7 @@ export const AdminDashboard: React.FC = () => {
         petugasCount={dbStatus?.cloudStats?.petugasCount ?? dbStatus?.localStats?.totalPetugas ?? petugasCount ?? 14}
         dbStatus={dbStatus}
         isAdmin={isAdmin}
+        isDeveloper={isDeveloper}
         userRole={computedUserRole}
         userSeksi={computedUserSeksi}
         userName={computedUserName}

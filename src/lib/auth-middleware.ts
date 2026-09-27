@@ -65,9 +65,16 @@ export function verifyAdminSession(req: Request): SessionVerificationResult {
 
 export function isDeveloper(user?: AuthTokenPayload): boolean {
   if (!user) return false;
-  const username = (user.username || "").toLowerCase();
-  const role = (user.role || "").toUpperCase();
-  return username === "develzy" || role === "DEVELOPER";
+  const username = (user.username || "").toLowerCase().trim();
+  const role = (user.role || "").toUpperCase().trim();
+  const jabatan = (user.jabatan || user.nama || "").toLowerCase();
+  return (
+    username === "develzy" ||
+    username === "developer" ||
+    role === "DEVELOPER" ||
+    jabatan.includes("developer") ||
+    jabatan.includes("system architect")
+  );
 }
 
 export function isKetuaP2KD(user?: AuthTokenPayload): boolean {

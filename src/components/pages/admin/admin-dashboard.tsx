@@ -359,7 +359,13 @@ export const AdminDashboard: React.FC = () => {
   // --- Lock Screen & Quick Unlock State (Keamanan Layar Native) ---
   const [isAppLocked, setIsAppLocked] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("p2kd_app_locked") === "true";
+      const isLocked = localStorage.getItem("p2kd_app_locked") === "true";
+      const lastActive = Number(localStorage.getItem("p2kd_last_activity") || "0");
+      if (lastActive > 0 && Date.now() - lastActive >= 30 * 60 * 1000) {
+        localStorage.setItem("p2kd_app_locked", "true");
+        return true;
+      }
+      return isLocked;
     }
     return false;
   });
@@ -400,6 +406,9 @@ export const AdminDashboard: React.FC = () => {
         setUnlockPassword("");
         if (typeof window !== "undefined") {
           localStorage.removeItem("p2kd_app_locked");
+          const now = Date.now();
+          localStorage.setItem("p2kd_last_activity", now.toString());
+          lastActivityRef.current = now;
           if (data.data?.token) {
             localStorage.setItem("admin_token", data.data.token);
             sessionStorage.setItem("admin_token", data.data.token);
@@ -415,6 +424,69 @@ export const AdminDashboard: React.FC = () => {
       setIsUnlocking(false);
     }
   };
+
+  // --- 30-Minute Inactivity Auto-Lock Security (Proteksi Otomatis Sesi Inaktif) ---
+  const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 Menit
+  const lastActivityRef = React.useRef<number>(0);
+
+  // Inactivity tracking & periodic check
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (!lastActivityRef.current) {
+      lastActivityRef.current = Date.now();
+    }
+
+    // Initialize last activity timestamp in storage if absent
+    if (!localStorage.getItem("p2kd_last_activity")) {
+      localStorage.setItem("p2kd_last_activity", Date.now().toString());
+    }
+
+    const recordActivity = () => {
+      const now = Date.now();
+      // Throttle storage write to once every 5 seconds
+      if (now - lastActivityRef.current > 5000) {
+        lastActivityRef.current = now;
+        localStorage.setItem("p2kd_last_activity", now.toString());
+      }
+    };
+
+    const verifyInactivity = () => {
+      if (typeof window === "undefined") return;
+      const lastActive = Number(localStorage.getItem("p2kd_last_activity") || lastActivityRef.current);
+      if (Date.now() - lastActive >= INACTIVITY_TIMEOUT_MS) {
+        handleLockScreen();
+      }
+    };
+
+    // User interaction events to record activity
+    const activityEvents = ["mousedown", "mousemove", "keydown", "touchstart", "scroll", "click"];
+    activityEvents.forEach((evt) => {
+      window.addEventListener(evt, recordActivity, { passive: true });
+    });
+
+    // Check inactivity periodically every 15 seconds
+    const intervalId = window.setInterval(verifyInactivity, 15000);
+
+    // Check immediately when user switches back to this tab / app window
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === "visible") {
+        verifyInactivity();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityOrFocus);
+    window.addEventListener("focus", handleVisibilityOrFocus);
+
+    return () => {
+      activityEvents.forEach((evt) => {
+        window.removeEventListener(evt, recordActivity);
+      });
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
+      window.removeEventListener("focus", handleVisibilityOrFocus);
+    };
+  }, [handleLockScreen, INACTIVITY_TIMEOUT_MS]);
 
   // --- PWA Native Gesture: Double Back / Double Swipe to Exit ---
   const lastBackPressRef = React.useRef<number>(0);
@@ -473,22 +545,13 @@ export const AdminDashboard: React.FC = () => {
       }
     };
 
-    // Auto-lock when user minimizes app or switches tabs
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "hidden") {
-        localStorage.setItem("p2kd_app_locked", "true");
-      }
-    };
-
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
     window.addEventListener("touchend", handleTouchEnd, { passive: true });
-    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchend", handleTouchEnd);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [toast]);
 
@@ -2084,9 +2147,14 @@ export const AdminDashboard: React.FC = () => {
               <div>
                 <h3 className="text-base font-black text-white">{computedUserName}</h3>
                 <p className="text-xs text-blue-300 font-medium">{computedUserJabatan}</p>
-                <span className="inline-block mt-1 text-[10px] text-slate-400 font-mono bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700">
-                  @{userParam}
-                </span>
+                <div className="flex items-center justify-center gap-1.5 mt-2">
+                  <span className="inline-block text-[10px] text-slate-400 font-mono bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700">
+                    @{userParam}
+                  </span>
+                  <span className="inline-block text-[10px] text-amber-300 font-medium bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    🔒 Terkunci (Inaktif 30m)
+                  </span>
+                </div>
               </div>
             </div>
 

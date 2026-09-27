@@ -56,19 +56,20 @@ jobs:
           gradle assembleRelease --no-daemon --stacktrace
 
       - name: Prepare Release APK Artifact
+        id: prep_apk
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name || '2.25.01' }}"
           VERSION="${VERSION#v}"
           mkdir -p release-output
           find android/app/build/outputs/apk -name "*release*.apk" -exec cp {} release-output/P2KD-Desa-Kalisalak-v${VERSION}.apk \; || find android/app/build/outputs/apk -name "*.apk" -exec cp {} release-output/P2KD-Desa-Kalisalak-v${VERSION}.apk \;
           ls -lh release-output/
-          echo "RELEASE_TAG=v${VERSION}" >> $GITHUB_ENV
-          echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Upload Build Artifact to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: P2KD-Desa-Kalisalak-v${{ env.RELEASE_VERSION }}
+          name: P2KD-Desa-Kalisalak-v${{ steps.prep_apk.outputs.version }}
           path: release-output/*.apk
           retention-days: 30
 
@@ -76,17 +77,17 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
-          name: "P2KD Mobile v${{ env.RELEASE_VERSION }} • Portal Petugas Resmi"
+          tag_name: ${{ steps.prep_apk.outputs.tag }}
+          name: "P2KD Mobile v${{ steps.prep_apk.outputs.version }} • Portal Petugas Resmi"
           draft: false
           prerelease: false
           files: release-output/*.apk
           body: |
-            ## 🗳️ P2KD Desa Kalisalak - Aplikasi Android Native v${{ env.RELEASE_VERSION }}
+            ## 🗳️ P2KD Desa Kalisalak - Aplikasi Android Native v${{ steps.prep_apk.outputs.version }}
 
             Aplikasi resmi operasional panitia, pengawas, dan petugas lapangan Pemilihan Kepala Desa (Pilkades) Kalisalak 2027.
 
-            ### ✨ Fitur Utama v${{ env.RELEASE_VERSION }}:
+            ### ✨ Fitur Utama v${{ steps.prep_apk.outputs.version }}:
             - 📸 **Izin Native Sekali Saja (Single Native Prompt):** Meminta persetujuan pengguna untuk Kamera (pemindai QR barcode), Lokasi (geotagging TPS/Coklit), dan Penyimpanan berkas sekali saja saat pertama kali dibuka.
             - ⚡ **QR Barcode Scanner:** Mendukung pemindaian berkas C6, DPT, dan identitas pemilih langsung dari kamera perangkat.
             - 📑 **Manajer Unduhan Cerdas:** Unduh berkas rekapitulasi Excel (.xlsx), Berkas Arsip (.json), dan Dokumen C6 langsung ke folder Download perangkat.
@@ -96,7 +97,7 @@ jobs:
 
             ---
             ### 📥 Panduan Instalasi:
-            1. Unduh berkas **`P2KD-Desa-Kalisalak-v${{ env.RELEASE_VERSION }}.apk`** di bawah ini.
+            1. Unduh berkas **`P2KD-Desa-Kalisalak-v${{ steps.prep_apk.outputs.version }}.apk`** di bawah ini.
             2. Buka berkas `.apk` pada perangkat Android Anda.
             3. Jika muncul peringatan keamanan instalasi dari luar Play Store, pilih **"Tetap Pasang" (Install Anyway)**.
             4. Buka aplikasi dan berikan izin yang diminta saat pertama kali dijalankan.

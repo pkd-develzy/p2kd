@@ -53,14 +53,15 @@ jobs:
       - name: Build Android Release APK
         run: |
           cd android
-          gradle assembleRelease --stacktrace
+          gradle assembleRelease --no-daemon --stacktrace
 
       - name: Prepare Release APK Artifact
         run: |
           VERSION="${{ github.event.inputs.version || github.ref_name || '2.25.01' }}"
           VERSION="${VERSION#v}"
           mkdir -p release-output
-          cp android/app/build/outputs/apk/release/app-release.apk release-output/P2KD-Desa-Kalisalak-v${VERSION}.apk
+          find android/app/build/outputs/apk -name "*release*.apk" -exec cp {} release-output/P2KD-Desa-Kalisalak-v${VERSION}.apk \; || find android/app/build/outputs/apk -name "*.apk" -exec cp {} release-output/P2KD-Desa-Kalisalak-v${VERSION}.apk \;
+          ls -lh release-output/
           echo "RELEASE_TAG=v${VERSION}" >> $GITHUB_ENV
           echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
 

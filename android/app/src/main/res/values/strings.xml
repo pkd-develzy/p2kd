@@ -6,5 +6,5 @@
     <string name="msg_offline">Koneksi internet terputus. Silakan periksa jaringan Anda.</string>
     <string name="btn_retry">Coba Lagi</string>
     <string name="perm_desc_title">Izin Akses P2KD Mobile</string>
-    <string name="perm_desc_message">Aplikasi P2KD membutuhkan izin Kamera (scan QR barcode DPT/Coklit), Lokasi (koordinat TPS/Coklit), dan Penyimpanan (unduh rekap & berkas) untuk fungsi operasional.</string>
+    <string name="perm_desc_message">Aplikasi P2KD membutuhkan izin Kamera (scan QR barcode DPT/Coklit), Lokasi (koordinat TPS/Coklit), dan Penyimpanan (unduh rekap dan berkas) untuk fungsi operasional.</string>
 </resources>

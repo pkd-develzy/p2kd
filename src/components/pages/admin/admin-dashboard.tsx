@@ -58,6 +58,7 @@ import { ModalTpsForm } from "./modals/modal-tps-form";
 import { ModalForceChangePassword } from "./modals/modal-force-change-password";
 import { FloatingQrVerifier } from "./widgets/floating-qr-verifier";
 import { FieldBottomNav } from "./field-bottom-nav";
+import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
 
 export const AdminDashboard: React.FC = () => {
   const searchParams = useSearchParams();
@@ -360,18 +361,31 @@ export const AdminDashboard: React.FC = () => {
   const [isAppLocked, setIsAppLocked] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       const isLocked = localStorage.getItem("p2kd_app_locked") === "true";
-      const lastActive = Number(localStorage.getItem("p2kd_last_activity") || "0");
-      if (lastActive > 0 && Date.now() - lastActive >= 30 * 60 * 1000) {
+      if (isLocked) return true;
+
+      const rawActive = localStorage.getItem("p2kd_last_activity");
+      const lastActive = rawActive ? Number(rawActive) : 0;
+
+      // Jika baru pertama kali dibuka atau timestamp kosong/invalid, jangan kunci! Inisialisasi waktu sekarang
+      if (!lastActive || isNaN(lastActive) || lastActive <= 0) {
+        localStorage.setItem("p2kd_last_activity", Date.now().toString());
+        return false;
+      }
+
+      // Kunci HANYA jika waktu sekarang dikurangi waktu aktivitas terakhir benar-benar >= 30 menit
+      if (Date.now() - lastActive >= 30 * 60 * 1000) {
         localStorage.setItem("p2kd_app_locked", "true");
         return true;
       }
-      return isLocked;
+      return false;
     }
     return false;
   });
   const [unlockPassword, setUnlockPassword] = useState("");
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [showUnlockPassword, setShowUnlockPassword] = useState(false);
+  const [unlockTurnstileToken, setUnlockTurnstileToken] = useState<string>("");
+  const unlockTurnstileRef = React.useRef<TurnstileShieldHandle>(null);
 
   const handleLockScreen = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -379,12 +393,19 @@ export const AdminDashboard: React.FC = () => {
     }
     setIsAppLocked(true);
     setUnlockPassword("");
+    setUnlockTurnstileToken("");
+    unlockTurnstileRef.current?.reset();
   }, []);
 
   const handleQuickUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!unlockPassword.trim()) {
       toast.warning("Kata Sandi Wajib", "Silakan masukkan kata sandi akun Anda.");
+      return;
+    }
+
+    if (!unlockTurnstileToken) {
+      toast.warning("Verifikasi Keamanan", "Silakan selesaikan centang verifikasi Cloudflare Turnstile.");
       return;
     }
 
@@ -396,7 +417,7 @@ export const AdminDashboard: React.FC = () => {
         body: JSON.stringify({
           username: userParam,
           password: unlockPassword.trim(),
-          turnstileToken: "bypass_quick_unlock",
+          turnstileToken: unlockTurnstileToken,
         }),
       });
 
@@ -404,6 +425,7 @@ export const AdminDashboard: React.FC = () => {
       if (res.ok && data.success) {
         setIsAppLocked(false);
         setUnlockPassword("");
+        setUnlockTurnstileToken("");
         if (typeof window !== "undefined") {
           localStorage.removeItem("p2kd_app_locked");
           const now = Date.now();
@@ -417,9 +439,13 @@ export const AdminDashboard: React.FC = () => {
         toast.success("Kunci Terbuka", "Selamat datang kembali di dashboard.");
       } else {
         toast.error("Gagal Buka Kunci", data.message || "Kata sandi salah.");
+        unlockTurnstileRef.current?.reset();
+        setUnlockTurnstileToken("");
       }
     } catch {
       toast.error("Gagal", "Tidak dapat terhubung ke server.");
+      unlockTurnstileRef.current?.reset();
+      setUnlockTurnstileToken("");
     } finally {
       setIsUnlocking(false);
     }
@@ -433,27 +459,41 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (!lastActivityRef.current) {
-      lastActivityRef.current = Date.now();
-    }
+    const now = Date.now();
+    lastActivityRef.current = now;
 
-    // Initialize last activity timestamp in storage if absent
-    if (!localStorage.getItem("p2kd_last_activity")) {
-      localStorage.setItem("p2kd_last_activity", Date.now().toString());
+    // Jika dashboard terbuka dalam kondisi TIDAK terkunci,
+    // maka mount/reload halaman ini (seperti Ctrl+Shift+R) adalah aktivitas aktif yang sah dari user!
+    const isCurrentlyLocked = localStorage.getItem("p2kd_app_locked") === "true";
+    if (!isCurrentlyLocked) {
+      localStorage.setItem("p2kd_last_activity", now.toString());
     }
 
     const recordActivity = () => {
-      const now = Date.now();
+      const currentTime = Date.now();
       // Throttle storage write to once every 5 seconds
-      if (now - lastActivityRef.current > 5000) {
-        lastActivityRef.current = now;
-        localStorage.setItem("p2kd_last_activity", now.toString());
+      if (currentTime - lastActivityRef.current > 5000) {
+        lastActivityRef.current = currentTime;
+        if (localStorage.getItem("p2kd_app_locked") !== "true") {
+          localStorage.setItem("p2kd_last_activity", currentTime.toString());
+        }
       }
     };
 
     const verifyInactivity = () => {
       if (typeof window === "undefined") return;
-      const lastActive = Number(localStorage.getItem("p2kd_last_activity") || lastActivityRef.current);
+      if (localStorage.getItem("p2kd_app_locked") === "true") return;
+
+      const raw = localStorage.getItem("p2kd_last_activity");
+      const lastActive = raw ? Number(raw) : lastActivityRef.current;
+
+      // Jika data tidak valid atau 0, jangan kunci! Reset ke waktu sekarang
+      if (!lastActive || isNaN(lastActive) || lastActive <= 0) {
+        localStorage.setItem("p2kd_last_activity", Date.now().toString());
+        lastActivityRef.current = Date.now();
+        return;
+      }
+
       if (Date.now() - lastActive >= INACTIVITY_TIMEOUT_MS) {
         handleLockScreen();
       }
@@ -478,6 +518,14 @@ export const AdminDashboard: React.FC = () => {
     document.addEventListener("visibilitychange", handleVisibilityOrFocus);
     window.addEventListener("focus", handleVisibilityOrFocus);
 
+    // Simpan timestamp aktivitas sebelum reload / unload jika tidak sedang terkunci
+    const handleBeforeUnload = () => {
+      if (localStorage.getItem("p2kd_app_locked") !== "true") {
+        localStorage.setItem("p2kd_last_activity", Date.now().toString());
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
       activityEvents.forEach((evt) => {
         window.removeEventListener(evt, recordActivity);
@@ -485,6 +533,7 @@ export const AdminDashboard: React.FC = () => {
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleVisibilityOrFocus);
       window.removeEventListener("focus", handleVisibilityOrFocus);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [handleLockScreen, INACTIVITY_TIMEOUT_MS]);
 
@@ -1035,6 +1084,7 @@ export const AdminDashboard: React.FC = () => {
         localStorage.removeItem("p2kd_berita_cache");
         localStorage.removeItem("p2kd_remembered_account");
         localStorage.removeItem("p2kd_app_locked");
+        localStorage.removeItem("p2kd_last_activity");
         sessionStorage.removeItem("admin_token");
       }
 
@@ -2224,10 +2274,21 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Cloudflare Turnstile Bot Protection */}
+              <div className="pt-1">
+                <CloudflareTurnstileShield
+                  ref={unlockTurnstileRef}
+                  action="login"
+                  isVerified={Boolean(unlockTurnstileToken)}
+                  onVerify={(token) => setUnlockTurnstileToken(token)}
+                  label="Verifikasi Akses Layar Kunci • Turnstile"
+                />
+              </div>
+
               <button
                 type="submit"
-                disabled={isUnlocking}
-                className="w-full h-11 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+                disabled={isUnlocking || !unlockTurnstileToken}
+                className="w-full h-11 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isUnlocking ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />

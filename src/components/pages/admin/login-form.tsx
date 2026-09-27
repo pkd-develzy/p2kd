@@ -195,6 +195,7 @@ export const AdminLoginForm: React.FC = () => {
           })
         );
         localStorage.removeItem("p2kd_app_locked");
+        localStorage.setItem("p2kd_last_activity", Date.now().toString());
       }
 
       const targetRole = (data.data.role || "SUPER_ADMIN").toLowerCase();

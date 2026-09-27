@@ -193,12 +193,13 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
   return (
     <div className="space-y-6">
       {/* Hero Header with GDrive 48-Hour Integration */}
-      <Card className="p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-xl rounded-3xl relative overflow-hidden">
+      <Card className="p-4 sm:p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-xl rounded-3xl relative overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3">
+        <div className="space-y-4 sm:space-y-5 relative z-10">
+          {/* Header Title & Badges (Full Width, No Squishing) */}
+          <div className="space-y-2.5 sm:space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="primary"
@@ -218,105 +219,107 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-3">
-              <History className="w-6 h-6 text-blue-400" />
-              Rincian Log Aktivitas Pengguna & Audit Trail
+            <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 sm:gap-3">
+              <History className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 shrink-0" />
+              <span>Rincian Log Aktivitas Pengguna & Audit Trail</span>
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed font-normal">
               Seluruh rekam jejak aksi operator, mutasi data pemilih, pendaftaran petugas, penugasan wilayah, dan penguncian pleno tersimpan permanen tanpa celah modifikasi, serta otomatis terbackup ke Google Drive resmi setiap 48 jam.
             </p>
           </div>
 
-          {/* Quick Action Controls */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            {onRefresh && (
-              <button
-                onClick={() => onRefresh()}
-                disabled={isLoading}
-                type="button"
-                className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
-                title="Segarkan data log aktivitas sekarang (WIB)"
-              >
-                <RefreshCw className={`w-4 h-4 text-white ${isLoading ? "animate-spin" : ""}`} />
-                <span>{isLoading ? "Menyinkronkan..." : "Segarkan Log"}</span>
-              </button>
-            )}
-
-            <button
-              onClick={handleTriggerBackupNow}
-              disabled={isBackingUp}
-              type="button"
-              className="px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
-              title="Cadangkan log audit ke Google Drive sekarang"
-            >
-              {isBackingUp ? (
-                <RefreshCw className="w-4 h-4 animate-spin text-white" />
-              ) : (
-                <CloudUpload className="w-4 h-4 text-white" />
+          {/* Dedicated Action Toolbar Strip */}
+          <div className="pt-3 border-t border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3">
+            {/* Primary Operations (Left) */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
+              {onRefresh && (
+                <button
+                  onClick={() => onRefresh()}
+                  disabled={isLoading}
+                  type="button"
+                  className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                  title="Segarkan data log aktivitas sekarang (WIB)"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-white ${isLoading ? "animate-spin" : ""}`} />
+                  <span>{isLoading ? "Menyinkronkan..." : "Segarkan Log"}</span>
+                </button>
               )}
-              <span>{isBackingUp ? "Mencadangkan..." : "Cadangkan ke GDrive"}</span>
-            </button>
 
-            <a
-              href={GDRIVE_CONFIG.FOLDER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all shadow-sm cursor-pointer"
-              title="Buka Folder Google Drive Resmi Cadangan P2KD"
-            >
-              <HardDrive className="w-4 h-4 text-blue-400" />
-              <span>Buka GDrive</span>
-              <ExternalLink className="w-3 h-3 text-slate-400" />
-            </a>
-
-            <button
-              onClick={() => setShowWebhookModal(true)}
-              type="button"
-              className="px-3.5 py-2.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all shadow-sm cursor-pointer"
-              title="Hubungkan Google Apps Script Webhook agar file langsung masuk otomatis ke folder Google Drive"
-            >
-              <HardDrive className="w-4 h-4 text-amber-400" />
-              <span>Integrasi Webhook GDrive</span>
-            </button>
-
-            <a
-              href="/api/admin/audit/backup"
-              download
-              className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all shadow-sm cursor-pointer"
-              title="Unduh Berkas Arsip Cadangan (.json)"
-            >
-              <Download className="w-4 h-4 text-purple-400" />
-              <span>Arsip (.json)</span>
-            </a>
-
-            <a
-              href="/api/admin/export?type=AUDIT"
-              download
-              title="Unduh Log Audit Excel (.xlsx)"
-            >
               <button
+                onClick={handleTriggerBackupNow}
+                disabled={isBackingUp}
                 type="button"
-                className="px-3.5 py-2.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all shadow-sm cursor-pointer"
+                className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                title="Cadangkan log audit ke Google Drive sekarang"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                <span>Excel</span>
+                {isBackingUp ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                ) : (
+                  <CloudUpload className="w-3.5 h-3.5 text-white" />
+                )}
+                <span>{isBackingUp ? "Mencadangkan..." : "Cadangkan GDrive"}</span>
               </button>
-            </a>
+            </div>
+
+            {/* Cloud Drive & Export Actions (Right) */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2 w-full md:w-auto">
+              <a
+                href={GDRIVE_CONFIG.FOLDER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2.5 sm:py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs flex items-center justify-center gap-1.5 backdrop-blur-md transition-all shadow-xs cursor-pointer"
+                title="Buka Folder Google Drive Resmi Cadangan P2KD"
+              >
+                <HardDrive className="w-3.5 h-3.5 text-blue-400" />
+                <span>Buka GDrive</span>
+                <ExternalLink className="w-3 h-3 text-slate-400" />
+              </a>
+
+              <button
+                onClick={() => setShowWebhookModal(true)}
+                type="button"
+                className="px-3 py-2.5 sm:py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border border-amber-400/40 font-bold text-xs flex items-center justify-center gap-1.5 backdrop-blur-md transition-all shadow-xs cursor-pointer"
+                title="Hubungkan Google Apps Script Webhook agar file langsung masuk otomatis ke folder Google Drive"
+              >
+                <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+                <span>Webhook GDrive</span>
+              </button>
+
+              <a
+                href="/api/admin/export?type=AUDIT"
+                download
+                className="px-3 py-2.5 sm:py-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-emerald-200 border border-emerald-500/40 font-bold text-xs flex items-center justify-center gap-1.5 backdrop-blur-md transition-all shadow-xs cursor-pointer"
+                title="Unduh Log Audit Excel (.xlsx)"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Unduh Excel</span>
+              </a>
+
+              <a
+                href="/api/admin/audit/backup"
+                download
+                className="px-3 py-2.5 sm:py-2 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-500/40 font-bold text-xs flex items-center justify-center gap-1.5 backdrop-blur-md transition-all shadow-xs cursor-pointer"
+                title="Unduh Berkas Arsip Cadangan (.json)"
+              >
+                <Download className="w-3.5 h-3.5 text-purple-400" />
+                <span>Arsip (.json)</span>
+              </a>
+            </div>
           </div>
         </div>
 
         {/* 48-Hour Automated Google Drive Backup Banner */}
-        <div className="mt-5 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
-            <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400">
+        <div className="mt-4 pt-3.5 border-t border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <div className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-white/5 border border-white/10">
+            <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 shrink-0">
               <Clock className="w-4 h-4" />
             </div>
-            <div>
-              <div className="text-[10px] text-slate-400 font-semibold uppercase">
+            <div className="min-w-0">
+              <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                 Siklus Backup Otomatis
               </div>
-              <div className="text-white font-bold text-xs flex items-center gap-1.5">
+              <div className="text-white font-bold text-xs flex items-center gap-1.5 truncate">
                 <span>Setiap 48 Jam Sekali</span>
                 <span className="px-1.5 py-0.2 rounded text-[9px] bg-emerald-500/20 text-emerald-300 font-mono">
                   AKTIF
@@ -325,36 +328,37 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
-            <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400">
+          <div className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-white/5 border border-white/10">
+            <div className="p-2 rounded-xl bg-purple-500/20 text-purple-400 shrink-0">
               <CheckCircle2 className="w-4 h-4" />
             </div>
-            <div>
-              <div className="text-[10px] text-slate-400 font-semibold uppercase">
+            <div className="min-w-0">
+              <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                 Cadangan Terakhir
               </div>
-              <div className="text-white font-bold text-xs">
+              <div className="text-white font-bold text-xs truncate">
                 {backupSchedule.lastBackupFormatted}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10">
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+          <div className="flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl bg-white/5 border border-white/10">
+            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
               <HardDrive className="w-4 h-4" />
             </div>
-            <div className="truncate">
-              <div className="text-[10px] text-slate-400 font-semibold uppercase">
+            <div className="min-w-0">
+              <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                 Folder GDrive Resmi
               </div>
               <a
                 href={GDRIVE_CONFIG.FOLDER_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-300 hover:text-white font-mono text-[11px] truncate block underline decoration-blue-500/50"
-                title={GDRIVE_CONFIG.FOLDER_ID}
+                className="text-blue-300 hover:text-white font-semibold text-xs flex items-center gap-1 truncate underline decoration-blue-500/40"
+                title={`Buka Google Drive: ${GDRIVE_CONFIG.FOLDER_ID}`}
               >
-                .../{GDRIVE_CONFIG.FOLDER_ID.substring(0, 16)}...
+                <span className="truncate">Buka Folder GDrive</span>
+                <ExternalLink className="w-3 h-3 shrink-0 text-blue-400" />
               </a>
             </div>
           </div>

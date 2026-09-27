@@ -1,0 +1,102 @@
+name: Build & Release P2KD Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versi Rilis (misal: 2.25.01)'
+        required: true
+        default: '2.25.01'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build & Publish Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate Release Keystore
+        run: |
+          keytool -genkey -v \
+            -keystore android/app/release.keystore \
+            -alias p2kdkey \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass p2kdkalisalak2027 \
+            -keypass p2kdkalisalak2027 \
+            -dname "CN=P2KD Kalisalak, OU=IT, O=P2KD, L=Kalisalak, ST=Jawa Tengah, C=ID"
+
+      - name: Generate Gradle Wrapper & Build APK
+        run: |
+          cd android
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Prepare Release APK Artifact
+        run: |
+          VERSION="${{ github.event.inputs.version || github.ref_name || '2.25.01' }}"
+          VERSION="${VERSION#v}"
+          mkdir -p release-output
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/P2KD-Desa-Kalisalak-v${VERSION}.apk
+          echo "RELEASE_TAG=v${VERSION}" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=${VERSION}" >> $GITHUB_ENV
+
+      - name: Upload Build Artifact to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: P2KD-Desa-Kalisalak-v${{ env.RELEASE_VERSION }}
+          path: release-output/*.apk
+          retention-days: 30
+
+      - name: Create GitHub Release & Publish APK
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: "P2KD Mobile v${{ env.RELEASE_VERSION }} • Portal Petugas Resmi"
+          draft: false
+          prerelease: false
+          files: release-output/*.apk
+          body: |
+            ## 🗳️ P2KD Desa Kalisalak - Aplikasi Android Native v${{ env.RELEASE_VERSION }}
+
+            Aplikasi resmi operasional panitia, pengawas, dan petugas lapangan Pemilihan Kepala Desa (Pilkades) Kalisalak 2027.
+
+            ### ✨ Fitur Utama v${{ env.RELEASE_VERSION }}:
+            - 📸 **Izin Native Sekali Saja (Single Native Prompt):** Meminta persetujuan pengguna untuk Kamera (pemindai QR barcode), Lokasi (geotagging TPS/Coklit), dan Penyimpanan berkas sekali saja saat pertama kali dibuka.
+            - ⚡ **QR Barcode Scanner:** Mendukung pemindaian berkas C6, DPT, dan identitas pemilih langsung dari kamera perangkat.
+            - 📑 **Manajer Unduhan Cerdas:** Unduh berkas rekapitulasi Excel (.xlsx), Berkas Arsip (.json), dan Dokumen C6 langsung ke folder Download perangkat.
+            - 🔄 **Tarik untuk Menyegarkan (Pull-to-Refresh):** Sinkronisasi data realtime lebih praktis dengan usap layar ke bawah.
+            - 🛡️ **Deteksi Jaringan & Offline Shield:** Layar penanganan cerdas dengan tombol coba lagi saat koneksi tidak stabil.
+            - 🔐 **Layar Kunci Otomatis & Proteksi Bot:** Dilengkapi Cloudflare Turnstile Shield dan auto-lock 30 menit.
+
+            ---
+            ### 📥 Panduan Instalasi:
+            1. Unduh berkas **`P2KD-Desa-Kalisalak-v${{ env.RELEASE_VERSION }}.apk`** di bawah ini.
+            2. Buka berkas `.apk` pada perangkat Android Anda.
+            3. Jika muncul peringatan keamanan instalasi dari luar Play Store, pilih **"Tetap Pasang" (Install Anyway)**.
+            4. Buka aplikasi dan berikan izin yang diminta saat pertama kali dijalankan.

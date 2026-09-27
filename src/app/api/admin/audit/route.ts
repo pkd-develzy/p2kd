@@ -1,12 +1,24 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import { verifyAdminSession, isDeveloper } from "@/lib/auth-middleware";
 
 export async function GET(req: Request) {
   try {
     const session = verifyAdminSession(req);
     if (!session.authenticated || !session.user) {
       return session.response!;
+    }
+
+    // STRICT DEVELOPER ONLY ACCESS
+    if (!isDeveloper(session.user)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "FORBIDDEN",
+          message: "Akses Ditolak: Log Aktivitas dan Audit Trail hanya dapat diakses oleh Developer Sistem.",
+        },
+        { status: 403 }
+      );
     }
 
     await dataStore.ensureSynced();

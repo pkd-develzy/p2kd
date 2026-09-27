@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { compressImage } from "@/lib/image-compressor";
+import { getAnggotaHierarchyRank } from "@/lib/data-store";
 
 interface TabAnggotaP2KDProps {
   anggotaList: AnggotaP2KD[];
@@ -44,6 +45,7 @@ interface TabAnggotaP2KDProps {
   userSeksi?: SeksiP2KDType;
   currentUser: string;
   onRefresh: () => void;
+  onDeleteAnggota?: (agt: AnggotaP2KD) => Promise<boolean>;
 }
 
 export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
@@ -54,6 +56,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   userSeksi = "PIMPINAN",
   currentUser,
   onRefresh,
+  onDeleteAnggota,
 }) => {
   const toast = useToast();
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
@@ -179,7 +182,12 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
     return true;
   });
 
-  const totalAnggota = filteredAnggota.length;
+  // Sort strictly by official hierarchy: Ketua -> Wakil -> Sekretaris -> Bendahara -> Seksi 1 -> Seksi 2 -> Seksi 3 -> Seksi 4 -> Seksi 5 -> Pantarlih RW 01-13
+  const sortedAnggota = [...filteredAnggota].sort(
+    (a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b)
+  );
+
+  const totalAnggota = sortedAnggota.length;
   const countPimpinan = anggotaList.filter((a) => a.seksi === "PIMPINAN").length;
   const countKoordinator = anggotaList.filter((a) => a.seksi.startsWith("SEKSI_")).length;
   const countPantarlih = anggotaList.filter((a) => a.seksi === "PANTARLIH_LAPANGAN").length;
@@ -187,7 +195,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const startIdx = (currentPage - 1) * pageSize;
-  const pagedAnggota = filteredAnggota.slice(startIdx, startIdx + pageSize);
+  const pagedAnggota = sortedAnggota.slice(startIdx, startIdx + pageSize);
 
   const generateAutoPassword = () => {
     const chars = "abcdefghjkmnpqrstuvwxyz23456789";
@@ -219,7 +227,6 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   const handleOpenAdd = () => {
     setIsEditing(false);
     setCurrentId("");
-    const generatedPass = generateAutoPassword();
     setFormData({
       namaLengkap: "",
       nik: "",
@@ -227,7 +234,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
       seksi: defaultSeksi,
       seksiLabel: allSeksiOptions.find((s) => s.value === defaultSeksi)?.label || "Seksi 1: Pendaftaran Pemilih",
       username: "",
-      customPassword: generatedPass,
+      customPassword: "p2kd2026",
       role: allSeksiOptions.find((s) => s.value === defaultSeksi)?.role || "seksi_pemilih",
       kontakWa: "",
       alamatDusun: "",
@@ -361,13 +368,18 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   const handleDelete = async (agt: AnggotaP2KD) => {
     const approved = await confirm({
       title: "Hapus Anggota P2KD?",
-      message: `Apakah Anda yakin ingin menghapus ${agt.namaLengkap} (${agt.jabatan}) dari sistem P2KD?`,
+      message: `Apakah Anda yakin ingin menghapus akun panitia ${agt.namaLengkap} (${agt.jabatan}) dari sistem P2KD?`,
       confirmText: "Hapus Anggota",
       cancelText: "Batal",
       variant: "danger",
     });
 
     if (!approved) {
+      return;
+    }
+
+    if (onDeleteAnggota) {
+      await onDeleteAnggota(agt);
       return;
     }
 
@@ -586,7 +598,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredAnggota.length === 0 ? (
+              {sortedAnggota.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-400">
                     Tidak ditemukan data anggota sesuai kriteria pencarian.

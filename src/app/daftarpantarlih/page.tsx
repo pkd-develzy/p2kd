@@ -375,6 +375,13 @@ export default function PendaftaranPetugasPage() {
             Tidak Lolos
           </span>
         );
+      case "TMS":
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-900 border border-rose-400">
+            <XCircle className="w-3.5 h-3.5 text-rose-600" />
+            TMS (Tidak Memenuhi Syarat)
+          </span>
+        );
       default:
         return <span className="text-xs font-bold text-slate-700">{status}</span>;
     }
@@ -1375,6 +1382,40 @@ export default function PendaftaranPetugasPage() {
                     </div>
                     <div className="p-3.5 bg-white/90 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
                       Berdasarkan hasil verifikasi berkas dan penyesuaian kuota kebutuhan wilayah, kami memohon maaf yang sebesar-besarnya bahwa pada periode Pilkades kali ini Anda <strong>belum dapat ditetapkan</strong> sebagai petugas. Keputusan ini tidak mengurangi rasa hormat kami, dan kami sangat mengharapkan partisipasi aktif Anda dalam tahapan pesta demokrasi Desa Kalisalak berikutnya.
+                    </div>
+                  </div>
+                )}
+
+                {statusResult.status === "TMS" && (
+                  <div className="p-5 rounded-2xl bg-linear-to-br from-rose-500/10 via-red-500/5 to-rose-500/10 border-2 border-rose-500/30 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2.5 rounded-xl bg-rose-600 text-white shrink-0 shadow-md shadow-rose-600/20">
+                        <XCircle className="w-6 h-6" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider">
+                          Pemberitahuan Resmi Panitia P2KD
+                        </span>
+                        <h3 className="text-base sm:text-lg font-black text-rose-950">
+                          Status: Tidak Memenuhi Syarat (TMS)
+                        </h3>
+                        <p className="text-xs text-rose-800 leading-relaxed">
+                          Berdasarkan hasil verifikasi berkas administrasi dan uji kelayakan pendaftar Petugas Pendataan DPT, berkas pendaftaran Anda dinyatakan <strong>Tidak Memenuhi Syarat (TMS)</strong>.
+                        </p>
+                      </div>
+                    </div>
+                    {statusResult.catatanPanitia && (
+                      <div className="p-4 bg-white/95 rounded-xl border border-rose-200 space-y-1">
+                        <span className="text-[11px] font-black text-rose-900 uppercase tracking-wider block">
+                          Alasan Tidak Memenuhi Syarat (TMS):
+                        </span>
+                        <p className="text-xs text-rose-950 font-medium leading-relaxed">
+                          {statusResult.catatanPanitia}
+                        </p>
+                      </div>
+                    )}
+                    <div className="p-3.5 bg-white/80 rounded-xl border border-rose-200 text-xs text-slate-600 leading-relaxed">
+                      Keputusan ini diambil sesuai dengan ketentuan tata tertib Pilkades Kalisalak dan pakta integritas panitia. Terima kasih atas partisipasi dan kepedulian Anda terhadap pesta demokrasi Desa Kalisalak.
                     </div>
                   </div>
                 )}

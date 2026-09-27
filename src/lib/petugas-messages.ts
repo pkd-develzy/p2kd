@@ -27,6 +27,8 @@ export function getDefaultCatatanPanitia(status: PetugasStatus, assignedWilayah?
       return `Selamat! Anda RESMI DITETAPKAN sebagai Petugas Pantarlih Wilayah ${wilayahStr} Pilkades Kalisalak 2026/2027. Wajib bergabung ke Grup Telegram Resmi Petugas.`;
     case "TIDAK_LOLOS":
       return "Terima kasih atas partisipasi dan dedikasi Anda. Mohon maaf pada periode kali ini Anda belum dapat kami tetapkan sebagai petugas pendataan DPT.";
+    case "TMS":
+      return "Berkas pendaftaran dinyatakan Tidak Memenuhi Syarat (TMS) sebagai Petugas Pantarlih karena: [tuliskan alasan di sini].";
     default:
       return "";
   }
@@ -103,6 +105,18 @@ export function generatePetugasWhatsAppMessage(
         `*Catatan Panitia:*\n${catatanPanitia || "Kuota kebutuhan wilayah telah terpenuhi atau terdapat kriteria administrasi yang belum terpenuhi."}\n\n` +
         `Keputusan ini tidak mengurangi rasa hormat kami atas niat baik dan kepedulian Anda dalam menyukseskan pesta demokrasi Desa Kalisalak. Kami sangat berharap Anda tetap dapat berpartisipasi aktif dalam tahapan Pilkades berikutnya sebagai pemilih yang cerdas dan kritis.\n\n` +
         `Salam hormat kami,\n` +
+        `_Panitia P2KD Desa Kalisalak_`
+      );
+
+    case "TMS":
+      return (
+        `Yth. Bpk/Ibu *${namaFormatted}*,\n\n` +
+        `Panitia Pemilihan Kepala Desa (P2KD) Desa Kalisalak 2026/2027 menginformasikan bahwa berkas pendaftaran Petugas Pendataan DPT Anda (No. Reg: *${nomorRegistrasi}*) dinyatakan:\n\n` +
+        `*STATUS: TIDAK MEMENUHI SYARAT (TMS)*\n\n` +
+        `*Alasan TMS:*\n${catatanPanitia || "Terdapat persyaratan administrasi, domisili, atau kriteria integritas netralitas yang tidak memenuhi ketentuan peraturan."}\n\n` +
+        `Rincian informasi lebih lanjut dapat dipantau melalui portal resmi:\n` +
+        `https://www.p2kdkalisalak.my.id/daftarpantarlih\n\n` +
+        `Terima kasih atas partisipasi dan perhatian Anda.\n` +
         `_Panitia P2KD Desa Kalisalak_`
       );
 

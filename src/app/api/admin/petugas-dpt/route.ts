@@ -62,6 +62,7 @@ export async function PUT(req: Request) {
       "LOLOS",
       "TIDAK_LOLOS",
       "DITETAPKAN",
+      "TMS",
     ];
 
     if (updateFields.status && !validStatuses.includes(updateFields.status as PetugasStatus)) {

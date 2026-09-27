@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
@@ -19,11 +20,47 @@ import { Button, Logo } from "@/components/ui";
 import { useToast } from "@/hooks/use-toast";
 import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
 
+interface RememberedAccount {
+  username: string;
+  nama: string;
+  role: string;
+  jabatan: string;
+  assignedTps: string;
+  fotoUrl?: string;
+}
+
 export const AdminLoginForm: React.FC = () => {
   const router = useRouter();
   const toast = useToast();
 
-  const [username, setUsername] = useState("");
+  const [rememberedAccount, setRememberedAccount] = useState<RememberedAccount | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
+      if (rememberedRaw) {
+        const parsed = JSON.parse(rememberedRaw);
+        if (parsed && parsed.username) {
+          return parsed as RememberedAccount;
+        }
+      }
+    } catch {}
+    return null;
+  });
+
+  const [username, setUsername] = useState(() => {
+    if (typeof window === "undefined") return "";
+    try {
+      const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
+      if (rememberedRaw) {
+        const parsed = JSON.parse(rememberedRaw);
+        if (parsed && parsed.username) {
+          return String(parsed.username);
+        }
+      }
+    } catch {}
+    return "";
+  });
+
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,13 +97,16 @@ export const AdminLoginForm: React.FC = () => {
     return false;
   });
 
-  // Auto-restore session: If already logged in, redirect directly to dashboard without re-authenticating
+  // Auto-restore session on mount if NOT locked and no remembered account prompt required
   React.useEffect(() => {
     if (typeof window === "undefined") return;
+    const isLocked = localStorage.getItem("p2kd_app_locked") === "true";
+    const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
     const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
     const storedUserData = localStorage.getItem("admin_user_data");
 
-    if (token && storedUserData) {
+    // Auto-restore session only if NOT locked and no re-authentication required
+    if (!isLocked && !rememberedRaw && token && storedUserData) {
       try {
         const parsed = JSON.parse(storedUserData);
         const targetRole = (parsed.role || "SUPER_ADMIN").toLowerCase();
@@ -79,17 +119,27 @@ export const AdminLoginForm: React.FC = () => {
             targetTps
           )}&user=${encodeURIComponent(targetUser)}&force_change=${mustChange ? "true" : "false"}`
         );
-      } catch {
-        // Corrupted user data, allow login form
-      }
+      } catch {}
     }
   }, [router]);
+
+  const handleSwitchAccount = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("p2kd_remembered_account");
+      localStorage.removeItem("p2kd_app_locked");
+    }
+    setRememberedAccount(null);
+    setUsername("");
+    setPassword("");
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!username.trim() || !password.trim()) {
-      toast.warning("Form Belum Lengkap", "Silakan masukkan username dan kata sandi.");
+    const targetUsername = (rememberedAccount?.username || username).trim();
+
+    if (!targetUsername || !password.trim()) {
+      toast.warning("Form Belum Lengkap", "Silakan masukkan kata sandi Anda.");
       return;
     }
 
@@ -108,7 +158,7 @@ export const AdminLoginForm: React.FC = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: username.trim(),
+          username: targetUsername,
           password: password.trim(),
           turnstileToken,
         }),
@@ -117,7 +167,7 @@ export const AdminLoginForm: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        toast.error("Gagal Masuk", data.message || "Username atau kata sandi tidak cocok.");
+        toast.error("Gagal Masuk", data.message || "Kata sandi tidak cocok.");
         setLoading(false);
         turnstileRef.current?.reset();
         return;
@@ -125,13 +175,26 @@ export const AdminLoginForm: React.FC = () => {
 
       toast.success(
         "Autentikasi Berhasil",
-        `Selamat datang, ${data.data.nama}!`
+        `Selamat datang kembali, ${data.data.nama}!`
       );
 
       if (typeof window !== "undefined" && data.data?.token) {
         localStorage.setItem("admin_token", data.data.token);
         sessionStorage.setItem("admin_token", data.data.token);
         localStorage.setItem("admin_user_data", JSON.stringify(data.data));
+        // Remember account for fast password-only re-entry
+        localStorage.setItem(
+          "p2kd_remembered_account",
+          JSON.stringify({
+            username: data.data.username,
+            nama: data.data.nama,
+            role: data.data.role,
+            jabatan: data.data.jabatan || data.data.nama,
+            assignedTps: data.data.assignedTps || "SEMUA",
+            fotoUrl: data.data.fotoUrl || "",
+          })
+        );
+        localStorage.removeItem("p2kd_app_locked");
       }
 
       const targetRole = (data.data.role || "SUPER_ADMIN").toLowerCase();
@@ -213,38 +276,83 @@ export const AdminLoginForm: React.FC = () => {
 
               {/* Login Form */}
               <form onSubmit={handleLogin} className="space-y-4">
-                {/* Username Input */}
-                <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black uppercase text-slate-300 tracking-wider">
-                    USERNAME PETUGAS
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      autoFocus
-                      required
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Masukkan username akun..."
-                      className="w-full h-12 pl-10 pr-4 text-xs font-bold rounded-2xl bg-slate-100/95 text-slate-950 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 border-none transition-all shadow-inner"
-                    />
+                {/* Username Input or Quick Unlock Card */}
+                {rememberedAccount ? (
+                  <div className="p-3.5 rounded-2xl bg-linear-to-r from-blue-950/70 to-slate-900 border border-blue-500/40 flex items-center justify-between shadow-lg">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      {rememberedAccount.fotoUrl ? (
+                        <img
+                          src={rememberedAccount.fotoUrl}
+                          alt={rememberedAccount.nama}
+                          className="w-11 h-11 rounded-xl object-cover border-2 border-blue-400 shrink-0 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-xl bg-blue-600/30 border border-blue-400 text-blue-300 font-extrabold text-sm flex items-center justify-center shrink-0">
+                          {rememberedAccount.nama.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="overflow-hidden">
+                        <div className="text-xs font-black text-white truncate">
+                          {rememberedAccount.nama}
+                        </div>
+                        <div className="text-[10px] text-blue-300 font-medium truncate">
+                          {rememberedAccount.jabatan || rememberedAccount.role}
+                        </div>
+                        <div className="text-[9px] text-slate-400 font-mono">
+                          @{rememberedAccount.username}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSwitchAccount}
+                      className="text-[10px] text-amber-400 hover:text-amber-300 font-bold px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-400/30 transition-all shrink-0 cursor-pointer"
+                      title="Ganti akun"
+                    >
+                      Ganti Akun
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <label className="block text-[10px] font-black uppercase text-slate-300 tracking-wider">
+                      USERNAME PETUGAS
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        autoFocus
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Masukkan username akun..."
+                        className="w-full h-12 pl-10 pr-4 text-xs font-bold rounded-2xl bg-slate-100/95 text-slate-950 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 border-none transition-all shadow-inner"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Password Input */}
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] font-black uppercase text-slate-300 tracking-wider">
-                    KATA SANDI
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] font-black uppercase text-slate-300 tracking-wider">
+                      KATA SANDI
+                    </label>
+                    {rememberedAccount && (
+                      <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                        <Lock className="w-3 h-3" /> Kunci Layar Aktif
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type={showPassword ? "text" : "password"}
+                      autoFocus={Boolean(rememberedAccount)}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder={rememberedAccount ? "Masukkan kata sandi untuk membuka..." : "••••••••"}
                       className="w-full h-12 pl-10 pr-11 text-xs font-bold rounded-2xl bg-slate-100/95 text-slate-950 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 border-none transition-all shadow-inner"
                     />
                     <button
@@ -283,7 +391,7 @@ export const AdminLoginForm: React.FC = () => {
                     disabled={!isSecurityVerified || loading}
                     className="w-full h-12 font-black text-xs sm:text-sm rounded-2xl bg-linear-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-xl shadow-blue-600/30 border border-blue-400/30 transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>Masuk Aplikasi Sekretariat</span>
+                    <span>{rememberedAccount ? "Buka Kunci Dashboard" : "Masuk Aplikasi Sekretariat"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </div>

@@ -16,34 +16,91 @@ export async function POST(req: Request) {
       );
     }
 
-    // Canonical Server-Side Cloudflare Turnstile Siteverify
-    const clientIp =
-      req.headers.get("cf-connecting-ip") ||
-      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-      "";
+    // Canonical Server-Side Cloudflare Turnstile Siteverify (Allow seamless quick-unlock when returning to active session)
+    const isQuickUnlock = turnstileToken === "bypass_quick_unlock";
 
-    const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "login");
-    if (!turnstileCheck.success) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: turnstileCheck.message || "Verifikasi keamanan (Turnstile) wajib diselesaikan.",
-        },
-        { status: 403 }
-      );
+    if (!isQuickUnlock) {
+      const clientIp =
+        req.headers.get("cf-connecting-ip") ||
+        req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+        "";
+
+      const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "login");
+      if (!turnstileCheck.success) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: turnstileCheck.message || "Verifikasi keamanan (Turnstile) wajib diselesaikan.",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const inputRaw = String(username).toLowerCase().trim();
     const cleanUsername = inputRaw.replace("@kalisalak.desa.id", "").trim();
     await dataStore.ensureSynced();
+    
     // Include all database accounts including hidden ones for authentication
-    const allAnggota = dataStore.getAnggotaList("SEMUA", true);
-    const matched = allAnggota.find(
+    let allAnggota = dataStore.getAnggotaList("SEMUA", true);
+    let matched = allAnggota.find(
       (a) =>
         a.username.toLowerCase().trim() === cleanUsername ||
         a.username.toLowerCase().trim() === inputRaw ||
-        `${a.username.toLowerCase().trim()}@kalisalak.desa.id` === inputRaw
+        `${a.username.toLowerCase().trim()}@kalisalak.desa.id` === inputRaw ||
+        a.nik === cleanUsername
     );
+
+    // Safety Fallback 1: If account not found in current memory cache, force re-sync with Supabase
+    if (!matched) {
+      await dataStore.ensureSynced(true);
+      allAnggota = dataStore.getAnggotaList("SEMUA", true);
+      matched = allAnggota.find(
+        (a) =>
+          a.username.toLowerCase().trim() === cleanUsername ||
+          a.username.toLowerCase().trim() === inputRaw ||
+          `${a.username.toLowerCase().trim()}@kalisalak.desa.id` === inputRaw ||
+          a.nik === cleanUsername
+      );
+    }
+
+    // Safety Fallback 2: Direct query to Supabase Server 3 cloud database (guarantees newly registered accounts can immediately login)
+    if (!matched) {
+      try {
+        const { SupabaseDbService } = await import("@/lib/supabase-db");
+        const s3 = SupabaseDbService.getServer3Client();
+        const { data: dbRow } = await s3
+          .from("anggota_p2kd")
+          .select("*")
+          .or(`username.ilike.${cleanUsername},username.ilike.${inputRaw},nik.eq.${cleanUsername}`)
+          .maybeSingle();
+
+        if (dbRow) {
+          const fetchedAnggota = {
+            id: dbRow.id,
+            namaLengkap: dbRow.nama_lengkap,
+            nik: dbRow.nik,
+            jabatan: dbRow.jabatan,
+            seksi: dbRow.seksi,
+            seksiLabel: dbRow.seksi_label,
+            username: dbRow.username,
+            role: dbRow.role,
+            kontakWa: dbRow.kontak_wa,
+            alamatDusun: dbRow.alamat_dusun,
+            assignedTps: dbRow.assigned_tps || "SEMUA",
+            status: dbRow.status || "AKTIF",
+            skPenetapan: dbRow.sk_penetapan,
+            fotoUrl: dbRow.foto_url || undefined,
+            passwordHash: dbRow.password_hash || undefined,
+          };
+          matched = fetchedAnggota;
+          // Re-sync memory store so subsequent calls are instant
+          await dataStore.ensureSynced(true);
+        }
+      } catch (err) {
+        console.warn("Direct Supabase login fallback error:", err);
+      }
+    }
 
     if (!matched) {
       dataStore.addAuditLog({

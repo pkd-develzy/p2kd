@@ -10,6 +10,7 @@
 import { Voter, TPSItem, AnggotaP2KD, Aduan } from "@/components/pages/admin/types";
 import { EncryptedLocalDb } from "./encrypted-local-db";
 import { sortVotersByKk } from "./print-models-export";
+import { getAnggotaHierarchyRank } from "./data-store";
 
 export class LocalPemilihRepository {
   private static votersMap = new Map<string, Voter>();
@@ -177,14 +178,20 @@ export class LocalPemilihRepository {
 
 export class LocalTPSRepository {
   private static tpsList: TPSItem[] = [];
+  private static isLoaded = false;
+  private static currentNamespace = "";
 
   public static async loadFromLocalDb(namespace: string): Promise<TPSItem[]> {
+    this.currentNamespace = namespace;
     this.tpsList = await EncryptedLocalDb.getAllDecrypted<TPSItem>(namespace, "TPS");
+    this.isLoaded = true;
     return this.tpsList;
   }
 
   public static async setAll(list: TPSItem[], namespace: string): Promise<void> {
+    this.currentNamespace = namespace;
     this.tpsList = list;
+    this.isLoaded = true;
     await EncryptedLocalDb.putEncryptedBatch(namespace, "TPS", list);
   }
 
@@ -192,43 +199,109 @@ export class LocalTPSRepository {
     return this.tpsList;
   }
 
+  public static isReady(): boolean {
+    return this.isLoaded && this.tpsList.length > 0;
+  }
+
+  public static async delete(id: string, namespace?: string): Promise<void> {
+    const ns = namespace || this.currentNamespace;
+    this.tpsList = this.tpsList.filter((t) => t.id !== id);
+    if (ns) {
+      await EncryptedLocalDb.deleteRecords(ns, "TPS", [id]);
+    }
+  }
+
+  public static async upsert(item: TPSItem, namespace?: string): Promise<void> {
+    const ns = namespace || this.currentNamespace;
+    const idx = this.tpsList.findIndex((t) => t.id === item.id);
+    if (idx !== -1) {
+      this.tpsList[idx] = item;
+    } else {
+      this.tpsList.push(item);
+    }
+    if (ns) {
+      await EncryptedLocalDb.putEncryptedBatch(ns, "TPS", [item]);
+    }
+  }
+
   public static clear(): void {
     this.tpsList = [];
+    this.isLoaded = false;
+    this.currentNamespace = "";
   }
 }
 
 export class LocalAnggotaRepository {
   private static anggotaList: AnggotaP2KD[] = [];
+  private static isLoaded = false;
+  private static currentNamespace = "";
 
   public static async loadFromLocalDb(namespace: string): Promise<AnggotaP2KD[]> {
+    this.currentNamespace = namespace;
     this.anggotaList = await EncryptedLocalDb.getAllDecrypted<AnggotaP2KD>(namespace, "ANGGOTA");
+    this.isLoaded = true;
     return this.anggotaList;
   }
 
   public static async setAll(list: AnggotaP2KD[], namespace: string): Promise<void> {
+    this.currentNamespace = namespace;
     this.anggotaList = list;
+    this.isLoaded = true;
     await EncryptedLocalDb.putEncryptedBatch(namespace, "ANGGOTA", list);
   }
 
   public static getAll(): AnggotaP2KD[] {
-    return this.anggotaList;
+    return [...this.anggotaList].sort((a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b));
+  }
+
+  public static isReady(): boolean {
+    return this.isLoaded && this.anggotaList.length > 0;
+  }
+
+  public static async delete(id: string, namespace?: string): Promise<void> {
+    const ns = namespace || this.currentNamespace;
+    this.anggotaList = this.anggotaList.filter((a) => a.id !== id);
+    if (ns) {
+      await EncryptedLocalDb.deleteRecords(ns, "ANGGOTA", [id]);
+    }
+  }
+
+  public static async upsert(item: AnggotaP2KD, namespace?: string): Promise<void> {
+    const ns = namespace || this.currentNamespace;
+    const idx = this.anggotaList.findIndex((a) => a.id === item.id);
+    if (idx !== -1) {
+      this.anggotaList[idx] = item;
+    } else {
+      this.anggotaList.push(item);
+    }
+    if (ns) {
+      await EncryptedLocalDb.putEncryptedBatch(ns, "ANGGOTA", [item]);
+    }
   }
 
   public static clear(): void {
     this.anggotaList = [];
+    this.isLoaded = false;
+    this.currentNamespace = "";
   }
 }
 
 export class LocalAduanRepository {
   private static aduanList: Aduan[] = [];
+  private static isLoaded = false;
+  private static currentNamespace = "";
 
   public static async loadFromLocalDb(namespace: string): Promise<Aduan[]> {
+    this.currentNamespace = namespace;
     this.aduanList = await EncryptedLocalDb.getAllDecrypted<Aduan>(namespace, "ADUAN");
+    this.isLoaded = true;
     return this.aduanList;
   }
 
   public static async setAll(list: Aduan[], namespace: string): Promise<void> {
+    this.currentNamespace = namespace;
     this.aduanList = list;
+    this.isLoaded = true;
     await EncryptedLocalDb.putEncryptedBatch(namespace, "ADUAN", list);
   }
 
@@ -236,7 +309,34 @@ export class LocalAduanRepository {
     return this.aduanList;
   }
 
+  public static isReady(): boolean {
+    return this.isLoaded && this.aduanList.length > 0;
+  }
+
+  public static async delete(id: string, namespace?: string): Promise<void> {
+    const ns = namespace || this.currentNamespace;
+    this.aduanList = this.aduanList.filter((a) => a.id !== id);
+    if (ns) {
+      await EncryptedLocalDb.deleteRecords(ns, "ADUAN", [id]);
+    }
+  }
+
+  public static async upsert(item: Aduan, namespace?: string): Promise<void> {
+    const ns = namespace || this.currentNamespace;
+    const idx = this.aduanList.findIndex((a) => a.id === item.id);
+    if (idx !== -1) {
+      this.aduanList[idx] = item;
+    } else {
+      this.aduanList.push(item);
+    }
+    if (ns) {
+      await EncryptedLocalDb.putEncryptedBatch(ns, "ADUAN", [item]);
+    }
+  }
+
   public static clear(): void {
     this.aduanList = [];
+    this.isLoaded = false;
+    this.currentNamespace = "";
   }
 }

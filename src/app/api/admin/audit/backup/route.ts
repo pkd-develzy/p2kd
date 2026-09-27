@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import { verifyAdminSession, isDeveloper } from "@/lib/auth-middleware";
 import {
   createAuditBackupPackage,
   GDRIVE_CONFIG,
@@ -12,6 +12,13 @@ export async function POST(req: Request) {
     const session = verifyAdminSession(req);
     if (!session.authenticated || !session.user) {
       return session.response!;
+    }
+
+    if (!isDeveloper(session.user)) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Fitur pencadangan log aktivitas hanya untuk Developer." },
+        { status: 403 }
+      );
     }
 
     let reqBody: Record<string, unknown> = {};
@@ -108,6 +115,13 @@ export async function GET(req: Request) {
     const session = verifyAdminSession(req);
     if (!session.authenticated || !session.user) {
       return session.response!;
+    }
+
+    if (!isDeveloper(session.user)) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Fitur pencadangan log aktivitas hanya untuk Developer." },
+        { status: 403 }
+      );
     }
 
     await dataStore.ensureSynced();

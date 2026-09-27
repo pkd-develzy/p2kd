@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import { verifyAdminSession, isDeveloper } from "@/lib/auth-middleware";
 import { hashPassword } from "@/lib/encryption";
 
 // Helper to strip passwordHash from responses
@@ -264,7 +264,7 @@ export async function DELETE(req: Request) {
     }
 
     const user = session.user;
-    const isSuperAdmin = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN";
+    const isSuperAdmin = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN" || isDeveloper(user);
 
     if (!isSuperAdmin) {
       return NextResponse.json(

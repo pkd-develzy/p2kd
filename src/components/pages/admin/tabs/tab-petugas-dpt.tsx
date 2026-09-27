@@ -293,6 +293,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       lolos: petugasList.filter((p) => p.status === "LOLOS").length,
       ditetapkan: petugasList.filter((p) => p.status === "DITETAPKAN").length,
       tidakLolos: petugasList.filter((p) => p.status === "TIDAK_LOLOS").length,
+      tms: petugasList.filter((p) => p.status === "TMS").length,
     };
   }, [petugasList]);
 
@@ -347,12 +348,14 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
             ...editFormData,
             status: editStatus,
             catatanPanitia: editCatatan.trim(),
+            alasanTms: editStatus === "TMS" ? editCatatan.trim() : undefined,
             assignedWilayah: editFormData.assignedWilayah || editWilayah.trim(),
           }
         : {
             id: selectedPetugas.id,
             status: editStatus,
             catatanPanitia: editCatatan.trim(),
+            alasanTms: editStatus === "TMS" ? editCatatan.trim() : undefined,
             assignedWilayah: editWilayah.trim(),
           };
 
@@ -471,6 +474,13 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-300">
             <XCircle className="w-3 h-3 text-rose-600" />
             Tidak Lolos
+          </span>
+        );
+      case "TMS":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-900 border border-rose-400">
+            <XCircle className="w-3 h-3 text-rose-600" />
+            TMS (Tidak Memenuhi Syarat)
           </span>
         );
       default:
@@ -669,7 +679,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
       </Card>
 
       {/* Metrics Overview Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card
           onClick={() => { setStatusFilter("ALL"); setCurrentPage(1); }}
           className={`p-4 bg-white border-slate-200 hover:border-blue-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 ${
@@ -744,7 +754,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 
         <Card
           onClick={() => { setStatusFilter("DITETAPKAN"); setCurrentPage(1); }}
-          className={`p-4 bg-white border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 col-span-2 sm:col-span-1 ${
+          className={`p-4 bg-white border-emerald-200 hover:border-emerald-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 ${
             statusFilter === "DITETAPKAN" ? "ring-2 ring-emerald-500/30 border-emerald-400 bg-emerald-50/20" : ""
           }`}
         >
@@ -757,6 +767,24 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
           <div>
             <div className="text-2xl font-black text-emerald-700">{metrics.ditetapkan}</div>
             <span className="text-[10px] text-emerald-600">Siap Bimtek & Tugas</span>
+          </div>
+        </Card>
+
+        <Card
+          onClick={() => { setStatusFilter("TMS"); setCurrentPage(1); }}
+          className={`p-4 bg-white border-rose-200 hover:border-rose-400 hover:shadow-md transition-all cursor-pointer rounded-2xl space-y-2 ${
+            statusFilter === "TMS" ? "ring-2 ring-rose-500/30 border-rose-400 bg-rose-50/20" : ""
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-rose-50 text-rose-700">
+              <XCircle className="w-4 h-4" />
+            </div>
+            <span className="text-[10px] font-bold text-rose-800 uppercase tracking-wider">TMS</span>
+          </div>
+          <div>
+            <div className="text-2xl font-black text-rose-700">{metrics.tms}</div>
+            <span className="text-[10px] text-rose-600">Tidak Memenuhi Syarat</span>
           </div>
         </Card>
       </div>
@@ -1030,6 +1058,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
             <option value="LOLOS">Lolos Seleksi</option>
             <option value="DITETAPKAN">Ditetapkan</option>
             <option value="TIDAK_LOLOS">Tidak Lolos</option>
+            <option value="TMS">TMS (Tidak Memenuhi Syarat)</option>
           </select>
 
           {/* RW Filter with live coverage status */}
@@ -1598,6 +1627,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                           <option value="LOLOS">Lolos Seleksi Administrasi</option>
                           <option value="DITETAPKAN">Ditetapkan Sebagai Petugas</option>
                           <option value="TIDAK_LOLOS">Tidak Lolos</option>
+                          <option value="TMS">TMS (Tidak Memenuhi Syarat)</option>
                         </select>
                       </div>
 
@@ -1625,7 +1655,9 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
 
                       <div className="sm:col-span-2 space-y-1">
                         <div className="flex items-center justify-between">
-                          <label className="text-[11px] font-bold text-slate-700">Catatan / Instruksi Panitia:</label>
+                          <label className="text-[11px] font-bold text-slate-700">
+                            {editStatus === "TMS" ? "Alasan Tidak Memenuhi Syarat (TMS) / Catatan:" : "Catatan / Instruksi Panitia:"}
+                          </label>
                           <button
                             type="button"
                             onClick={() => {
@@ -1643,8 +1675,16 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                           rows={2}
                           value={editCatatan}
                           onChange={(e) => setEditCatatan(e.target.value)}
-                          placeholder="Catatan resmi panitia untuk pendaftar..."
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-xs outline-none"
+                          placeholder={
+                            editStatus === "TMS"
+                              ? "Tuliskan alasan spesifik pendaftar TMS (misal: terbukti anggota partai politik / bukan warga domisili setempat / tidak memenuhi syarat usia)..."
+                              : "Catatan resmi panitia untuk pendaftar..."
+                          }
+                          className={`w-full px-3 py-2 rounded-xl border text-xs outline-none ${
+                            editStatus === "TMS"
+                              ? "border-rose-400 bg-rose-50/30 text-rose-950 placeholder:text-rose-400"
+                              : "border-slate-300 bg-white"
+                          }`}
                         />
                       </div>
                     </div>
@@ -1815,6 +1855,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                           <option value="LOLOS">Lolos Seleksi Administrasi</option>
                           <option value="DITETAPKAN">Ditetapkan Sebagai Petugas</option>
                           <option value="TIDAK_LOLOS">Tidak Lolos</option>
+                          <option value="TMS">TMS (Tidak Memenuhi Syarat)</option>
                         </select>
                       </div>
 
@@ -1846,7 +1887,9 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                       <div className="space-y-1 sm:col-span-2">
                         <div className="flex items-center justify-between">
                           <label className="font-semibold text-slate-700 text-xs">
-                            Catatan / Instruksi Panitia (Dapat dilihat pendaftar saat cek status):
+                            {editStatus === "TMS"
+                              ? "Alasan Tidak Memenuhi Syarat (TMS) / Catatan Panitia:"
+                              : "Catatan / Instruksi Panitia (Dapat dilihat pendaftar saat cek status):"}
                           </label>
                           <button
                             type="button"
@@ -1864,8 +1907,16 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                           rows={2}
                           value={editCatatan}
                           onChange={(e) => setEditCatatan(e.target.value)}
-                          placeholder="Catatan resmi panitia untuk pendaftar..."
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-blue-500 outline-none text-xs"
+                          placeholder={
+                            editStatus === "TMS"
+                              ? "Tuliskan alasan spesifik Tidak Memenuhi Syarat (TMS) di sini (misal: terbukti anggota partai politik / bukan warga domisili setempat / tidak memenuhi syarat usia)..."
+                              : "Catatan resmi panitia untuk pendaftar..."
+                          }
+                          className={`w-full px-3 py-2 rounded-xl border focus:border-blue-500 outline-none text-xs ${
+                            editStatus === "TMS"
+                              ? "border-rose-400 bg-rose-50/40 text-rose-950 placeholder:text-rose-400 font-medium"
+                              : "border-slate-300"
+                          }`}
                         />
                       </div>
                     </div>
@@ -1952,6 +2003,18 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         </strong>
                         <p className="text-rose-800 leading-relaxed">
                           Pesan penolakan dirancang santun, profesional, menghargai partisipasi warga, serta menyampaikan permohonan maaf atas keterbatasan kuota wilayah.
+                        </p>
+                      </div>
+                    )}
+
+                    {editStatus === "TMS" && (
+                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-300 text-xs space-y-2">
+                        <strong className="text-rose-900 flex items-center gap-1.5 font-bold">
+                          <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                          Status: TMS (Tidak Memenuhi Syarat)
+                        </strong>
+                        <p className="text-rose-800 leading-relaxed">
+                          Pendaftar dinyatakan Tidak Memenuhi Syarat (TMS). Silakan tuliskan alasan spesifik TMS pada kolom catatan di atas. Alasan ini akan langsung tampil saat warga mengecek status berkas di portal dan otomatis terangkum dalam format pesan WhatsApp.
                         </p>
                       </div>
                     )}

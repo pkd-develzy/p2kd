@@ -69,7 +69,19 @@ export class SyncEngine {
         isComplete: false,
       });
 
-      const metaRes = await fetch("/api/admin/sync?type=meta", { cache: "no-store" });
+      const authHeaders: Record<string, string> =
+        typeof window !== "undefined"
+          ? {
+              Authorization: `Bearer ${
+                localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token") || ""
+              }`,
+            }
+          : {};
+
+      const metaRes = await fetch("/api/admin/sync?type=meta", {
+        cache: "no-store",
+        headers: authHeaders,
+      });
       if (metaRes.ok) {
         const metaJson = await metaRes.json();
         if (metaJson.success && metaJson.data) {
@@ -108,7 +120,10 @@ export class SyncEngine {
       let latestServerTimestamp = new Date().toISOString();
 
       while (hasMore) {
-        const res = await fetch(`/api/admin/sync?type=initial&batch=${batch}&limit=1000`, { cache: "no-store" });
+        const res = await fetch(`/api/admin/sync?type=initial&batch=${batch}&limit=1000`, {
+          cache: "no-store",
+          headers: authHeaders,
+        });
         if (!res.ok) {
           throw new Error(`Gagal mengunduh batch data pemilih ke-${batch + 1} (HTTP ${res.status})`);
         }
@@ -125,8 +140,9 @@ export class SyncEngine {
         const currentBatchData: Voter[] = json.data;
         loadedVoters = loadedVoters.concat(currentBatchData);
 
-        // Langsung simpan batch terenkripsi ke IndexedDB
+        // Langsung simpan batch terenkripsi ke IndexedDB dan in-memory repository
         await EncryptedLocalDb.putEncryptedBatch(namespace, "PEMILIH", currentBatchData);
+        await LocalPemilihRepository.upsertBatch(currentBatchData, namespace);
 
         const currentCount = loadedVoters.length;
         const voterProgressPercent = 15 + Math.round((currentCount / Math.max(1, totalVoters)) * 80);
@@ -200,8 +216,18 @@ export class SyncEngine {
       const syncState = await EncryptedLocalDb.getSyncState(namespace, "server-1");
       const since = syncState?.lastSyncAt || this.lastSyncTimestamp || new Date(Date.now() - 3600000).toISOString();
 
+      const authHeaders: Record<string, string> =
+        typeof window !== "undefined"
+          ? {
+              Authorization: `Bearer ${
+                localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token") || ""
+              }`,
+            }
+          : {};
+
       const res = await fetch(`/api/admin/sync?type=incremental&since=${encodeURIComponent(since)}`, {
         cache: "no-store",
+        headers: authHeaders,
       });
 
       if (!res.ok) return false;

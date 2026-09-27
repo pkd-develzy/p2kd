@@ -126,8 +126,15 @@ export function verifyPassword(plain: string, storedHashOrPlain: string): boolea
   if (storedHashOrPlain.includes(":")) {
     const [salt, originalHash] = storedHashOrPlain.split(":");
     if (!salt || !originalHash) return false;
-    const computedHash = crypto.pbkdf2Sync(plain, salt, 10000, 64, "sha512").toString("hex");
-    return crypto.timingSafeEqual(Buffer.from(computedHash), Buffer.from(originalHash));
+    try {
+      const computedHash = crypto.pbkdf2Sync(plain, salt, 10000, 64, "sha512").toString("hex");
+      const bufComputed = Buffer.from(computedHash);
+      const bufOriginal = Buffer.from(originalHash);
+      if (bufComputed.length !== bufOriginal.length) return false;
+      return crypto.timingSafeEqual(bufComputed, bufOriginal);
+    } catch {
+      return false;
+    }
   }
 
   // 2. Fallback for plain initial seed default passwords (e.g. "p2kd2026")

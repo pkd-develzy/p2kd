@@ -14,6 +14,7 @@ import {
   MasterPetugasDpt,
   MasterBerita,
   BeritaKategori,
+  getAnggotaHierarchyRank,
 } from "./data-store";
 import { maskNIK, maskKK } from "./encryption";
 
@@ -474,7 +475,7 @@ export class SupabaseDbService {
         skPenetapan: a.sk_penetapan,
         fotoUrl: a.foto_url || undefined,
         passwordHash: a.password_hash || undefined,
-      }));
+      })).sort((a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b));
 
       const balonList: MasterBalonPenjaringan[] = ((balonData as SupabaseBalonRow[]) || []).map((b) => ({
         id: b.id,
@@ -1237,10 +1238,16 @@ export class SupabaseDbService {
     }
   }
 
-  public static async deleteAnggota(id: string): Promise<boolean> {
+  public static async deleteAnggota(id: string, username?: string): Promise<boolean> {
     try {
       this.invalidateCache();
-      const { error } = await this.getServer3Client().from("anggota_p2kd").delete().eq("id", id);
+      let query = this.getServer3Client().from("anggota_p2kd").delete();
+      if (username) {
+        query = query.or(`id.eq.${id},username.eq.${username}`);
+      } else {
+        query = query.eq("id", id);
+      }
+      const { error } = await query;
       if (error) {
         console.error("Supabase deleteAnggota error:", error);
         return false;

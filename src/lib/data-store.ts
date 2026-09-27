@@ -221,6 +221,287 @@ export interface MasterAnggotaP2KD {
   passwordHash?: string;
 }
 
+/**
+ * Menghitung bobot urutan resmi hierarki P2KD:
+ * 1. Pimpinan (Ketua -> Wakil -> Sekretaris -> Bendahara)
+ * 2. Seksi 1: Pendaftaran Pemilih (Wajib di urutan teratas seksi!)
+ * 3. Seksi 2: Penjaringan
+ * 4. Seksi 3: Penyaringan
+ * 5. Seksi 4: Pemungutan & Penghitungan
+ * 6. Seksi 5: Logistik & Publikasi
+ * 7. Petugas Coklit / Pantarlih Lapangan RW 01 - RW 13
+ * 8. Developer Sistem
+ */
+export function getAnggotaHierarchyRank(agt: {
+  seksi?: string;
+  seksiLabel?: string;
+  seksi_label?: string;
+  namaLengkap?: string;
+  nama_lengkap?: string;
+  jabatan?: string;
+  role?: string;
+  username?: string;
+  assignedTps?: string;
+  assigned_tps?: string;
+}): number {
+  const username = (agt.username || "").toLowerCase().trim();
+  const role = (agt.role || "").toUpperCase().trim();
+  const jabatan = (agt.jabatan || "").toLowerCase().trim();
+  const seksi = (agt.seksi || "").toUpperCase().trim();
+  const seksiLabel = (agt.seksiLabel || agt.seksi_label || "").toLowerCase().trim();
+  const nama = (agt.namaLengkap || agt.nama_lengkap || "").toLowerCase().trim();
+  const assigned = (agt.assignedTps || agt.assigned_tps || "").toLowerCase().trim();
+
+  // 0. Developer System Core (Paling bawah / terpisah dari jajaran pengurus desa resmi)
+  if (
+    username === "develzy" ||
+    role === "DEVELOPER" ||
+    nama.includes("develzy") ||
+    jabatan.includes("developer") ||
+    jabatan.includes("system architect")
+  ) {
+    return 9999;
+  }
+
+  // 1. Ketua P2KD (Pimpinan Tertinggi)
+  if (
+    username === "khasanudin" ||
+    username === "admin_kalisalak" ||
+    nama.includes("khasanudin") ||
+    (jabatan.includes("ketua") &&
+      !jabatan.includes("wakil") &&
+      !jabatan.includes("seksi") &&
+      !jabatan.includes("koordinator") &&
+      !jabatan.includes("kpps") &&
+      !jabatan.includes("pantarlih"))
+  ) {
+    return 10;
+  }
+
+  // 2. Wakil Ketua
+  if (
+    jabatan.includes("wakil ketua") ||
+    jabatan.includes("wakil p2kd") ||
+    role === "WAKIL_KETUA" ||
+    (jabatan.includes("wakil") && !jabatan.includes("seksi") && !jabatan.includes("koordinator"))
+  ) {
+    return 20;
+  }
+
+  // 3. Sekretaris
+  if (
+    jabatan.includes("sekretaris") ||
+    username.includes("sekretaris") ||
+    username === "mashady" ||
+    nama.includes("mashady") ||
+    role === "SEKRETARIS"
+  ) {
+    return 30;
+  }
+
+  // 4. Bendahara
+  if (
+    jabatan.includes("bendahara") ||
+    username.includes("bendahara") ||
+    username.includes("ali_nurhakim") ||
+    nama.includes("ali nurhakim") ||
+    role === "BENDAHARA"
+  ) {
+    return 40;
+  }
+
+  // 5. Pimpinan lainnya (Non-Seksi)
+  if (
+    (seksi === "PIMPINAN" || role === "SUPER_ADMIN") &&
+    !seksi.includes("SEKSI") &&
+    !seksiLabel.includes("seksi") &&
+    !jabatan.includes("seksi")
+  ) {
+    return 50;
+  }
+
+  // 6. SEKSI 1: Pendaftaran Pemilih (Wajib di urutan teratas di antara seluruh seksi teknis!)
+  // Tidak boleh berada di bawah Seksi 2, 3, 4, 5 atau Petugas!
+  if (
+    seksi === "SEKSI_PEMILIH" ||
+    seksi.includes("PEMILIH") ||
+    seksi === "SEKSI_1" ||
+    seksi === "SEKSI 1" ||
+    seksiLabel.includes("seksi 1") ||
+    seksiLabel.includes("pendaftaran pemilih") ||
+    role === "SEKSI_PEMILIH" ||
+    role.includes("PEMILIH") ||
+    username.includes("khulal") ||
+    nama.includes("khulal") ||
+    nama.includes("lu’lu") ||
+    nama.includes("lu'lu") ||
+    nama.includes("lulu") ||
+    jabatan.includes("seksi 1") ||
+    jabatan.includes("pendaftaran pemilih") ||
+    jabatan.includes("pemilih")
+  ) {
+    const isKoordinator =
+      jabatan.includes("koordinator") ||
+      jabatan.includes("ketua") ||
+      username.includes("khulal") ||
+      nama.includes("khulal");
+    return isKoordinator ? 100 : 110;
+  }
+
+  // 7. SEKSI 2: Penjaringan Bakal Calon
+  if (
+    seksi === "SEKSI_PENJARINGAN" ||
+    seksi.includes("PENJARINGAN") ||
+    seksi === "SEKSI_2" ||
+    seksi === "SEKSI 2" ||
+    seksiLabel.includes("seksi 2") ||
+    seksiLabel.includes("penjaringan") ||
+    role === "SEKSI_PENJARINGAN" ||
+    role.includes("PENJARINGAN") ||
+    username.includes("hero") ||
+    nama.includes("hero") ||
+    jabatan.includes("seksi 2") ||
+    jabatan.includes("penjaringan") ||
+    jabatan.includes("balon")
+  ) {
+    const isKoordinator =
+      jabatan.includes("koordinator") ||
+      jabatan.includes("ketua") ||
+      username.includes("hero");
+    return isKoordinator ? 200 : 210;
+  }
+
+  // 8. SEKSI 3: Penyaringan & Seleksi Calon
+  if (
+    seksi === "SEKSI_PENYARINGAN" ||
+    seksi.includes("PENYARINGAN") ||
+    seksi === "SEKSI_3" ||
+    seksi === "SEKSI 3" ||
+    seksiLabel.includes("seksi 3") ||
+    seksiLabel.includes("penyaringan") ||
+    role === "SEKSI_PENYARINGAN" ||
+    role.includes("PENYARINGAN") ||
+    username.includes("urip") ||
+    nama.includes("urip") ||
+    jabatan.includes("seksi 3") ||
+    jabatan.includes("penyaringan") ||
+    jabatan.includes("seleksi")
+  ) {
+    const isKoordinator =
+      jabatan.includes("koordinator") ||
+      jabatan.includes("ketua") ||
+      username.includes("urip");
+    return isKoordinator ? 300 : 310;
+  }
+
+  // 9. SEKSI 4: Pemungutan & Penghitungan Suara
+  if (
+    seksi === "SEKSI_PUNGUT_HITUNG" ||
+    seksi.includes("PUNGUT") ||
+    seksi.includes("HITUNG") ||
+    seksi === "SEKSI_4" ||
+    seksi === "SEKSI 4" ||
+    seksiLabel.includes("seksi 4") ||
+    seksiLabel.includes("pemungutan") ||
+    seksiLabel.includes("penghitungan") ||
+    role === "SEKSI_PUNGUT_HITUNG" ||
+    role === "SEKSI_PEMUNGUTAN" ||
+    role.includes("PUNGUT") ||
+    role.includes("HITUNG") ||
+    username.includes("diah") ||
+    username.includes("wihadi") ||
+    nama.includes("diah") ||
+    nama.includes("wihadi") ||
+    jabatan.includes("seksi 4") ||
+    jabatan.includes("pemungutan") ||
+    jabatan.includes("penghitungan") ||
+    jabatan.includes("pungut") ||
+    jabatan.includes("hitung")
+  ) {
+    const isKoordinator =
+      jabatan.includes("koordinator") ||
+      jabatan.includes("ketua") ||
+      username.includes("diah") ||
+      username.includes("wihadi");
+    return isKoordinator ? 400 : 410;
+  }
+
+  // 10. SEKSI 5: Perlengkapan, Logistik & Publikasi / Keamanan
+  if (
+    seksi === "SEKSI_LOGISTIK_PUBLIKASI" ||
+    seksi === "SEKSI_LOGISTIK" ||
+    seksi.includes("LOGISTIK") ||
+    seksi.includes("PUBLIKASI") ||
+    seksi.includes("KEAMANAN") ||
+    seksi === "SEKSI_5" ||
+    seksi === "SEKSI 5" ||
+    seksiLabel.includes("seksi 5") ||
+    seksiLabel.includes("logistik") ||
+    seksiLabel.includes("publikasi") ||
+    seksiLabel.includes("keamanan") ||
+    role === "SEKSI_LOGISTIK_PUBLIKASI" ||
+    role === "SEKSI_LOGISTIK" ||
+    role.includes("LOGISTIK") ||
+    role.includes("PUBLIKASI") ||
+    role.includes("KEAMANAN") ||
+    username.includes("topik") ||
+    username.includes("khumaidi") ||
+    nama.includes("topik") ||
+    nama.includes("khumaidi") ||
+    jabatan.includes("seksi 5") ||
+    jabatan.includes("logistik") ||
+    jabatan.includes("perlengkapan") ||
+    jabatan.includes("publikasi") ||
+    jabatan.includes("dokumentasi") ||
+    jabatan.includes("keamanan")
+  ) {
+    if (
+      jabatan.includes("keamanan") ||
+      jabatan.includes("ketertiban") ||
+      username.includes("topik") ||
+      nama.includes("topik")
+    ) {
+      return 505;
+    }
+    const isKoordinator =
+      jabatan.includes("koordinator") ||
+      jabatan.includes("ketua") ||
+      username.includes("khumaidi");
+    return isKoordinator ? 500 : 510;
+  }
+
+  // 11. Petugas Lapangan / Pantarlih / Petugas Pemutakhiran Lapangan RW 01 s/d RW 13
+  if (
+    seksi === "PANTARLIH_LAPANGAN" ||
+    seksi.includes("PANTARLIH") ||
+    seksi.includes("PETUGAS") ||
+    role === "PETUGAS" ||
+    role === "PETUGAS_TPS" ||
+    role.includes("PANTARLIH") ||
+    role.includes("KPPS") ||
+    jabatan.includes("pantarlih") ||
+    jabatan.includes("coklit") ||
+    jabatan.includes("petugas lapangan") ||
+    jabatan.includes("petugas pemutakhiran") ||
+    jabatan.includes("kpps") ||
+    assigned.includes("tabung") ||
+    assigned.includes("tps") ||
+    assigned.includes("rw")
+  ) {
+    const textTarget = `${assigned} ${jabatan} ${nama}`;
+    const rwMatch =
+      textTarget.match(/RW\s*(\d+)/i) ||
+      textTarget.match(/Tabung\s*(\d+)/i) ||
+      textTarget.match(/TPS\s*(\d+)/i) ||
+      textTarget.match(/(\d+)/);
+    const rwNum = rwMatch ? parseInt(rwMatch[1], 10) : 99;
+    return 1000 + rwNum;
+  }
+
+  // 12. Anggota / Staf Tambahan Kepanitiaan Desa Lainnya
+  return 800;
+}
+
 export interface MasterBalonPenjaringan {
   id: string;
   namaLengkap: string;
@@ -249,7 +530,8 @@ export type PetugasStatus =
   | "PERLU_KLARIFIKASI"
   | "LOLOS"
   | "TIDAK_LOLOS"
-  | "DITETAPKAN";
+  | "DITETAPKAN"
+  | "TMS";
 
 export interface MasterPetugasDpt {
   id: string;
@@ -280,6 +562,7 @@ export interface MasterPetugasDpt {
   // Status Panitia & Verifikasi
   status: PetugasStatus;
   catatanPanitia?: string;
+  alasanTms?: string; // Alasan spesifik Tidak Memenuhi Syarat
   assignedWilayah?: string; // e.g. "RW 01" / "RW 05"
   tanggalPendaftaran: string; // YYYY-MM-DD HH:mm:ss atau ISO
   updatedAt: string;
@@ -1576,10 +1859,14 @@ class SystemDataStore {
         (a) => a.username.toLowerCase() !== "develzy" && a.role !== "DEVELOPER"
       );
     }
+    
+    // Sort strictly by official hierarchy: Ketua -> Wakil -> Sekretaris -> Bendahara -> Seksi 1 (Pemilih) -> Seksi 2 -> Seksi 3 -> Seksi 4 -> Seksi 5 -> Pantarlih RW 01-13
+    const sorted = [...list].sort((a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b));
+
     if (!seksiFilter || seksiFilter === "SEMUA") {
-      return [...list];
+      return sorted;
     }
-    return list.filter((a) => a.seksi === seksiFilter || a.role === seksiFilter);
+    return sorted.filter((a) => a.seksi === seksiFilter || a.role === seksiFilter);
   }
 
   public getAnggotaById(id: string) {
@@ -1646,7 +1933,7 @@ class SystemDataStore {
     }
 
     // Always delete directly from Supabase Cloud
-    const dbDeleted = await SupabaseDbService.deleteAnggota(id);
+    const dbDeleted = await SupabaseDbService.deleteAnggota(id, target?.username);
     SupabaseDbService.invalidateCache();
 
     if (idx === -1 && !dbDeleted) {
@@ -2005,6 +2292,23 @@ class SystemDataStore {
       } catch (syncErr) {
         console.warn("Gagal auto-sync ke Anggota P2KD:", syncErr);
       }
+    } else if (updated.status === "TMS" || updated.status === "TIDAK_LOLOS") {
+      // Jika status diubah menjadi TMS atau TIDAK_LOLOS, cabut/hapus akun portal jika ada
+      try {
+        const cleanNik = updated.nik ? updated.nik.replace(/\D/g, "") : "";
+        const cleanWa = updated.nomorWa ? updated.nomorWa.replace(/\D/g, "") : "";
+        const matchAnggota = this.anggotaList.find((a) => {
+          const matchNik = cleanNik.length === 16 && a.nik && a.nik.replace(/\D/g, "") === cleanNik;
+          const matchWa = cleanWa.length >= 9 && a.kontakWa && a.kontakWa.replace(/\D/g, "") === cleanWa;
+          const matchName = a.namaLengkap.trim().toLowerCase() === updated.namaLengkap.trim().toLowerCase();
+          return matchNik || matchWa || matchName;
+        });
+        if (matchAnggota) {
+          await this.deleteAnggota(matchAnggota.id, user);
+        }
+      } catch (cleanupErr) {
+        console.warn("Gagal membersihkan akun anggota TMS:", cleanupErr);
+      }
     }
 
     return updated;
@@ -2015,6 +2319,7 @@ class SystemDataStore {
     updateData: {
       status?: PetugasStatus;
       catatanPanitia?: string;
+      alasanTms?: string;
       assignedWilayah?: string;
     },
     user = "Panitia P2KD"

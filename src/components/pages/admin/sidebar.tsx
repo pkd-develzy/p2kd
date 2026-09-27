@@ -47,6 +47,7 @@ interface SidebarProps {
   userJabatan?: string;
   assignedTps?: string;
   onLogout: () => void;
+  onLockScreen?: () => void;
   onSwitchRoleDemo?: (role: string, tps?: string) => void;
 }
 
@@ -71,7 +72,9 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
   userJabatan = "Panitia P2KD",
   assignedTps = "SEMUA",
   onLogout,
+  onLockScreen,
 }) => {
+  const isDeveloper = userName?.toLowerCase() === "develzy" || userRole?.toUpperCase() === "DEVELOPER";
   // Clear, cohesive, logical menu structure based on Pilkades tahapan
   const menuGroups = [
     {
@@ -348,6 +351,9 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
 
             // Filter items within group
             const visibleItems = group.items.filter((item) => {
+              if (item.id === "audit") {
+                return isDeveloper;
+              }
               if (isAdmin) return true;
               return item.allowedRoles.includes(userRole) || item.allowedRoles.includes(userSeksi);
             });
@@ -453,9 +459,19 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
               </button>
             </Link>
 
+            {onLockScreen && (
+              <button
+                onClick={onLockScreen}
+                title="Kunci Layar (Buka kembali hanya dengan kata sandi)"
+                className="p-2 rounded-xl bg-amber-950/60 hover:bg-amber-900 text-amber-200 hover:text-white border border-amber-700/60 transition-colors shrink-0 cursor-pointer"
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               onClick={onLogout}
-              title="Keluar dari Akun"
+              title="Keluar / Logout Akun"
               className="p-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-200 hover:text-white border border-rose-700/60 transition-colors shrink-0 cursor-pointer"
             >
               <LogOut className="w-4 h-4" />

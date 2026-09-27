@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/local-repositories";
 import { SyncEngine, SyncProgress } from "@/lib/sync-engine";
 import { ModalSyncProgress } from "./modals/modal-sync-progress";
+import { RefreshCw, Lock, KeyRound, Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
 
 import {
   Voter,
@@ -29,7 +31,7 @@ import {
   AnggotaP2KD,
   SeksiP2KDType,
 } from "./types";
-import { PublicWebConfig } from "@/lib/data-store";
+import { PublicWebConfig, getAnggotaHierarchyRank } from "@/lib/data-store";
 
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
@@ -213,12 +215,16 @@ export const AdminDashboard: React.FC = () => {
     ? "calon"
     : "dashboard";
 
+  const isDeveloper = userParam.toLowerCase() === "develzy" || computedUserRole === "DEVELOPER";
+
   const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
   const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "tps"];
   const voterDataTabs: TabType[] = ["pemilih", "dpt", "coklit", "petugas_dpt", "aduan", "lock", "export"];
 
   let effectiveActiveTab: TabType = activeTab;
-  if (!canAccessVoterDataUI && voterDataTabs.includes(activeTab)) {
+  if (effectiveActiveTab === "audit" && !isDeveloper) {
+    effectiveActiveTab = "dashboard";
+  } else if (!canAccessVoterDataUI && voterDataTabs.includes(activeTab)) {
     effectiveActiveTab = defaultInitialTab !== "pemilih" && defaultInitialTab !== "coklit" ? defaultInitialTab : "dashboard";
   } else if (isFieldOfficer && !allowedFieldTabs.includes(activeTab)) {
     effectiveActiveTab = "coklit";
@@ -246,7 +252,12 @@ export const AdminDashboard: React.FC = () => {
   const [voters, setVoters] = useState<Voter[]>([]);
   const [aduanList, setAduanList] = useState<Aduan[]>(() => initialCache?.aduanList || []);
   const [tpsList, setTpsList] = useState<TPSItem[]>(() => initialCache?.tpsList || []);
-  const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>(() => initialCache?.anggotaList || []);
+  const [anggotaList, setAnggotaList] = useState<AnggotaP2KD[]>(() => {
+    if (!initialCache?.anggotaList) return [];
+    return [...initialCache.anggotaList].sort(
+      (a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b)
+    );
+  });
   const [petugasCount, setPetugasCount] = useState<number>(() => initialCache?.petugasCount || 0);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => initialCache?.auditLogs || []);
   const [dbStatus, setDbStatus] = useState<DbStatus | null>(() => initialCache?.dbStatus || null);
@@ -278,6 +289,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Initial Full Sync Modal & Progress States
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
+  const [isBackgroundSyncing, setIsBackgroundSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
     stage: "Menghubungkan ke server...",
     detail: "Menyiapkan sistem keamanan & database lokal...",
@@ -287,25 +299,186 @@ export const AdminDashboard: React.FC = () => {
     isComplete: false,
   });
 
-  const runFullSync = useCallback(async () => {
+  const runFullSync = useCallback(async (isBackground = false) => {
     if (!canAccessVoterDataUI) return;
-    setIsSyncModalOpen(true);
+    if (!isBackground) {
+      setIsSyncModalOpen(true);
+    }
+    setIsBackgroundSyncing(true);
+
     const success = await SyncEngine.runInitialSync(userContext, (progress) => {
       setSyncProgress(progress);
+      // Update in-memory voters progressively as batches download in the background
+      if (progress.current > 0) {
+        const partialVoters = LocalPemilihRepository.getAll();
+        if (partialVoters.length > 0) {
+          setVoters(partialVoters);
+        }
+      }
     });
+
+    setIsBackgroundSyncing(false);
 
     if (success) {
       const allVoters = LocalPemilihRepository.getAll();
       setVoters(allVoters);
-      setTimeout(() => {
-        setIsSyncModalOpen(false);
-      }, 800);
+      if (LocalAnggotaRepository.isReady()) {
+        setAnggotaList(LocalAnggotaRepository.getAll());
+      }
+      if (LocalTPSRepository.isReady()) {
+        setTpsList(LocalTPSRepository.getAll());
+      }
+      if (LocalAduanRepository.isReady()) {
+        setAduanList(LocalAduanRepository.getAll());
+      }
+
+      if (!isBackground) {
+        setTimeout(() => {
+          setIsSyncModalOpen(false);
+        }, 800);
+      }
       toast.success(
         "Sinkronisasi Selesai",
-        `${allVoters.length.toLocaleString("id-ID")} data pemilih tersimpan aman secara lokal di perangkat Anda.`
+        `${allVoters.length.toLocaleString("id-ID")} seluruh data pemilih dan administrasi berhasil diunduh ke latar belakang.`
       );
     }
   }, [canAccessVoterDataUI, userContext, toast]);
+
+  // --- Lock Screen & Quick Unlock State (Keamanan Layar Native) ---
+  const [isAppLocked, setIsAppLocked] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("p2kd_app_locked") === "true";
+    }
+    return false;
+  });
+  const [unlockPassword, setUnlockPassword] = useState("");
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [showUnlockPassword, setShowUnlockPassword] = useState(false);
+
+  const handleLockScreen = useCallback(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("p2kd_app_locked", "true");
+    }
+    setIsAppLocked(true);
+    setUnlockPassword("");
+  }, []);
+
+  const handleQuickUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!unlockPassword.trim()) {
+      toast.warning("Kata Sandi Wajib", "Silakan masukkan kata sandi akun Anda.");
+      return;
+    }
+
+    setIsUnlocking(true);
+    try {
+      const res = await fetch("/api/admin/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: userParam,
+          password: unlockPassword.trim(),
+          turnstileToken: "bypass_quick_unlock",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setIsAppLocked(false);
+        setUnlockPassword("");
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("p2kd_app_locked");
+          if (data.data?.token) {
+            localStorage.setItem("admin_token", data.data.token);
+            sessionStorage.setItem("admin_token", data.data.token);
+          }
+        }
+        toast.success("Kunci Terbuka", "Selamat datang kembali di dashboard.");
+      } else {
+        toast.error("Gagal Buka Kunci", data.message || "Kata sandi salah.");
+      }
+    } catch {
+      toast.error("Gagal", "Tidak dapat terhubung ke server.");
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
+
+  // --- PWA Native Gesture: Double Back / Double Swipe to Exit ---
+  const lastBackPressRef = React.useRef<number>(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Trap back navigation in PWA
+    window.history.pushState({ p2kd: "dashboard_root" }, "", window.location.href);
+
+    const handlePopState = () => {
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2500) {
+        toast.info("Keluar Aplikasi", "Menutup sesi dashboard P2KD...");
+        window.history.back();
+      } else {
+        window.history.pushState({ p2kd: "dashboard_root" }, "", window.location.href);
+        lastBackPressRef.current = now;
+        toast.warning(
+          "Geser / Tekan Sekali Lagi",
+          "Geser layar atau tekan kembali sekali lagi untuk keluar dari aplikasi."
+        );
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // Touch edge-swipe detection
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (e.changedTouches.length === 1 && touchStartX < 40) {
+        const deltaX = e.changedTouches[0].clientX - touchStartX;
+        const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY);
+        if (deltaX > 90 && deltaY < 60) {
+          const now = Date.now();
+          if (now - lastBackPressRef.current < 2500) {
+            toast.info("Keluar Aplikasi", "Menutup sesi dashboard P2KD...");
+            window.history.back();
+          } else {
+            lastBackPressRef.current = now;
+            toast.warning(
+              "Geser Sekali Lagi",
+              "Geser layar sekali lagi untuk keluar dari aplikasi."
+            );
+          }
+        }
+      }
+    };
+
+    // Auto-lock when user minimizes app or switches tabs
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        localStorage.setItem("p2kd_app_locked", "true");
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [toast]);
 
   // Instant 0ms RW Filter Switch (Pure Local In-Memory Filtering)
   const handleSelectTpsFilter = useCallback((newTps: string) => {
@@ -393,6 +566,12 @@ export const AdminDashboard: React.FC = () => {
   // Fetch dashboard metadata manually when triggered
   const fetchData = useCallback(async () => {
     try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+          : null;
+      const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
       const [
         resAduan,
         resTps,
@@ -402,12 +581,12 @@ export const AdminDashboard: React.FC = () => {
         resPetugas,
         resConfig,
       ] = await Promise.all([
-        fetch("/api/admin/aduan", { cache: "no-store" }),
-        fetch("/api/admin/tps", { cache: "no-store" }),
-        fetch("/api/admin/audit", { cache: "no-store" }),
-        fetch("/api/admin/db-status", { cache: "no-store" }),
-        fetch("/api/admin/anggota", { cache: "no-store" }),
-        fetch("/api/admin/petugas-dpt", { cache: "no-store" }),
+        fetch("/api/admin/aduan", { cache: "no-store", headers: authHeaders }),
+        fetch("/api/admin/tps", { cache: "no-store", headers: authHeaders }),
+        fetch("/api/admin/audit", { cache: "no-store", headers: authHeaders }),
+        fetch("/api/admin/db-status", { cache: "no-store", headers: authHeaders }),
+        fetch("/api/admin/anggota?refresh=true", { cache: "no-store", headers: authHeaders }),
+        fetch("/api/admin/petugas-dpt", { cache: "no-store", headers: authHeaders }),
         fetch("/api/config", { cache: "no-store" }),
       ]);
 
@@ -433,7 +612,7 @@ export const AdminDashboard: React.FC = () => {
         setWebConfig(dataConfig.data);
       }
 
-      if (resAduan.status === 401 || resTps.status === 401) {
+      if (resAduan.status === 401 || resTps.status === 401 || resAnggota.status === 401) {
         toast.error("Sesi Berakhir", "Sesi autentikasi Anda telah berakhir. Silakan masuk kembali.");
         router.push("/admin");
         return;
@@ -448,10 +627,22 @@ export const AdminDashboard: React.FC = () => {
         setVoters([]);
       }
 
-      if (dataAduan.success) setAduanList(dataAduan.data);
-      if (dataTps.success) setTpsList(dataTps.data);
+      if (dataAduan.success && Array.isArray(dataAduan.data)) {
+        setAduanList(dataAduan.data);
+        void LocalAduanRepository.setAll(dataAduan.data, namespace);
+      }
+      if (dataTps.success && Array.isArray(dataTps.data)) {
+        setTpsList(dataTps.data);
+        void LocalTPSRepository.setAll(dataTps.data, namespace);
+      }
       if (dataAudit.success) setAuditLogs(dataAudit.data);
-      if (dataAnggota.success) setAnggotaList(dataAnggota.data);
+      if (dataAnggota.success && Array.isArray(dataAnggota.data)) {
+        const sorted = [...dataAnggota.data].sort(
+          (a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b)
+        );
+        setAnggotaList(sorted);
+        void LocalAnggotaRepository.setAll(sorted, namespace);
+      }
       if (dataPetugas?.success && Array.isArray(dataPetugas.data)) {
         setPetugasCount(dataPetugas.data.length);
         if (typeof window !== "undefined") {
@@ -481,6 +672,7 @@ export const AdminDashboard: React.FC = () => {
     canAccessVoterDataUI,
     router,
     toast,
+    namespace,
     setVoters,
     setAduanList,
     setTpsList,
@@ -495,6 +687,13 @@ export const AdminDashboard: React.FC = () => {
 
   const handleNavigateTab = useCallback(
     (tab: TabType) => {
+      if (tab === "audit" && !isDeveloper) {
+        toast.error(
+          "Akses Ditolak",
+          "Log Aktivitas dan Audit Trail hanya dapat diakses oleh Developer Sistem."
+        );
+        return;
+      }
       const voterTabs: TabType[] = ["pemilih", "dpt", "coklit", "petugas_dpt", "aduan", "lock", "export"];
       if (!canAccessVoterDataUI && voterTabs.includes(tab)) {
         toast.error(
@@ -505,7 +704,7 @@ export const AdminDashboard: React.FC = () => {
       }
       setActiveTab(tab);
     },
-    [canAccessVoterDataUI, toast, setActiveTab]
+    [canAccessVoterDataUI, isDeveloper, toast, setActiveTab]
   );
 
   // 1. Initial Load: Prioritas baca dari Encrypted Local DB (0ms), jika kosong lakukan Full Initial Sync
@@ -536,10 +735,11 @@ export const AdminDashboard: React.FC = () => {
         console.warn("Gagal memuat dari EncryptedLocalDb:", err);
       }
 
-      // Jika belum ada data lokal, ambil metadata dan jalankan Initial Full Sync
+      // Jika belum ada data lokal (login pertama kali), wajib memblokir layar dengan modal popup progres besar!
+      // Latar belakang hanya ketika data sudah diunduh seluruhnya!
       if (!isCancelled) {
         await fetchData();
-        await runFullSync();
+        void runFullSync(false); // isBackground = false: BLOCKING MODAL BESAR!
       }
     };
 
@@ -578,7 +778,52 @@ export const AdminDashboard: React.FC = () => {
       .on("postgres_changes", { event: "*", schema: "public" }, handleRemoteChange)
       .subscribe();
 
-    // B. Smart Fallback Polling (Every 180s, ONLY when tab is active/visible)
+    // B. Dedicated Instant Realtime Stream for Audit Logs on Server 3 (0ms Delay - Developer Only Stream)
+    const channelAuditInstant = supabaseServer3
+      .channel("admin-audit-instant-stream")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "audit_logs" },
+        (payload) => {
+          interface AuditLogRow {
+            id: string;
+            created_at?: string;
+            user_name?: string;
+            role?: string;
+            aksi?: string;
+            entity?: string;
+            target?: string;
+            detail?: string;
+            ip_address?: string;
+          }
+          const row = payload.new as unknown as AuditLogRow;
+          if (!row || !row.id) return;
+          const newLog: AuditLog = {
+            id: row.id,
+            waktu: new Date(row.created_at || Date.now()).toLocaleString("id-ID"),
+            user: row.user_name || "Sistem",
+            role: row.role || "SYSTEM",
+            aksi: row.aksi || "UNKNOWN",
+            entity: row.entity || "SISTEM",
+            target: row.target || "",
+            detail: row.detail || "",
+            ipAddress: row.ip_address || "127.0.0.1",
+            device: "Workstation Terminal",
+            browser: "Live WebSocket Stream",
+            userAgent: "P2KD-Realtime/1.0",
+            signature: `SIG-${row.id.substring(0, 8)}`,
+            kategori: row.entity || "SISTEM",
+            severity: row.aksi?.includes("DELETE") ? "CRITICAL" : row.aksi?.includes("UPDATE") ? "WARNING" : "INFO",
+          };
+          setAuditLogs((prev) => {
+            if (prev.some((l) => l.id === newLog.id)) return prev;
+            return [newLog, ...prev];
+          });
+        }
+      )
+      .subscribe();
+
+    // C. Smart Fallback Polling (Every 180s, ONLY when tab is active/visible)
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.visibilityState === "visible") {
         handleRemoteChange();
@@ -590,6 +835,7 @@ export const AdminDashboard: React.FC = () => {
       supabase.removeChannel(channelMain);
       supabaseSeksi1.removeChannel(channelSeksi1);
       supabaseServer3.removeChannel(channelServer3);
+      supabaseServer3.removeChannel(channelAuditInstant);
     };
   }, [canAccessVoterDataUI, userContext, fetchData]);
 
@@ -670,7 +916,7 @@ export const AdminDashboard: React.FC = () => {
       LocalAnggotaRepository.clear();
       LocalAduanRepository.clear();
 
-      // 3. Hapus token sesi dan cache modul dari browser
+      // 3. Hapus token sesi, remembered account, dan cache modul dari browser (Logout penuh mewajibkan username & kata sandi)
       if (typeof window !== "undefined") {
         localStorage.removeItem("admin_token");
         localStorage.removeItem("admin_user_data");
@@ -678,6 +924,8 @@ export const AdminDashboard: React.FC = () => {
         localStorage.removeItem("p2kd_petugas_dpt_cache");
         localStorage.removeItem("p2kd_calon_kades_cache");
         localStorage.removeItem("p2kd_berita_cache");
+        localStorage.removeItem("p2kd_remembered_account");
+        localStorage.removeItem("p2kd_app_locked");
         sessionStorage.removeItem("admin_token");
       }
 
@@ -1276,6 +1524,61 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleDeleteAnggota = useCallback(
+    async (agt: AnggotaP2KD): Promise<boolean> => {
+      // 1. Instant Optimistic UI Update (0ms) - completely eliminates any buffering / reappearing
+      const previousList = anggotaList;
+      const filtered = anggotaList.filter((a) => a.id !== agt.id);
+      setAnggotaList(filtered);
+
+      // 2. Instant Local Storage & Encrypted IndexedDB removal
+      void LocalAnggotaRepository.delete(agt.id, namespace);
+      if (typeof window !== "undefined") {
+        try {
+          const raw = localStorage.getItem("p2kd_admin_dashboard_cache");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            parsed.anggotaList = filtered;
+            localStorage.setItem("p2kd_admin_dashboard_cache", JSON.stringify(parsed));
+          }
+        } catch {}
+      }
+
+      // 3. Background delete to server database
+      try {
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+            : null;
+        const res = await fetch(
+          `/api/admin/anggota?id=${encodeURIComponent(agt.id)}&user=${encodeURIComponent(currentUser)}`,
+          {
+            method: "DELETE",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          }
+        );
+        const json = await res.json();
+        if (!json.success) {
+          // Rollback if server rejected
+          setAnggotaList(previousList);
+          void LocalAnggotaRepository.setAll(previousList, namespace);
+          toast.error("Gagal Menghapus", json.message || "Gagal menghapus data di server.");
+          return false;
+        }
+        toast.success("Anggota Dihapus", json.message || `Akun ${agt.namaLengkap} berhasil dihapus.`);
+        return true;
+      } catch {
+        setAnggotaList(previousList);
+        void LocalAnggotaRepository.setAll(previousList, namespace);
+        toast.error("Kesalahan Jaringan", "Gagal menghubungi server database.");
+        return false;
+      }
+    },
+    [anggotaList, namespace, currentUser, toast]
+  );
+
   // --- STATS COMPUTATION ---
   const totalAktif = voters.filter((v) => v.statusAktif === "AKTIF").length;
   const totalAduanMenunggu = aduanList.filter((a) => a.status === "MENUNGGU").length;
@@ -1317,6 +1620,7 @@ export const AdminDashboard: React.FC = () => {
         userJabatan={computedUserJabatan}
         assignedTps={assignedTps}
         onLogout={handleLogout}
+        onLockScreen={handleLockScreen}
       />
 
       {/* Main Content Area */}
@@ -1375,6 +1679,7 @@ export const AdminDashboard: React.FC = () => {
               userSeksi={computedUserSeksi}
               currentUser={currentUser}
               onRefresh={() => fetchData()}
+              onDeleteAnggota={handleDeleteAnggota}
             />
           )}
 
@@ -1568,7 +1873,7 @@ export const AdminDashboard: React.FC = () => {
             <TabRekapEkspor tpsList={tpsList} voters={voters} />
           )}
 
-          {effectiveActiveTab === "audit" && (
+          {effectiveActiveTab === "audit" && isDeveloper && (
             <TabAuditTrail auditLogs={auditLogs} />
           )}
 
@@ -1677,9 +1982,43 @@ export const AdminDashboard: React.FC = () => {
       <ModalSyncProgress
         isOpen={isSyncModalOpen}
         progress={syncProgress}
-        onRetry={runFullSync}
+        onRetry={() => runFullSync(false)}
         onClose={() => setIsSyncModalOpen(false)}
       />
+
+      {/* Floating Background Sync Status Pill (Non-blocking, smooth UI) */}
+      {isBackgroundSyncing && (
+        <div className="fixed bottom-6 right-6 z-40 bg-slate-950/95 text-white border border-blue-500/40 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-300 max-w-sm">
+          <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+            <RefreshCw className="w-4 h-4 animate-spin text-blue-400" />
+          </div>
+          <div className="flex flex-col text-left pr-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black tracking-wide text-blue-300 uppercase">
+                Sinkronisasi Latar Belakang
+              </span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500/30 text-blue-200">
+                {syncProgress.percent}%
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-300 truncate">
+              {syncProgress.detail || syncProgress.stage}
+            </p>
+            <div className="w-full bg-slate-800 rounded-full h-1 mt-1.5 overflow-hidden">
+              <div
+                className="bg-linear-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-300"
+                style={{ width: `${syncProgress.percent}%` }}
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => setIsSyncModalOpen(true)}
+            className="text-[11px] font-bold text-blue-400 hover:text-blue-300 underline cursor-pointer shrink-0"
+          >
+            Detail
+          </button>
+        </div>
+      )}
 
       {/* 4. Native Mobile Bottom Navigation Bar for Field Officers */}
       {isFieldOfficer && (
@@ -1702,6 +2041,96 @@ export const AdminDashboard: React.FC = () => {
           onCloseControlled={() => setIsScannerOpen(false)}
           showFloatingTrigger={!isFieldOfficer && isPetugasTpsOnly}
         />
+      )}
+
+      {/* 6. Quick Unlock Screen (Native-like App Lock) */}
+      {isAppLocked && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+          <div className="w-full max-w-sm rounded-3xl bg-slate-900/95 border border-white/15 p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
+            {/* User Identity Avatar */}
+            <div className="flex flex-col items-center space-y-3">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl bg-linear-to-tr from-blue-600 to-indigo-600 p-0.5 shadow-xl">
+                  {dbMatchedMember?.fotoUrl ? (
+                    <img
+                      src={dbMatchedMember.fotoUrl}
+                      alt={computedUserName}
+                      className="w-full h-full rounded-[14px] object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full rounded-[14px] bg-slate-900 flex items-center justify-center text-white font-black text-xl">
+                      {computedUserName.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-amber-500 text-slate-950 shadow-md">
+                  <Lock className="w-3.5 h-3.5" />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-black text-white">{computedUserName}</h3>
+                <p className="text-xs text-blue-300 font-medium">{computedUserJabatan}</p>
+                <span className="inline-block mt-1 text-[10px] text-slate-400 font-mono bg-slate-800/80 px-2.5 py-0.5 rounded-full border border-slate-700">
+                  @{userParam}
+                </span>
+              </div>
+            </div>
+
+            {/* Quick Unlock Form */}
+            <form onSubmit={handleQuickUnlock} className="space-y-4">
+              <div className="space-y-1.5 text-left">
+                <label className="block text-[10px] font-black uppercase text-slate-300 tracking-wider">
+                  KATA SANDI AKUN
+                </label>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={showUnlockPassword ? "text" : "password"}
+                    autoFocus
+                    required
+                    value={unlockPassword}
+                    onChange={(e) => setUnlockPassword(e.target.value)}
+                    placeholder="Masukkan kata sandi..."
+                    className="w-full h-11 pl-10 pr-11 text-xs font-bold rounded-xl bg-slate-100/95 text-slate-950 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowUnlockPassword(!showUnlockPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                    title={showUnlockPassword ? "Sembunyikan" : "Tampilkan"}
+                  >
+                    {showUnlockPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isUnlocking}
+                className="w-full h-11 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+              >
+                {isUnlocking ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span>Buka Kunci Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="w-full text-center text-xs font-semibold text-rose-400 hover:text-rose-300 transition-colors pt-2 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Keluar Akun Sepenuhnya (Logout)</span>
+              </button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

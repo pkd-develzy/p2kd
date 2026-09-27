@@ -4,6 +4,11 @@ export const TELEGRAM_GROUP_URL = "https://t.me/+CC-WB_yujNhmZmM9";
 export const TELEGRAM_PLAYSTORE_URL =
   "https://play.google.com/store/apps/details?id=org.telegram.messenger&pcampaignid=web_share";
 
+export const P2KD_APK_NAME = "P2KD-Desa-Kalisalak-v2.25.01.apk";
+export const P2KD_APK_URL = "https://www.p2kdkalisalak.my.id/P2KD-Desa-Kalisalak-v2.25.01.apk";
+export const P2KD_APK_GITHUB_URL =
+  "https://github.com/pkd-develzy/p2kd/releases/download/v2.25.01/P2KD-Desa-Kalisalak-v2.25.01.apk";
+
 export interface PetugasMessageParams {
   namaLengkap: string;
   nomorRegistrasi: string;
@@ -22,9 +27,9 @@ export function getDefaultCatatanPanitia(status: PetugasStatus, assignedWilayah?
     case "PERLU_KLARIFIKASI":
       return "Mohon hadir ke Sekretariat P2KD Desa Kalisalak (Balai Desa) atau menghubungi panitia untuk klarifikasi berkas dan konfirmasi data kependudukan/integritas.";
     case "LOLOS":
-      return `Selamat! Anda dinyatakan Lolos Seleksi Administrasi sebagai Calon Petugas Pantarlih Wilayah ${wilayahStr} Desa Kalisalak. Menunggu jadwal penetapan resmi dan bimbingan teknis (Bimtek).`;
+      return `Selamat! Anda dinyatakan Lolos Seleksi Administrasi sebagai Calon Petugas Pantarlih Wilayah ${wilayahStr} Desa Kalisalak. Wajib mengunduh aplikasi resmi P2KD Mobile (.APK v2.25.01) untuk persiapan Bimtek.`;
     case "DITETAPKAN":
-      return `Selamat! Anda RESMI DITETAPKAN sebagai Petugas Pantarlih Wilayah ${wilayahStr} Pilkades Kalisalak 2026/2027. Wajib bergabung ke Grup Telegram Resmi Petugas.`;
+      return `Selamat! Anda RESMI DITETAPKAN sebagai Petugas Pantarlih Wilayah ${wilayahStr} Pilkades Kalisalak 2026/2027. Wajib mengunduh aplikasi P2KD Mobile (.APK v2.25.01) dan bergabung ke Grup Telegram Petugas.`;
     case "TIDAK_LOLOS":
       return "Terima kasih atas partisipasi dan dedikasi Anda. Mohon maaf pada periode kali ini Anda belum dapat kami tetapkan sebagai petugas pendataan DPT.";
     case "TMS":
@@ -70,8 +75,13 @@ export function generatePetugasWhatsAppMessage(
         `- Wilayah Tugas: *${wilayahStr}*\n` +
         `- Lingkup Desa: Desa Kalisalak, Kec. Margasari, Kab. Tegal\n\n` +
         `*Catatan Panitia:*\n${catatanPanitia || "Berkas administrasi dan surat pernyataan integritas lengkap serta memenuhi syarat."}\n\n` +
-        `*Langkah Selanjutnya:*\n` +
-        `Tahapan selanjutnya adalah Penetapan Resmi Petugas dan Bimbingan Teknis (Bimtek) Coklit Lapangan. Pantau pengumuman resmi berkala di portal:\n` +
+        `*Langkah Selanjutnya (Wajib Bagi Petugas):*\n` +
+        `1. *WAJIB MENGUNDUH APLIKASI RESMI P2KD MOBILE (.APK v2.25.01)*:\n` +
+        `Seluruh petugas pantarlih wajib mengunduh aplikasi operasional lapangan untuk persiapan Bimtek dan Coklit:\n` +
+        `>> *Link Unduh APK Langsung:*\n` +
+        `${P2KD_APK_URL}\n` +
+        `_(Alternatif Unduh GitHub: ${P2KD_APK_GITHUB_URL})_\n\n` +
+        `2. Pantau jadwal penetapan resmi dan bimbingan teknis (Bimtek) coklit lapangan secara berkala di portal:\n` +
         `https://www.p2kdkalisalak.my.id/daftarpantarlih\n\n` +
         `Terima kasih atas kesiapan dan dedikasi Anda.\n` +
         `_Panitia P2KD Desa Kalisalak_`
@@ -87,10 +97,16 @@ export function generatePetugasWhatsAppMessage(
         `- Wilayah Tugas: *${wilayahStr}*\n` +
         `- Desa: Kalisalak, Kec. Margasari, Kab. Tegal\n\n` +
         `*Catatan Panitia:*\n${catatanPanitia || "Selamat bertugas mengemban amanah dalam mengawal hak pilih warga Desa Kalisalak."}\n\n` +
-        `*INSTRUKSI PENTING / WAJIB BAGI PETUGAS:*\n` +
-        `Seluruh petugas yang telah ditetapkan *WAJIB BERGABUNG* ke Grup Telegram Resmi Pantarlih P2KD Kalisalak untuk koordinasi tugas, materi Bimtek, jadwal coklit, dan distribusi logistik:\n` +
-        `>> *Link Grup Telegram Resmi:*\n${TELEGRAM_GROUP_URL}\n\n` +
-        `*(Bagi yang belum memiliki aplikasi Telegram, wajib mengunduh terlebih dahulu di Play Store: ${TELEGRAM_PLAYSTORE_URL})*\n\n` +
+        `*INSTRUKSI PENTING / WAJIB BAGI SELURUH PETUGAS PANTARLIH:*\n` +
+        `1. *WAJIB MENGUNDUH & MEMASANG APLIKASI RESMI P2KD MOBILE (APK v2.25.01)*\n` +
+        `Aplikasi ini digunakan untuk pemindaian barcode/QR pemilih, geotagging lokasi TPS, sinkronisasi data pemilih, dan pencatatan coklit lapangan secara realtime.\n` +
+        `>> *Link Unduh APK Langsung:*\n` +
+        `${P2KD_APK_URL}\n` +
+        `_(Alternatif Unduh GitHub: ${P2KD_APK_GITHUB_URL})_\n\n` +
+        `2. *WAJIB BERGABUNG KE GRUP TELEGRAM RESMI*\n` +
+        `Seluruh petugas yang telah ditetapkan wajib bergabung ke grup koordinasi tugas, materi Bimtek, jadwal coklit, dan distribusi logistik:\n` +
+        `>> *Link Grup Telegram Resmi:*\n${TELEGRAM_GROUP_URL}\n` +
+        `*(Bagi yang belum memiliki aplikasi Telegram, pasang terlebih dahulu di Play Store: ${TELEGRAM_PLAYSTORE_URL})*\n\n` +
         `Silakan unduh dokumen berkas resmi (Surat Pernyataan & Tanda Bukti) di:\n` +
         `https://www.p2kdkalisalak.my.id/daftarpantarlih\n\n` +
         `Selamat bertugas, junjung tinggi netralitas dan kejujuran!\n` +

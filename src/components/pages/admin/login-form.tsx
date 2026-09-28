@@ -316,7 +316,7 @@ export const AdminLoginForm: React.FC = () => {
                 ) : (
                   <div className="space-y-1.5">
                     <label className="block text-[10px] font-black uppercase text-slate-300 tracking-wider">
-                      USERNAME PETUGAS
+                      IDENTITAS AKUN PETUGAS
                     </label>
                     <div className="relative">
                       <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -326,10 +326,13 @@ export const AdminLoginForm: React.FC = () => {
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Masukkan username akun..."
+                        placeholder="Username / Nama Lengkap / NIK / No. WhatsApp..."
                         className="w-full h-12 pl-10 pr-4 text-xs font-bold rounded-2xl bg-slate-100/95 text-slate-950 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 border-none transition-all shadow-inner"
                       />
                     </div>
+                    <p className="text-[10px] text-slate-400 font-medium leading-tight pt-0.5">
+                      💡 Masuk dengan <span className="text-blue-300 font-semibold">Username</span>, <span className="text-amber-300 font-semibold">Nama Lengkap</span>, <span className="text-emerald-300 font-semibold">NIK</span>, atau <span className="text-sky-300 font-semibold">No. WhatsApp</span>.
+                    </p>
                   </div>
                 )}
 

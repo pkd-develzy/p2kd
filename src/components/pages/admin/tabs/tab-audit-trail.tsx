@@ -30,6 +30,7 @@ import {
   GDRIVE_CONFIG,
   getBackupScheduleStatus,
   recordBackupExecuted,
+  partitionLogsBy48Hours,
 } from "@/lib/gdrive-backup";
 import { ModalAuditDetail } from "../modals/modal-audit-detail";
 import { ModalGdriveWebhook } from "../modals/modal-gdrive-webhook";
@@ -54,11 +55,16 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
   const [selectedSource, setSelectedSource] = useState<"ALL" | "APLIKASI_APK" | "BROWSER_WEB">("ALL");
   const [selectedLogForDetail, setSelectedLogForDetail] = useState<AuditLog | null>(null);
 
-  // Perhitungan statistik sumber akses (APK vs Browser)
+  // Batasi tampilan menu log: hanya log dalam 48 jam terakhir yang ditampilkan
+  const { activeLogs, expiredLogs } = useMemo(() => {
+    return partitionLogsBy48Hours(auditLogs);
+  }, [auditLogs]);
+
+  // Perhitungan statistik sumber akses (APK vs Browser) untuk log 48 jam aktif
   const sourceCounts = useMemo(() => {
     let apk = 0;
     let browser = 0;
-    for (const log of auditLogs) {
+    for (const log of activeLogs) {
       const src = parseClientSource({
         userAgent: log.userAgent,
         browser: log.browser,
@@ -71,8 +77,8 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
         browser++;
       }
     }
-    return { apk, browser, total: auditLogs.length };
-  }, [auditLogs]);
+    return { apk, browser, total: activeLogs.length };
+  }, [activeLogs]);
 
   // Status backup GDrive 48 jam
   const [backupSchedule, setBackupSchedule] = useState(() => getBackupScheduleStatus());
@@ -147,9 +153,49 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
     }
   };
 
-  // Filter logs berdasarkan search, kategori, dan severity
+  // Simpan & Arsipkan log > 48 jam ke Google Apps Script Webhook
+  const [isArchivingExpired, setIsArchivingExpired] = useState(false);
+
+  const handleArchiveExpiredNow = async () => {
+    setIsArchivingExpired(true);
+    setBackupMessage(null);
+    try {
+      const storedWebhook =
+        typeof window !== "undefined"
+          ? localStorage.getItem("p2kd_gdrive_webhook_url") || ""
+          : "";
+
+      const res = await fetch("/api/admin/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ webhookUrl: storedWebhook }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBackupMessage({
+          type: "success",
+          text: data.message || "Log yang sudah 48 jam berhasil disimpan ke Google Drive.",
+        });
+        if (onRefresh) await onRefresh();
+      } else {
+        setBackupMessage({
+          type: "error",
+          text: data.message || "Gagal mengarsipkan log.",
+        });
+      }
+    } catch {
+      setBackupMessage({
+        type: "error",
+        text: "Koneksi ke server gagal saat proses arsip 48 jam.",
+      });
+    } finally {
+      setIsArchivingExpired(false);
+    }
+  };
+
+  // Filter logs berdasarkan search, kategori, dan severity (hanya dari activeLogs 48 jam)
   const filteredLogs = useMemo(() => {
-    return auditLogs.filter((log) => {
+    return activeLogs.filter((log) => {
       // Filter Kategori
       if (selectedCategory !== "ALL") {
         const cat = (log.kategori || "").toUpperCase();
@@ -197,7 +243,7 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
 
       return true;
     });
-  }, [auditLogs, selectedCategory, selectedSeverity, selectedSource, searchQuery]);
+  }, [activeLogs, selectedCategory, selectedSeverity, selectedSource, searchQuery]);
 
   const startIdx = (currentPage - 1) * pageSize;
   const pagedLogs = filteredLogs.slice(startIdx, startIdx + pageSize);
@@ -284,13 +330,19 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="primary"
-                className="text-[10px] uppercase font-bold bg-blue-500/20 text-blue-300 border-blue-400/30 px-3 py-0.5 rounded-full"
+                className="text-[10px] uppercase font-bold bg-amber-500/20 text-amber-300 border-amber-400/30 px-3 py-0.5 rounded-full"
               >
-                Log Rekam Jejak Forensik P2KD
+                Jendela Menu: 48 Jam Terakhir
               </Badge>
-              <span className="text-xs text-slate-400 font-medium">
-                • {auditLogs.length} Total Aktivitas Terekam
+              <span className="text-xs text-slate-300 font-semibold">
+                • {activeLogs.length} Log Aktif (≤ 48 Jam)
               </span>
+              {expiredLogs.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-300 bg-amber-950/80 px-2.5 py-0.5 rounded-full border border-amber-500/40 animate-pulse">
+                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+                  <span>{expiredLogs.length} Siap Disimpan ke Drive</span>
+                </span>
+              )}
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                 <Smartphone className="w-3 h-3 text-emerald-400" />
                 <span>{sourceCounts.apk} dari Aplikasi APK</span>
@@ -301,7 +353,7 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
               </span>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Live Realtime Stream (WIB)</span>
+                <span>Live Stream WIB</span>
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-400 bg-blue-950/60 px-2.5 py-0.5 rounded-full border border-blue-500/30">
                 <CheckCircle2 className="w-3 h-3" /> Immutable SHA-256
@@ -310,13 +362,38 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
 
             <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 sm:gap-3">
               <History className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 shrink-0" />
-              <span>Rincian Log Aktivitas Pengguna & Audit Trail</span>
+              <span>Rincian Log Aktivitas Pengguna & Audit Trail (Maks 48 Jam)</span>
             </h2>
 
             <p className="text-xs sm:text-sm text-slate-300 max-w-4xl leading-relaxed font-normal">
-              Seluruh rekam jejak aksi operator, mutasi data pemilih, pendaftaran petugas, penugasan wilayah, dan penguncian pleno tersimpan permanen tanpa celah modifikasi, serta otomatis terbackup ke Google Drive resmi setiap 48 jam.
+              Menu log ini secara khusus dibatasi untuk menampilkan riwayat aktivitas dalam <strong>48 jam terakhir</strong>. Seluruh rekaman yang telah melampaui 48 jam langsung diamankan dan disimpan ke folder Google Drive resmi P2KD Kalisalak.
             </p>
           </div>
+
+          {/* Banner Notifikasi jika ada log > 48 jam yang siap disimpan */}
+          {expiredLogs.length > 0 && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/15 border border-amber-400/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-amber-200 text-xs">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>
+                  Terdapat <strong>{expiredLogs.length} data log</strong> yang telah melampaui batas 48 jam. Simpan langsung sekarang ke Google Drive resmi.
+                </span>
+              </div>
+              <button
+                onClick={handleArchiveExpiredNow}
+                disabled={isArchivingExpired}
+                type="button"
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer disabled:opacity-50 shrink-0"
+              >
+                {isArchivingExpired ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CloudUpload className="w-3.5 h-3.5" />
+                )}
+                <span>{isArchivingExpired ? "Menyimpan..." : `Simpan ${expiredLogs.length} Log ke GDrive`}</span>
+              </button>
+            </div>
+          )}
 
           {/* Dedicated Action Toolbar Strip */}
           <div className="pt-3 border-t border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3">
@@ -340,7 +417,7 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
                 disabled={isBackingUp}
                 type="button"
                 className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-50"
-                title="Cadangkan log audit ke Google Drive sekarang"
+                title="Cadangkan seluruh log audit ke Google Drive sekarang"
               >
                 {isBackingUp ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
@@ -348,6 +425,26 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
                   <CloudUpload className="w-3.5 h-3.5 text-white" />
                 )}
                 <span>{isBackingUp ? "Mencadangkan..." : "Cadangkan GDrive"}</span>
+              </button>
+
+              <button
+                onClick={handleArchiveExpiredNow}
+                disabled={isArchivingExpired}
+                type="button"
+                className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                title="Simpan seluruh log yang sudah 48 jam langsung ke Google Drive"
+              >
+                {isArchivingExpired ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                ) : (
+                  <HardDrive className="w-3.5 h-3.5 text-white" />
+                )}
+                <span>{isArchivingExpired ? "Menyimpan..." : "Simpan Log > 48 Jam"}</span>
+                {expiredLogs.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-amber-950 text-amber-200 text-[10px] font-black">
+                    {expiredLogs.length}
+                  </span>
+                )}
               </button>
             </div>
 

@@ -39,7 +39,10 @@ export async function POST(req: Request) {
       typeof reqBody.webhookUrl === "string" && reqBody.webhookUrl.trim()
         ? reqBody.webhookUrl.trim()
         : undefined;
-    const webhookUrl = customWebhook || process.env.GDRIVE_BACKUP_WEBHOOK_URL;
+    const webhookUrl =
+      customWebhook ||
+      process.env.GDRIVE_BACKUP_WEBHOOK_URL ||
+      GDRIVE_CONFIG.DEFAULT_WEBHOOK_URL;
 
     let uploadStatus: "UPLOADED_TO_GDRIVE" | "ARCHIVED_LOCALLY" | "WEBHOOK_FAILED" = "ARCHIVED_LOCALLY";
     let driveFileUrl: string | undefined = undefined;

@@ -3,6 +3,13 @@ import { maskNIK, maskKK, hashPassword } from "./encryption";
 import { SupabaseDbService } from "./supabase-db";
 import { getAutoTabungByRtRw } from "./kalisalak-wilayah";
 import { parseClientSource } from "./utils";
+import {
+  filterLogsWithin48Hours,
+  partitionLogsBy48Hours,
+  createAuditBackupPackage,
+  uploadPackageToGdriveWebhook,
+} from "./gdrive-backup";
+import type { AuditLog } from "@/components/pages/admin/types";
 
 export interface MasterPemilih {
   id: string;
@@ -220,6 +227,10 @@ export interface MasterAnggotaP2KD {
   skPenetapan: string;
   fotoUrl?: string;
   passwordHash?: string;
+  isActivated?: boolean;
+  hasChangedPassword?: boolean;
+  lastLoginAt?: string;
+  loginCount?: number;
 }
 
 /**
@@ -572,6 +583,7 @@ export interface MasterPetugasDpt {
 export interface AuditLogItem {
   id: string;
   waktu: string;
+  createdAt?: string;
   user: string;
   role: string;
   aksi: string;
@@ -715,7 +727,12 @@ class SystemDataStore {
   };
 
   private constructor() {
-    this.syncWithSupabase();
+    // Defer initial sync to next event tick so circular imports (supabase-db <-> data-store) initialize safely
+    if (typeof setTimeout !== "undefined") {
+      setTimeout(() => {
+        this.syncWithSupabase().catch(() => {});
+      }, 0);
+    }
   }
 
   public static getInstance(): SystemDataStore {
@@ -1861,8 +1878,27 @@ class SystemDataStore {
       );
     }
     
+    // Strict Deduplication by ID, Username, and NIK
+    const seenIds = new Set<string>();
+    const seenUsernames = new Set<string>();
+    const seenNiks = new Set<string>();
+    const deduplicated: MasterAnggotaP2KD[] = [];
+
+    for (const a of list) {
+      const u = (a.username || "").toLowerCase().trim();
+      const cleanNik = a.nik ? a.nik.replace(/\D/g, "") : "";
+      if (a.id && seenIds.has(a.id)) continue;
+      if (u && seenUsernames.has(u)) continue;
+      if (cleanNik.length === 16 && seenNiks.has(cleanNik)) continue;
+
+      if (a.id) seenIds.add(a.id);
+      if (u) seenUsernames.add(u);
+      if (cleanNik.length === 16) seenNiks.add(cleanNik);
+      deduplicated.push(a);
+    }
+
     // Sort strictly by official hierarchy: Ketua -> Wakil -> Sekretaris -> Bendahara -> Seksi 1 (Pemilih) -> Seksi 2 -> Seksi 3 -> Seksi 4 -> Seksi 5 -> Pantarlih RW 01-13
-    const sorted = [...list].sort((a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b));
+    const sorted = [...deduplicated].sort((a, b) => getAnggotaHierarchyRank(a) - getAnggotaHierarchyRank(b));
 
     if (!seksiFilter || seksiFilter === "SEMUA") {
       return sorted;
@@ -1875,6 +1911,19 @@ class SystemDataStore {
   }
 
   public async addAnggota(data: Omit<MasterAnggotaP2KD, "id">, user = "admin_kalisalak"): Promise<MasterAnggotaP2KD> {
+    // Prevent duplicate insertion by username or NIK
+    const cleanUname = data.username.toLowerCase().trim();
+    const cleanNik = data.nik ? data.nik.replace(/\D/g, "") : "";
+    const dupIdx = this.anggotaList.findIndex(
+      (a) =>
+        a.username.toLowerCase().trim() === cleanUname ||
+        (cleanNik.length === 16 && a.nik && a.nik.replace(/\D/g, "") === cleanNik)
+    );
+    if (dupIdx !== -1) {
+      const existingId = this.anggotaList[dupIdx].id;
+      return (await this.updateAnggota(existingId, data, user)) || this.anggotaList[dupIdx];
+    }
+
     const newId = `agt-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
     const newAnggota: MasterAnggotaP2KD = {
       ...data,
@@ -2430,12 +2479,61 @@ class SystemDataStore {
     return this.tahapanState;
   }
 
-  public getAuditLogs(limit = 100) {
-    return this.auditLogs.slice(0, limit);
+  public getAuditLogs(limit = 100, within48HoursOnly = true) {
+    const logs = within48HoursOnly
+      ? filterLogsWithin48Hours(this.auditLogs)
+      : this.auditLogs;
+    return logs.slice(0, limit);
   }
 
-  public addAuditLog(log: Omit<AuditLogItem, "id" | "waktu"> & { id?: string; waktu?: string }) {
+  public getAuditLogsWithin48Hours(limit = 500) {
+    return filterLogsWithin48Hours(this.auditLogs).slice(0, limit);
+  }
+
+  public async archiveAndPruneExpiredLogs(customWebhookUrl?: string): Promise<{
+    archivedCount: number;
+    status: string;
+    fileUrl?: string;
+    fileName?: string;
+  }> {
+    const { activeLogs, expiredLogs } = partitionLogsBy48Hours(this.auditLogs);
+    if (expiredLogs.length === 0) {
+      return { archivedCount: 0, status: "NO_EXPIRED_LOGS" };
+    }
+
+    const backupPackage = await createAuditBackupPackage(
+      expiredLogs as unknown as AuditLog[],
+      "Arsip Otomatis Siklus 48 Jam (Expired Logs)"
+    );
+
+    const uploadResult = await uploadPackageToGdriveWebhook(backupPackage, customWebhookUrl);
+
+    if (uploadResult.success) {
+      const expiredIds = expiredLogs.map((l) => l.id);
+      this.auditLogs = activeLogs;
+
+      // Hapus dari Supabase Server 3 agar bersih dan tidak menumpuk
+      SupabaseDbService.deleteAuditLogsByIds(expiredIds).catch((err) => {
+        console.warn("Gagal membersihkan log kadaluarsa dari Supabase:", err);
+      });
+
+      return {
+        archivedCount: expiredLogs.length,
+        status: "UPLOADED_TO_GDRIVE",
+        fileUrl: uploadResult.fileUrl,
+        fileName: backupPackage.metadata.targetFileName,
+      };
+    }
+
+    return {
+      archivedCount: 0,
+      status: "UPLOAD_FAILED",
+    };
+  }
+
+  public addAuditLog(log: Omit<AuditLogItem, "id" | "waktu"> & { id?: string; waktu?: string; createdAt?: string }) {
     const id = log.id || `log-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+    const createdAt = log.createdAt || new Date().toISOString();
     const waktu =
       log.waktu ||
       new Date().toLocaleString("id-ID", {
@@ -2510,6 +2608,7 @@ class SystemDataStore {
       ...log,
       id,
       waktu,
+      createdAt,
       kategori,
       severity,
       signature,

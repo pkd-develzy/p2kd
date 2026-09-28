@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession, isDeveloper } from "@/lib/auth-middleware";
-import { hashPassword } from "@/lib/encryption";
+import { hashPassword, verifyPassword } from "@/lib/encryption";
+import { DEFAULT_INITIAL_PASSWORDS, isInitialDefaultPassword } from "@/lib/password-policy";
+
+function checkIsActivated(passwordHash?: string): boolean {
+  if (!passwordHash) return false;
+  const isDefault =
+    isInitialDefaultPassword(passwordHash) ||
+    DEFAULT_INITIAL_PASSWORDS.some((def) => verifyPassword(def, passwordHash) || passwordHash === def);
+  return !isDefault;
+}
 
 // Helper to strip passwordHash from responses
 function sanitizeAnggota<T extends { passwordHash?: string }>(agt: T): Omit<T, "passwordHash"> {
@@ -22,13 +31,97 @@ export async function GET(req: Request) {
     const seksi = searchParams.get("seksi") || "SEMUA";
     const forceRefresh = searchParams.get("refresh") === "true";
     await dataStore.ensureSynced(forceRefresh);
+
+    // Auto-clean duplicates in cloud database in the background if forceRefresh requested
+    if (forceRefresh) {
+      try {
+        const { SupabaseDbService } = await import("@/lib/supabase-db");
+        const s3 = SupabaseDbService.getServer3Client();
+        const { data: dbRows } = await s3.from("anggota_p2kd").select("id, username, nik, created_at").order("created_at", { ascending: true });
+        if (dbRows && dbRows.length > 0) {
+          const seenUname = new Set<string>();
+          const seenNikSet = new Set<string>();
+          const toDelete: string[] = [];
+
+          for (const row of dbRows) {
+            const u = (row.username || "").toLowerCase().trim();
+            const nikDigits = (row.nik || "").replace(/\D/g, "");
+            let isDup = false;
+
+            if (u && seenUname.has(u)) isDup = true;
+            if (nikDigits.length === 16 && seenNikSet.has(nikDigits)) isDup = true;
+
+            if (isDup) {
+              toDelete.push(row.id);
+            } else {
+              if (u) seenUname.add(u);
+              if (nikDigits.length === 16) seenNikSet.add(nikDigits);
+            }
+          }
+
+          if (toDelete.length > 0) {
+            await s3.from("anggota_p2kd").delete().in("id", toDelete);
+          }
+        }
+      } catch (err) {
+        console.warn("Background auto-deduplicate check notice:", err);
+      }
+    }
+
     const anggota = dataStore.getAnggotaList(seksi);
+
+    // Extract login statistics from audit trail
+    const allAuditLogs = dataStore.getAuditLogs();
+    const loginStats = new Map<string, { count: number; lastLogin?: string }>();
+    for (const log of allAuditLogs) {
+      if (log.aksi === "LOGIN_SUCCESS" && log.user) {
+        const u = log.user.toLowerCase().trim();
+        const existing = loginStats.get(u) || { count: 0 };
+        existing.count += 1;
+        const logTime = log.waktu || log.createdAt;
+        if (logTime && (!existing.lastLogin || new Date(logTime) > new Date(existing.lastLogin))) {
+          existing.lastLogin = logTime;
+        }
+        loginStats.set(u, existing);
+      }
+    }
+
+    // Strict deduplication and enrichment with activation indicator
+    const seenIds = new Set<string>();
+    const seenUsernames = new Set<string>();
+    const seenNiks = new Set<string>();
+    const enrichedAnggota = [];
+
+    for (const agt of anggota) {
+      const u = (agt.username || "").toLowerCase().trim();
+      const cleanNik = agt.nik ? agt.nik.replace(/\D/g, "") : "";
+      if (agt.id && seenIds.has(agt.id)) continue;
+      if (u && seenUsernames.has(u)) continue;
+      if (cleanNik.length === 16 && seenNiks.has(cleanNik)) continue;
+
+      if (agt.id) seenIds.add(agt.id);
+      if (u) seenUsernames.add(u);
+      if (cleanNik.length === 16) seenNiks.add(cleanNik);
+
+      const stats = loginStats.get(u);
+      const isAct = checkIsActivated(agt.passwordHash);
+
+      const item = {
+        ...agt,
+        isActivated: isAct,
+        hasChangedPassword: isAct,
+        loginCount: stats?.count || 0,
+        lastLoginAt: stats?.lastLogin,
+      };
+      delete item.passwordHash;
+      enrichedAnggota.push(item);
+    }
 
     return NextResponse.json(
       {
         success: true,
-        data: anggota.map(sanitizeAnggota),
-        total: anggota.length,
+        data: enrichedAnggota,
+        total: enrichedAnggota.length,
       },
       {
         headers: {

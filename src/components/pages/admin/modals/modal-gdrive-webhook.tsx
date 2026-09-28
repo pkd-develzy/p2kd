@@ -55,9 +55,12 @@ export const ModalGdriveWebhook: React.FC<ModalGdriveWebhookProps> = ({
 }) => {
   const [webhookUrl, setWebhookUrl] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("p2kd_gdrive_webhook_url") || "";
+      return (
+        localStorage.getItem("p2kd_gdrive_webhook_url") ||
+        GDRIVE_CONFIG.DEFAULT_WEBHOOK_URL
+      );
     }
-    return "";
+    return GDRIVE_CONFIG.DEFAULT_WEBHOOK_URL;
   });
   const [copiedCode, setCopiedCode] = useState(false);
   const [testing, setTesting] = useState(false);

@@ -34,9 +34,14 @@ async function handleBackupCron(req: Request) {
 
     const backupPackage = await createAuditBackupPackage(auditLogs, operator);
 
-    // Integrasi Google Apps Script Webhook jika dikonfigurasi
-    const webhookUrl = process.env.GDRIVE_BACKUP_WEBHOOK_URL;
+    // Integrasi Google Apps Script Webhook
+    const webhookUrl = process.env.GDRIVE_BACKUP_WEBHOOK_URL || GDRIVE_CONFIG.DEFAULT_WEBHOOK_URL;
     let uploadStatus = "ARCHIVED_LOCALLY";
+
+    // Otomatis bersihkan & arsipkan log yang sudah > 48 jam
+    await dataStore.archiveAndPruneExpiredLogs(webhookUrl).catch((err) => {
+      console.warn("Cron archive expired logs error:", err);
+    });
 
     if (webhookUrl) {
       try {

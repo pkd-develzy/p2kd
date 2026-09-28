@@ -69,6 +69,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
     userSectionCode ? userSectionCode : "SEMUA"
   );
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("SEMUA");
+  const [selectedAktivasiFilter, setSelectedAktivasiFilter] = useState<string>("SEMUA");
 
   // Modal State for Add/Edit
   const [showFormModal, setShowFormModal] = useState(false);
@@ -151,8 +152,20 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
     ? allSeksiOptions
     : allSeksiOptions.filter((s) => s.value === userSectionCode || (userSectionCode === "SEKSI_PEMILIH" && s.value === "PANTARLIH_LAPANGAN"));
 
+  // Strict Deduplication in frontend
+  const seenTableIds = new Set<string>();
+  const seenTableUnames = new Set<string>();
+  const uniqueAnggotaList = anggotaList.filter((agt) => {
+    const u = (agt.username || "").toLowerCase().trim();
+    if (agt.id && seenTableIds.has(agt.id)) return false;
+    if (u && seenTableUnames.has(u)) return false;
+    if (agt.id) seenTableIds.add(agt.id);
+    if (u) seenTableUnames.add(u);
+    return true;
+  });
+
   // Filtering
-  const filteredAnggota = anggotaList.filter((agt) => {
+  const filteredAnggota = uniqueAnggotaList.filter((agt) => {
     if (userSectionCode) {
       if (userSectionCode === "SEKSI_PEMILIH") {
         if (agt.seksi !== "SEKSI_PEMILIH" && agt.seksi !== "PANTARLIH_LAPANGAN") return false;
@@ -167,6 +180,12 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
 
     if (selectedStatusFilter !== "SEMUA") {
       if (agt.status !== selectedStatusFilter) return false;
+    }
+
+    if (selectedAktivasiFilter === "SUDAH") {
+      if (!agt.isActivated) return false;
+    } else if (selectedAktivasiFilter === "BELUM") {
+      if (agt.isActivated) return false;
     }
 
     if (searchTerm.trim()) {
@@ -188,9 +207,11 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   );
 
   const totalAnggota = sortedAnggota.length;
-  const countPimpinan = anggotaList.filter((a) => a.seksi === "PIMPINAN").length;
-  const countKoordinator = anggotaList.filter((a) => a.seksi.startsWith("SEKSI_")).length;
-  const countPantarlih = anggotaList.filter((a) => a.seksi === "PANTARLIH_LAPANGAN").length;
+  const countPimpinan = uniqueAnggotaList.filter((a) => a.seksi === "PIMPINAN").length;
+  const countKoordinator = uniqueAnggotaList.filter((a) => a.seksi.startsWith("SEKSI_")).length;
+  const countPantarlih = uniqueAnggotaList.filter((a) => a.seksi === "PANTARLIH_LAPANGAN").length;
+  const countSudahAktivasi = uniqueAnggotaList.filter((a) => a.isActivated).length;
+  const countBelumAktivasi = uniqueAnggotaList.filter((a) => !a.isActivated).length;
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -487,15 +508,39 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
       </Card>
 
       {/* KPI Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <Card className="p-3.5 bg-white border-slate-200 shadow-sm">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-            {userSectionCode ? "Anggota Tim Seksi" : "Total Seluruh Panitia"}
+            {userSectionCode ? "Anggota Tim Seksi" : "Total Akun Panitia"}
           </div>
           <div className="text-2xl font-black text-slate-900 mt-1">{totalAnggota}</div>
           <div className="text-[10px] text-slate-400 mt-0.5 truncate" title={dynamicSkP2kd}>
             {dynamicSkP2kd}
           </div>
+        </Card>
+
+        <Card className="p-3.5 border-emerald-200 bg-emerald-50/40 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              Sudah Diaktivasi
+            </div>
+            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-2xl font-black text-emerald-950 mt-1">{countSudahAktivasi}</div>
+          <div className="text-[10px] text-emerald-700 mt-0.5 font-medium">Sandi pribadi aktif</div>
+        </Card>
+
+        <Card className="p-3.5 border-amber-200 bg-amber-50/40 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              Belum Aktivasi
+            </div>
+            <KeyRound className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-2xl font-black text-amber-950 mt-1">{countBelumAktivasi}</div>
+          <div className="text-[10px] text-amber-700 mt-0.5 font-medium">Sandi bawaan awal</div>
         </Card>
 
         <Card className="p-3.5 border-blue-200 bg-blue-50/30 shadow-sm">
@@ -506,21 +551,21 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
           <div className="text-[10px] text-blue-600 mt-0.5">Ketua, Sekretaris, Bendahara</div>
         </Card>
 
-        <Card className="p-3.5 border-amber-200 bg-amber-50/30 shadow-sm">
-          <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+        <Card className="p-3.5 border-indigo-200 bg-indigo-50/30 shadow-sm">
+          <div className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
             Koordinator 5 Seksi
           </div>
-          <div className="text-2xl font-black text-amber-900 mt-1">{countKoordinator}</div>
-          <div className="text-[10px] text-amber-600 mt-0.5">5 Divisi Bidang Tugas</div>
+          <div className="text-2xl font-black text-indigo-900 mt-1">{countKoordinator}</div>
+          <div className="text-[10px] text-indigo-600 mt-0.5">5 Divisi Bidang</div>
         </Card>
 
-        <Card className="p-3.5 border-emerald-200 bg-emerald-50/30 shadow-sm">
-          <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">
-            Pantarlih Lapangan
+        <Card className="p-3.5 border-purple-200 bg-purple-50/30 shadow-sm">
+          <div className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">
+            Petugas Lapangan
           </div>
-          <div className="text-2xl font-black text-emerald-900 mt-1">{countPantarlih}</div>
-          <div className="text-[10px] text-emerald-600 mt-0.5">
-            {tpsList.length > 0 ? `${tpsList.length} Tabung Terdaftar` : "Belum Ada Master Tabung"}
+          <div className="text-2xl font-black text-purple-900 mt-1">{countPantarlih}</div>
+          <div className="text-[10px] text-purple-600 mt-0.5">
+            {tpsList.length > 0 ? `${tpsList.length} Wilayah RW / TPS` : "Petugas Coklit"}
           </div>
         </Card>
       </div>
@@ -547,7 +592,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
             >
               {isSuperAdminUser ? (
                 <>
-                  <option value="SEMUA">Semua Seksi & Jabatan</option>
+                  <option value="SEMUA">Semua Jabatan</option>
                   <option value="PIMPINAN">Pimpinan P2KD</option>
                   <option value="SEKSI_PEMILIH">Seksi 1: Pendaftaran Pemilih</option>
                   <option value="SEKSI_PENJARINGAN">Seksi 2: Penjaringan Balon</option>
@@ -578,6 +623,16 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
               <option value="AKTIF">Status Aktif</option>
               <option value="NONAKTIF">Nonaktif</option>
             </select>
+
+            <select
+              value={selectedAktivasiFilter}
+              onChange={(e) => setSelectedAktivasiFilter(e.target.value)}
+              className="h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none"
+            >
+              <option value="SEMUA">Semua Status Aktivasi</option>
+              <option value="SUDAH">🟢 Sudah Aktivasi ({countSudahAktivasi})</option>
+              <option value="BELUM">🟡 Belum Aktivasi ({countBelumAktivasi})</option>
+            </select>
           </div>
         </div>
       </Card>
@@ -591,7 +646,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
                 <th className="py-3 px-4">No</th>
                 <th className="py-3 px-4">Profil & Identitas</th>
                 <th className="py-3 px-4">Jabatan & Seksi</th>
-                <th className="py-3 px-4">Kredensial Login</th>
+                <th className="py-3 px-4">Kredensial & Aktivasi</th>
                 <th className="py-3 px-4">Kontak & Penugasan</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-center">Aksi & Kredensial</th>
@@ -654,7 +709,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 space-y-1.5">
                       <div className="flex items-center gap-1.5">
                         <code className="px-2 py-0.5 rounded-lg bg-slate-100 font-mono text-[11px] font-bold text-slate-800 border border-slate-200">
                           {agt.username}
@@ -671,9 +726,28 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
                           )}
                         </button>
                       </div>
-                      <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+
+                      {/* Indikator Status Aktivasi Akun */}
+                      <div>
+                        {agt.isActivated ? (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Sudah Diaktivasi</span>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-300 shadow-2xs">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            <span>Belum Aktivasi</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-[10px] text-slate-500 flex items-center gap-1">
                         <ShieldCheck className="w-3 h-3 text-emerald-600" />
                         Role: {agt.role}
+                        {agt.loginCount && agt.loginCount > 0 ? (
+                          <span className="text-slate-400 text-[9px]">• {agt.loginCount}x login</span>
+                        ) : null}
                       </div>
                     </td>
 
@@ -1089,6 +1163,23 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
 
             {/* Credential Details Box */}
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5 text-xs">
+              {/* Indikator Status Aktivasi Akun dalam Modal */}
+              {selectedAnggotaForCreds.isActivated ? (
+                <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 flex items-center gap-2 text-emerald-800">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="text-[11px] leading-tight">
+                    <span className="font-bold">Akun Sudah Diaktivasi:</span> Petugas telah mengganti kata sandi bawaan dengan kata sandi pribadi baru.
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 flex items-center gap-2 text-amber-800">
+                  <KeyRound className="w-4 h-4 text-amber-600 shrink-0" />
+                  <div className="text-[11px] leading-tight">
+                    <span className="font-bold">Menunggu Aktivasi:</span> Akun masih menggunakan kata sandi awal bawaan (<code className="font-mono text-amber-900 bg-amber-100 px-1 py-0.5 rounded text-[10px]">p2kd2026</code> / default). Petugas belum mengganti sandi.
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <span className="text-slate-500 font-medium">Username Login:</span>
                 <code className="px-2 py-0.5 rounded bg-white font-mono font-bold text-blue-700 border border-slate-200">

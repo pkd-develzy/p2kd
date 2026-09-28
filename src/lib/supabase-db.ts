@@ -421,7 +421,7 @@ export class SupabaseDbService {
         client.from("tahapan").select("*"),
         client.from("pengumuman").select("*").order("created_at", { ascending: false }),
         client.from("web_config").select("*").limit(1),
-        this.getServer3Client().from("audit_logs").select("*").order("created_at", { ascending: false }).limit(100),
+        this.getServer3Client().from("audit_logs").select("*").order("created_at", { ascending: false }).limit(500),
         this.getSeksi1Client().from("pendaftaran_petugas_dpt").select("*").order("tanggal_pendaftaran", { ascending: false }),
         client.from("berita_artikel").select("*").order("created_at", { ascending: false }),
       ]);
@@ -579,6 +579,7 @@ export class SupabaseDbService {
         const id = l.id || `log-${Date.now().toString(36)}`;
         return {
           id,
+          createdAt: l.created_at || new Date().toISOString(),
           aksi: l.aksi,
           entity: l.entity || "SYSTEM",
           user: l.user_name,
@@ -1435,6 +1436,24 @@ export class SupabaseDbService {
       });
     } catch (err) {
       console.warn("Supabase insertAuditLog sync failed:", err);
+    }
+  }
+
+  public static async deleteAuditLogsByIds(ids: string[]): Promise<boolean> {
+    if (!ids || ids.length === 0) return true;
+    try {
+      const { error } = await this.getServer3Client()
+        .from("audit_logs")
+        .delete()
+        .in("id", ids);
+      if (error) {
+        console.warn("Supabase deleteAuditLogsByIds warning:", error);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn("Supabase deleteAuditLogsByIds error:", err);
+      return false;
     }
   }
 

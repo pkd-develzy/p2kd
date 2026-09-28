@@ -85,11 +85,16 @@ export interface AnggotaP2KD {
   status: "AKTIF" | "NONAKTIF";
   skPenetapan: string;
   fotoUrl?: string;
+  isActivated?: boolean;
+  hasChangedPassword?: boolean;
+  lastLoginAt?: string;
+  loginCount?: number;
 }
 
 export interface AuditLog {
   id: string;
   waktu: string;
+  createdAt?: string;
   user: string;
   role: string;
   aksi: string;

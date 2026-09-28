@@ -143,6 +143,11 @@ export const DpsTable: React.FC = () => {
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
           Daftar Pemilih Sementara (DPS) Pilkades Kalisalak
         </h1>
+        <div className="flex justify-center mt-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+            Runtutan: Calon DPS → DPS → DPSHP → DPSHP Akhir → DPT
+          </span>
+        </div>
         <p className="text-sm text-slate-500 mt-2">
           Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal • Total DPS: <strong>{totalDps.toLocaleString("id-ID")} Pemilih</strong>
         </p>

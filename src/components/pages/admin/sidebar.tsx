@@ -103,14 +103,14 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      title: "1. DATA PEMILIH & COKLIT",
+      title: "1. TAHAPAN DATA PEMILIH",
       icon: Users,
       color: "text-amber-400",
       allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
       items: [
         {
           id: "pemilih" as TabType,
-          label: "1.1 Daftar Pemilih Sementara (DPS)",
+          label: "1.1 Tahapan DPS (Calon DPS - DPS - DPSHP - DPSHP Akhir)",
           icon: Users,
           badge: (voterCount - (dptCount || 0)).toString(),
           badgeColor: "bg-amber-900/80 text-amber-200 border-amber-600/70",
@@ -126,9 +126,9 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
         },
         {
           id: "coklit" as TabType,
-          label: "1.3 Coklit Lapangan (Koordinator RW)",
+          label: "1.3 Pemutakhiran Lapangan (Koordinator RW)",
           icon: Sparkles,
-          badge: "Coklit",
+          badge: "Pemutakhiran",
           badgeColor: "bg-amber-400 text-slate-950 font-black border-amber-300 animate-pulse",
           allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
         },

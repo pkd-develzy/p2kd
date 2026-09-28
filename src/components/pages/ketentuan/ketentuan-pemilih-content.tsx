@@ -247,34 +247,54 @@ export const KetentuanPemilihContent: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2.5">
-            <Badge variant="primary" className="text-[10px] font-black">
-              1. DPT (Daftar Pemilih Tetap)
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
+            <Badge variant="info" className="text-[10px] font-black bg-blue-50 text-blue-700 border-blue-200">
+              1. CALON DPS
             </Badge>
-            <h3 className="text-sm font-black text-slate-900">Pemilih Utama Terdaftar</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Daftar pemilih yang telah melalui proses pencocokan & penelitian (Coklit) oleh Pantarlih dan telah disahkan dalam DPT. <strong>Pemilih DPT mencoblos pukul 07:00 WIB – Selesai di Lapangan Desa Kalisalak</strong> pada TPS / Tabung sesuai wilayah RW.
+            <h3 className="text-xs font-black text-slate-900">Potensial Pemilih DP4</h3>
+            <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+              Daftar awal penduduk usia 17 tahun ke atas atau telah menikah hasil sinkronisasi database kependudukan desa dan pemilih pemula.
             </p>
           </Card>
 
-          <Card className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2.5">
+          <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
             <Badge variant="warning" className="text-[10px] font-black">
-              2. DPS & DPSHP
+              2. DPS
             </Badge>
-            <h3 className="text-sm font-black text-slate-900">Uji Publik & Masa Sanggah</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Daftar Pemilih Sementara yang diumumkan di balai desa & tempat strategis untuk menerima masukan, koreksi data, atau laporan warga yang belum terdaftar sebelum ditetapkan menjadi DPT.
+            <h3 className="text-xs font-black text-slate-900">Daftar Pemilih Sementara</h3>
+            <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+              Daftar pemilih hasil pemutakhiran lapangan door-to-door oleh Pantarlih yang diumumkan secara terbuka untuk uji publik.
             </p>
           </Card>
 
-          <Card className="p-5 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2.5">
-            <Badge variant="success" className="text-[10px] font-black">
-              3. DPTb / Pemilih Tambahan
+          <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
+            <Badge variant="primary" className="text-[10px] font-black bg-teal-50 text-teal-700 border-teal-200">
+              3. DPSHP
             </Badge>
-            <h3 className="text-sm font-black text-slate-900">Warga Ber-KTP Kalisalak</h3>
-            <p className="text-xs text-slate-600 leading-relaxed font-normal">
-              Pemilih yang memenuhi syarat namun belum terdaftar di DPT. Dapat menggunakan hak pilih di Lapangan Desa Kalisalak pada TPS/Tabung sesuai KTP-el Kalisalak asli menjelang akhir waktu pemungutan suara (selama surat suara cadangan tersedia).
+            <h3 className="text-xs font-black text-slate-900">DPS Hasil Perbaikan</h3>
+            <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+              Pemutakhiran berkala atas tanggapan masyarakat, laporan pemilih baru, perbaikan elemen data, dan pencoretan data TMS.
+            </p>
+          </Card>
+
+          <Card className="p-4 bg-white border border-slate-200 rounded-2xl shadow-xs space-y-2">
+            <Badge variant="primary" className="text-[10px] font-black bg-indigo-50 text-indigo-700 border-indigo-200">
+              4. DPSHP AKHIR
+            </Badge>
+            <h3 className="text-xs font-black text-slate-900">Perbaikan Tahap Akhir</h3>
+            <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+              Rekapitulasi final seluruh perbaikan dan sanggahan masyarakat sebelum dibawa ke rapat pleno pengesahan DPT.
+            </p>
+          </Card>
+
+          <Card className="p-4 bg-white border border-emerald-200 bg-emerald-50/20 rounded-2xl shadow-xs space-y-2">
+            <Badge variant="success" className="text-[10px] font-black">
+              5. DPT FINAL
+            </Badge>
+            <h3 className="text-xs font-black text-emerald-950">Daftar Pemilih Tetap</h3>
+            <p className="text-[11px] text-slate-600 leading-relaxed font-normal">
+              Daftar pemilih sah yang telah ditetapkan melalui Berita Acara Rapat Pleno resmi P2KD dan dikunci secara digital.
             </p>
           </Card>
         </div>

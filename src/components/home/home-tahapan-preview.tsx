@@ -95,17 +95,17 @@ export const HomeTahapanPreview: React.FC = () => {
                   TERJADWAL
                 </Badge>
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">Pencalonan & Pendataan DPS</h3>
+              <h3 className="text-base font-bold text-slate-900 mb-2">Pencalonan & Tahapan Pemilih</h3>
               <div className="text-xs text-slate-600 font-semibold flex items-center gap-1.5 mb-3 bg-slate-100 p-2 rounded-xl">
                 <Calendar className="w-3.5 h-3.5 text-slate-500" />
                 <span>Nov – Des 2026</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Pendaftaran bakal calon kades (12–20 Nov), pendataan penduduk pemilih, penetapan DPS (11 Des), dan tanggapan perbaikan DPSHP (14–24 Des).
+                Runtutan pemutakhiran data: <strong>Calon DPS → DPS → DPSHP → DPSHP Akhir → DPT</strong>, disertai pendaftaran bakal calon Kades Kalisalak 2027.
               </p>
             </div>
             <div className="pt-4 border-t border-slate-100 mt-4 text-[11px] font-semibold text-slate-500 flex items-center justify-between">
-              <span>Penetapan DPT: 28 Des 2026</span>
+              <span>Penetapan DPT Final: 28 Des 2026</span>
               <Link href="/tahapan" className="text-slate-700 hover:underline font-bold">
                 Lihat Jadwal →
               </Link>

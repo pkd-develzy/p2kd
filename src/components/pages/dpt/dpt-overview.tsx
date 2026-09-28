@@ -27,12 +27,12 @@ export const DptOverview: React.FC = () => {
             <Lock className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-900">Status Tahapan: Proses Pemutakhiran DPSHP</h3>
+            <h3 className="text-lg font-bold text-slate-900">Runtutan Tahapan Pemutakhiran Data Pemilih</h3>
             <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-              Daftar Pemilih Tetap (DPT) Pilkades Desa Kalisalak saat ini sedang dalam proses perbaikan pasca-DPS. Penetapan DPT Final dijadwalkan pada sidang pleno P2KD Desa Kalisalak bersama BPD, Kepala Desa, dan saksi calon Kepala Desa.
+              Pemutakhiran data pemilih Pilkades Kalisalak 2027 berjalan melalui runtutan bertahap: <strong>Calon DPS → DPS → DPSHP → DPSHP Akhir → DPT Final</strong>. Seluruh proses divalidasi secara transparan sebelum pengesahan pada Sidang Pleno resmi P2KD Kalisalak.
             </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Badge variant="primary">Target Pleno DPT: 28 Desember 2026</Badge>
+              <Badge variant="primary">Tahapan: Calon DPS • DPS • DPSHP • DPSHP Akhir • DPT</Badge>
               <Badge variant="success">Proteksi Database Server: Aktif</Badge>
             </div>
           </div>

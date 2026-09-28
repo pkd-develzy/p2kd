@@ -477,40 +477,40 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-emerald-900 block">1. Pembentukan & SK P2KD</span>
-                  <span className="text-[11px] text-emerald-700">SK BPD Desa Kalisalak telah ditetapkan.</span>
+                  <span className="font-bold text-emerald-900 block">1. Calon DPS (Data Potensial DP4)</span>
+                  <span className="text-[11px] text-emerald-700">Data kependudukan awal dan pemilih pemula Desa Kalisalak.</span>
                 </div>
               </div>
 
               <div className="p-3 rounded-2xl bg-blue-50 border border-blue-200 flex items-start gap-2.5">
                 <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5 animate-spin" />
                 <div>
-                  <span className="font-bold text-blue-900 block">2. Penyusunan DPS & Coklit</span>
-                  <span className="text-[11px] text-blue-700">Coklit lapangan {persentaseCoklit}% selesai ({coklitSelesai} pemilih).</span>
+                  <span className="font-bold text-blue-900 block">2. DPS (Daftar Pemilih Sementara)</span>
+                  <span className="text-[11px] text-blue-700">Pemutakhiran lapangan door-to-door {persentaseCoklit}% selesai ({coklitSelesai} pemilih).</span>
                 </div>
               </div>
 
               <div className="p-3 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-start gap-2.5">
                 <Clock className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-indigo-900 block">3. Uji Publik & Masukan DPS</span>
-                  <span className="text-[11px] text-indigo-700">Tanggapan masyarakat & perbaikan data DPS ({aduanList.length} laporan).</span>
+                  <span className="font-bold text-indigo-900 block">3. DPSHP (DPS Hasil Perbaikan)</span>
+                  <span className="text-[11px] text-indigo-700">Uji publik tanggapan warga & koreksi identitas ({aduanList.length} masukan).</span>
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
-                <Layers className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 flex items-start gap-2.5">
+                <Layers className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-slate-800 block">4. Pleno DPT & Penguncian</span>
-                  <span className="text-[11px] text-slate-500">Berita acara penetapan DPT Final 13 Tabung.</span>
+                  <span className="font-bold text-amber-900 block">4. DPSHP Akhir (Validasi Pleno)</span>
+                  <span className="text-[11px] text-amber-700">Penyusunan rekapitulasi akhir menjelang penetapan DPT resmi.</span>
                 </div>
               </div>
 
               <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-start gap-2.5">
                 <BarChart3 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-bold text-slate-800 block">5. Pemungutan Suara (Hari-H)</span>
-                  <span className="text-[11px] text-slate-500">Rabu, 3 Februari 2027 di Desa Kalisalak.</span>
+                  <span className="font-bold text-slate-800 block">5. DPT (Daftar Pemilih Tetap Final)</span>
+                  <span className="text-[11px] text-slate-500">Penguncian berita acara penetapan DPT 13 Tabung Pemilihan.</span>
                 </div>
               </div>
             </div>

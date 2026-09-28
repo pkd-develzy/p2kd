@@ -112,18 +112,34 @@ export function isSeksiPemilih(user?: AuthTokenPayload): boolean {
   const seksi = (user.seksi || "").toUpperCase();
   const role = (user.role || "").toUpperCase();
   const username = (user.username || "").toLowerCase();
-  const jabatan = (user.jabatan || user.nama || "").toLowerCase();
+  const nama = (user.nama || "").toLowerCase();
+  const jabatan = (user.jabatan || "").toLowerCase();
   return (
     seksi === "SEKSI_PEMILIH" ||
+    seksi === "SEKSI_1" ||
+    seksi === "SEKSI 1" ||
     role === "SEKSI_PEMILIH" ||
+    role === "SEKSI_1" ||
+    role === "SEKSI 1" ||
+    role === "KOORDINATOR_PANTARLIH" ||
     username.includes("pemilih") ||
+    username.includes("khulal") ||
+    username.includes("lulu") ||
+    nama.includes("khulal") ||
+    nama.includes("lu’lu") ||
+    nama.includes("lu'lu") ||
+    nama.includes("lulu") ||
     jabatan.includes("pendaftaran pemilih") ||
-    jabatan.includes("seksi 1")
+    jabatan.includes("koordinator pantarlih") ||
+    jabatan.includes("seksi 1") ||
+    jabatan.includes("seksi pemilih")
   );
 }
 
 export function isPantarlih(user?: AuthTokenPayload): boolean {
   if (!user) return false;
+  // Seksi 1 Koordinator Pantarlih, Developer, and Ketua are universal coordinators across all 13 RWs
+  if (isDeveloper(user) || isKetuaP2KD(user) || isSeksiPemilih(user)) return false;
   const seksi = (user.seksi || "").toUpperCase();
   const role = (user.role || "").toUpperCase();
   const username = (user.username || "").toLowerCase();

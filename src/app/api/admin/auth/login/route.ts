@@ -343,6 +343,16 @@ export async function POST(req: Request) {
       (Boolean(matched.jabatan) && matched.jabatan.toLowerCase().includes("ketua") && !matched.jabatan.toLowerCase().includes("seksi"));
 
     const isSuperAdmin = isDeveloper || isKetua;
+
+    const isSeksiPemilihLogin =
+      matched.seksi === "SEKSI_PEMILIH" ||
+      matched.role === "SEKSI_PEMILIH" ||
+      matched.username.toLowerCase().includes("khulal") ||
+      (matched.jabatan && matched.jabatan.toLowerCase().includes("pendaftaran pemilih")) ||
+      (matched.jabatan && matched.jabatan.toLowerCase().includes("koordinator pantarlih"));
+
+    const effectiveAssignedTps = isSuperAdmin || isSeksiPemilihLogin ? "SEMUA" : (matched.assignedTps || "SEMUA");
+
     const token = generateAuthToken(
       {
         username: matched.username,
@@ -350,7 +360,7 @@ export async function POST(req: Request) {
         role: matched.role,
         seksi: matched.seksi,
         jabatan: matched.jabatan,
-        assignedTps: matched.assignedTps || "SEMUA",
+        assignedTps: effectiveAssignedTps,
         isSuperAdmin,
       },
       172800 // 48 hours session
@@ -385,7 +395,7 @@ export async function POST(req: Request) {
         role: matched.role,
         seksi: matched.seksi,
         jabatan: matched.jabatan,
-        assignedTps: matched.assignedTps || "SEMUA",
+        assignedTps: effectiveAssignedTps,
         isSuperAdmin,
         mustChangePassword: isDefault,
         token,

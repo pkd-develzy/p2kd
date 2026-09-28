@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { verifyAdminSession, isDeveloper } from "@/lib/auth-middleware";
+import { verifyAdminSession, isDeveloper, isSeksiPemilih } from "@/lib/auth-middleware";
 import { hashPassword, verifyPassword } from "@/lib/encryption";
 import { DEFAULT_INITIAL_PASSWORDS, isInitialDefaultPassword } from "@/lib/password-policy";
 
@@ -147,9 +147,9 @@ export async function POST(req: Request) {
 
     const user = session.user;
     const isSuperAdmin = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN";
-    const isSeksiPemilih = user.seksi === "SEKSI_PEMILIH";
+    const isSeksiPemilihRole = isSeksiPemilih(user);
 
-    if (!isSuperAdmin && !isSeksiPemilih) {
+    if (!isSuperAdmin && !isSeksiPemilihRole) {
       return NextResponse.json(
         { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang mendaftarkan anggota P2KD." },
         { status: 403 }
@@ -246,7 +246,7 @@ export async function PUT(req: Request) {
 
     const user = session.user;
     const isSuperAdmin = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN";
-    const isSeksiPemilih = user.seksi === "SEKSI_PEMILIH";
+    const isSeksiPemilihRole = isSeksiPemilih(user);
 
     const body = await req.json();
     const { id, action, customPassword, password, fotoUrl, ...updateFields } = body;
@@ -254,7 +254,7 @@ export async function PUT(req: Request) {
     const cleanUsername = user.username.replace("@kalisalak.desa.id", "").toLowerCase().trim();
     const isSelfPhotoUpdate = action === "update_foto";
 
-    if (!isSuperAdmin && !isSeksiPemilih && !isSelfPhotoUpdate) {
+    if (!isSuperAdmin && !isSeksiPemilihRole && !isSelfPhotoUpdate) {
       return NextResponse.json(
         { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang memperbarui data anggota." },
         { status: 403 }

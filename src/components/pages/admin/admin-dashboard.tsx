@@ -95,34 +95,52 @@ export const AdminDashboard: React.FC = () => {
 
   const isKetuaOrDev = isDeveloperUser || isKetuaUser;
 
-  // Field officer (Pantarlih / PPS)
-  const isFieldOfficer =
-    (tpsParam !== "" && tpsParam !== "SEMUA") ||
-    roleParam === "petugas" ||
-    roleParam === "pantarlih" ||
-    roleParam === "petugas_tps" ||
-    roleParam === "pps" ||
-    userParam.toLowerCase().includes("lapangan") ||
-    userParam.toLowerCase().includes("pantarlih") ||
-    userParam.toLowerCase().startsWith("pps") ||
-    storedUser?.role === "PETUGAS_TPS" ||
-    storedUser?.seksi === "PANTARLIH_LAPANGAN";
-
+  // Seksi 1: Koordinator Seksi Pendaftaran Pemilih / Koordinator Pantarlih (Universal access across all 13 RW)
   const isSeksiPemilihUser =
-    !isFieldOfficer &&
+    !isKetuaOrDev &&
     (roleParam === "seksi_pemilih" ||
+      roleParam === "seksi_1" ||
+      roleParam === "seksi 1" ||
+      roleParam === "koordinator_pantarlih" ||
       userParam.toLowerCase().includes("pemilih") ||
+      userParam.toLowerCase().includes("khulal") ||
+      userParam.toLowerCase().includes("lulu") ||
+      storedUser?.username?.toLowerCase().includes("khulal") ||
+      storedUser?.username?.toLowerCase().includes("lulu") ||
+      storedUser?.nama?.toLowerCase().includes("khulal") ||
+      storedUser?.nama?.toLowerCase().includes("lu’lu") ||
+      storedUser?.nama?.toLowerCase().includes("lu'lu") ||
+      storedUser?.nama?.toLowerCase().includes("lulu") ||
+      storedUser?.jabatan?.toLowerCase().includes("pendaftaran pemilih") ||
+      storedUser?.jabatan?.toLowerCase().includes("koordinator pantarlih") ||
+      storedUser?.jabatan?.toLowerCase().includes("seksi 1") ||
       storedUser?.seksi === "SEKSI_PEMILIH" ||
       storedUser?.role === "SEKSI_PEMILIH");
+
+  // Field officer (Pantarlih Lapangan RW 01 - RW 13 ONLY - strictly NOT Seksi 1 Coordinator)
+  const isFieldOfficer =
+    !isKetuaOrDev &&
+    !isSeksiPemilihUser &&
+    ((tpsParam !== "" && tpsParam !== "SEMUA") ||
+      roleParam === "petugas" ||
+      roleParam === "pantarlih" ||
+      roleParam === "petugas_tps" ||
+      roleParam === "pps" ||
+      userParam.toLowerCase().includes("lapangan") ||
+      userParam.toLowerCase().includes("pantarlih") ||
+      userParam.toLowerCase().startsWith("pps") ||
+      storedUser?.role === "PETUGAS_TPS" ||
+      storedUser?.seksi === "PANTARLIH_LAPANGAN");
 
   // ONLY Developer, Ketua, Seksi 1, and Pantarlih are authorized to access voter data
   const canAccessVoterDataUI = isKetuaOrDev || isSeksiPemilihUser || isFieldOfficer;
 
-  // Super Admin privilege is strictly restricted to Developer and Ketua P2KD
+  // Privileges: Developer, Ketua, and Seksi 1 Koordinator Pantarlih have universal jurisdiction across all 13 RWs
+  const canManageAllWilayah = isKetuaOrDev || isSeksiPemilihUser;
   const isSuperAdmin = isKetuaOrDev;
   const isAdmin = isKetuaOrDev;
-  const assignedTps = tpsParam || (isFieldOfficer ? "Tabung Pemilihan 01" : "SEMUA");
-  const currentUser = userParam || (isAdmin ? "admin_kalisalak" : "petugas");
+  const assignedTps = isSeksiPemilihUser ? "SEMUA" : (tpsParam || (isFieldOfficer ? "Tabung Pemilihan 01" : "SEMUA"));
+  const currentUser = userParam || (isAdmin ? "admin_kalisalak" : isSeksiPemilihUser ? "khulal" : "petugas");
   const router = useRouter();
   const toast = useToast();
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
@@ -251,7 +269,10 @@ export const AdminDashboard: React.FC = () => {
     effectiveActiveTab = "coklit";
   }
 
-  const [currentCoklitTps, setCurrentCoklitTps] = useState(assignedTps);
+  const [currentCoklitTps, setCurrentCoklitTps] = useState(() => {
+    if (canManageAllWilayah) return "SEMUA";
+    return assignedTps;
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -287,11 +308,11 @@ export const AdminDashboard: React.FC = () => {
   const [lockHashSignature, setLockHashSignature] = useState<string>(() => initialCache?.lockHashSignature || "");
   const [nomorBeritaAcara, setNomorBeritaAcara] = useState<string>(() => initialCache?.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026");
 
-  // Filter States: Default strictly per RW (RW 01)
+  // Filter States: Default to SEMUA for universal coordinators (Seksi 1, Ketua, Developer), or assigned RW for field Pantarlih
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTpsFilter, setSelectedTpsFilter] = useState(() => {
-    if (!isAdmin && assignedTps && assignedTps !== "SEMUA") return assignedTps;
-    return "01";
+    if (isFieldOfficer && assignedTps && assignedTps !== "SEMUA") return assignedTps;
+    return "SEMUA";
   });
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("SEMUA");
   const [selectedAduanFilter, setSelectedAduanFilter] = useState("SEMUA");
@@ -1856,7 +1877,7 @@ export const AdminDashboard: React.FC = () => {
 
           {effectiveActiveTab === "petugas_dpt" && canAccessVoterDataUI && (
             <TabPetugasDpt
-              isAdmin={isAdmin}
+              isAdmin={canManageAllWilayah}
               userRole={computedUserRole}
               userName={computedUserName}
             />
@@ -1885,7 +1906,7 @@ export const AdminDashboard: React.FC = () => {
                 setCurrentCoklitTps(tps);
                 handleSelectTpsFilter(tps);
               }}
-              isAdmin={isAdmin}
+              isAdmin={canManageAllWilayah}
               onUpdateCoklitStatus={handleUpdateCoklitStatus}
               onOpenEditVoter={handleOpenEditVoter}
               onOpenAddVoter={() => {
@@ -1922,7 +1943,7 @@ export const AdminDashboard: React.FC = () => {
               setSelectedTpsFilter={handleSelectTpsFilter}
               selectedStatusFilter={selectedStatusFilter}
               setSelectedStatusFilter={setSelectedStatusFilter}
-              isAdmin={isAdmin}
+              isAdmin={canManageAllWilayah}
               assignedTps={assignedTps}
               onOpenAddVoter={() => {
                 const autoTps = getAutoTabungByRtRw("01", "01", tpsList);
@@ -1962,7 +1983,7 @@ export const AdminDashboard: React.FC = () => {
               setSelectedTpsFilter={handleSelectTpsFilter}
               selectedStatusFilter={selectedStatusFilter}
               setSelectedStatusFilter={setSelectedStatusFilter}
-              isAdmin={isAdmin}
+              isAdmin={canManageAllWilayah}
               assignedTps={assignedTps}
               onOpenAddVoter={() => {
                 const autoTps = getAutoTabungByRtRw("01", "01", tpsList);
@@ -2041,7 +2062,7 @@ export const AdminDashboard: React.FC = () => {
               nomorBeritaAcara={nomorBeritaAcara}
               isDptLocked={isDptLocked}
               lockHashSignature={lockHashSignature}
-              isAdmin={isAdmin}
+              isAdmin={canManageAllWilayah}
               assignedTps={assignedTps}
               anggotaList={anggotaList}
             />

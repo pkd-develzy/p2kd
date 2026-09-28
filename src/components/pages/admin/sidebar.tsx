@@ -175,7 +175,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
       title: "2. WILAYAH RW & LOGISTIK",
       icon: Building2,
       color: "text-emerald-400",
-      allowedRoles: ["SUPER_ADMIN", "SEKSI_PUNGUT_HITUNG", "SEKSI_LOGISTIK_PUBLIKASI", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
+      allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "SEKSI_PUNGUT_HITUNG", "SEKSI_LOGISTIK_PUBLIKASI", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
       items: [
         {
           id: "tps" as TabType,
@@ -183,7 +183,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           icon: Building2,
           badge: `${tpsCount} Tabung (RW)`,
           badgeColor: "bg-emerald-900/80 text-emerald-200 border-emerald-600/70",
-          allowedRoles: ["SUPER_ADMIN", "SEKSI_PUNGUT_HITUNG", "SEKSI_LOGISTIK_PUBLIKASI"],
+          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "SEKSI_PUNGUT_HITUNG", "SEKSI_LOGISTIK_PUBLIKASI"],
         },
         {
           id: "print" as TabType,
@@ -191,7 +191,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           icon: Printer,
           badge: "C6 & ID",
           badgeColor: "bg-cyan-900/80 text-cyan-200 border-cyan-600/70 font-bold",
-          allowedRoles: ["SUPER_ADMIN", "SEKSI_LOGISTIK_PUBLIKASI", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
+          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "SEKSI_LOGISTIK_PUBLIKASI", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
         },
       ],
     },

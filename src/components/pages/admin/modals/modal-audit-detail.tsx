@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   ExternalLink,
   Smartphone,
-  LayoutGrid,
 } from "lucide-react";
 import { AuditLog } from "../types";
 import { GDRIVE_CONFIG } from "@/lib/gdrive-backup";
@@ -261,7 +260,7 @@ export const ModalAuditDetail: React.FC<ModalAuditDetailProps> = ({
                     </div>
                     <div className="flex justify-between items-center py-1">
                       <span className="text-slate-500">Peramban (Browser) / Client:</span>
-                      <span className="font-medium text-slate-700 truncate max-w-[200px]" title={log.browser || clientInfo.browserName}>
+                      <span className="font-medium text-slate-700 truncate max-w-50" title={log.browser || clientInfo.browserName}>
                         {clientInfo.isApp ? "P2KD Mobile App Engine (APK)" : (log.browser || clientInfo.browserName)}
                       </span>
                     </div>

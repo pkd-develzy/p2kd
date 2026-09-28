@@ -302,3 +302,79 @@ ${payload.assignedWilayah ? `Wilayah: <b>${payload.assignedWilayah}</b>\n` : ""}
     recipientChatId: groupChatId,
   };
 }
+
+export interface PetugasActivityPayload {
+  namaPetugas: string;
+  rolePetugas?: string;
+  wilayahTps?: string;
+  waktu?: string;
+  aktivitas: string;
+  rincian?: string;
+  targetWarga?: string;
+  wilayah?: string;
+  perubahanStatus?: string; // e.g. "CALON DPS ➜ SESUAI", "CALON DPS ➜ TMS", "CALON DPS ➜ DPT"
+}
+
+export async function notifyPetugasActivity(
+  payload: PetugasActivityPayload
+): Promise<TelegramNotificationResult> {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  // Default ke grup baru "LAPORAN PENGGUNA" (-1004400235312)
+  const chatId = process.env.TELEGRAM_ACTIVITY_CHAT_ID || process.env.TELEGRAM_REPORT_CHAT_ID || -1004400235312;
+
+  if (!token || !chatId) {
+    return { success: true, message: "Token or chat ID not set" };
+  }
+
+  const now = new Date();
+  const waktuStr = payload.waktu || (
+    now.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }) + " • " +
+    now.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }) + " WIB"
+  );
+
+  const message = `
+📢 <b>LAPORAN AKTIVITAS PETUGAS PANTARLIH</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━
+👤 <b>Petugas Siapa :</b> <b>${payload.namaPetugas}</b>${payload.rolePetugas ? ` (${payload.rolePetugas})` : ""}
+🕒 <b>Waktu         :</b> ${waktuStr}
+⚡ <b>Aktivitas     :</b> <b>${payload.aktivitas}</b>
+${payload.perubahanStatus ? `🔄 <b>Perubahan     :</b> <code>${payload.perubahanStatus}</code>\n` : ""}${payload.targetWarga ? `👥 <b>Nama Warga    :</b> <b>${payload.targetWarga}</b>\n` : ""}${payload.wilayah ? `📍 <b>Wilayah       :</b> ${payload.wilayah}\n` : ""}${payload.rincian ? `📝 <b>Keterangan    :</b> <i>${payload.rincian}</i>\n` : ""}━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 <i>Aplikasi Lapangan P2KD Desa Kalisalak</i>
+`.trim();
+
+  try {
+    const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+      }),
+    });
+
+    const data = await res.json();
+    if (!data.ok) {
+      console.warn("[Telegram Activity Notification Warning]:", data.description);
+      return { success: false, message: data.description };
+    }
+    return { success: true };
+  } catch (err) {
+    console.error("[Telegram Activity Notification Error]:", err);
+    return { success: false, message: "Network error sending telegram activity notification" };
+  }
+}
+

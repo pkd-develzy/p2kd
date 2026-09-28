@@ -47,6 +47,20 @@ export async function POST(req: Request) {
 
     await dataStore.ensureSynced(true);
 
+    // Kirim notifikasi otomatis aktivitas pemindahan tahap ke grup Telegram (tanpa simpan database)
+    try {
+      const { notifyPetugasActivity } = await import("@/lib/telegram");
+      void notifyPetugasActivity({
+        namaPetugas: userName,
+        rolePetugas: user.role === "pantarlih" ? `Pantarlih ${user.assignedTps || ""}` : (user.role || "Petugas P2KD"),
+        aktivitas: `Promosi Tahap Pemilih ke ${targetTahap}`,
+        perubahanStatus: `CALON DPS ➜ ${targetTahap} (${result.count} Pemilih)`,
+        rincian: `Berhasil memindahkan ${result.count} data pemilih menuju ${targetTahap} menjelang penetapan pleno resmi.`,
+      }).catch(() => {});
+    } catch {
+      // non-blocking
+    }
+
     return NextResponse.json({
       success: true,
       count: result.count,

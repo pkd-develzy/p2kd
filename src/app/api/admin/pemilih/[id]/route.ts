@@ -119,6 +119,23 @@ export async function PUT(
       alasan || "Perbaikan data manual oleh petugas"
     );
 
+    // Kirim notifikasi otomatis aktivitas perbaikan data ke grup Telegram (tanpa simpan database)
+    try {
+      const { notifyPetugasActivity } = await import("@/lib/telegram");
+      const maskedNik = existing.nik ? `${existing.nik.slice(0, 6)}******${existing.nik.slice(-4)}` : "-";
+      void notifyPetugasActivity({
+        namaPetugas: user.nama || user.username || "Petugas Lapangan",
+        rolePetugas: user.role === "pantarlih" ? `Pantarlih ${existing.tps}` : (user.role || "Petugas"),
+        wilayahTps: existing.tps,
+        aktivitas: "Perbaikan Elemen Data Pemilih",
+        targetWarga: `${existing.namaLengkap} (NIK: ${maskedNik})`,
+        wilayah: `${existing.tps} (RT ${existing.rt} / RW ${existing.rw})`,
+        rincian: alasan || "Perbaikan data manual oleh petugas lapangan.",
+      }).catch(() => {});
+    } catch {
+      // non-blocking
+    }
+
     return NextResponse.json({
       success: true,
       message: "Data pemilih berhasil diperbarui dan dicatat dalam audit trail.",
@@ -180,6 +197,25 @@ export async function DELETE(
 
     if (mode === "tms") {
       const updated = await dataStore.markTMS(id, alasanTms, user.nama || user.username);
+
+      // Kirim notifikasi otomatis penetapan TMS ke grup Telegram (tanpa simpan database)
+      try {
+        const { notifyPetugasActivity } = await import("@/lib/telegram");
+        const maskedNik = existing.nik ? `${existing.nik.slice(0, 6)}******${existing.nik.slice(-4)}` : "-";
+        void notifyPetugasActivity({
+          namaPetugas: user.nama || user.username || "Petugas Lapangan",
+          rolePetugas: user.role === "pantarlih" ? `Pantarlih ${existing.tps}` : (user.role || "Petugas"),
+          wilayahTps: existing.tps,
+          aktivitas: `Penetapan Tidak Memenuhi Syarat (TMS: ${alasanTms})`,
+          perubahanStatus: `CALON DPS ➜ TMS (${alasanTms})`,
+          targetWarga: `${existing.namaLengkap} (NIK: ${maskedNik})`,
+          wilayah: `${existing.tps} (RT ${existing.rt} / RW ${existing.rw})`,
+          rincian: `Pemilih ditetapkan TMS dengan alasan: ${alasanTms}.`,
+        }).catch(() => {});
+      } catch {
+        // non-blocking
+      }
+
       return NextResponse.json({
         success: true,
         message: `Pemilih berhasil ditandai sebagai TMS (${alasanTms}).`,

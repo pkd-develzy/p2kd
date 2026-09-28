@@ -209,6 +209,24 @@ export async function POST(req: Request) {
       user.nama || user.username
     );
 
+    // Kirim notifikasi otomatis aktivitas temuan baru ke grup Telegram (tanpa simpan database)
+    try {
+      const { notifyPetugasActivity } = await import("@/lib/telegram");
+      const maskedNik = newPemilih.nik ? `${newPemilih.nik.slice(0, 6)}******${newPemilih.nik.slice(-4)}` : "-";
+      void notifyPetugasActivity({
+        namaPetugas: user.nama || user.username || "Petugas Pantarlih",
+        rolePetugas: user.role === "pantarlih" ? `Pantarlih ${newPemilih.tps}` : (user.role || "Petugas Lapangan"),
+        wilayahTps: newPemilih.tps,
+        aktivitas: "Input Temuan Pemilih Baru Lapangan",
+        perubahanStatus: "BARU ➜ CALON DPS",
+        targetWarga: `${newPemilih.namaLengkap} (NIK: ${maskedNik})`,
+        wilayah: `${newPemilih.tps} (RT ${newPemilih.rt} / RW ${newPemilih.rw})`,
+        rincian: "Warga baru memenuhi syarat hak pilih berhasil ditambahkan ke Calon DPS.",
+      }).catch(() => {});
+    } catch {
+      // non-blocking
+    }
+
     return NextResponse.json({
       success: true,
       message: "Data pemilih baru berhasil ditambahkan secara manual oleh petugas.",

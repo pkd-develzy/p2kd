@@ -142,6 +142,42 @@ export async function PUT(req: Request) {
       userName
     );
 
+    // Kirim notifikasi otomatis aktivitas petugas ke grup Telegram (tanpa simpan database)
+    try {
+      const { notifyPetugasActivity } = await import("@/lib/telegram");
+      let actTitle = "Pemutakhiran Calon DPS (SESUAI)";
+      let actChange = "CALON DPS ➜ SESUAI";
+      let actDetail = catatan ? `Catatan: ${catatan}` : "Fisik KTP-el dan KK cocok 100%.";
+
+      if (status === "UBAH_DATA") {
+        actTitle = "Perbaikan Elemen Data Pemilih";
+        actChange = "CALON DPS ➜ DIPERBAIKI (Ubah Data)";
+        actDetail = catatan ? `Koreksi data: ${catatan}` : "Dilakukan koreksi identitas / disabilitas di lapangan.";
+      } else if (status === "TMS") {
+        actTitle = "Penetapan Tidak Memenuhi Syarat (TMS)";
+        actChange = `CALON DPS ➜ TMS (${catatan || "Tidak Memenuhi Syarat"})`;
+        actDetail = `Warga ditetapkan TMS: ${catatan || "Data Tidak Memenuhi Syarat"}`;
+      } else if (status === "BELUM" || status === "BELUM_COKLIT") {
+        actTitle = "Reset Status Pemutakhiran Calon DPS";
+        actChange = "STATUS ➜ CALON DPS (Reset)";
+        actDetail = "Status pemutakhiran dikembalikan ke status awal Calon DPS.";
+      }
+
+      const maskedNik = targetVoter.nik ? `${targetVoter.nik.slice(0, 6)}******${targetVoter.nik.slice(-4)}` : "-";
+      void notifyPetugasActivity({
+        namaPetugas: userName,
+        rolePetugas: user.role === "pantarlih" ? `Pantarlih ${targetVoter.tps}` : (user.role || "Petugas Lapangan"),
+        wilayahTps: targetVoter.tps,
+        aktivitas: actTitle,
+        perubahanStatus: actChange,
+        targetWarga: `${targetVoter.namaLengkap} (NIK: ${maskedNik})`,
+        wilayah: `${targetVoter.tps} (RT ${targetVoter.rt || "01"} / RW ${targetVoter.rw || "01"})`,
+        rincian: actDetail,
+      }).catch(() => {});
+    } catch {
+      // non-blocking
+    }
+
     return NextResponse.json({
       success: true,
       message: `Status Coklit berhasil diperbarui (${status}).`,

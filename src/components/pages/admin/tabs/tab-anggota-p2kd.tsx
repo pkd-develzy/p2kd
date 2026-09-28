@@ -480,7 +480,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
               </Badge>
               <span className="text-xs text-slate-400 font-medium truncate max-w-full">• {dynamicSkP2kd}</span>
             </div>
-            <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 break-words">
+            <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 wrap-break-word">
               <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 shrink-0" />
               <span>
                 {userSectionCode
@@ -642,7 +642,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
       {/* Anggota List Table */}
       <Card className="overflow-hidden border-slate-200 bg-white shadow-sm w-full max-w-full min-w-0">
         <div className="overflow-x-auto w-full max-w-full">
-          <table className="w-full text-left text-xs border-collapse min-w-[720px]">
+          <table className="w-full text-left text-xs border-collapse min-w-180">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
                 <th className="py-3 px-4">No</th>

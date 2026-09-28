@@ -466,25 +466,27 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5 w-full max-w-full min-w-0">
       {/* Hero Header */}
-      <Card className="p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-lg rounded-3xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
+      <Card className="p-4 sm:p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-950 text-white border border-blue-900/60 shadow-lg rounded-3xl w-full max-w-full min-w-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5">
+          <div className="space-y-2 min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="primary"
-                className="text-[10px] uppercase font-bold bg-blue-500/20 text-blue-300 border-blue-400/30 px-3 py-0.5 rounded-full"
+                className="text-[10px] uppercase font-bold bg-blue-500/20 text-blue-300 border-blue-400/30 px-3 py-0.5 rounded-full shrink-0"
               >
                 Struktur Kepanitiaan P2KD
               </Badge>
-              <span className="text-xs text-slate-400 font-medium">• {dynamicSkP2kd}</span>
+              <span className="text-xs text-slate-400 font-medium truncate max-w-full">• {dynamicSkP2kd}</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-              <Users className="w-6 h-6 text-blue-400" />
-              {userSectionCode
-                ? `Manajemen Anggota & Akun ${allSeksiOptions.find(s => s.value === userSectionCode)?.label || ""}`
-                : "Struktur Anggota P2KD & Kredensial Akun"}
+            <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5 break-words">
+              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 shrink-0" />
+              <span>
+                {userSectionCode
+                  ? `Manajemen Anggota & Akun ${allSeksiOptions.find(s => s.value === userSectionCode)?.label || ""}`
+                  : "Struktur Anggota P2KD & Kredensial Akun"}
+              </span>
             </h2>
             <p className="text-xs text-slate-300 max-w-2xl leading-relaxed font-normal">
               Kelola struktur kepanitiaan Pilkades Kalisalak (Pimpinan, 5 Koordinator Seksi, serta Petugas KPPS/Pantarlih), cetak ID Card, dan kelola kata sandi akun panitia.
@@ -492,12 +494,12 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
           </div>
 
           {canManage && (
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
               <Button
                 variant="primary"
                 size="sm"
                 onClick={handleOpenAdd}
-                className="text-xs font-bold bg-blue-600 hover:bg-blue-500 shadow-md rounded-2xl py-2.5 px-4"
+                className="text-xs font-bold bg-blue-600 hover:bg-blue-500 shadow-md rounded-2xl py-2.5 px-4 w-full sm:w-auto justify-center"
               >
                 <UserPlus className="w-4 h-4 mr-1.5" />
                 Tambah Anggota Seksi / Petugas
@@ -508,72 +510,72 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
       </Card>
 
       {/* KPI Overview */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <Card className="p-3.5 bg-white border-slate-200 shadow-sm">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 w-full max-w-full">
+        <Card className="p-3 sm:p-3.5 bg-white border-slate-200 shadow-sm min-w-0">
+          <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
             {userSectionCode ? "Anggota Tim Seksi" : "Total Akun Panitia"}
           </div>
-          <div className="text-2xl font-black text-slate-900 mt-1">{totalAnggota}</div>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">{totalAnggota}</div>
           <div className="text-[10px] text-slate-400 mt-0.5 truncate" title={dynamicSkP2kd}>
             {dynamicSkP2kd}
           </div>
         </Card>
 
-        <Card className="p-3.5 border-emerald-200 bg-emerald-50/40 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Sudah Diaktivasi
+        <Card className="p-3 sm:p-3.5 border-emerald-200 bg-emerald-50/40 shadow-sm min-w-0">
+          <div className="flex items-center justify-between gap-1">
+            <div className="text-[10px] sm:text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="truncate">Sudah Diaktivasi</span>
             </div>
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
           </div>
-          <div className="text-2xl font-black text-emerald-950 mt-1">{countSudahAktivasi}</div>
-          <div className="text-[10px] text-emerald-700 mt-0.5 font-medium">Sandi pribadi aktif</div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-950 mt-1">{countSudahAktivasi}</div>
+          <div className="text-[10px] text-emerald-700 mt-0.5 font-medium truncate">Sandi pribadi aktif</div>
         </Card>
 
-        <Card className="p-3.5 border-amber-200 bg-amber-50/40 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              Belum Aktivasi
+        <Card className="p-3 sm:p-3.5 border-amber-200 bg-amber-50/40 shadow-sm min-w-0">
+          <div className="flex items-center justify-between gap-1">
+            <div className="text-[10px] sm:text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5 truncate">
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+              <span className="truncate">Belum Aktivasi</span>
             </div>
-            <KeyRound className="w-4 h-4 text-amber-600" />
+            <KeyRound className="w-4 h-4 text-amber-600 shrink-0" />
           </div>
-          <div className="text-2xl font-black text-amber-950 mt-1">{countBelumAktivasi}</div>
-          <div className="text-[10px] text-amber-700 mt-0.5 font-medium">Sandi bawaan awal</div>
+          <div className="text-xl sm:text-2xl font-black text-amber-950 mt-1">{countBelumAktivasi}</div>
+          <div className="text-[10px] text-amber-700 mt-0.5 font-medium truncate">Sandi bawaan awal</div>
         </Card>
 
-        <Card className="p-3.5 border-blue-200 bg-blue-50/30 shadow-sm">
-          <div className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+        <Card className="p-3 sm:p-3.5 border-blue-200 bg-blue-50/30 shadow-sm min-w-0">
+          <div className="text-[10px] sm:text-[11px] font-bold text-blue-700 uppercase tracking-wider truncate">
             Pimpinan P2KD
           </div>
-          <div className="text-2xl font-black text-blue-900 mt-1">{countPimpinan}</div>
-          <div className="text-[10px] text-blue-600 mt-0.5">Ketua, Sekretaris, Bendahara</div>
+          <div className="text-xl sm:text-2xl font-black text-blue-900 mt-1">{countPimpinan}</div>
+          <div className="text-[10px] text-blue-600 mt-0.5 truncate">Ketua, Sekr, Bendahara</div>
         </Card>
 
-        <Card className="p-3.5 border-indigo-200 bg-indigo-50/30 shadow-sm">
-          <div className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider">
+        <Card className="p-3 sm:p-3.5 border-indigo-200 bg-indigo-50/30 shadow-sm min-w-0">
+          <div className="text-[10px] sm:text-[11px] font-bold text-indigo-700 uppercase tracking-wider truncate">
             Koordinator 5 Seksi
           </div>
-          <div className="text-2xl font-black text-indigo-900 mt-1">{countKoordinator}</div>
-          <div className="text-[10px] text-indigo-600 mt-0.5">5 Divisi Bidang</div>
+          <div className="text-xl sm:text-2xl font-black text-indigo-900 mt-1">{countKoordinator}</div>
+          <div className="text-[10px] text-indigo-600 mt-0.5 truncate">5 Divisi Bidang</div>
         </Card>
 
-        <Card className="p-3.5 border-purple-200 bg-purple-50/30 shadow-sm">
-          <div className="text-[11px] font-bold text-purple-700 uppercase tracking-wider">
+        <Card className="p-3 sm:p-3.5 border-purple-200 bg-purple-50/30 shadow-sm min-w-0">
+          <div className="text-[10px] sm:text-[11px] font-bold text-purple-700 uppercase tracking-wider truncate">
             Petugas Lapangan
           </div>
-          <div className="text-2xl font-black text-purple-900 mt-1">{countPantarlih}</div>
-          <div className="text-[10px] text-purple-600 mt-0.5">
-            {tpsList.length > 0 ? `${tpsList.length} Wilayah RW / TPS` : "Petugas Coklit"}
+          <div className="text-xl sm:text-2xl font-black text-purple-900 mt-1">{countPantarlih}</div>
+          <div className="text-[10px] text-purple-600 mt-0.5 truncate">
+            {tpsList.length > 0 ? `${tpsList.length} RW/TPS` : "Petugas Coklit"}
           </div>
         </Card>
       </div>
 
       {/* Filter & Search Bar */}
-      <Card className="p-4 bg-white border-slate-200 shadow-sm space-y-3">
-        <div className="flex flex-col md:flex-row items-center gap-3">
-          <div className="flex-1 w-full relative">
+      <Card className="p-3.5 sm:p-4 bg-white border-slate-200 shadow-sm space-y-3 w-full max-w-full min-w-0">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 sm:gap-3 w-full">
+          <div className="flex-1 w-full relative min-w-0">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
@@ -584,11 +586,11 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full md:w-auto">
             <select
               value={selectedSeksiFilter}
               onChange={(e) => setSelectedSeksiFilter(e.target.value)}
-              className="h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none"
+              className="w-full h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none truncate"
             >
               {isSuperAdminUser ? (
                 <>
@@ -596,9 +598,9 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
                   <option value="PIMPINAN">Pimpinan P2KD</option>
                   <option value="SEKSI_PEMILIH">Seksi 1: Pendaftaran Pemilih</option>
                   <option value="SEKSI_PENJARINGAN">Seksi 2: Penjaringan Balon</option>
-                  <option value="SEKSI_PENYARINGAN">Seksi 3: Penyaringan & Uji Kompetensi</option>
+                  <option value="SEKSI_PENYARINGAN">Seksi 3: Penyaringan & Uji</option>
                   <option value="SEKSI_PUNGUT_HITUNG">Seksi 4: Pemungutan Suara</option>
-                  <option value="SEKSI_LOGISTIK_PUBLIKASI">Seksi 5: Perlengkapan & Publikasi</option>
+                  <option value="SEKSI_LOGISTIK_PUBLIKASI">Seksi 5: Logistik & Publikasi</option>
                   <option value="PANTARLIH_LAPANGAN">Pantarlih Lapangan Tabung 1–13</option>
                 </>
               ) : userSectionCode === "SEKSI_PEMILIH" ? (
@@ -617,7 +619,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
             <select
               value={selectedStatusFilter}
               onChange={(e) => setSelectedStatusFilter(e.target.value)}
-              className="h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none"
+              className="w-full h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none truncate"
             >
               <option value="SEMUA">Semua Status</option>
               <option value="AKTIF">Status Aktif</option>
@@ -627,7 +629,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
             <select
               value={selectedAktivasiFilter}
               onChange={(e) => setSelectedAktivasiFilter(e.target.value)}
-              className="h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none"
+              className="w-full h-9 px-3 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 focus:outline-none truncate"
             >
               <option value="SEMUA">Semua Status Aktivasi</option>
               <option value="SUDAH">🟢 Sudah Aktivasi ({countSudahAktivasi})</option>
@@ -638,9 +640,9 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
       </Card>
 
       {/* Anggota List Table */}
-      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+      <Card className="overflow-hidden border-slate-200 bg-white shadow-sm w-full max-w-full min-w-0">
+        <div className="overflow-x-auto w-full max-w-full">
+          <table className="w-full text-left text-xs border-collapse min-w-[720px]">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
                 <th className="py-3 px-4">No</th>

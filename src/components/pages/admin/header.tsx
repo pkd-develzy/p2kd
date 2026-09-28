@@ -94,41 +94,42 @@ export const AdminHeader: React.FC<HeaderProps> = ({
   const current = tabTitles[activeTab] || tabTitles.pemilih;
 
   return (
-    <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80 shadow-xs backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 bg-white border-b border-slate-200/80 shadow-xs backdrop-blur-md w-full max-w-full">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0">
         {/* Left Side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
           <button
             onClick={onOpenSidebar}
-            className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+            className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
+            title="Menu Navigasi"
           >
             <Menu className="w-5 h-5" />
           </button>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+              <h1 className="text-sm sm:text-base font-black text-slate-900 tracking-tight truncate">
                 {current.title}
               </h1>
-              <Badge variant={isAdmin ? "primary" : "success"} className="hidden sm:inline-flex text-[10px]">
+              <Badge variant={isAdmin ? "primary" : "success"} className="hidden sm:inline-flex text-[10px] shrink-0">
                 {isAdmin ? "SUPERADMIN" : `PANTARLIH ${assignedTps}`}
               </Badge>
               {isDptLocked && activeTab === "lock" && (
-                <Badge variant="danger" className="text-[10px]">
+                <Badge variant="danger" className="text-[10px] shrink-0">
                   <Lock className="w-3 h-3 mr-1 inline" /> DIKUNCI
                 </Badge>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 hidden sm:block">
+            <p className="text-[11px] text-slate-500 hidden sm:block truncate">
               {current.subtitle}
             </p>
           </div>
         </div>
 
         {/* Right Side */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
           {/* DB Indicator Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 border border-slate-200 text-slate-700">
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 border border-slate-200 text-slate-700">
             <span
               className={`w-2 h-2 rounded-full ${
                 dbStatus === null || (isLoading && !dbStatus)
@@ -150,7 +151,7 @@ export const AdminHeader: React.FC<HeaderProps> = ({
           <button
             onClick={onRefresh}
             title="Segarkan Data"
-            className="p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 border border-slate-200 transition-colors"
+            className="p-2 text-slate-500 hover:text-slate-800 rounded-xl hover:bg-slate-100 border border-slate-200 transition-colors shrink-0"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin text-blue-600" : ""}`} />
           </button>
@@ -162,7 +163,7 @@ export const AdminHeader: React.FC<HeaderProps> = ({
               size="sm"
               onClick={onOpenChangePassword}
               title="Ganti Kata Sandi Akun"
-              className="text-xs border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300"
+              className="text-xs border-slate-200 hover:bg-amber-50 hover:text-amber-800 hover:border-amber-300 shrink-0 px-2 sm:px-3"
             >
               <KeyRound className="w-3.5 h-3.5 sm:mr-1 text-amber-600" />
               <span className="hidden md:inline">Ganti Sandi</span>

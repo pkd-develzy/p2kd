@@ -1743,7 +1743,7 @@ export const AdminDashboard: React.FC = () => {
   const totalAduanMenunggu = aduanList.filter((a) => a.status === "MENUNGGU").length;
 
   return (
-    <div className="min-h-screen flex bg-slate-100/90 text-slate-900">
+    <div className="min-h-screen flex bg-slate-100/90 text-slate-900 w-full max-w-full overflow-x-hidden">
       {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={isConfirmOpen}
@@ -1784,7 +1784,7 @@ export const AdminDashboard: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
+      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden lg:pl-72">
         {/* 2. Top Header */}
         <AdminHeader
           activeTab={effectiveActiveTab}
@@ -1802,7 +1802,7 @@ export const AdminDashboard: React.FC = () => {
         />
 
         {/* 3. Main Dashboard Body */}
-        <main className={`flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 space-y-6 ${isFieldOfficer ? "pb-28" : ""}`}>
+        <main className={`flex-1 max-w-7xl w-full min-w-0 mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 ${isFieldOfficer ? "pb-28" : ""}`}>
           {/* Active Tab Views */}
           {effectiveActiveTab === "dashboard" && (
             <TabDashboardOverview

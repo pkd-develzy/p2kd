@@ -260,7 +260,7 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
   const isActivated = matchedMember?.isActivated || matchedMember?.hasChangedPassword;
 
   return (
-    <div className="space-y-5 max-w-4xl mx-auto pb-8">
+    <div className="space-y-5 max-w-4xl mx-auto pb-28 sm:pb-36">
       {/* 1. Header Profile Card */}
       <Card className="p-5 sm:p-6 bg-linear-to-r from-slate-900 via-blue-950 to-slate-900 text-white border border-blue-900/60 shadow-xl rounded-3xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -549,27 +549,26 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
       </Card>
 
       {/* 4. Keamanan Sesi & Logout */}
-      <Card className="p-5 bg-white border border-rose-100 shadow-xs rounded-3xl space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div className="space-y-0.5 min-w-0">
-            <h2 className="text-sm font-bold flex items-center gap-1.5 text-rose-700">
-              <LogOut className="w-4 h-4" />
-              Keluar Sesi Akun
+      <Card className="p-5 sm:p-6 bg-white border border-rose-200/90 shadow-sm rounded-3xl space-y-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 text-rose-700">
+              <LogOut className="w-4 h-4 shrink-0" />
+              Keluar Sesi Akun Petugas
             </h2>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Keluarkan sesi akun pada perangkat ini. Semua data tersimpan aman di server terpusat.
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Keluarkan sesi akun pada perangkat ini. Seluruh data pemutakhiran tersimpan aman di server cloud P2KD.
             </p>
           </div>
 
           <Button
             type="button"
             variant="danger"
-            size="sm"
             onClick={handleLogoutClick}
-            className="shrink-0 text-xs font-bold rounded-2xl px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 cursor-pointer"
+            className="shrink-0 text-xs sm:text-sm font-bold rounded-2xl px-5 py-3 bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/25 cursor-pointer flex items-center justify-center gap-2 transition-all active:scale-95"
           >
-            <LogOut className="w-4 h-4 mr-1.5" />
-            Keluar Sesi
+            <LogOut className="w-4 h-4" />
+            <span>Keluar Sesi</span>
           </Button>
         </div>
       </Card>

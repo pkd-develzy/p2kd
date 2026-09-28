@@ -1834,7 +1834,7 @@ export const AdminDashboard: React.FC = () => {
         />
 
         {/* 3. Main Dashboard Body */}
-        <main className={`flex-1 max-w-7xl w-full min-w-0 mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6 ${isFieldOfficer ? "pb-28" : ""}`}>
+        <main className={`flex-1 max-w-7xl w-full min-w-0 mx-auto px-3 sm:px-4 lg:px-8 pt-4 sm:pt-6 space-y-4 sm:space-y-6 ${isFieldOfficer ? "pb-40 sm:pb-48" : "pb-12 sm:pb-16"}`}>
           {/* Active Tab Views */}
           {effectiveActiveTab === "dashboard" && (
             <TabDashboardOverview

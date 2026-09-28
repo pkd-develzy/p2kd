@@ -127,7 +127,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
               <CheckCircle className="w-6 h-6 text-emerald-400" />
-              Pencocokan & Penelitian Data Pemilih (Coklit Wilayah RW)
+              Pencocokan & Penelitian Data Pemilih (Pemutakhiran Wilayah RW)
             </h2>
             <p className="text-xs text-slate-300 leading-relaxed max-w-xl font-normal">
               Gunakan lembar kerja ini saat verifikasi faktual door-to-door per lingkungan RW. Tandai status pemilih, lakukan koreksi identitas, atau laporkan data TMS secara seketika.
@@ -165,7 +165,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
         {/* Progress Bar & Realtime Percentage */}
         <div className="pt-2 border-t border-slate-800/80 space-y-1.5">
           <div className="flex items-center justify-between text-xs font-bold">
-            <span className="text-blue-200">Progres Coklit Lapangan</span>
+            <span className="text-blue-200">Progres Pemutakhiran Lapangan</span>
             <span className="text-emerald-400">{selesai} dari {total} Pemilih ({persentase}%)</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden flex border border-slate-700/60">
@@ -197,7 +197,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
         </Card>
 
         <Card className="p-3 bg-amber-50/50 border-amber-200 shadow-2xs">
-          <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Belum Coklit</div>
+          <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Belum Dimutakhirkan</div>
           <div className="text-lg font-black text-amber-900 mt-0.5">{belum}</div>
           <div className="text-[10px] text-amber-600 font-medium">Sisa Kunjungan</div>
         </Card>
@@ -282,7 +282,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
                 : "bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/60"
             }`}
           >
-            Belum Coklit ({belum})
+            Belum Dimutakhirkan ({belum})
           </button>
 
           <button

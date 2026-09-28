@@ -50,6 +50,7 @@ import { TabPengaturanWeb } from "./tabs/tab-pengaturan-web";
 import { TabPetugasDpt } from "./tabs/tab-petugas-dpt";
 import { TabManajemenBerita } from "./tabs/tab-manajemen-berita";
 import { TabCalonKades } from "./tabs/tab-calon-kades";
+import { TabAkunPetugas } from "./tabs/tab-akun-petugas";
 
 import { ModalVoterForm } from "./modals/modal-voter-form";
 import { ModalTms } from "./modals/modal-tms";
@@ -238,7 +239,7 @@ export const AdminDashboard: React.FC = () => {
   const handleLogoutRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
-  const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "tps"];
+  const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "akun"];
   const voterDataTabs: TabType[] = ["pemilih", "dpt", "coklit", "petugas_dpt", "aduan", "lock", "export"];
 
   let effectiveActiveTab: TabType = activeTab;
@@ -1780,39 +1781,41 @@ export const AdminDashboard: React.FC = () => {
         onCancel={handleCancel}
       />
 
-      {/* 1. Professional Admin Sidebar */}
-      <AdminSidebar
-        activeTab={effectiveActiveTab}
-        setActiveTab={handleNavigateTab}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        voterCount={
-          dbStatus?.cloudStats?.pemilihCount ??
-          dbStatus?.localStats?.totalDps ??
-          dbStatus?.localStats?.totalPemilih ??
-          7787
-        }
-        dptCount={dbStatus?.localStats?.totalDpt ?? 0}
-        tpsCount={dbStatus?.localStats?.totalTps ?? tpsList.length ?? 13}
-        aduanPendingCount={dbStatus?.localStats?.totalAduan ?? totalAduanMenunggu ?? 0}
-        isDptLocked={isDptLocked}
-        auditCount={dbStatus?.localStats?.totalAudit ?? auditLogs.length ?? 144}
-        anggotaCount={dbStatus?.cloudStats?.anggotaCount ?? dbStatus?.localStats?.totalAnggota ?? anggotaList.length ?? 10}
-        petugasCount={dbStatus?.cloudStats?.petugasCount ?? dbStatus?.localStats?.totalPetugas ?? petugasCount ?? 14}
-        dbStatus={dbStatus}
-        isAdmin={isAdmin}
-        isDeveloper={isDeveloper}
-        userRole={computedUserRole}
-        userSeksi={computedUserSeksi}
-        userName={computedUserName}
-        userJabatan={computedUserJabatan}
-        assignedTps={assignedTps}
-        onLogout={handleLogout}
-        onLockScreen={handleLockScreen}
-      />
+      {/* 1. Professional Admin Sidebar (Non-Field Officers Only: Field Officers use Native Bottom Bar) */}
+      {!isFieldOfficer && (
+        <AdminSidebar
+          activeTab={effectiveActiveTab}
+          setActiveTab={handleNavigateTab}
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+          voterCount={
+            dbStatus?.cloudStats?.pemilihCount ??
+            dbStatus?.localStats?.totalDps ??
+            dbStatus?.localStats?.totalPemilih ??
+            7787
+          }
+          dptCount={dbStatus?.localStats?.totalDpt ?? 0}
+          tpsCount={dbStatus?.localStats?.totalTps ?? tpsList.length ?? 13}
+          aduanPendingCount={dbStatus?.localStats?.totalAduan ?? totalAduanMenunggu ?? 0}
+          isDptLocked={isDptLocked}
+          auditCount={dbStatus?.localStats?.totalAudit ?? auditLogs.length ?? 144}
+          anggotaCount={dbStatus?.cloudStats?.anggotaCount ?? dbStatus?.localStats?.totalAnggota ?? anggotaList.length ?? 10}
+          petugasCount={dbStatus?.cloudStats?.petugasCount ?? dbStatus?.localStats?.totalPetugas ?? petugasCount ?? 14}
+          dbStatus={dbStatus}
+          isAdmin={isAdmin}
+          isDeveloper={isDeveloper}
+          userRole={computedUserRole}
+          userSeksi={computedUserSeksi}
+          userName={computedUserName}
+          userJabatan={computedUserJabatan}
+          assignedTps={assignedTps}
+          onLogout={handleLogout}
+          onLockScreen={handleLockScreen}
+        />
+      )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden lg:pl-72">
+      <div className={`flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden ${isFieldOfficer ? "lg:pl-0" : "lg:pl-72"}`}>
         {/* 2. Top Header */}
         <AdminHeader
           activeTab={effectiveActiveTab}
@@ -1821,6 +1824,7 @@ export const AdminDashboard: React.FC = () => {
           isLoading={isLoading}
           dbStatus={dbStatus}
           isAdmin={isAdmin}
+          isFieldOfficer={isFieldOfficer}
           assignedTps={assignedTps}
           isDptLocked={isDptLocked}
           onOpenChangePassword={() => {
@@ -2093,6 +2097,19 @@ export const AdminDashboard: React.FC = () => {
               isSekretaris={roleParam === "sekretaris" || userParam.toLowerCase().includes("sekretaris")}
               isSeksiPublikasi={roleParam === "seksi_publikasi" || roleParam === "seksi_logistik" || computedUserSeksi === "SEKSI_LOGISTIK_PUBLIKASI"}
               isAdmin={isAdmin}
+            />
+          )}
+
+          {effectiveActiveTab === "akun" && (
+            <TabAkunPetugas
+              userName={computedUserName}
+              userRole={computedUserRole}
+              userSeksi={computedUserSeksi}
+              userJabatan={computedUserJabatan}
+              assignedTps={assignedTps}
+              anggotaList={anggotaList}
+              onLogout={handleLogout}
+              onRefresh={() => fetchData()}
             />
           )}
         </main>

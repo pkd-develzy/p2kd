@@ -202,6 +202,7 @@ export type TabType =
   | "pemilih"
   | "dpt"
   | "coklit"
+  | "akun"
   | "aduan"
   | "tps"
   | "print"

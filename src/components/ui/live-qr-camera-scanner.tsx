@@ -62,24 +62,57 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
         aspectRatio: 1.0,
       };
 
-      await html5QrCode.start(
-        { facingMode: "environment" }, // Paksa Kamera Belakang Smartphone
-        config,
-        (decodedText: string) => {
-          // Haptic feedback if supported
-          if (typeof window !== "undefined" && "vibrate" in navigator) {
-            try {
-              navigator.vibrate([40, 60, 40]);
-            } catch {
-              // ignore
-            }
+      const handleSuccess = (decodedText: string) => {
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate([40, 60, 40]);
+          } catch {
+            // ignore
           }
-          onScanSuccess(decodedText);
-        },
-        () => {
-          // Frame error (silently ignore non-scanned frames)
         }
-      );
+        onScanSuccess(decodedText);
+      };
+
+      const handleFrame = () => {};
+
+      // Coba aktifkan kamera belakang secara presisi:
+      let started = false;
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length > 0) {
+          // Cari kamera dengan indikasi kamera belakang (back / rear / environment / belakang)
+          const rearCam = cameras.find((c) =>
+            /back|rear|environment|belakang|trás/i.test(c.label)
+          );
+          // Bila ditemukan, pakai rearCam; jika di smartphone tanpa label, kamera terakhir biasanya adalah rear
+          const chosenCam = rearCam || (cameras.length > 1 ? cameras[cameras.length - 1] : cameras[0]);
+          await html5QrCode.start(chosenCam.id, config, handleSuccess, handleFrame);
+          started = true;
+        }
+      } catch (errCam) {
+        console.warn("Device enumeration fallback:", errCam);
+      }
+
+      if (!started) {
+        try {
+          await html5QrCode.start(
+            { facingMode: { ideal: "environment" } },
+            config,
+            handleSuccess,
+            handleFrame
+          );
+          started = true;
+        } catch {
+          // Fallback terakhir: buka kamera apapun yang tersedia agar tidak pernah macet
+          await html5QrCode.start(
+            { facingMode: "user" },
+            config,
+            handleSuccess,
+            handleFrame
+          );
+          started = true;
+        }
+      }
 
       setIsScanning(true);
 
@@ -108,7 +141,7 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
         );
       } else {
         setCameraError(
-          "Kamera belakang tidak ditemukan atau sedang digunakan oleh aplikasi lain."
+          "Kamera belum aktif. Tekan tombol Coba Aktifkan Ulang Kamera di bawah."
         );
       }
       setIsScanning(false);

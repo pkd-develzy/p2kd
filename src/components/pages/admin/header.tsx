@@ -12,6 +12,7 @@ interface HeaderProps {
   isLoading: boolean;
   dbStatus: DbStatus | null;
   isAdmin: boolean;
+  isFieldOfficer?: boolean;
   assignedTps?: string;
   isDptLocked: boolean;
   onOpenChangePassword?: () => void;
@@ -27,16 +28,20 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
     subtitle: "Struktur kepanitiaan, hak akses, SK penetapan, dan cetak kartu tanda pengenal (ID Card)",
   },
   coklit: {
-    title: "Coklit Lapangan (Koordinator RW)",
-    subtitle: "Pencocokan, penelitian, dan verifikasi faktual pemilih door-to-door per RW",
+    title: "Pemutakhiran Data Pemilih (Koordinator RW)",
+    subtitle: "Pencocokan, penelitian, dan pemutakhiran faktual pemilih door-to-door per lingkungan RW",
   },
   pemilih: {
-    title: "1.1 Daftar Pemilih Sementara (DPS)",
-    subtitle: "Pemutakhiran, verifikasi faktual warga, dan promosi data pemilih masuk ke DPT",
+    title: "Daftar Pemilih (Calon DPS, DPS, DPSHP, DPSHP Akhir)",
+    subtitle: "Tahapan pemutakhiran data pemilih berjenjang berbasis Wilayah RW",
   },
   dpt: {
     title: "1.2 Daftar Pemilih Tetap (DPT)",
     subtitle: "Daftar pemilih sah yang telah lolos verifikasi dan siap disahkan pada Sidang Pleno",
+  },
+  akun: {
+    title: "Profil & Keamanan Akun Petugas",
+    subtitle: "Informasi identitas penugasan, pembaruan foto profil, dan pengaturan kata sandi",
   },
   tps: {
     title: "13 Wilayah Tabung (RW)",
@@ -87,6 +92,7 @@ export const AdminHeader: React.FC<HeaderProps> = ({
   isLoading,
   dbStatus,
   isAdmin,
+  isFieldOfficer = false,
   assignedTps = "SEMUA",
   isDptLocked,
   onOpenChangePassword,
@@ -98,13 +104,15 @@ export const AdminHeader: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 w-full min-w-0">
         {/* Left Side */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-          <button
-            onClick={onOpenSidebar}
-            className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
-            title="Menu Navigasi"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {!isFieldOfficer && (
+            <button
+              onClick={onOpenSidebar}
+              className="lg:hidden p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
+              title="Menu Navigasi"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">

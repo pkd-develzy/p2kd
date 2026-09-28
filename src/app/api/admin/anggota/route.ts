@@ -248,17 +248,20 @@ export async function PUT(req: Request) {
     const isSuperAdmin = user.isSuperAdmin || user.role === "SUPER_ADMIN" || user.seksi === "PIMPINAN";
     const isSeksiPemilih = user.seksi === "SEKSI_PEMILIH";
 
-    if (!isSuperAdmin && !isSeksiPemilih) {
+    const body = await req.json();
+    const { id, action, customPassword, password, fotoUrl, ...updateFields } = body;
+
+    const cleanUsername = user.username.replace("@kalisalak.desa.id", "").toLowerCase().trim();
+    const isSelfPhotoUpdate = action === "update_foto";
+
+    if (!isSuperAdmin && !isSeksiPemilih && !isSelfPhotoUpdate) {
       return NextResponse.json(
         { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang memperbarui data anggota." },
         { status: 403 }
       );
     }
 
-    const body = await req.json();
-    const { id, action, customPassword, password, ...updateFields } = body;
-
-    if (!id) {
+    if (!id && !isSelfPhotoUpdate) {
       return NextResponse.json(
         { success: false, message: "ID anggota wajib disertakan." },
         { status: 400 }
@@ -266,6 +269,34 @@ export async function PUT(req: Request) {
     }
 
     const userName = user.nama || user.username;
+
+    if (action === "update_foto") {
+      let targetMember = id ? dataStore.getAnggotaById(id) : undefined;
+      if (!targetMember) {
+        targetMember = dataStore.getAnggotaList().find(
+          (a) => a.username.toLowerCase().trim() === cleanUsername
+        );
+      }
+      if (!targetMember) {
+        return NextResponse.json(
+          { success: false, message: "Data anggota tidak ditemukan." },
+          { status: 404 }
+        );
+      }
+      if (!fotoUrl) {
+        return NextResponse.json(
+          { success: false, message: "Data foto profil tidak valid." },
+          { status: 400 }
+        );
+      }
+
+      const updated = await dataStore.updateAnggota(targetMember.id, { fotoUrl }, userName);
+      return NextResponse.json({
+        success: true,
+        message: "Foto profil berhasil disimpan.",
+        data: sanitizeAnggota(updated || targetMember),
+      });
+    }
 
     if (action === "reset_password") {
       const resetRes = dataStore.resetPasswordAnggota(id, userName);

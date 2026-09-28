@@ -14,6 +14,7 @@ import {
   CheckSquare,
   Square,
   CheckCircle2,
+  LayoutGrid,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge, PaginationControl } from "@/components/ui";
@@ -61,6 +62,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedStage, setSelectedStage] = useState<"SEMUA" | "CALON_DPS" | "DPS" | "DPSHP" | "DPSHP_AKHIR">("SEMUA");
 
   // 1. Filter by Mode (DPS vs DPT)
   const modeFilteredVoters = voters.filter((v) => {
@@ -71,8 +73,37 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
     }
   });
 
+  // Base Scoped Voters for 4-Stage Grid Statistics
+  const baseScopedVoters = modeFilteredVoters.filter((v) => {
+    if (selectedTpsFilter !== "SEMUA") {
+      const rwTarget = selectedTpsFilter.replace(/\D/g, "");
+      const matchRw = v.rw && v.rw.replace(/\D/g, "") === rwTarget;
+      const matchTps = v.tps && v.tps.toLowerCase().includes(selectedTpsFilter.toLowerCase());
+      if (!matchRw && !matchTps) return false;
+    }
+    return true;
+  });
+
+  const calonDpsCount = baseScopedVoters.filter((v) => v.coklitStatus === "BARU" || v.tahap === "DPTB").length;
+  const dpsCount = baseScopedVoters.length;
+  const dpshpCount = baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA").length;
+  const dpshpAkhirCount = baseScopedVoters.filter((v) => v.statusAktif === "AKTIF" && v.coklitStatus !== "TMS").length;
+
   // 2. Ultra-Fast Instant Client-side Filter (< 1ms across loaded rows)
   const filteredVoters = modeFilteredVoters.filter((v) => {
+    // Stage Filter for Grid
+    if (mode === "DPS" && selectedStage !== "SEMUA") {
+      if (selectedStage === "CALON_DPS") {
+        if (v.coklitStatus !== "BARU" && v.tahap !== "DPTB") return false;
+      } else if (selectedStage === "DPS") {
+        if (v.tahap === "DPT") return false;
+      } else if (selectedStage === "DPSHP") {
+        if (v.coklitStatus !== "SESUAI" && v.coklitStatus !== "UBAH_DATA") return false;
+      } else if (selectedStage === "DPSHP_AKHIR") {
+        if (v.statusAktif !== "AKTIF" || v.coklitStatus === "TMS") return false;
+      }
+    }
+
     // Status Filter
     if (selectedStatusFilter !== "SEMUA" && v.statusAktif !== selectedStatusFilter) return false;
 
@@ -199,6 +230,152 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
           </div>
         </div>
       </Card>
+
+      {/* 2. GRID 4 TAHAPAN: CALON DPS - DPS - DPSHP - DPSHP Akhir */}
+      {mode === "DPS" && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-1.5 text-xs font-black text-slate-800 uppercase tracking-wider">
+              <LayoutGrid className="w-4 h-4 text-blue-600" />
+              <span>Tahapan Pemutakhiran Data Pemilih</span>
+            </div>
+            {selectedStage !== "SEMUA" && (
+              <button
+                type="button"
+                onClick={() => setSelectedStage("SEMUA")}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+              >
+                Tampilkan Semua Tahapan
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+            {/* Stage 1: CALON DPS */}
+            <button
+              type="button"
+              onClick={() => setSelectedStage(selectedStage === "CALON_DPS" ? "SEMUA" : "CALON_DPS")}
+              className={`p-3.5 sm:p-4 rounded-3xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+                selectedStage === "CALON_DPS"
+                  ? "bg-linear-to-br from-blue-600 to-indigo-700 text-white border-blue-500 shadow-lg shadow-blue-600/30 scale-[1.02]"
+                  : "bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800 shadow-xs"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${selectedStage === "CALON_DPS" ? "text-blue-200" : "text-blue-600"}`}>
+                  Tahap 1
+                </span>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "CALON_DPS" ? "bg-white/20 text-white" : "bg-blue-50 text-blue-700"}`}>
+                  Potensial
+                </span>
+              </div>
+              <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">CALON DPS</div>
+              <div className={`text-xl sm:text-2xl font-black mt-0.5 ${selectedStage === "CALON_DPS" ? "text-white" : "text-slate-900"}`}>
+                {calonDpsCount}
+              </div>
+              <div className={`text-[10px] mt-1 truncate ${selectedStage === "CALON_DPS" ? "text-blue-200" : "text-slate-500"}`}>
+                DP4 / Pemilih Pemula
+              </div>
+            </button>
+
+            {/* Stage 2: DPS */}
+            <button
+              type="button"
+              onClick={() => setSelectedStage(selectedStage === "DPS" ? "SEMUA" : "DPS")}
+              className={`p-3.5 sm:p-4 rounded-3xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+                selectedStage === "DPS"
+                  ? "bg-linear-to-br from-amber-600 to-orange-700 text-white border-amber-500 shadow-lg shadow-amber-600/30 scale-[1.02]"
+                  : "bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800 shadow-xs"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${selectedStage === "DPS" ? "text-amber-200" : "text-amber-600"}`}>
+                  Tahap 2
+                </span>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "DPS" ? "bg-white/20 text-white" : "bg-amber-50 text-amber-700"}`}>
+                  Uji Publik
+                </span>
+              </div>
+              <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">DPS</div>
+              <div className={`text-xl sm:text-2xl font-black mt-0.5 ${selectedStage === "DPS" ? "text-white" : "text-slate-900"}`}>
+                {dpsCount}
+              </div>
+              <div className={`text-[10px] mt-1 truncate ${selectedStage === "DPS" ? "text-amber-200" : "text-slate-500"}`}>
+                Daftar Pemilih Sementara
+              </div>
+            </button>
+
+            {/* Stage 3: DPSHP */}
+            <button
+              type="button"
+              onClick={() => setSelectedStage(selectedStage === "DPSHP" ? "SEMUA" : "DPSHP")}
+              className={`p-3.5 sm:p-4 rounded-3xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+                selectedStage === "DPSHP"
+                  ? "bg-linear-to-br from-teal-600 to-emerald-700 text-white border-teal-500 shadow-lg shadow-teal-600/30 scale-[1.02]"
+                  : "bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800 shadow-xs"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${selectedStage === "DPSHP" ? "text-teal-200" : "text-teal-600"}`}>
+                  Tahap 3
+                </span>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "DPSHP" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700"}`}>
+                  Perbaikan
+                </span>
+              </div>
+              <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">DPSHP</div>
+              <div className={`text-xl sm:text-2xl font-black mt-0.5 ${selectedStage === "DPSHP" ? "text-white" : "text-slate-900"}`}>
+                {dpshpCount}
+              </div>
+              <div className={`text-[10px] mt-1 truncate ${selectedStage === "DPSHP" ? "text-teal-200" : "text-slate-500"}`}>
+                Hasil Pemutakhiran
+              </div>
+            </button>
+
+            {/* Stage 4: DPSHP AKHIR */}
+            <button
+              type="button"
+              onClick={() => setSelectedStage(selectedStage === "DPSHP_AKHIR" ? "SEMUA" : "DPSHP_AKHIR")}
+              className={`p-3.5 sm:p-4 rounded-3xl border text-left transition-all cursor-pointer relative overflow-hidden ${
+                selectedStage === "DPSHP_AKHIR"
+                  ? "bg-linear-to-br from-indigo-600 to-purple-700 text-white border-indigo-500 shadow-lg shadow-indigo-600/30 scale-[1.02]"
+                  : "bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800 shadow-xs"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${selectedStage === "DPSHP_AKHIR" ? "text-indigo-200" : "text-indigo-600"}`}>
+                  Tahap 4
+                </span>
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "DPSHP_AKHIR" ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700"}`}>
+                  Siap Pleno
+                </span>
+              </div>
+              <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">DPSHP AKHIR</div>
+              <div className={`text-xl sm:text-2xl font-black mt-0.5 ${selectedStage === "DPSHP_AKHIR" ? "text-white" : "text-slate-900"}`}>
+                {dpshpAkhirCount}
+              </div>
+              <div className={`text-[10px] mt-1 truncate ${selectedStage === "DPSHP_AKHIR" ? "text-indigo-200" : "text-slate-500"}`}>
+                Validasi Menuju DPT
+              </div>
+            </button>
+          </div>
+
+          {selectedStage !== "SEMUA" && (
+            <div className="px-3 py-2 bg-blue-50/70 border border-blue-200/80 rounded-2xl flex items-center justify-between text-xs text-blue-900 animate-in fade-in duration-200">
+              <span className="font-semibold">
+                Menyaring data pemilih: <span className="font-black underline">{selectedStage.replace("_", " ")}</span> ({filteredVoters.length} pemilih ditemukan)
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedStage("SEMUA")}
+                className="text-[11px] font-black text-blue-700 hover:text-blue-900 cursor-pointer"
+              >
+                Reset Filter ✕
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filter & Action Toolbar */}
       <Card className="p-4 bg-white border-slate-200 shadow-sm space-y-3">

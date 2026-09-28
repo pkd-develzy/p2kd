@@ -5,7 +5,6 @@ import {
   Users,
   Building2,
   BarChart3,
-  CheckCircle2,
   AlertTriangle,
   Sparkles,
   ArrowRight,
@@ -144,11 +143,11 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
         <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase block tracking-wider">
-              Status Data DPT
+              Status Data Pemilih
             </span>
             <div className="text-sm sm:text-base font-black text-white mt-0.5 flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${isDptLocked ? "bg-rose-400" : "bg-emerald-400 animate-pulse"}`} />
-              {isDptLocked ? "Terkunci & Final" : "Tahap DPSHP / Coklit"}
+              {isDptLocked ? "Terkunci & Final" : "Tahap Calon DPS / Pemutakhiran"}
             </div>
           </div>
 
@@ -198,7 +197,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
           </div>
           <div>
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-              DPT Aktif
+              Calon DPS Aktif
             </span>
             <div className="text-2xl font-black text-slate-900">{totalAktif}</div>
             <span className="text-[10px] text-blue-600 font-semibold block">
@@ -475,18 +474,18 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
 
             <div className="space-y-3 text-xs">
               <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <Clock className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 animate-spin" />
                 <div>
-                  <span className="font-bold text-emerald-900 block">1. Calon DPS (Data Potensial DP4)</span>
-                  <span className="text-[11px] text-emerald-700">Data kependudukan awal dan pemilih pemula Desa Kalisalak.</span>
+                  <span className="font-bold text-emerald-900 block">1. Calon DPS (Data Pemilih Saat Ini)</span>
+                  <span className="text-[11px] text-emerald-700">Data pemilih aktif ({totalAktif} jiwa) sedang dalam proses pemutakhiran lapangan door-to-door {persentaseCoklit}% ({coklitSelesai} pemilih).</span>
                 </div>
               </div>
 
               <div className="p-3 rounded-2xl bg-blue-50 border border-blue-200 flex items-start gap-2.5">
-                <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5 animate-spin" />
+                <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold text-blue-900 block">2. DPS (Daftar Pemilih Sementara)</span>
-                  <span className="text-[11px] text-blue-700">Pemutakhiran lapangan door-to-door {persentaseCoklit}% selesai ({coklitSelesai} pemilih).</span>
+                  <span className="text-[11px] text-blue-700">Penetapan rapat pleno DPS resmi setelah pemutakhiran Calon DPS selesai.</span>
                 </div>
               </div>
 

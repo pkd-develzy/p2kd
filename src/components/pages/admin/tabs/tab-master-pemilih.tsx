@@ -84,8 +84,8 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
     return true;
   });
 
-  const calonDpsCount = baseScopedVoters.filter((v) => v.coklitStatus === "BARU" || v.tahap === "DPTB").length;
-  const dpsCount = baseScopedVoters.length;
+  const calonDpsCount = baseScopedVoters.length;
+  const dpsCount = baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA" || v.statusAktif === "AKTIF").length;
   const dpshpCount = baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA").length;
   const dpshpAkhirCount = baseScopedVoters.filter((v) => v.statusAktif === "AKTIF" && v.coklitStatus !== "TMS").length;
 
@@ -94,9 +94,10 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
     // Stage Filter for Grid
     if (mode === "DPS" && selectedStage !== "SEMUA") {
       if (selectedStage === "CALON_DPS") {
-        if (v.coklitStatus !== "BARU" && v.tahap !== "DPTB") return false;
-      } else if (selectedStage === "DPS") {
+        // Data saat ini adalah Calon DPS
         if (v.tahap === "DPT") return false;
+      } else if (selectedStage === "DPS") {
+        if (v.coklitStatus !== "SESUAI" && v.coklitStatus !== "UBAH_DATA" && v.statusAktif !== "AKTIF") return false;
       } else if (selectedStage === "DPSHP") {
         if (v.coklitStatus !== "SESUAI" && v.coklitStatus !== "UBAH_DATA") return false;
       } else if (selectedStage === "DPSHP_AKHIR") {
@@ -203,7 +204,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                     : "bg-amber-500/20 text-amber-300 border-amber-400/30"
                 }`}
               >
-                {mode === "DPT" ? "1.2 DAFTAR PEMILIH TETAP (DPT)" : "1.1 DAFTAR PEMILIH SEMENTARA (DPS)"}
+                {mode === "DPT" ? "1.2 DAFTAR PEMILIH TETAP (DPT)" : "1.1 CALON DPS (DATA PEMILIH SAAT INI)"}
               </Badge>
               <span className="text-xs text-slate-400 font-medium">
                 • {activeCount} Pemilih Aktif ({lakiCount} L • {perempuanCount} P) • {tmsCount} TMS
@@ -217,15 +218,15 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                 </>
               ) : (
                 <>
-                  <Users className="w-6 h-6 text-amber-400" />
-                  Daftar Pemilih Sementara (DPS) - Tahap Verifikasi & Coklit
+                  <Users className="w-6 h-6 text-blue-400" />
+                  Daftar Calon DPS (Data Pemutakhiran Menuju DPS)
                 </>
               )}
             </h2>
             <p className="text-xs text-slate-300 max-w-3xl leading-relaxed font-normal">
               {mode === "DPT"
                 ? "Daftar pemilih ini berisi warga yang telah lolos verifikasi faktual lapangan dan telah disahkan masuk ke DPT. Data pemilih di sini siap ditetapkan pada Sidang Pleno DPT Pilkades Kalisalak."
-                : "Daftar pemilih sementara yang sedang dalam proses pencocokan dan penelitian door-to-door. Pemilih yang sudah diverifikasi dapat langsung dipindahkan ke Daftar Pemilih Tetap (DPT)."}
+                : "Daftar pemilih saat ini berstatus CALON DPS yang sedang dalam proses pencocokan dan penelitian door-to-door per lingkungan RW sebelum disahkan menjadi DPS, DPSHP, DPSHP Akhir, hingga DPT."}
             </p>
           </div>
         </div>
@@ -266,7 +267,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                   Tahap 1
                 </span>
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "CALON_DPS" ? "bg-white/20 text-white" : "bg-blue-50 text-blue-700"}`}>
-                  Potensial
+                  Aktif Saat Ini
                 </span>
               </div>
               <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">CALON DPS</div>
@@ -274,7 +275,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                 {calonDpsCount}
               </div>
               <div className={`text-[10px] mt-1 truncate ${selectedStage === "CALON_DPS" ? "text-blue-200" : "text-slate-500"}`}>
-                DP4 / Pemilih Pemula
+                Data Pemilih Saat Ini
               </div>
             </button>
 
@@ -507,11 +508,11 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                     <div className="flex flex-col items-center justify-center gap-2">
                       <Users className="w-8 h-8 text-slate-300" />
                       <div>
-                        Tidak ada data pemilih yang berada di <strong>{mode === "DPT" ? "DPT" : "DPS"}</strong> untuk kriteria pencarian ini.
+                        Tidak ada data pemilih yang berada di <strong>{mode === "DPT" ? "DPT" : "Calon DPS"}</strong> untuk kriteria pencarian ini.
                       </div>
                       {mode === "DPT" && (
                         <p className="text-xs text-slate-400">
-                          Silakan verifikasi data dari menu <strong>1.1 Daftar Pemilih Sementara (DPS)</strong> terlebih dahulu.
+                          Silakan verifikasi data dari menu <strong>1.1 Calon DPS (Data Pemilih Saat Ini)</strong> terlebih dahulu.
                         </p>
                       )}
                     </div>

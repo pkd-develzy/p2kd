@@ -32,8 +32,8 @@ const tabTitles: Record<TabType, { title: string; subtitle: string }> = {
     subtitle: "Pencocokan, penelitian, dan pemutakhiran faktual pemilih door-to-door per lingkungan RW",
   },
   pemilih: {
-    title: "Daftar Pemilih (Calon DPS, DPS, DPSHP, DPSHP Akhir)",
-    subtitle: "Tahapan pemutakhiran data pemilih berjenjang berbasis Wilayah RW",
+    title: "1.1 Calon DPS (Data Pemilih Saat Ini)",
+    subtitle: "Runtutan pemutakhiran data: Calon DPS → DPS → DPSHP → DPSHP Akhir → DPT",
   },
   dpt: {
     title: "1.2 Daftar Pemilih Tetap (DPT)",

@@ -110,7 +110,7 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
       items: [
         {
           id: "pemilih" as TabType,
-          label: "1.1 Tahapan DPS (Calon DPS - DPS - DPSHP - DPSHP Akhir)",
+          label: "1.1 Calon DPS (Data Pemilih Saat Ini)",
           icon: Users,
           badge: (voterCount - (dptCount || 0)).toString(),
           badgeColor: "bg-amber-900/80 text-amber-200 border-amber-600/70",

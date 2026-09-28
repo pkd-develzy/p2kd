@@ -99,8 +99,8 @@ const menuCategories: Record<string, MenuCategory> = {
       },
       {
         href: "/dps",
-        label: "Daftar Pemilih Sementara (DPS)",
-        desc: "Data pemilih hasil pemutakhiran awal",
+        label: "Calon DPS (Daftar Pemilih)",
+        desc: "Data pemilih tahap pemutakhiran (Calon DPS)",
         icon: <Database className="w-4 h-4 text-teal-700" />,
       },
       {

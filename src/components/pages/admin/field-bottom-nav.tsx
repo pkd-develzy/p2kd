@@ -38,7 +38,7 @@ export const FieldBottomNav: React.FC<FieldBottomNavProps> = ({
     },
     {
       id: "pemilih" as TabType,
-      label: "Tahapan DPS",
+      label: "Calon DPS",
       icon: LayoutGrid,
     },
     {

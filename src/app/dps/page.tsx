@@ -3,8 +3,8 @@ import { Navbar, Footer } from "@/components/layout";
 import { DpsTable } from "@/components/pages/dps/dps-table";
 
 export const metadata = {
-  title: "Daftar Pemilih Sementara (DPS) | Kabupaten Tegal",
-  description: "Rekapitulasi resmi DPS per wilayah kecamatan dan desa di Kabupaten Tegal.",
+  title: "Calon DPS (Daftar Pemilih) | Pilkades Kalisalak",
+  description: "Rekapitulasi resmi data Calon DPS per wilayah RW dan RT menuju penetapan DPS Pilkades Kalisalak.",
 };
 
 export default function DpsPage() {

@@ -139,9 +139,9 @@ export const DpsTable: React.FC = () => {
         <div className="flex justify-center mb-3">
           <Logo size="md" />
         </div>
-        <Badge variant="primary" className="mb-2">Rekapitulasi Resmi P2KD</Badge>
+        <Badge variant="primary" className="mb-2">Tahap 1: Calon DPS (Data Pemilih Saat Ini)</Badge>
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Daftar Pemilih Sementara (DPS) Pilkades Kalisalak
+          Daftar Calon DPS Pilkades Kalisalak
         </h1>
         <div className="flex justify-center mt-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
@@ -149,7 +149,7 @@ export const DpsTable: React.FC = () => {
           </span>
         </div>
         <p className="text-sm text-slate-500 mt-2">
-          Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal • Total DPS: <strong>{totalDps.toLocaleString("id-ID")} Pemilih</strong>
+          Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal • Total Calon DPS: <strong>{totalDps.toLocaleString("id-ID")} Pemilih</strong>
         </p>
       </div>
 

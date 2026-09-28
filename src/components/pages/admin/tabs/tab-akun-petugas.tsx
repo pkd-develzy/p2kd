@@ -552,7 +552,7 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
       <Card className="p-5 bg-white border border-rose-100 shadow-xs rounded-3xl space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-0.5 min-w-0">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 text-rose-700">
+            <h2 className="text-sm font-bold flex items-center gap-1.5 text-rose-700">
               <LogOut className="w-4 h-4" />
               Keluar Sesi Akun
             </h2>

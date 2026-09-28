@@ -108,7 +108,7 @@ export const FieldBottomNav: React.FC<FieldBottomNavProps> = ({
               >
                 <Icon className="w-5 h-5" />
               </div>
-              <span className="text-[10px] tracking-tight mt-0.5 font-bold truncate max-w-[65px] text-center">
+              <span className="text-[10px] tracking-tight mt-0.5 font-bold truncate max-w-16 text-center">
                 {tab.label}
               </span>
             </button>

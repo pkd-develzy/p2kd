@@ -288,7 +288,7 @@ export const KetentuanPemilihContent: React.FC = () => {
             </p>
           </Card>
 
-          <Card className="p-4 bg-white border border-emerald-200 bg-emerald-50/20 rounded-2xl shadow-xs space-y-2">
+          <Card className="p-4 border border-emerald-200 bg-emerald-50/20 rounded-2xl shadow-xs space-y-2">
             <Badge variant="success" className="text-[10px] font-black">
               5. DPT FINAL
             </Badge>

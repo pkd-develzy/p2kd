@@ -35,6 +35,15 @@ export const AdminLoginForm: React.FC = () => {
 
   const [rememberedAccount, setRememberedAccount] = useState<RememberedAccount | null>(() => {
     if (typeof window === "undefined") return null;
+    const isRevoked = new URLSearchParams(window.location.search).get("revoked") === "1";
+    if (isRevoked) {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_user_data");
+      localStorage.removeItem("p2kd_remembered_account");
+      localStorage.removeItem("p2kd_app_locked");
+      sessionStorage.removeItem("admin_token");
+      return null;
+    }
     try {
       const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
       if (rememberedRaw) {
@@ -49,6 +58,8 @@ export const AdminLoginForm: React.FC = () => {
 
   const [username, setUsername] = useState(() => {
     if (typeof window === "undefined") return "";
+    const isRevoked = new URLSearchParams(window.location.search).get("revoked") === "1";
+    if (isRevoked) return "";
     try {
       const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
       if (rememberedRaw) {
@@ -100,6 +111,16 @@ export const AdminLoginForm: React.FC = () => {
   // Auto-restore session on mount if NOT locked and no remembered account prompt required
   React.useEffect(() => {
     if (typeof window === "undefined") return;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("revoked") === "1") {
+      toast.error(
+        "Sesi Berakhir",
+        "Sesi login Anda telah dicabut oleh Developer Pusat. Silakan masuk kembali."
+      );
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
     const isLocked = localStorage.getItem("p2kd_app_locked") === "true";
     const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
     const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
@@ -121,7 +142,7 @@ export const AdminLoginForm: React.FC = () => {
         );
       } catch {}
     }
-  }, [router]);
+  }, [router, toast]);
 
   const handleSwitchAccount = () => {
     if (typeof window !== "undefined") {

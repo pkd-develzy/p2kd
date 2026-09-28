@@ -726,6 +726,52 @@ class SystemDataStore {
     tpsCounts: {} as Record<string, { total: number; laki: number; perempuan: number }>,
   };
 
+  // Global Session Invalidation Epoch (Unix timestamp in seconds)
+  private sessionRevocationEpoch: number = 0;
+
+  public getSessionRevocationEpoch(): number {
+    return this.sessionRevocationEpoch;
+  }
+
+  public setSessionRevocationEpoch(epoch: number): void {
+    if (epoch > this.sessionRevocationEpoch) {
+      this.sessionRevocationEpoch = epoch;
+    }
+  }
+
+  public async revokeAllSessions(byUser: string, byUsername: string, ipAddress = "127.0.0.1"): Promise<number> {
+    const epoch = Math.floor(Date.now() / 1000);
+    this.sessionRevocationEpoch = epoch;
+
+    const auditItem = this.addAuditLog({
+      user: byUser,
+      role: "DEVELOPER",
+      aksi: "REVOKE_ALL_SESSIONS",
+      entity: "KEAMANAN_SISTEM",
+      target: "Semua Sesi Login Pengguna",
+      detail: `Developer ${byUser} (@${byUsername}) mengeluarkan seluruh sesi login aktif semua anggota dari sistem.`,
+      ipAddress,
+    });
+
+    try {
+      await SupabaseDbService.getServer3Client().from("audit_logs").insert({
+        id: auditItem.id,
+        user_name: byUser,
+        role: "DEVELOPER",
+        aksi: "REVOKE_ALL_SESSIONS",
+        entity: "KEAMANAN_SISTEM",
+        target: "Semua Sesi Login Pengguna",
+        detail: auditItem.detail,
+        ip_address: ipAddress,
+        created_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn("Gagal menyimpan audit log revoke ke Supabase Server 3:", err);
+    }
+
+    return epoch;
+  }
+
   private constructor() {
     // Defer initial sync to next event tick so circular imports (supabase-db <-> data-store) initialize safely
     if (typeof setTimeout !== "undefined") {
@@ -776,7 +822,16 @@ class SystemDataStore {
         if (res.data.tpsVoteCounts) this.tpsVoteCounts = res.data.tpsVoteCounts;
         if (res.data.aduanList) this.aduanList = res.data.aduanList;
         if (res.data.pengumumanList) this.pengumumanList = res.data.pengumumanList;
-        if (res.data.auditLogs) this.auditLogs = res.data.auditLogs;
+        if (res.data.auditLogs) {
+          this.auditLogs = res.data.auditLogs;
+          const revokeLog = this.auditLogs.find((l) => l.aksi === "REVOKE_ALL_SESSIONS");
+          if (revokeLog && revokeLog.createdAt) {
+            const epoch = Math.floor(new Date(revokeLog.createdAt).getTime() / 1000);
+            if (!isNaN(epoch) && epoch > this.sessionRevocationEpoch) {
+              this.sessionRevocationEpoch = epoch;
+            }
+          }
+        }
         if (res.data.tahapanState) this.tahapanState = res.data.tahapanState;
         if (res.data.webConfig) this.webConfig = { ...this.webConfig, ...res.data.webConfig };
         if (res.data.petugasDptList) this.petugasDptList = res.data.petugasDptList;

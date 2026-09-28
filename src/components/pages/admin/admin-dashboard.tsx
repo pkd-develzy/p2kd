@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -229,6 +229,13 @@ export const AdminDashboard: React.FC = () => {
     userParam.toLowerCase() === "developer" ||
     computedUserRole === "DEVELOPER" ||
     (storedUser?.role || "").toUpperCase() === "DEVELOPER";
+
+  const isDeveloperRef = useRef(isDeveloper);
+  useEffect(() => {
+    isDeveloperRef.current = isDeveloper;
+  }, [isDeveloper]);
+
+  const handleLogoutRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
   const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "export", "print", "tps"];
@@ -953,6 +960,23 @@ export const AdminDashboard: React.FC = () => {
             if (prev.some((l) => l.id === newLog.id)) return prev;
             return [newLog, ...prev];
           });
+
+          // Invalidate active session immediately across all devices if global revocation event received
+          if (row.aksi === "REVOKE_ALL_SESSIONS") {
+            if (!isDeveloperRef.current) {
+              toast.error(
+                "Sesi Berakhir",
+                "Sesi login Anda telah dicabut oleh Developer Pusat. Mengalihkan..."
+              );
+              setTimeout(() => {
+                if (handleLogoutRef.current) {
+                  void handleLogoutRef.current();
+                } else {
+                  router.replace("/admin?revoked=1");
+                }
+              }, 1200);
+            }
+          }
         }
       )
       .subscribe();
@@ -971,7 +995,7 @@ export const AdminDashboard: React.FC = () => {
       supabaseServer3.removeChannel(channelServer3);
       supabaseServer3.removeChannel(channelAuditInstant);
     };
-  }, [canAccessVoterDataUI, userContext, fetchData]);
+  }, [canAccessVoterDataUI, userContext, fetchData, toast, router]);
 
   // Dedicated fast 10s auto-refresh polling when viewing Audit Trail (Ensures 100% Realtime WIB updates)
   useEffect(() => {
@@ -1092,6 +1116,10 @@ export const AdminDashboard: React.FC = () => {
       router.replace("/admin");
     }
   };
+
+  useEffect(() => {
+    handleLogoutRef.current = handleLogout;
+  });
 
   // --- CRUD HANDLERS (OPTIMISTIC & ASYNCHRONOUS BACKGROUND SYNC) ---
   const handleSaveNewVoter = (e: React.FormEvent) => {
@@ -1840,6 +1868,7 @@ export const AdminDashboard: React.FC = () => {
               currentUser={currentUser}
               onRefresh={() => fetchData()}
               onDeleteAnggota={handleDeleteAnggota}
+              isDeveloper={isDeveloper}
             />
           )}
 

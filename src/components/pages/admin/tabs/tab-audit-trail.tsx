@@ -22,9 +22,13 @@ import {
   Smartphone,
   Globe,
   LayoutGrid,
+  UserX,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge, PaginationControl } from "@/components/ui";
+import { useToast } from "@/hooks/use-toast";
+import { useConfirm } from "@/hooks/use-confirm";
+import { ConfirmDialog } from "@/components/ui/dialog";
 import { AuditLog } from "../types";
 import {
   GDRIVE_CONFIG,
@@ -47,6 +51,9 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
   onRefresh,
   isLoading = false,
 }) => {
+  const toast = useToast();
+  const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
+  const [isRevokingSessions, setIsRevokingSessions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
@@ -317,6 +324,53 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
     }
   };
 
+  const handleRevokeAllSessions = async () => {
+    const approved = await confirm({
+      title: "Keluarkan Semua Sesi Pengguna?",
+      message:
+        "Tindakan ini akan menghentikan seluruh sesi login aktif semua anggota panitia di seluruh perangkat secara serentak. Semua pengguna wajib login kembali dengan kredensial mereka. Sesi Developer Anda akan tetap aktif.",
+      confirmText: "Keluarkan Semua Sesi",
+      cancelText: "Batal",
+      variant: "danger",
+    });
+
+    if (!approved) return;
+
+    setIsRevokingSessions(true);
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+          : null;
+      const res = await fetch("/api/admin/auth/revoke-all", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        if (json.data?.token) {
+          localStorage.setItem("admin_token", json.data.token);
+          sessionStorage.setItem("admin_token", json.data.token);
+        }
+        toast.success(
+          "Seluruh Sesi Dikeluarkan",
+          json.message || "Seluruh sesi login pengguna berhasil diputus secara massal."
+        );
+        if (onRefresh) onRefresh();
+      } else {
+        toast.error("Gagal", json.message || "Terjadi kesalahan saat memutus sesi.");
+      }
+    } catch {
+      toast.error("Gagal Jaringan", "Tidak dapat terhubung ke server.");
+    } finally {
+      setIsRevokingSessions(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Hero Header with GDrive 48-Hour Integration */}
@@ -445,6 +499,22 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
                     {expiredLogs.length}
                   </span>
                 )}
+              </button>
+
+              {/* Developer Master Action: Revoke All User Sessions */}
+              <button
+                onClick={handleRevokeAllSessions}
+                disabled={isRevokingSessions}
+                type="button"
+                className="px-3.5 py-2.5 sm:py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md cursor-pointer disabled:opacity-50"
+                title="Keluarkan seluruh sesi login aktif semua pengguna dari sistem secara massal"
+              >
+                {isRevokingSessions ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-white" />
+                ) : (
+                  <UserX className="w-3.5 h-3.5 text-rose-200" />
+                )}
+                <span>{isRevokingSessions ? "Mengeluarkan Sesi..." : "Keluarkan Semua Sesi"}</span>
               </button>
             </div>
 
@@ -869,6 +939,13 @@ export const TabAuditTrail: React.FC<TabAuditTrailProps> = ({
             text: "Webhook Google Apps Script berhasil dihubungkan! File backup sekarang akan otomatis terkirim dan langsung muncul di folder Google Drive.",
           });
         }}
+      />
+      {/* Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={isConfirmOpen}
+        options={confirmOptions}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
       />
     </div>
   );

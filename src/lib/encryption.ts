@@ -12,6 +12,7 @@ export interface AuthTokenPayload {
   assignedTps: string;
   isSuperAdmin: boolean;
   exp: number; // unix timestamp in seconds
+  iat?: number; // unix timestamp in seconds of token issuance
 }
 
 /**
@@ -145,9 +146,10 @@ export function verifyPassword(plain: string, storedHashOrPlain: string): boolea
  * Generates a signed cryptographic HMAC SHA-256 session token.
  * Token structure: base64Url(payload) . signature
  */
-export function generateAuthToken(payload: Omit<AuthTokenPayload, "exp">, expiresInSeconds = 172800): string {
-  const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
-  const fullPayload: AuthTokenPayload = { ...payload, exp };
+export function generateAuthToken(payload: Omit<AuthTokenPayload, "exp" | "iat">, expiresInSeconds = 172800): string {
+  const now = Math.floor(Date.now() / 1000);
+  const exp = now + expiresInSeconds;
+  const fullPayload: AuthTokenPayload = { iat: now, ...payload, exp };
 
   const payloadEncoded = Buffer.from(JSON.stringify(fullPayload)).toString("base64url");
   const secret = getJwtSecret();

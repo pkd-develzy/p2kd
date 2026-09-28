@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyAuthToken, AuthTokenPayload } from "./encryption";
+import { dataStore } from "./data-store";
 
 export interface SessionVerificationResult {
   authenticated: boolean;
@@ -51,6 +52,23 @@ export function verifyAdminSession(req: Request): SessionVerificationResult {
           success: false,
           code: "INVALID_SESSION",
           message: "Akses Ditolak: Sesi Anda telah berakhir atau tanda tangan token tidak valid. Silakan login kembali.",
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // Check if session was revoked globally by developer
+  const minValidEpoch = dataStore.getSessionRevocationEpoch();
+  const tokenIat = payload.iat || 0;
+  if (minValidEpoch > 0 && tokenIat > 0 && tokenIat < minValidEpoch) {
+    return {
+      authenticated: false,
+      response: NextResponse.json(
+        {
+          success: false,
+          code: "SESSION_REVOKED",
+          message: "Akses Ditolak: Sesi login Anda telah dikeluarkan oleh Developer. Silakan masuk kembali.",
         },
         { status: 401 }
       ),

@@ -29,6 +29,7 @@ import {
   Award,
   Upload,
   Camera,
+  UserX,
 } from "lucide-react";
 import { AnggotaP2KD, SeksiP2KDType, TPSItem } from "../types";
 import { useToast } from "@/hooks/use-toast";
@@ -46,6 +47,7 @@ interface TabAnggotaP2KDProps {
   currentUser: string;
   onRefresh: () => void;
   onDeleteAnggota?: (agt: AnggotaP2KD) => Promise<boolean>;
+  isDeveloper?: boolean;
 }
 
 export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
@@ -57,6 +59,7 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
   currentUser,
   onRefresh,
   onDeleteAnggota,
+  isDeveloper = false,
 }) => {
   const toast = useToast();
   const { confirm, isOpen: isConfirmOpen, options: confirmOptions, handleConfirm, handleCancel } = useConfirm();
@@ -137,6 +140,54 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
 
   // Copy state helper
   const [copiedUser, setCopiedUser] = useState<string | null>(null);
+  const [isRevokingSessions, setIsRevokingSessions] = useState(false);
+
+  const handleRevokeAllSessions = async () => {
+    const approved = await confirm({
+      title: "Keluarkan Semua Sesi Pengguna?",
+      message:
+        "Tindakan ini akan menghentikan seluruh sesi login aktif semua anggota panitia di seluruh perangkat secara serentak. Semua pengguna wajib login kembali dengan kredensial mereka. Sesi Developer Anda akan tetap aktif.",
+      confirmText: "Keluarkan Semua Sesi",
+      cancelText: "Batal",
+      variant: "danger",
+    });
+
+    if (!approved) return;
+
+    setIsRevokingSessions(true);
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+          : null;
+      const res = await fetch("/api/admin/auth/revoke-all", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        if (json.data?.token) {
+          localStorage.setItem("admin_token", json.data.token);
+          sessionStorage.setItem("admin_token", json.data.token);
+        }
+        toast.success(
+          "Seluruh Sesi Dikeluarkan",
+          json.message || "Seluruh sesi login pengguna berhasil diputus secara massal."
+        );
+        onRefresh();
+      } else {
+        toast.error("Gagal", json.message || "Terjadi kesalahan saat memutus sesi.");
+      }
+    } catch {
+      toast.error("Gagal Jaringan", "Tidak dapat terhubung ke server.");
+    } finally {
+      setIsRevokingSessions(false);
+    }
+  };
 
   const allSeksiOptions: Array<{ value: SeksiP2KDType; label: string; role: string }> = [
     { value: "PIMPINAN", label: "Pimpinan P2KD (Ketua/Sekretaris/Bendahara)", role: "SUPER_ADMIN" },
@@ -492,8 +543,26 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
             </p>
           </div>
 
-          {canManage && (
-            <div className="flex items-center gap-2.5 shrink-0 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full sm:w-auto">
+            {isDeveloper && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleRevokeAllSessions}
+                disabled={isRevokingSessions}
+                className="text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-md rounded-2xl py-2.5 px-4 w-full sm:w-auto justify-center"
+                title="Keluarkan seluruh sesi login aktif semua anggota dari seluruh perangkat"
+              >
+                {isRevokingSessions ? (
+                  <RefreshCw className="w-4 h-4 mr-1.5 animate-spin" />
+                ) : (
+                  <UserX className="w-4 h-4 mr-1.5" />
+                )}
+                <span>{isRevokingSessions ? "Mengeluarkan..." : "Keluarkan Semua Sesi"}</span>
+              </Button>
+            )}
+
+            {canManage && (
               <Button
                 variant="primary"
                 size="sm"
@@ -503,8 +572,8 @@ export const TabAnggotaP2KD: React.FC<TabAnggotaP2KDProps> = ({
                 <UserPlus className="w-4 h-4 mr-1.5" />
                 Tambah Anggota Seksi / Petugas
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </Card>
 

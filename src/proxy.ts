@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { verifyAuthToken } from "@/lib/encryption";
+import { dataStore } from "@/lib/data-store";
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -8,7 +10,11 @@ export function proxy(req: NextRequest) {
   // 1. If accessing login page (/admin) while already having a valid admin_token, redirect to dashboard
   if (pathname === "/admin") {
     if (adminToken) {
-      return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+      const payload = verifyAuthToken(adminToken);
+      const minValid = dataStore.getSessionRevocationEpoch();
+      if (payload && (!minValid || (payload.iat && payload.iat >= minValid))) {
+        return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+      }
     }
   }
 
@@ -18,6 +24,16 @@ export function proxy(req: NextRequest) {
       const loginUrl = new URL("/admin", req.url);
       loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+    const payload = verifyAuthToken(adminToken);
+    const minValid = dataStore.getSessionRevocationEpoch();
+    if (!payload || (minValid > 0 && payload.iat && payload.iat < minValid)) {
+      const loginUrl = new URL("/admin", req.url);
+      loginUrl.searchParams.set("from", pathname);
+      loginUrl.searchParams.set("revoked", "1");
+      const res = NextResponse.redirect(loginUrl);
+      res.cookies.delete("admin_token");
+      return res;
     }
   }
 

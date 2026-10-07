@@ -87,9 +87,9 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Sinkronkan ke Struktur Anggota P2KD & Akun Kredensial jika LOLOS atau DITETAPKAN
+    // Sinkronkan ke Struktur Anggota P2KD & Akun Kredensial HANYA JIKA DITETAPKAN (Resmi menjadi Petugas Pantarlih)
     let accountInfo: { username: string; isNew: boolean; plainPassword?: string; role?: string } | null = null;
-    if (updated.status === "LOLOS" || updated.status === "DITETAPKAN") {
+    if (updated.status === "DITETAPKAN") {
       try {
         const syncResult = await dataStore.syncPetugasToAnggota(updated, operatorName);
         accountInfo = {
@@ -101,13 +101,32 @@ export async function PUT(req: Request) {
       } catch (syncErr) {
         console.warn("Auto-sync ke Anggota P2KD gagal:", syncErr);
       }
+    } else if (updated.status === "TMS" || updated.status === "TIDAK_LOLOS") {
+      // Jika status ditolak/TMS, nonaktifkan akun panitia jika sebelumnya pernah terdaftar
+      try {
+        const cleanNik = updated.nik ? updated.nik.replace(/\D/g, "") : "";
+        const cleanWa = updated.nomorWa ? updated.nomorWa.replace(/\D/g, "") : "";
+        const existingAgt = dataStore.getAnggotaList().find((a) => {
+          const matchNik = cleanNik.length === 16 && a.nik && a.nik.replace(/\D/g, "") === cleanNik;
+          const matchWa = cleanWa.length >= 9 && a.kontakWa && a.kontakWa.replace(/\D/g, "") === cleanWa;
+          const matchName = a.namaLengkap.trim().toLowerCase() === updated.namaLengkap.trim().toLowerCase();
+          return matchNik || matchWa || matchName;
+        });
+        if (existingAgt && existingAgt.seksi === "PANTARLIH_LAPANGAN") {
+          await dataStore.updateAnggota(existingAgt.id, { status: "NONAKTIF" }, operatorName);
+        }
+      } catch (deactErr) {
+        console.warn("Deaktivasi akun petugas gagal:", deactErr);
+      }
     }
 
     const customMessage = accountInfo
       ? accountInfo.isNew
-        ? `Pendaftar ${updated.namaLengkap} berstatus ${updated.status}. Otomatis dimasukkan ke Struktur Anggota P2KD & dibuatkan akun dengan username: '${accountInfo.username}' (Password: '${accountInfo.plainPassword}').`
-        : `Data pendaftar ${updated.namaLengkap} diperbarui (${updated.status}). Akun Anggota P2KD aktif: '${accountInfo.username}'.`
-      : `Data pendaftar ${updated.namaLengkap} berhasil diperbarui.`;
+        ? `Petugas ${updated.namaLengkap} resmi DITETAPKAN. Otomatis dimasukkan ke Struktur Anggota P2KD & dibuatkan akun dengan username: '${accountInfo.username}' (Password: '${accountInfo.plainPassword}').`
+        : `Data penugasan petugas ${updated.namaLengkap} diperbarui (${updated.status}). Akun Anggota P2KD aktif: '${accountInfo.username}'.`
+      : updated.status === "LOLOS"
+      ? `Pendaftar ${updated.namaLengkap} dinyatakan LOLOS seleksi administrasi (Calon Petugas). Menunggu penetapan resmi untuk aktivasi akun.`
+      : `Data pendaftar ${updated.namaLengkap} berhasil diperbarui (${updated.status}).`;
 
     return NextResponse.json({
       success: true,

@@ -157,8 +157,8 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
         throw new Error(json.message || "Gagal memperbarui foto profil.");
       }
 
-      setCurrentFoto(compressedDataUrl);
-      toast.success("Foto Diperbarui", "Foto profil akun Anda berhasil disimpan.");
+      setCurrentFoto(json.data?.fotoUrl || compressedDataUrl);
+      toast.success("Foto Tersimpan", "Foto profil akun Anda berhasil disimpan ke Cloudinary.");
       if (onRefresh) onRefresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Terjadi kesalahan saat memproses foto profil.";

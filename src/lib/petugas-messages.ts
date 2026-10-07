@@ -25,7 +25,7 @@ export function getDefaultCatatanPanitia(status: PetugasStatus, assignedWilayah?
     case "PERLU_KLARIFIKASI":
       return "Mohon hadir ke Sekretariat P2KD Desa Kalisalak (Balai Desa) atau menghubungi panitia untuk klarifikasi berkas dan konfirmasi data kependudukan/integritas.";
     case "LOLOS":
-      return `Selamat! Anda dinyatakan Lolos Seleksi Administrasi sebagai Calon Petugas Pantarlih Wilayah ${wilayahStr} Desa Kalisalak. Wajib mengunduh aplikasi resmi P2KD Mobile (.APK v2.25.01) untuk persiapan Bimtek.`;
+      return `Selamat! Anda dinyatakan Lolos Seleksi Administrasi sebagai Calon Petugas Pantarlih Wilayah ${wilayahStr} Desa Kalisalak. Silakan pantau pengumuman resmi penetapan petugas dan jadwal Bimtek berikutnya di portal resmi.`;
     case "DITETAPKAN":
       return `Selamat! Anda RESMI DITETAPKAN sebagai Petugas Pantarlih Wilayah ${wilayahStr} Pilkades Kalisalak 2026/2027. Wajib mengunduh aplikasi P2KD Mobile (.APK v2.25.01) dan bergabung ke Grup Telegram Petugas.`;
     case "TIDAK_LOLOS":
@@ -67,20 +67,17 @@ export function generatePetugasWhatsAppMessage(
       return (
         `Yth. Bpk/Ibu *${namaFormatted}*,\n\n` +
         `KABAR BAIK! Panitia Pemilihan Kepala Desa (P2KD) Kalisalak 2026/2027 mengumumkan bahwa berkas pendaftaran Petugas Pendataan DPT Anda (No. Reg: *${nomorRegistrasi}*) secara resmi dinyatakan:\n\n` +
-        `*STATUS: LOLOS SELEKSI ADMINISTRASI*\n\n` +
-        `*Rincian Wilayah Penugasan:*\n` +
-        `- Jabatan: Calon Petugas Pemutakhiran Data Pemilih (Pantarlih)\n` +
+        `*STATUS: LOLOS SELEKSI ADMINISTRASI (CALON PETUGAS)*\n\n` +
+        `*Rincian Wilayah Alokasi:*\n` +
+        `- Calon Jabatan: Petugas Pemutakhiran Data Pemilih (Pantarlih)\n` +
         `- Wilayah Tugas: *${wilayahStr}*\n` +
         `- Lingkup Desa: Desa Kalisalak, Kec. Margasari, Kab. Tegal\n\n` +
         `*Catatan Panitia:*\n${catatanPanitia || "Berkas administrasi dan surat pernyataan integritas lengkap serta memenuhi syarat."}\n\n` +
-        `*Langkah Selanjutnya (Wajib Bagi Petugas):*\n` +
-        `1. *WAJIB MENGUNDUH APLIKASI RESMI P2KD MOBILE (.APK v2.25.01)*:\n` +
-        `Seluruh petugas pantarlih wajib mengunduh aplikasi operasional lapangan untuk persiapan Bimtek dan Coklit:\n` +
-        `>> *Link Unduh APK Langsung:*\n` +
-        `${P2KD_APK_URL}\n\n` +
-        `2. Pantau jadwal penetapan resmi dan bimbingan teknis (Bimtek) coklit lapangan secara berkala di portal:\n` +
+        `*Informasi Tahapan Selanjutnya:*\n` +
+        `1. Berkas administrasi Anda telah memenuhi syarat. Saat ini Panitia sedang menyusun Keputusan Penetapan Resmi Petugas Pantarlih se-Desa Kalisalak.\n` +
+        `2. Pantau jadwal pengumuman penetapan resmi dan bimbingan teknis (Bimtek) coklit lapangan secara berkala di portal resmi:\n` +
         `https://www.p2kdkalisalak.my.id/daftarpantarlih\n\n` +
-        `Terima kasih atas kesiapan dan dedikasi Anda.\n` +
+        `Terima kasih atas partisipasi dan kesiapan Anda.\n` +
         `_Panitia P2KD Desa Kalisalak_`
       );
 

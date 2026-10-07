@@ -4,21 +4,18 @@ import React, { useState } from "react";
 import {
   Search,
   Plus,
-  Edit,
-  ArrowRightLeft,
-  UserX,
-  Trash2,
   Users,
   UserCheck,
   RotateCcw,
   CheckSquare,
   Square,
-  CheckCircle2,
   LayoutGrid,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge, PaginationControl } from "@/components/ui";
 import { Voter, TPSItem } from "../types";
+import { VirtualVoterTable } from "@/features/pemilih/components/virtual-voter-table";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface TabMasterPemilihProps {
   mode?: "DPS" | "DPT";
@@ -63,6 +60,15 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedStage, setSelectedStage] = useState<"SEMUA" | "CALON_DPS" | "DPS" | "DPSHP" | "DPSHP_AKHIR">("SEMUA");
+
+  // Local debounced search for ultra-smooth 60 FPS input experience
+  const [localSearch, setLocalSearch] = useState(searchTerm);
+  const debouncedSearch = useDebounce(localSearch, 300);
+
+  // Sync debounced search back to parent
+  React.useEffect(() => {
+    setSearchTerm(debouncedSearch);
+  }, [debouncedSearch, setSearchTerm]);
 
   // 1. Filter by Mode (DPS vs DPT)
   const modeFilteredVoters = voters.filter((v) => {
@@ -117,8 +123,8 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
     }
 
     // Search Query (NIK, Nama, KK, RT/RW, Alamat)
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase().trim();
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase().trim();
       const matchName = v.namaLengkap.toLowerCase().includes(q);
       const matchNik = v.nik.includes(q);
       const matchKk = v.kk ? v.kk.includes(q) : false;
@@ -387,13 +393,13 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
             <input
               type="text"
               placeholder={`Cari nama, NIK, No. KK, atau alamat di ${mode === "DPT" ? "DPT" : "DPS"}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
               className="w-full h-10 pl-9 pr-4 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
             />
-            {searchTerm && (
+            {localSearch && (
               <button
-                onClick={() => setSearchTerm("")}
+                onClick={() => setLocalSearch("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-bold"
               >
                 ✕
@@ -476,187 +482,65 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
       {/* Table of Voters */}
       <Card className="overflow-hidden bg-white border-slate-200 shadow-sm rounded-2xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider">
-                <th className="py-3 px-3 w-10 text-center">
-                  <button
-                    onClick={handleSelectAllPaged}
-                    title="Pilih Semua di Halaman Ini"
-                    className="p-1 text-slate-500 hover:text-slate-800"
-                  >
-                    {pagedVoters.length > 0 && pagedVoters.every((v) => selectedIds.includes(v.id)) ? (
-                      <CheckSquare className="w-4 h-4 text-blue-600" />
-                    ) : (
-                      <Square className="w-4 h-4 text-slate-400" />
-                    )}
-                  </button>
-                </th>
-                <th className="py-3 px-3 w-12 text-center">No</th>
-                <th className="py-3 px-4">NIK (Sensor Proteksi)</th>
-                <th className="py-3 px-4">Nama Lengkap & JK</th>
-                <th className="py-3 px-4">Wilayah / Domisili</th>
-                <th className="py-3 px-4">Wilayah RW</th>
-                <th className="py-3 px-4 text-center">Status Tahap</th>
-                <th className="py-3 px-4 text-center">Aksi Petugas</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-800 font-medium">
-              {filteredVoters.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Users className="w-8 h-8 text-slate-300" />
-                      <div>
-                        Tidak ada data pemilih yang berada di <strong>{mode === "DPT" ? "DPT" : "Calon DPS"}</strong> untuk kriteria pencarian ini.
-                      </div>
-                      {mode === "DPT" && (
-                        <p className="text-xs text-slate-400">
-                          Silakan verifikasi data dari menu <strong>1.1 Calon DPS (Data Pemilih Saat Ini)</strong> terlebih dahulu.
-                        </p>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                pagedVoters.map((p, idx) => {
-                  const isSelected = selectedIds.includes(p.id);
-                  const rtNum = (p.rt || "01").replace(/\D/g, "").padStart(2, "0");
-                  const rwNum = (p.rw || "01").replace(/\D/g, "").padStart(2, "0");
-                  // Wilayah RW selalu sinkron mengikuti wilayah / domisili RW pemilih
-                  const wilayahRwDisplay = `Wilayah RW ${rwNum}`;
-                  const maskedNikDisplay = p.nikMasked || (p.nik ? `${p.nik.slice(0, 1)}*************${p.nik.slice(-2)}` : "****************");
-                  const maskedKkDisplay = p.kk ? `${p.kk.slice(0, 1)}*************${p.kk.slice(-2)}` : "-";
-                  const isLaki = String(p.jenisKelamin).toUpperCase().startsWith("L");
+          <div className="min-w-225">
+            {/* Header */}
+            <div className="flex items-center bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-xs py-3">
+              <div className="w-10 text-center shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSelectAllPaged}
+                  title="Pilih Semua di Halaman Ini"
+                  className="p-1 text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  {pagedVoters.length > 0 && pagedVoters.every((v) => selectedIds.includes(v.id)) ? (
+                    <CheckSquare className="w-4 h-4 text-blue-600" />
+                  ) : (
+                    <Square className="w-4 h-4 text-slate-400" />
+                  )}
+                </button>
+              </div>
+              <div className="w-12 text-center shrink-0">No</div>
+              <div className="w-44 px-3 shrink-0">NIK (Sensor Proteksi)</div>
+              <div className="flex-1 min-w-45 px-3">Nama Lengkap & JK</div>
+              <div className="w-36 px-3 shrink-0">Wilayah / Domisili</div>
+              <div className="w-32 px-3 shrink-0 text-center">Wilayah RW</div>
+              <div className="w-32 px-3 shrink-0 text-center">Status Tahap</div>
+              <div className="w-36 px-3 shrink-0 text-center">Aksi Petugas</div>
+            </div>
 
-                  return (
-                    <tr
-                      key={p.id}
-                      className={`hover:bg-slate-50/80 transition-colors ${
-                        isSelected ? "bg-blue-50/60" : ""
-                      }`}
-                    >
-                      <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={() => handleToggleSelect(p.id)}
-                          className="p-1 text-slate-500 hover:text-slate-800"
-                        >
-                          {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-blue-600" />
-                          ) : (
-                            <Square className="w-4 h-4 text-slate-300" />
-                          )}
-                        </button>
-                      </td>
-                      <td className="py-3 px-3 text-center text-slate-400 font-semibold">{startIdx + idx + 1}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                        {maskedNikDisplay}
-                        <div className="text-[10px] text-slate-400 font-normal">KK: {maskedKkDisplay}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{p.namaLengkap}</div>
-                        <div className="text-[10px] text-slate-500">
-                          {isLaki ? "Laki-laki" : "Perempuan"} • Lahir: {p.tempatLahir}, {p.tanggalLahir}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-semibold text-slate-900">RT {rtNum} / RW {rwNum}</div>
-                        <div className="text-[10px] text-slate-500">Desa Kalisalak</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge variant="primary" className="text-[11px] font-bold">
-                          {wilayahRwDisplay}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        {p.statusAktif === "AKTIF" ? (
-                          mode === "DPT" ? (
-                            <Badge variant="success" className="text-[10px] font-bold">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Sah di DPT
-                            </Badge>
-                          ) : (
-                            <Badge variant="warning" className="text-[10px] font-bold">
-                              Draft DPS
-                            </Badge>
-                          )
-                        ) : (
-                          <Badge variant="danger" className="text-[10px]">
-                            TMS ({p.alasanTms || "TIDAK MEMENUHI"})
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Verifikasi Masuk DPT (in DPS mode) */}
-                          {mode === "DPS" && onPromoteToDpt && p.statusAktif === "AKTIF" && (
-                            <button
-                              onClick={() => onPromoteToDpt([p.id])}
-                              title="Verifikasi & Pindahkan Masuk ke DPT"
-                              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-300 transition-colors"
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          {/* Kembalikan ke DPS (in DPT mode) */}
-                          {mode === "DPT" && onRollbackToDps && (
-                            <button
-                              onClick={() => onRollbackToDps([p.id])}
-                              title="Kembalikan ke DPS (Perbaikan Data)"
-                              className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-300 transition-colors"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          {/* Koreksi Data */}
-                          <button
-                            onClick={() => onOpenEditVoter(p)}
-                            title="Koreksi Data"
-                            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Mutasi RW */}
-                          <button
-                            onClick={() => onOpenMutasi(p)}
-                            title="Pindah Wilayah RW"
-                            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-colors"
-                          >
-                            <ArrowRightLeft className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* TMS */}
-                          {p.statusAktif === "AKTIF" && (
-                            <button
-                              onClick={() => onOpenTms(p)}
-                              title="Tandai TMS (Meninggal/Pindah)"
-                              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 transition-colors"
-                            >
-                              <UserX className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-
-                          {/* Hapus */}
-                          {isAdmin && (
-                            <button
-                              onClick={() => onDeleteVoter(p)}
-                              title="Hapus Permanen (Superadmin)"
-                              className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:bg-rose-100 hover:text-rose-800 hover:border-rose-400 transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+            {/* Virtualized Table Body */}
+            {filteredVoters.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <Users className="w-8 h-8 text-slate-300" />
+                  <div>
+                    Tidak ada data pemilih yang berada di <strong>{mode === "DPT" ? "DPT" : "Calon DPS"}</strong> untuk kriteria pencarian ini.
+                  </div>
+                  {mode === "DPT" && (
+                    <p className="text-xs text-slate-400">
+                      Silakan verifikasi data dari menu <strong>1.1 Calon DPS (Data Pemilih Saat Ini)</strong> terlebih dahulu.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <VirtualVoterTable
+                voters={pagedVoters}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onOpenEditVoter={onOpenEditVoter}
+                onOpenMutasi={onOpenMutasi}
+                onOpenTms={onOpenTms}
+                onDeleteVoter={onDeleteVoter}
+                onPromoteToDpt={onPromoteToDpt}
+                onRollbackToDps={onRollbackToDps}
+                isAdmin={isAdmin}
+                startIdx={startIdx}
+                mode={mode}
+                height={540}
+              />
+            )}
+          </div>
         </div>
 
         <div className="px-4 pb-4">

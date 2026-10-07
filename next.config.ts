@@ -7,9 +7,10 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2592000, // 30 hari
   },
+  reactCompiler: true,
   experimental: {
     cpus: 2,
-    optimizePackageImports: ["lucide-react", "framer-motion"],
+    optimizePackageImports: ["lucide-react", "framer-motion", "@tanstack/react-virtual", "@tanstack/react-query"],
   },
   async headers() {
     return [

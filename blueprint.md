@@ -1,6 +1,6 @@
-Berikut blueprint yang saya sarankan. Saya buat dengan prinsip bahwa **data pemilih adalah satu master data**, sedangkan DPS/DPT merupakan tahapan/status administrasi yang memiliki riwayat dan dapat diaudit.
-
 # BLUEPRINT SISTEM PENDAFTARAN PEMILIH
+
+Berikut blueprint yang saya sarankan. Saya buat dengan prinsip bahwa **data pemilih adalah satu master data**, sedangkan DPS/DPT merupakan tahapan/status administrasi yang memiliki riwayat dan dapat diaudit.
 
 ## 1. Visi Sistem
 
@@ -50,7 +50,7 @@ Arsitektur:
 
 ---
 
-# 2. Arsitektur Data Utama
+## 
 
 Prinsip terpenting:
 
@@ -85,7 +85,7 @@ Karena cara kedua menghasilkan duplikasi dan menyulitkan audit.
 
 ---
 
-# 3. Struktur Database
+## 
 
 Saya sarankan database dibagi menjadi beberapa kelompok.
 
@@ -159,7 +159,7 @@ Kabupaten
 
 ---
 
-# 4. Tahapan Pemilihan
+## 
 
 ### `tahapan`
 
@@ -196,7 +196,7 @@ Ini memungkinkan sistem mengetahui **tahapan aktif saat ini**.
 
 ---
 
-# 5. Riwayat Status Pemilih
+## 
 
 ### `pendaftaran_pemilih`
 
@@ -238,7 +238,7 @@ Semua riwayat tetap tersimpan.
 
 ---
 
-# 6. Perubahan Data
+## 
 
 ### `perubahan_pemilih`
 
@@ -281,7 +281,7 @@ Tanggal:
 
 ---
 
-# 7. Mutasi Pemilih
+## 
 
 ### `mutasi_pemilih`
 
@@ -310,7 +310,7 @@ PINDAH_TPS
 
 ---
 
-# 8. Pemilih TMS
+## 
 
 Tidak perlu menghapus pemilih.
 
@@ -350,7 +350,7 @@ Data identitas tetap tersimpan untuk kebutuhan audit.
 
 ---
 
-# 9. Aduan Masyarakat
+## 
 
 ### `aduan_pemilih`
 
@@ -388,7 +388,7 @@ Pengurus menerima laporan → melakukan verifikasi → jika benar, memasukkan ke
 
 ---
 
-# 10. User dan Role
+## 
 
 ### `users`
 
@@ -425,7 +425,7 @@ VIEWER
 
 ---
 
-# 11. Permission
+## 
 
 Jangan hanya menggunakan role.
 
@@ -472,7 +472,7 @@ Kemudian role mendapatkan permission.
 
 ---
 
-# 12. Matriks Role
+## 
 
 | Modul          | Ketua | Admin | Verifikator | Operator | Viewer |
 | -------------- | ----: | ----: | ----------: | -------: | -----: |
@@ -492,7 +492,7 @@ Kemudian role mendapatkan permission.
 
 ---
 
-# 13. Portal Publik
+## 
 
 Menu:
 
@@ -536,7 +536,7 @@ TPS
 
 ---
 
-# 14. Cek Hak Pilih
+## 
 
 Jangan menggunakan pencarian nama bebas sebagai mekanisme utama.
 
@@ -567,7 +567,7 @@ NIK lengkap jangan ditampilkan kembali.
 
 ---
 
-# 15. Portal Publik Tidak Boleh Membocorkan Database
+## 
 
 API publik tidak boleh mengembalikan:
 
@@ -594,7 +594,7 @@ Bahkan endpoint publik sebaiknya tidak bisa dipakai untuk melakukan enumeration 
 
 ---
 
-# 16. Portal Private
+## 
 
 Sidebar:
 
@@ -635,7 +635,7 @@ PENGATURAN
 
 ---
 
-# 17. Dashboard Private
+## 
 
 Dashboard harus menjadi pusat monitoring.
 
@@ -681,7 +681,7 @@ TPS 004     53
 
 ---
 
-# 18. Workflow Utama DPS → DPT
+## 
 
 Ini bagian inti sistem.
 
@@ -724,7 +724,7 @@ Ini bagian inti sistem.
 
 ---
 
-# 19. Tahap 1 — Import Data Awal
+## 
 
 Admin dapat:
 
@@ -763,7 +763,7 @@ Validasi minimal:
 
 ---
 
-# 20. Tahap 2 — Penyusunan DPS
+## 
 
 Operator memilih:
 
@@ -790,7 +790,7 @@ DPS kemudian dapat:
 
 ---
 
-# 21. Tahap 3 — Masa Perbaikan DPS
+## 
 
 Semua perubahan masuk ke workflow.
 
@@ -814,7 +814,7 @@ Tidak boleh operator langsung mengubah data final tanpa jejak.
 
 ---
 
-# 22. Tahap 4 — Pemilih Tambahan
+## 
 
 Pemilih baru:
 
@@ -836,7 +836,7 @@ Masuk daftar sesuai tahapan
 
 ---
 
-# 23. Tahap 5 — TMS
+## 
 
 Jika ditemukan pemilih yang tidak memenuhi syarat:
 
@@ -858,7 +858,7 @@ Contoh alasan harus mengikuti regulasi yang berlaku, bukan dibuat sembarangan ol
 
 ---
 
-# 24. Tahap 6 — Finalisasi
+## 
 
 Sebelum DPT ditetapkan, sistem menampilkan checklist validasi:
 
@@ -887,7 +887,7 @@ FINALISASI DPT
 
 ---
 
-# 25. Tahap 7 — DPT Lock
+## 
 
 Setelah ditetapkan:
 
@@ -915,7 +915,7 @@ Audit
 
 ---
 
-# 26. Audit Log
+## 
 
 Setiap operasi penting dicatat.
 
@@ -947,7 +947,7 @@ Artinya operator tidak dapat menghapus riwayat.
 
 ---
 
-# 27. Keamanan Data
+## 
 
 Ini bagian yang harus dianggap sebagai fitur inti, bukan tambahan.
 
@@ -990,7 +990,7 @@ jika user tidak memiliki permission.
 
 ---
 
-# 28. Perlindungan NIK
+## 
 
 NIK adalah data yang sangat sensitif untuk sistem ini.
 
@@ -1016,7 +1016,7 @@ Untuk portal publik, tampilkan data seminimal mungkin.
 
 ---
 
-# 29. Rate Limiting
+## 
 
 Endpoint:
 
@@ -1039,7 +1039,7 @@ Tambahkan CAPTCHA/challenge bila diperlukan berdasarkan pola serangan.
 
 ---
 
-# 30. Database Backup
+## 
 
 Minimal:
 
@@ -1054,7 +1054,7 @@ Dan jangan menyimpan satu-satunya backup pada server yang sama.
 
 ---
 
-# 31. Soft Delete
+## 
 
 Untuk data administratif:
 
@@ -1078,7 +1078,7 @@ daripada delete permanen.
 
 ---
 
-# 32. Import / Export
+## 
 
 Menu:
 
@@ -1103,7 +1103,7 @@ Export data sensitif harus membutuhkan permission.
 
 ---
 
-# 33. Cetak Dokumen
+## 
 
 Sistem sebaiknya bisa menghasilkan:
 
@@ -1129,7 +1129,7 @@ Print
 
 ---
 
-# 34. Relasi Database
+## 
 
 Gambaran sederhananya:
 
@@ -1139,7 +1139,6 @@ users
   ├─────────────── audit_logs
   │
   └─────────────── perubahan_pemilih
-
 
 pemilih
   │
@@ -1154,11 +1153,9 @@ pemilih
   │
   └────────────── aduan_pemilih
 
-
 wilayah
   │
   └────────────── tps
-
 
 roles
   │
@@ -1167,7 +1164,7 @@ roles
 
 ---
 
-# 35. Struktur Aplikasi
+## 
 
 Jika menggunakan stack yang Anda biasa gunakan:
 
@@ -1212,7 +1209,7 @@ features/
 
 ---
 
-# 36. URL/Route
+## 
 
 Portal publik:
 
@@ -1256,13 +1253,13 @@ Portal private:
 
 ---
 
-# 37. UI/UX
+## 
 
 Saya sarankan desainnya bukan seperti aplikasi pemerintahan lama yang penuh tabel dan tombol.
 
 Gunakan:
 
-**Clean Administrative SaaS**
+### Clean Administrative SaaS
 
 Karakter:
 
@@ -1300,7 +1297,7 @@ Contoh:
 
 ---
 
-# 38. Prinsip Bisnis Utama
+## 
 
 Sistem harus memiliki aturan yang tegas:
 
@@ -1324,7 +1321,7 @@ Sistem harus memiliki aturan yang tegas:
 
 ---
 
-# 39. Bentuk Akhir Sistem
+## 
 
 Dengan blueprint ini, sistem akhirnya akan menjadi:
 

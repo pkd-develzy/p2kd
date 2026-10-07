@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
@@ -7,8 +6,6 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { supabase, supabaseSeksi1, supabaseServer3 } from "@/lib/supabase";
-import { getAutoTabungByRtRw } from "@/lib/kalisalak-wilayah";
-import { clearDeviceSessionCache } from "@/lib/secure-device-cache";
 import { EncryptedLocalDb } from "@/lib/encrypted-local-db";
 import {
   LocalPemilihRepository,
@@ -18,7 +15,7 @@ import {
 } from "@/lib/local-repositories";
 import { SyncEngine, SyncProgress } from "@/lib/sync-engine";
 import { ModalSyncProgress } from "./modals/modal-sync-progress";
-import { RefreshCw, Lock, KeyRound, Eye, EyeOff, ArrowRight, LogOut } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 import {
   Voter,
@@ -26,7 +23,6 @@ import {
   TPSItem,
   AuditLog,
   DbStatus,
-  VoterFormData,
   TabType,
   AnggotaP2KD,
   SeksiP2KDType,
@@ -36,30 +32,52 @@ import { PublicWebConfig, getAnggotaHierarchyRank } from "@/lib/data-store";
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
 
+import dynamic from "next/dynamic";
+
 import { TabDashboardOverview } from "./tabs/tab-dashboard-overview";
 import { TabMasterPemilih } from "./tabs/tab-master-pemilih";
 import { TabCoklitLapangan } from "./tabs/tab-coklit-lapangan";
 import { TabMasterTPS } from "./tabs/tab-master-tps";
 import { TabAduanWarga } from "./tabs/tab-aduan-warga";
-import { TabPrintCenter } from "./tabs/tab-print-center";
 import { TabFinalisasiDPT } from "./tabs/tab-finalisasi-dpt";
-import { TabRekapEkspor } from "./tabs/tab-rekap-ekspor";
-import { TabAuditTrail } from "./tabs/tab-audit-trail";
 import { TabAnggotaP2KD } from "./tabs/tab-anggota-p2kd";
 import { TabPengaturanWeb } from "./tabs/tab-pengaturan-web";
 import { TabPetugasDpt } from "./tabs/tab-petugas-dpt";
-import { TabManajemenBerita } from "./tabs/tab-manajemen-berita";
 import { TabCalonKades } from "./tabs/tab-calon-kades";
 import { TabAkunPetugas } from "./tabs/tab-akun-petugas";
 
-import { ModalVoterForm } from "./modals/modal-voter-form";
+// Code-split heavy modules via next/dynamic to minimize initial bundle footprint
+const TabPrintCenter = dynamic(
+  () => import("./tabs/tab-print-center").then((m) => m.TabPrintCenter),
+  { ssr: false, loading: () => <div className="p-8 text-center text-slate-400 text-sm font-semibold">Memuat Modul Cetak Dokumen...</div> }
+);
+const TabRekapEkspor = dynamic(
+  () => import("./tabs/tab-rekap-ekspor").then((m) => m.TabRekapEkspor),
+  { ssr: false, loading: () => <div className="p-8 text-center text-slate-400 text-sm font-semibold">Memuat Rekap Ekspor...</div> }
+);
+const TabAuditTrail = dynamic(
+  () => import("./tabs/tab-audit-trail").then((m) => m.TabAuditTrail),
+  { ssr: false, loading: () => <div className="p-8 text-center text-slate-400 text-sm font-semibold">Memuat Audit Trail...</div> }
+);
+const TabManajemenBerita = dynamic(
+  () => import("./tabs/tab-manajemen-berita").then((m) => m.TabManajemenBerita),
+  { ssr: false, loading: () => <div className="p-8 text-center text-slate-400 text-sm font-semibold">Memuat Manajemen Berita...</div> }
+);
+const FloatingQrVerifier = dynamic(
+  () => import("./widgets/floating-qr-verifier").then((m) => m.FloatingQrVerifier),
+  { ssr: false }
+);
+
 import { ModalTms } from "./modals/modal-tms";
 import { ModalMutasi } from "./modals/modal-mutasi";
 import { ModalTpsForm } from "./modals/modal-tps-form";
 import { ModalForceChangePassword } from "./modals/modal-force-change-password";
-import { FloatingQrVerifier } from "./widgets/floating-qr-verifier";
 import { FieldBottomNav } from "./field-bottom-nav";
-import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
+import { AdminLockScreen } from "@/features/auth/components/admin-lock-screen";
+import { performSecureLogout } from "@/features/auth/services/auth-cleanup.service";
+import { ModalVoterFormRHF } from "@/features/pemilih/components/modal-voter-form-rhf";
+import { VoterFormValues } from "@/features/pemilih/schemas/voter.schema";
+import { useDashboardUIStore } from "@/stores/use-dashboard-ui-store";
 
 export const AdminDashboard: React.FC = () => {
   const searchParams = useSearchParams();
@@ -256,7 +274,28 @@ export const AdminDashboard: React.FC = () => {
 
   const handleLogoutRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-  const [activeTab, setActiveTab] = useState<TabType>(defaultInitialTab);
+  const {
+    activeTab,
+    setActiveTab,
+    isSidebarOpen,
+    setSidebarOpen,
+    isScannerOpen,
+    setScannerOpen,
+    searchTerm,
+    setSearchTerm,
+    selectedTpsFilter,
+    setSelectedTpsFilter,
+    selectedStatusFilter,
+    setSelectedStatusFilter,
+    selectedAduanFilter,
+    setSelectedAduanFilter,
+    currentCoklitTps,
+    setCurrentCoklitTps,
+  } = useDashboardUIStore();
+
+  const setIsSidebarOpen = setSidebarOpen;
+  const setIsScannerOpen = setScannerOpen;
+
   const allowedFieldTabs: TabType[] = ["coklit", "pemilih", "dpt", "akun"];
   const voterDataTabs: TabType[] = ["pemilih", "dpt", "coklit", "petugas_dpt", "aduan", "lock", "export"];
 
@@ -269,12 +308,6 @@ export const AdminDashboard: React.FC = () => {
     effectiveActiveTab = "coklit";
   }
 
-  const [currentCoklitTps, setCurrentCoklitTps] = useState(() => {
-    if (canManageAllWilayah) return "SEMUA";
-    return assignedTps;
-  });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Instant Offline / Browser Restart Cache Loader
@@ -307,15 +340,6 @@ export const AdminDashboard: React.FC = () => {
   const [isDptLocked, setIsDptLocked] = useState<boolean>(() => Boolean(initialCache?.isDptLocked));
   const [lockHashSignature, setLockHashSignature] = useState<string>(() => initialCache?.lockHashSignature || "");
   const [nomorBeritaAcara, setNomorBeritaAcara] = useState<string>(() => initialCache?.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026");
-
-  // Filter States: Default to SEMUA for universal coordinators (Seksi 1, Ketua, Developer), or assigned RW for field Pantarlih
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTpsFilter, setSelectedTpsFilter] = useState(() => {
-    if (isFieldOfficer && assignedTps && assignedTps !== "SEMUA") return assignedTps;
-    return "SEMUA";
-  });
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState("SEMUA");
-  const [selectedAduanFilter, setSelectedAduanFilter] = useState("SEMUA");
 
   // User Security Context & Encrypted Namespace
   const userContext = React.useMemo(() => ({
@@ -410,75 +434,12 @@ export const AdminDashboard: React.FC = () => {
     }
     return false;
   });
-  const [unlockPassword, setUnlockPassword] = useState("");
-  const [isUnlocking, setIsUnlocking] = useState(false);
-  const [showUnlockPassword, setShowUnlockPassword] = useState(false);
-  const [unlockTurnstileToken, setUnlockTurnstileToken] = useState<string>("");
-  const unlockTurnstileRef = React.useRef<TurnstileShieldHandle>(null);
-
   const handleLockScreen = useCallback(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("p2kd_app_locked", "true");
     }
     setIsAppLocked(true);
-    setUnlockPassword("");
-    setUnlockTurnstileToken("");
-    unlockTurnstileRef.current?.reset();
   }, []);
-
-  const handleQuickUnlock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!unlockPassword.trim()) {
-      toast.warning("Kata Sandi Wajib", "Silakan masukkan kata sandi akun Anda.");
-      return;
-    }
-
-    if (!unlockTurnstileToken) {
-      toast.warning("Verifikasi Keamanan", "Silakan selesaikan centang verifikasi Cloudflare Turnstile.");
-      return;
-    }
-
-    setIsUnlocking(true);
-    try {
-      const res = await fetch("/api/admin/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: userParam,
-          password: unlockPassword.trim(),
-          turnstileToken: unlockTurnstileToken,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setIsAppLocked(false);
-        setUnlockPassword("");
-        setUnlockTurnstileToken("");
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("p2kd_app_locked");
-          const now = Date.now();
-          localStorage.setItem("p2kd_last_activity", now.toString());
-          lastActivityRef.current = now;
-          if (data.data?.token) {
-            localStorage.setItem("admin_token", data.data.token);
-            sessionStorage.setItem("admin_token", data.data.token);
-          }
-        }
-        toast.success("Kunci Terbuka", "Selamat datang kembali di dashboard.");
-      } else {
-        toast.error("Gagal Buka Kunci", data.message || "Kata sandi salah.");
-        unlockTurnstileRef.current?.reset();
-        setUnlockTurnstileToken("");
-      }
-    } catch {
-      toast.error("Gagal", "Tidak dapat terhubung ke server.");
-      unlockTurnstileRef.current?.reset();
-      setUnlockTurnstileToken("");
-    } finally {
-      setIsUnlocking(false);
-    }
-  };
 
   // --- 30-Minute Inactivity Auto-Lock Security (Proteksi Otomatis Sesi Inaktif) ---
   const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 Menit
@@ -636,7 +597,7 @@ export const AdminDashboard: React.FC = () => {
   // Instant 0ms RW Filter Switch (Pure Local In-Memory Filtering)
   const handleSelectTpsFilter = useCallback((newTps: string) => {
     setSelectedTpsFilter(newTps);
-  }, []);
+  }, [setSelectedTpsFilter]);
 
   // Modal States
   const [showAddVoterModal, setShowAddVoterModal] = useState(false);
@@ -699,23 +660,6 @@ export const AdminDashboard: React.FC = () => {
       roleParam.toLowerCase() === "petugas_tps" ||
       roleParam.toLowerCase() === "pps");
 
-  // Form State for Add / Edit Voter
-  const [voterForm, setVoterForm] = useState<VoterFormData>({
-    nik: "",
-    kk: "",
-    namaLengkap: "",
-    tempatLahir: "",
-    tanggalLahir: "",
-    jenisKelamin: "L",
-    statusPerkawinan: "S",
-    alamat: "",
-    rt: "",
-    rw: "",
-    tps: "",
-    statusAktif: "AKTIF",
-    alasanTms: "",
-  });
-
   // Fetch dashboard metadata manually when triggered
   const fetchData = useCallback(async () => {
     try {
@@ -765,7 +709,11 @@ export const AdminDashboard: React.FC = () => {
         setWebConfig(dataConfig.data);
       }
 
-      if (resAduan.status === 401 || resTps.status === 401 || resAnggota.status === 401) {
+      const isCompletelyUnauthorized =
+        !token ||
+        (resAduan.status === 401 && resTps.status === 401 && resAnggota.status === 401);
+
+      if (isCompletelyUnauthorized) {
         toast.error("Sesi Berakhir", "Sesi autentikasi Anda telah berakhir. Silakan masuk kembali.");
         router.push("/admin");
         return;
@@ -904,15 +852,19 @@ export const AdminDashboard: React.FC = () => {
 
   // 2. Realtime Background Sync (Supabase Realtime Channel + Smart Visibility-Aware Fallback Polling)
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const handleRemoteChange = () => {
-      if (canAccessVoterDataUI) {
-        void SyncEngine.runIncrementalSync(userContext).then((hasChanges) => {
-          if (hasChanges) {
-            setVoters(LocalPemilihRepository.getAll());
-          }
-        });
-      }
-      void fetchData();
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (canAccessVoterDataUI) {
+          void SyncEngine.runIncrementalSync(userContext).then((hasChanges) => {
+            if (hasChanges) {
+              setVoters(LocalPemilihRepository.getAll());
+            }
+          });
+        }
+        void fetchData();
+      }, 1500);
     };
 
     // A. Supabase Realtime Postgres Changes Channel (All 3 isolated servers)
@@ -1011,6 +963,7 @@ export const AdminDashboard: React.FC = () => {
     }, 180000);
 
     return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
       clearInterval(interval);
       supabase.removeChannel(channelMain);
       supabaseSeksi1.removeChannel(channelSeksi1);
@@ -1103,40 +1056,11 @@ export const AdminDashboard: React.FC = () => {
     return unsub;
   }, [router, toast]);
 
-  // Logout Handler: Wajib menggunakan blok finally untuk menjamin penghapusan cache terenkripsi & kunci
+  // Logout Handler: Menggunakan auth cleanup service yang menjamin penghapusan cache terenkripsi & kunci
   const handleLogout = async () => {
-    try {
-      await fetch("/api/admin/auth/logout", { method: "POST" });
-    } catch {
-      // Abaikan kegagalan jaringan saat logout
-    } finally {
-      // 1. Hapus seluruh ciphertext, sync_state, & session encryption key dari IndexedDB
-      await EncryptedLocalDb.clearSession();
-      await clearDeviceSessionCache();
-
-      // 2. Bersihkan seluruh in-memory local repositories
-      LocalPemilihRepository.clear();
-      LocalTPSRepository.clear();
-      LocalAnggotaRepository.clear();
-      LocalAduanRepository.clear();
-
-      // 3. Hapus token sesi, remembered account, dan cache modul dari browser (Logout penuh mewajibkan username & kata sandi)
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("admin_token");
-        localStorage.removeItem("admin_user_data");
-        localStorage.removeItem("p2kd_admin_dashboard_cache");
-        localStorage.removeItem("p2kd_petugas_dpt_cache");
-        localStorage.removeItem("p2kd_calon_kades_cache");
-        localStorage.removeItem("p2kd_berita_cache");
-        localStorage.removeItem("p2kd_remembered_account");
-        localStorage.removeItem("p2kd_app_locked");
-        localStorage.removeItem("p2kd_last_activity");
-        sessionStorage.removeItem("admin_token");
-      }
-
-      toast.info("Sesi Berakhir", "Anda telah keluar dari Portal Petugas.");
-      router.replace("/admin");
-    }
+    await performSecureLogout();
+    toast.info("Sesi Berakhir", "Anda telah keluar dari Portal Petugas.");
+    router.replace("/admin");
   };
 
   useEffect(() => {
@@ -1144,48 +1068,41 @@ export const AdminDashboard: React.FC = () => {
   });
 
   // --- CRUD HANDLERS (OPTIMISTIC & ASYNCHRONOUS BACKGROUND SYNC) ---
-  const handleSaveNewVoter = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (voterForm.nik.length !== 16) {
-      toast.error("Validasi Gagal", "NIK harus berjumlah 16 digit angka.");
-      return;
-    }
-
+  const handleSaveNewVoter = (values: VoterFormValues) => {
     const tempId = `temp_${Date.now()}`;
-    const maskedNik = `${voterForm.nik.slice(0, 1)}*************${voterForm.nik.slice(-2)}`;
-    const maskedKk = voterForm.kk ? `${voterForm.kk.slice(0, 1)}*************${voterForm.kk.slice(-2)}` : "";
+    const maskedNik = `${values.nik.slice(0, 1)}*************${values.nik.slice(-2)}`;
+    const maskedKk = values.kk ? `${values.kk.slice(0, 1)}*************${values.kk.slice(-2)}` : "";
 
     const optimisticVoter: Voter = {
       id: tempId,
-      nik: voterForm.nik,
+      nik: values.nik,
       nikMasked: maskedNik,
-      kk: voterForm.kk,
+      kk: values.kk || "",
       kkMasked: maskedKk,
-      namaLengkap: voterForm.namaLengkap.trim().toUpperCase(),
-      tempatLahir: voterForm.tempatLahir.trim().toUpperCase(),
-      tanggalLahir: voterForm.tanggalLahir,
-      jenisKelamin: voterForm.jenisKelamin,
-      statusPerkawinan: voterForm.statusPerkawinan,
-      alamat: voterForm.alamat.trim().toUpperCase(),
-      rt: voterForm.rt || "01",
-      rw: voterForm.rw || "01",
+      namaLengkap: values.namaLengkap.trim().toUpperCase(),
+      tempatLahir: values.tempatLahir.trim().toUpperCase(),
+      tanggalLahir: values.tanggalLahir,
+      jenisKelamin: values.jenisKelamin,
+      statusPerkawinan: values.statusPerkawinan,
+      alamat: values.alamat.trim().toUpperCase(),
+      rt: values.rt || "01",
+      rw: values.rw || "01",
       desa: "Kalisalak",
       kecamatan: "Margasari",
-      tps: voterForm.tps || `TPS ${voterForm.rw || "01"}`,
-      statusAktif: voterForm.statusAktif || "AKTIF",
-      alasanTms: voterForm.alasanTms || "",
+      tps: values.tps || `TPS ${values.rw || "01"}`,
+      statusAktif: values.statusAktif || "AKTIF",
+      alasanTms: values.alasanTms || "",
       tahap: "DPS",
       updatedAt: new Date().toISOString(),
     };
 
     // 1. Instant optimistic state & cache update (< 1ms)
-    // 1. Optimistic state & repository update (< 1ms)
     void LocalPemilihRepository.upsert(optimisticVoter, namespace);
     setVoters(LocalPemilihRepository.getAll());
 
     // 2. Immediately close modal & provide instant feedback
     setShowAddVoterModal(false);
-    toast.success("Pemilih Ditambahkan", `Data ${voterForm.namaLengkap} berhasil diproses.`);
+    toast.success("Pemilih Ditambahkan", `Data ${values.namaLengkap} berhasil diproses.`);
 
     // 3. Asynchronous background execution (zero UI delay)
     void (async () => {
@@ -1193,7 +1110,7 @@ export const AdminDashboard: React.FC = () => {
         const res = await fetch("/api/admin/pemilih", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...voterForm, user: currentUser }),
+          body: JSON.stringify({ ...values, user: currentUser }),
         });
         const result = await res.json();
         if (result.success && result.data?.id) {
@@ -1215,45 +1132,28 @@ export const AdminDashboard: React.FC = () => {
 
   const handleOpenEditVoter = (v: Voter) => {
     setActiveVoter(v);
-    const autoTps = getAutoTabungByRtRw(v.rw, v.rt, tpsList);
-    setVoterForm({
-      nik: v.nik,
-      kk: v.kk || "",
-      namaLengkap: v.namaLengkap,
-      tempatLahir: v.tempatLahir,
-      tanggalLahir: v.tanggalLahir,
-      jenisKelamin: v.jenisKelamin,
-      statusPerkawinan: v.statusPerkawinan,
-      alamat: v.alamat,
-      rt: v.rt || "01",
-      rw: v.rw || "01",
-      tps: autoTps || v.tps,
-      statusAktif: v.statusAktif === "TMS" ? "TMS" : "AKTIF",
-      alasanTms: v.alasanTms || "",
-    });
     setShowEditVoterModal(true);
   };
 
-  const handleSaveEditVoter = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveEditVoter = (values: VoterFormValues) => {
     if (!activeVoter) return;
 
     const previousVoter = activeVoter;
     const updatedVoter: Voter = {
       ...activeVoter,
-      nik: voterForm.nik,
-      kk: voterForm.kk,
-      namaLengkap: voterForm.namaLengkap.trim().toUpperCase(),
-      tempatLahir: voterForm.tempatLahir.trim().toUpperCase(),
-      tanggalLahir: voterForm.tanggalLahir,
-      jenisKelamin: voterForm.jenisKelamin,
-      statusPerkawinan: voterForm.statusPerkawinan,
-      alamat: voterForm.alamat.trim().toUpperCase(),
-      rt: voterForm.rt,
-      rw: voterForm.rw,
-      tps: voterForm.tps,
-      statusAktif: voterForm.statusAktif || "AKTIF",
-      alasanTms: voterForm.alasanTms || "",
+      nik: values.nik,
+      kk: values.kk || "",
+      namaLengkap: values.namaLengkap.trim().toUpperCase(),
+      tempatLahir: values.tempatLahir.trim().toUpperCase(),
+      tanggalLahir: values.tanggalLahir,
+      jenisKelamin: values.jenisKelamin,
+      statusPerkawinan: values.statusPerkawinan,
+      alamat: values.alamat.trim().toUpperCase(),
+      rt: values.rt,
+      rw: values.rw,
+      tps: values.tps,
+      statusAktif: values.statusAktif || "AKTIF",
+      alasanTms: values.alasanTms || "",
       updatedAt: new Date().toISOString(),
     };
 
@@ -1263,7 +1163,7 @@ export const AdminDashboard: React.FC = () => {
 
     // 2. Immediately close modal & show success toast
     setShowEditVoterModal(false);
-    toast.success("Data Diperbarui", `Perubahan data ${voterForm.namaLengkap} berhasil disimpan.`);
+    toast.success("Data Diperbarui", `Perubahan data ${values.namaLengkap} berhasil disimpan.`);
 
     // 3. Asynchronous background execution (zero UI delay)
     void (async () => {
@@ -1272,7 +1172,7 @@ export const AdminDashboard: React.FC = () => {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...voterForm,
+            ...values,
             user: currentUser,
             alasan: "Koreksi Data Manual Petugas",
           }),
@@ -1284,7 +1184,7 @@ export const AdminDashboard: React.FC = () => {
           toast.error("Gagal Update di Server", result.message || "Data dikembalikan.");
         }
       } catch (err) {
-        console.error("Background update voter error:", err);
+        console.error("Background edit voter error:", err);
       }
     })();
   };
@@ -1910,22 +1810,7 @@ export const AdminDashboard: React.FC = () => {
               onUpdateCoklitStatus={handleUpdateCoklitStatus}
               onOpenEditVoter={handleOpenEditVoter}
               onOpenAddVoter={() => {
-                const autoTps = getAutoTabungByRtRw("01", "01", tpsList);
-                setVoterForm({
-                  nik: "",
-                  kk: "",
-                  namaLengkap: "",
-                  tempatLahir: "",
-                  tanggalLahir: "",
-                  jenisKelamin: "L",
-                  statusPerkawinan: "S",
-                  alamat: "",
-                  rt: "01",
-                  rw: "01",
-                  tps: autoTps,
-                  statusAktif: "AKTIF",
-                  alasanTms: "",
-                });
+                setActiveVoter(null);
                 setShowAddVoterModal(true);
               }}
               onOpenTms={handleOpenTms}
@@ -1946,22 +1831,7 @@ export const AdminDashboard: React.FC = () => {
               isAdmin={canManageAllWilayah}
               assignedTps={assignedTps}
               onOpenAddVoter={() => {
-                const autoTps = getAutoTabungByRtRw("01", "01", tpsList);
-                setVoterForm({
-                  nik: "",
-                  kk: "",
-                  namaLengkap: "",
-                  tempatLahir: "",
-                  tanggalLahir: "",
-                  jenisKelamin: "L",
-                  statusPerkawinan: "S",
-                  alamat: "",
-                  rt: "01",
-                  rw: "01",
-                  tps: autoTps,
-                  statusAktif: "AKTIF",
-                  alasanTms: "",
-                });
+                setActiveVoter(null);
                 setShowAddVoterModal(true);
               }}
               onOpenEditVoter={handleOpenEditVoter}
@@ -1986,22 +1856,7 @@ export const AdminDashboard: React.FC = () => {
               isAdmin={canManageAllWilayah}
               assignedTps={assignedTps}
               onOpenAddVoter={() => {
-                const autoTps = getAutoTabungByRtRw("01", "01", tpsList);
-                setVoterForm({
-                  nik: "",
-                  kk: "",
-                  namaLengkap: "",
-                  tempatLahir: "",
-                  tanggalLahir: "",
-                  jenisKelamin: "L",
-                  statusPerkawinan: "S",
-                  alamat: "",
-                  rt: "01",
-                  rw: "01",
-                  tps: autoTps,
-                  statusAktif: "AKTIF",
-                  alasanTms: "",
-                });
+                setActiveVoter(null);
                 setShowAddVoterModal(true);
               }}
               onOpenEditVoter={handleOpenEditVoter}
@@ -2137,11 +1992,28 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* --- MODALS --- */}
-      <ModalVoterForm
+      <ModalVoterFormRHF
         isOpen={showAddVoterModal || showEditVoterModal}
         isEdit={showEditVoterModal}
-        voterForm={voterForm}
-        setVoterForm={setVoterForm}
+        initialValues={
+          showEditVoterModal && activeVoter
+            ? {
+                nik: activeVoter.nik,
+                kk: activeVoter.kk || "",
+                namaLengkap: activeVoter.namaLengkap,
+                tempatLahir: activeVoter.tempatLahir,
+                tanggalLahir: activeVoter.tanggalLahir,
+                jenisKelamin: activeVoter.jenisKelamin,
+                statusPerkawinan: activeVoter.statusPerkawinan,
+                alamat: activeVoter.alamat,
+                rt: activeVoter.rt || "01",
+                rw: activeVoter.rw || "01",
+                tps: activeVoter.tps,
+                statusAktif: activeVoter.statusAktif === "TMS" ? "TMS" : "AKTIF",
+                alasanTms: activeVoter.alasanTms || "",
+              }
+            : undefined
+        }
         tpsList={tpsList}
         onClose={() => {
           setShowAddVoterModal(false);
@@ -2170,7 +2042,7 @@ export const AdminDashboard: React.FC = () => {
         activeTps={activeTps}
         setActiveTps={setActiveTps}
         onClose={() => setShowEditTpsModal(false)}
-        onSubmit={async (e) => {
+        onSubmit={async (e: React.FormEvent) => {
           e.preventDefault();
           if (!activeTps) return;
           try {
@@ -2276,108 +2148,18 @@ export const AdminDashboard: React.FC = () => {
 
       {/* 6. Quick Unlock Screen (Native-like App Lock) */}
       {isAppLocked && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
-          <div className="w-full max-w-sm rounded-3xl bg-slate-900/95 border border-white/15 p-6 sm:p-8 shadow-2xl shadow-black/80 space-y-6 text-center animate-in fade-in zoom-in-95 duration-200">
-            {/* User Identity Avatar */}
-            <div className="flex flex-col items-center space-y-3">
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl bg-linear-to-tr from-blue-600 to-indigo-600 p-0.5 shadow-xl">
-                  {dbMatchedMember?.fotoUrl ? (
-                    <img
-                      src={dbMatchedMember.fotoUrl}
-                      alt={computedUserName}
-                      className="w-full h-full rounded-[14px] object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full rounded-[14px] bg-slate-900 flex items-center justify-center text-white font-black text-xl">
-                      {computedUserName.slice(0, 2).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-amber-500 text-slate-950 shadow-md">
-                  <Lock className="w-3.5 h-3.5" />
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-base font-black text-white">{computedUserName}</h3>
-                <p className="text-xs text-blue-300 font-medium">{computedUserJabatan}</p>
-                <div className="flex items-center justify-center gap-1.5 mt-2">
-                  <span className="inline-block text-[10px] text-slate-400 font-mono bg-slate-800/80 px-2 py-0.5 rounded-full border border-slate-700">
-                    @{userParam}
-                  </span>
-                  <span className="inline-block text-[10px] text-amber-300 font-medium bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                    🔒 Terkunci (Inaktif 30m)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Unlock Form */}
-            <form onSubmit={handleQuickUnlock} className="space-y-4">
-              <div className="space-y-1.5 text-left">
-                <label className="block text-[10px] font-black uppercase text-slate-300 tracking-wider">
-                  KATA SANDI AKUN
-                </label>
-                <div className="relative">
-                  <KeyRound className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showUnlockPassword ? "text" : "password"}
-                    autoFocus
-                    required
-                    value={unlockPassword}
-                    onChange={(e) => setUnlockPassword(e.target.value)}
-                    placeholder="Masukkan kata sandi..."
-                    className="w-full h-11 pl-10 pr-11 text-xs font-bold rounded-xl bg-slate-100/95 text-slate-950 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowUnlockPassword(!showUnlockPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
-                    title={showUnlockPassword ? "Sembunyikan" : "Tampilkan"}
-                  >
-                    {showUnlockPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Cloudflare Turnstile Bot Protection */}
-              <div className="pt-1">
-                <CloudflareTurnstileShield
-                  ref={unlockTurnstileRef}
-                  action="login"
-                  isVerified={Boolean(unlockTurnstileToken)}
-                  onVerify={(token) => setUnlockTurnstileToken(token)}
-                  label="Verifikasi Akses Layar Kunci • Turnstile"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isUnlocking || !unlockTurnstileToken}
-                className="w-full h-11 rounded-xl bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isUnlocking ? (
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>Buka Kunci Dashboard</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full text-center text-xs font-semibold text-rose-400 hover:text-rose-300 transition-colors pt-2 cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Keluar Akun Sepenuhnya (Logout)</span>
-              </button>
-            </form>
-          </div>
-        </div>
+        <AdminLockScreen
+          userName={computedUserName}
+          userJabatan={computedUserJabatan}
+          username={userParam}
+          fotoUrl={dbMatchedMember?.fotoUrl}
+          onUnlockSuccess={() => {
+            setIsAppLocked(false);
+            const now = Date.now();
+            lastActivityRef.current = now;
+          }}
+          onLogout={handleLogout}
+        />
       )}
     </div>
   );

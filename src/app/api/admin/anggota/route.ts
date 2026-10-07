@@ -3,6 +3,7 @@ import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession, isDeveloper, isSeksiPemilih } from "@/lib/auth-middleware";
 import { hashPassword, verifyPassword } from "@/lib/encryption";
 import { DEFAULT_INITIAL_PASSWORDS, isInitialDefaultPassword } from "@/lib/password-policy";
+import { uploadImageToCloudinary } from "@/lib/cloudinary";
 
 function checkIsActivated(passwordHash?: string): boolean {
   if (!passwordHash) return false;
@@ -203,6 +204,18 @@ export async function POST(req: Request) {
     const plainPass = password || customPassword || "p2kd2026";
     const passwordHash = hashPassword(plainPass);
 
+    let finalFotoUrl = fotoUrl ? String(fotoUrl).trim() : undefined;
+    if (finalFotoUrl && (finalFotoUrl.startsWith("data:image/") || finalFotoUrl.startsWith("data:application/"))) {
+      try {
+        const upl = await uploadImageToCloudinary(finalFotoUrl, "p2kd_petugas");
+        if (upl?.secure_url) {
+          finalFotoUrl = upl.secure_url;
+        }
+      } catch (uploadErr) {
+        console.error("Gagal mengunggah foto profil anggota baru ke Cloudinary:", uploadErr);
+      }
+    }
+
     const newAnggota = await dataStore.addAnggota(
       {
         namaLengkap: namaLengkap.trim(),
@@ -217,7 +230,7 @@ export async function POST(req: Request) {
         assignedTps: assignedTps || "SEMUA",
         status: status || "AKTIF",
         skPenetapan: skPenetapan || "Keputusan BPD No. 04/BPD-KLS/VII/2026",
-        fotoUrl: fotoUrl || undefined,
+        fotoUrl: finalFotoUrl || undefined,
         passwordHash,
       },
       user.nama || user.username
@@ -290,10 +303,23 @@ export async function PUT(req: Request) {
         );
       }
 
-      const updated = await dataStore.updateAnggota(targetMember.id, { fotoUrl }, userName);
+      let finalFotoUrl = String(fotoUrl).trim();
+      // Opsi A: Backend Auto-Intercept ke Cloudinary jika foto profil berupa Base64
+      if (finalFotoUrl.startsWith("data:image/") || finalFotoUrl.startsWith("data:application/")) {
+        try {
+          const upl = await uploadImageToCloudinary(finalFotoUrl, "p2kd_petugas");
+          if (upl?.secure_url) {
+            finalFotoUrl = upl.secure_url;
+          }
+        } catch (uploadErr) {
+          console.error("Gagal mengunggah foto profil petugas ke Cloudinary:", uploadErr);
+        }
+      }
+
+      const updated = await dataStore.updateAnggota(targetMember.id, { fotoUrl: finalFotoUrl }, userName);
       return NextResponse.json({
         success: true,
-        message: "Foto profil berhasil disimpan.",
+        message: "Foto profil berhasil disimpan ke Cloudinary.",
         data: sanitizeAnggota(updated || targetMember),
       });
     }
@@ -356,6 +382,20 @@ export async function PUT(req: Request) {
     // If updating member fields and new password supplied
     if (customPassword || password) {
       updateFields.passwordHash = hashPassword(customPassword || password);
+    }
+
+    if (updateFields.fotoUrl && typeof updateFields.fotoUrl === "string") {
+      const finalFotoUrl = updateFields.fotoUrl.trim();
+      if (finalFotoUrl.startsWith("data:image/") || finalFotoUrl.startsWith("data:application/")) {
+        try {
+          const upl = await uploadImageToCloudinary(finalFotoUrl, "p2kd_petugas");
+          if (upl?.secure_url) {
+            updateFields.fotoUrl = upl.secure_url;
+          }
+        } catch (uploadErr) {
+          console.error("Gagal mengunggah foto profil anggota ke Cloudinary:", uploadErr);
+        }
+      }
     }
 
     const updated = await dataStore.updateAnggota(id, updateFields, userName);

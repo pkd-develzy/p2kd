@@ -1300,7 +1300,7 @@ export class SupabaseDbService {
   public static async insertPemilihBatch(dataList: MasterPemilih[]) {
     try {
       this.invalidateCache();
-      const chunkSize = 100;
+      const chunkSize = 500;
       for (let i = 0; i < dataList.length; i += chunkSize) {
         const chunk = dataList.slice(i, i + chunkSize);
         const rows = chunk.map((data) => ({
@@ -1322,7 +1322,7 @@ export class SupabaseDbService {
           alasan_tms: data.alasanTms,
           coklit_status: data.coklitStatus || "BELUM_COKLIT",
         }));
-        await this.getSeksi1Client().from("pemilih").insert(rows);
+        await this.getSeksi1Client().from("pemilih").upsert(rows, { onConflict: "nik", ignoreDuplicates: true });
       }
     } catch (err) {
       console.warn("Supabase insertPemilihBatch sync failed:", err);

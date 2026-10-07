@@ -111,6 +111,7 @@ async function migrate() {
     CREATE INDEX IF NOT EXISTS idx_pemilih_status_aktif ON public.pemilih USING btree (status_aktif);
     CREATE INDEX IF NOT EXISTS idx_pemilih_nik ON public.pemilih USING btree (nik);
     CREATE INDEX IF NOT EXISTS idx_pemilih_tahap ON public.pemilih USING btree (tahap);
+    CREATE INDEX IF NOT EXISTS idx_pemilih_updated_at ON public.pemilih USING btree (updated_at);
 
     ALTER TABLE public.tps ENABLE ROW LEVEL SECURITY;
     ALTER TABLE public.pendaftaran_petugas_dpt ENABLE ROW LEVEL SECURITY;

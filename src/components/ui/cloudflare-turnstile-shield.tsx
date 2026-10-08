@@ -209,7 +209,7 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
     return (
       <div className={containerClasses}>
         {/* Cloudflare Widget Render Target */}
-        <div className="flex justify-center items-center w-full max-w-full overflow-hidden min-h-[65px]">
+        <div className="flex justify-center items-center w-full max-w-full overflow-hidden min-h-16.25">
           <div
             ref={containerRef}
             className="flex justify-center items-center w-[300px] max-w-full overflow-hidden [&_iframe]:max-w-full [&_iframe]:rounded-xl transition-transform origin-center scale-95 sm:scale-100 max-[350px]:scale-[0.85]"

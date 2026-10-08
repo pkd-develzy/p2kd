@@ -289,11 +289,11 @@ export const AdminLoginForm: React.FC = () => {
       </header>
 
       {/* Main Container: 2-Column Split Hero Layout */}
-      <main className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-12 py-4 flex-1 flex items-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center w-full">
+      <main className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-12 py-4 flex-1 flex items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center w-full">
           {/* Left Column: Glassmorphism Login Card */}
           <div className="lg:col-span-5 w-full max-w-md mx-auto lg:mx-0">
-            <div className="relative rounded-3xl bg-slate-900/80 border border-white/15 p-6 sm:p-8 backdrop-blur-xl shadow-2xl shadow-black/70 space-y-6">
+            <div className="relative rounded-3xl bg-slate-900/80 border border-white/15 p-5 sm:p-8 backdrop-blur-xl shadow-2xl shadow-black/70 space-y-5 sm:space-y-6 overflow-hidden">
               {/* Card Header */}
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
@@ -365,7 +365,7 @@ export const AdminLoginForm: React.FC = () => {
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="Username / Nama Lengkap / NIK / No. WhatsApp..."
+                        placeholder="Username / NIK / No. WhatsApp..."
                         className="w-full h-12 pl-10 pr-4 text-xs font-bold rounded-2xl bg-slate-100/95 text-slate-950 placeholder:text-slate-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 border-none transition-all shadow-inner"
                       />
                     </div>
@@ -421,6 +421,9 @@ export const AdminLoginForm: React.FC = () => {
                     action="login"
                     isVerified={isSecurityVerified}
                     onVerify={handleTurnstileVerify}
+                    size="flexible"
+                    theme="dark"
+                    variant="dark"
                     label="Verifikasi Akses Panitia Lolos • Cloudflare Turnstile"
                   />
                 </div>

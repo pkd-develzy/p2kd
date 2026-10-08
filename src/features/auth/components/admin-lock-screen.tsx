@@ -149,6 +149,9 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
               action="login"
               isVerified={Boolean(unlockTurnstileToken)}
               onVerify={(token) => setUnlockTurnstileToken(token)}
+              size="flexible"
+              theme="dark"
+              variant="dark"
               label="Verifikasi Akses Layar Kunci • Turnstile"
             />
           </div>

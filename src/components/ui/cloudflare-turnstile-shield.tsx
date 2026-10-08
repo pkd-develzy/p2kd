@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { ShieldCheck, Loader2, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -35,7 +36,10 @@ interface TurnstileShieldProps {
   isVerified?: boolean;
   action?: string;
   size?: "normal" | "compact" | "flexible";
+  theme?: "light" | "dark" | "auto";
+  variant?: "light" | "dark" | "glass";
   label?: string;
+  className?: string;
 }
 
 export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, TurnstileShieldProps>(
@@ -44,8 +48,11 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
       onVerify,
       isVerified = false,
       action = "form_submit",
-      size = "normal",
+      size = "flexible",
+      theme,
+      variant = "light",
       label = "Verifikasi Keamanan Sistem Berhasil • Cloudflare Turnstile",
+      className,
     },
     ref
   ) => {
@@ -58,10 +65,15 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
     }, [onVerify]);
 
     const [loading, setLoading] = useState(true);
+    const [isWidgetMounted, setIsWidgetMounted] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const siteKey =
       process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITEKEY || "";
+
+    const effectiveTheme: "light" | "dark" | "auto" =
+      theme || (variant === "dark" ? "dark" : "auto");
+    const effectiveSize = size || "flexible";
 
     const resetWidget = useCallback(() => {
       if (widgetIdRef.current && window.turnstile) {
@@ -101,12 +113,13 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
           widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: siteKey,
             action,
-            theme: "light",
-            size,
+            theme: effectiveTheme,
+            size: effectiveSize,
             appearance: "always",
             execution: "render",
             callback: (token: string) => {
               if (!isCancelled && token) {
+                setIsWidgetMounted(true);
                 setLoading(false);
                 setError(null);
                 onVerifyRef.current(token);
@@ -127,6 +140,7 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
               }
             },
           });
+          setIsWidgetMounted(true);
           setLoading(false);
         } catch (err) {
           console.error("Turnstile render error:", err);
@@ -180,34 +194,54 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
           widgetIdRef.current = null;
         }
       };
-    }, [siteKey, action, size, resetWidget]);
+    }, [siteKey, action, effectiveTheme, effectiveSize, resetWidget]);
+
+    const containerClasses = cn(
+      "w-full max-w-full overflow-hidden transition-all duration-200",
+      variant === "dark"
+        ? "rounded-2xl border border-white/10 bg-slate-950/60 p-2 sm:p-2.5 shadow-inner backdrop-blur-sm"
+        : variant === "glass"
+        ? "rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-2 sm:p-2.5 shadow-inner"
+        : "rounded-2xl border border-slate-200/90 bg-white p-2 sm:p-2.5 shadow-xs",
+      className
+    );
 
     return (
-      <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-xs">
+      <div className={containerClasses}>
         {/* Cloudflare Widget Render Target */}
-        <div ref={containerRef} className="flex justify-center min-h-16.25" />
+        <div
+          ref={containerRef}
+          className="flex justify-center items-center w-full max-w-full overflow-hidden min-h-[65px] [&_iframe]:max-w-full [&_iframe]:w-full [&_iframe]:rounded-xl"
+        />
 
-        {loading && !isVerified && (
-          <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-500">
-            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+        {!isWidgetMounted && loading && !isVerified && (
+          <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-400">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />
             <span>Menyiapkan proteksi keamanan Cloudflare Turnstile...</span>
           </div>
         )}
 
         {error && (
-          <div className="flex items-center justify-center gap-1.5 py-2 text-xs text-rose-600 font-semibold">
+          <div className="flex items-center justify-center gap-1.5 py-2 text-xs text-rose-500 font-semibold">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {isVerified && (
-          <div className="flex items-center justify-between text-[11px] font-bold text-emerald-700 pt-1.5 px-1 border-t border-slate-100 mt-1">
+          <div
+            className={cn(
+              "flex items-center justify-between text-[11px] font-bold pt-1.5 px-1 border-t mt-1",
+              variant === "dark"
+                ? "text-emerald-400 border-white/10"
+                : "text-emerald-700 border-slate-100"
+            )}
+          >
             <span className="flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              {label}
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>{label}</span>
             </span>
-            <span className="text-[10px] text-slate-400 font-mono">Protected by Turnstile</span>
+            <span className="text-[10px] text-slate-400 font-mono shrink-0">Protected</span>
           </div>
         )}
       </div>

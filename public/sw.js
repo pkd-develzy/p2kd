@@ -7,7 +7,7 @@
  * 4. Bypass transparan untuk API (/api/*) & database queries
  */
 
-const CACHE_NAME = "p2kd-kalisalak-v2.26.00-opt";
+const CACHE_NAME = "p2kd-kalisalak-v2.27.00-opt";
 
 const PRECACHE_ASSETS = [
   "/",
@@ -20,7 +20,7 @@ const PRECACHE_ASSETS = [
   "/icon-192x192.png",
   "/icon-512x512.png",
   "/apple-touch-icon.png",
-  "/logo.svg",
+  "/logo-v2.png",
   "/manifest.json",
 ];
 

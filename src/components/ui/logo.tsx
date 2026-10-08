@@ -38,7 +38,7 @@ export const Logo: React.FC<LogoProps> = ({
     <div className={cn("inline-flex items-center gap-3 select-none", className)}>
       <div className={cn("relative shrink-0 drop-shadow-md transition-transform hover:scale-105", currentSize.class)}>
         <Image
-          src="/logo.svg"
+          src="/logo-v2.png"
           alt="Logo Kabupaten Tegal"
           width={currentSize.width}
           height={currentSize.height}

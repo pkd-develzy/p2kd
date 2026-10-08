@@ -15,7 +15,12 @@ import {
   EyeOff,
   RefreshCw,
   Check,
+  Laptop,
+  Smartphone,
+  ShieldCheck,
+  Trash2,
 } from "lucide-react";
+import { useSessionPresence } from "@/hooks/use-session-presence";
 import { Card } from "@/components/ui/card";
 import { Button, Badge } from "@/components/ui";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -67,6 +72,9 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [isChangingPass, setIsChangingPass] = useState(false);
+
+  // Sesi & Presence Perangkat dari PostgreSQL
+  const { sessions, revokeSession, isRevoking, refetchSessions } = useSessionPresence(userName);
 
   // Password Policy Checks
   const passChecks = {
@@ -546,6 +554,105 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
             <span>{isChangingPass ? "Memvalidasi & Memperbarui..." : "Perbarui Kata Sandi Akun"}</span>
           </Button>
         </form>
+      </Card>
+
+      {/* 3.5. Sesi & Perangkat Terhubung (Multi-Device Presence) */}
+      <Card className="p-5 sm:p-6 bg-white border border-slate-200/90 shadow-sm rounded-3xl space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <h2 className="text-sm sm:text-base font-bold flex items-center gap-2 text-slate-800">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Sesi Perangkat & Status Keaktifan
+            </h2>
+            <p className="text-xs text-slate-500">
+              Database PostgreSQL mencatat seluruh perangkat yang sedang login atau aktif untuk akun ini.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => refetchSessions()}
+            className="p-2 text-slate-400 hover:text-blue-600 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer"
+            title="Muat Ulang Sesi"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-2.5">
+          {sessions.length === 0 ? (
+            <div className="text-center py-6 text-xs text-slate-400 font-medium">
+              Sesi saat ini aktif pada perangkat ini.
+            </div>
+          ) : (
+            sessions.map((sess) => (
+              <div
+                key={sess.id}
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-colors gap-3"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2.5 rounded-xl bg-white border border-slate-200/60 shadow-xs shrink-0 text-slate-700">
+                    {sess.deviceInfo?.toLowerCase().includes("mobile") ||
+                    sess.deviceInfo?.toLowerCase().includes("android") ||
+                    sess.deviceInfo?.toLowerCase().includes("iphone") ? (
+                      <Smartphone className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <Laptop className="w-4 h-4 text-indigo-600" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-800 truncate max-w-50">
+                        {sess.deviceInfo?.split(" ")[0] || "Perangkat Web"}
+                      </span>
+                      {sess.isOnline ? (
+                        <Badge variant="success" className="text-[10px] py-0 px-2 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          ONLINE
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" className="text-[10px] py-0 px-2 text-slate-500">
+                          {sess.status === "ACTIVE" ? "STANDBY" : sess.status}
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      IP: {sess.ipAddress || "127.0.0.1"} • Login:{" "}
+                      {new Date(sess.loginAt).toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {sess.status === "ACTIVE" && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Cabut Sesi Perangkat?",
+                        message: "Perangkat ini akan dipaksa logout dari sistem.",
+                        confirmText: "Ya, Cabut",
+                        variant: "danger",
+                      });
+                      if (ok) {
+                        await revokeSession(sess.sessionId);
+                        toast.success("Sesi Dicabut", "Sesi perangkat telah dinonaktifkan.");
+                      }
+                    }}
+                    disabled={isRevoking}
+                    className="self-end sm:self-center px-3 py-1.5 text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 border border-rose-200"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Cabut Sesi</span>
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </Card>
 
       {/* 4. Keamanan Sesi & Logout */}

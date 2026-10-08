@@ -17,6 +17,7 @@ import {
   getAnggotaHierarchyRank,
 } from "./data-store";
 import { maskNIK, maskKK } from "./encryption";
+import { parseClientSource } from "./utils";
 
 interface SupabaseBeritaRow {
   id: string;
@@ -168,6 +169,9 @@ interface SupabaseAuditRow {
   detail: string;
   ip_address?: string | null;
   created_at?: string | null;
+  user_agent?: string | null;
+  browser?: string | null;
+  device?: string | null;
 }
 
 interface SupabasePengumumanRow {
@@ -442,18 +446,18 @@ export class SupabaseDbService {
         }
 
         const result = {
-          calonDps: Number(dbStats.calon_dps) || 7787,
-          dps: Number(dbStats.dps) || 7787,
-          dpt: Number(dbStats.dpt) || 0,
-          pemilihTambahan: Number(dbStats.pemilih_tambahan) || 0,
-          totalSemua: Number(dbStats.total_pemilih) || 7787,
-          totalAktif: Number(dbStats.total_aktif) || 7787,
-          totalLaki: Number(dbStats.total_laki) || 3933,
-          totalPerempuan: Number(dbStats.total_perempuan) || 3854,
-          totalTms: Number(dbStats.total_tms) || 0,
-          totalDisabilitas: Number(dbStats.total_disabilitas) || 0,
-          coklitSelesai: Number(dbStats.coklit_selesai) || 0,
-          breakdownWilayah: breakdown,
+          calonDps: Number(dbStats.calon_dps ?? 0),
+          dps: Number(dbStats.dps ?? 7787),
+          dpt: Number(dbStats.dpt ?? 0),
+          pemilihTambahan: Number(dbStats.dp_tambahan ?? dbStats.pemilih_tambahan ?? 0),
+          totalSemua: Number(dbStats.total_terdaftar ?? dbStats.total_pemilih ?? 7787),
+          totalAktif: Number(dbStats.total_aktif ?? 7787),
+          totalLaki: Number(dbStats.total_laki ?? 3933),
+          totalPerempuan: Number(dbStats.total_perempuan ?? 3854),
+          totalTms: Number(dbStats.total_tms ?? 0),
+          totalDisabilitas: Number(dbStats.total_disabilitas ?? 0),
+          coklitSelesai: Number(dbStats.coklit_selesai ?? 0),
+          breakdownWilayah: Array.isArray(dbStats.breakdown_tabung) && dbStats.breakdown_tabung.length > 0 ? dbStats.breakdown_tabung : breakdown,
           tpsCounts,
           tpsStats: tpsStatsList,
           updatedAt: dbStats.updated_at,
@@ -818,9 +822,39 @@ export class SupabaseDbService {
             }).replace(/\./g, ":") + " WIB",
           kategori,
           severity,
-          device: "Desktop / Workstation",
-          browser: "Google Chrome 124.0 (x64)",
-          userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) P2KD-SecureBrowser/1.0",
+          device:
+            l.device ||
+            parseClientSource({
+              userAgent: l.user_agent || undefined,
+              browser: l.browser || undefined,
+              device: l.device || undefined,
+              detail: l.detail,
+            }).deviceLabel,
+          browser:
+            l.browser ||
+            (() => {
+              const cs = parseClientSource({
+                userAgent: l.user_agent || undefined,
+                browser: l.browser || undefined,
+                device: l.device || undefined,
+                detail: l.detail,
+              });
+              return cs.isApp
+                ? "Aplikasi Android (APK v2.25.01)"
+                : `${cs.browserName} (${cs.platform})`;
+            })(),
+          userAgent:
+            l.user_agent ||
+            (() => {
+              const cs = parseClientSource({
+                browser: l.browser || undefined,
+                device: l.device || undefined,
+                detail: l.detail,
+              });
+              return cs.isApp
+                ? "P2KDApp/2.25.01 AndroidNative"
+                : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) P2KD-SecureBrowser/1.0";
+            })(),
           signature: `SIG-P2KD-${id.substring(0, 8).toUpperCase()}-IMMUTABLE`,
         };
       });
@@ -1065,7 +1099,10 @@ export class SupabaseDbService {
       const safeLimit = Math.min(1000, Math.max(1, limit));
       let q = this.getSeksi1Client()
         .from("pemilih")
-        .select("*", { count: "exact" })
+        .select(
+          "id, nik, no_kk, nama_lengkap, tempat_lahir, tanggal_lahir, jenis_kelamin, status_perkawinan, alamat, rt, rw, desa, kecamatan, tps, disabilitas, status_aktif, alasan_tms, coklit_status, coklit_tanggal, coklit_catatan, tahap, created_at, updated_at",
+          { count: "exact" }
+        )
         .order("rt")
         .order("no_kk")
         .order("nama_lengkap")
@@ -1228,7 +1265,9 @@ export class SupabaseDbService {
 
       let q = this.getSeksi1Client()
         .from("pemilih")
-        .select("*")
+        .select(
+          "id, nik, no_kk, nama_lengkap, tempat_lahir, tanggal_lahir, jenis_kelamin, status_perkawinan, alamat, rt, rw, desa, kecamatan, tps, disabilitas, status_aktif, alasan_tms, coklit_status, coklit_tanggal, coklit_catatan, tahap, created_at, updated_at"
+        )
         .order("nama_lengkap")
         .limit(limit);
 
@@ -1651,6 +1690,9 @@ export class SupabaseDbService {
         role: log.role,
         detail: log.detail,
         ip_address: log.ipAddress,
+        user_agent: log.userAgent || null,
+        browser: log.browser || null,
+        device: log.device || null,
       });
     } catch (err) {
       console.warn("Supabase insertAuditLog sync failed:", err);

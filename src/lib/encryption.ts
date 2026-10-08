@@ -11,6 +11,7 @@ export interface AuthTokenPayload {
   jabatan?: string;
   assignedTps: string;
   isSuperAdmin: boolean;
+  sessionId?: string;
   exp: number; // unix timestamp in seconds
   iat?: number; // unix timestamp in seconds of token issuance
 }

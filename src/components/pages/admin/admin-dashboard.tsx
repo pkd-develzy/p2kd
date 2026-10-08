@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useSessionPresence } from "@/hooks/use-session-presence";
 import { supabase, supabaseSeksi1, supabaseServer3 } from "@/lib/supabase";
 import { EncryptedLocalDb } from "@/lib/encrypted-local-db";
 import {
@@ -273,6 +274,9 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     isDeveloperRef.current = isDeveloper;
   }, [isDeveloper]);
+
+  // Aktivasi presence & status online session perangkat di PostgreSQL
+  useSessionPresence(currentUser);
 
   const handleLogoutRef = useRef<() => Promise<void>>(() => Promise.resolve());
 

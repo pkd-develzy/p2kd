@@ -8,8 +8,27 @@ import {
 } from "@/lib/local-repositories";
 
 export async function performSecureLogout(): Promise<void> {
+  let sessionId: string | undefined;
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("admin_user_data");
+      sessionId = raw ? JSON.parse(raw).sessionId : localStorage.getItem("p2kd_session_id") || undefined;
+    } catch {}
+  }
+
   try {
-    await fetch("/api/admin/auth/logout", { method: "POST" });
+    const { wipeAllSessionCaches } = await import("@/lib/cache-query-client");
+    await wipeAllSessionCaches(null, sessionId);
+  } catch {
+    // Fallback if dynamic import fails
+  }
+
+  try {
+    await fetch("/api/admin/auth/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId }),
+    });
   } catch {
     // Ignore network error during logout
   } finally {

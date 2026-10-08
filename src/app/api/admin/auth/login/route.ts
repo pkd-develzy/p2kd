@@ -341,6 +341,33 @@ export async function POST(req: Request) {
 
     const effectiveAssignedTps = isSuperAdmin || isSeksiPemilihLogin ? "SEMUA" : (matched.assignedTps || "SEMUA");
 
+    // Generate dedicated session ID & track device session in database
+    const sessionId = "sess_" + crypto.randomUUID().replace(/-/g, "");
+    const deviceId = body.deviceId || "dev_" + crypto.randomUUID().slice(0, 8);
+    
+    const { detectClientAppVersion } = await import("@/lib/app-version");
+    const { parseClientSource } = await import("@/lib/utils");
+    const detectedClient = detectClientAppVersion(userAgent, body.appVersion);
+    const clientSource = parseClientSource({ userAgent });
+
+    const appVersion = body.appVersion || detectedClient.version;
+    const deviceInfo =
+      body.deviceInfo ||
+      (detectedClient.isNativeApk
+        ? `Aplikasi Android APK (${clientSource.platform})`
+        : `${clientSource.browserName} (${clientSource.platform})`);
+
+    const { SessionTracker } = await import("@/lib/session-tracker");
+    await SessionTracker.recordLogin({
+      userId: matched.id || matched.username,
+      username: matched.username,
+      sessionId,
+      deviceId,
+      deviceInfo,
+      ipAddress: clientIp,
+      appVersion,
+    });
+
     const token = generateAuthToken(
       {
         username: matched.username,
@@ -350,6 +377,7 @@ export async function POST(req: Request) {
         jabatan: matched.jabatan,
         assignedTps: effectiveAssignedTps,
         isSuperAdmin,
+        sessionId,
       },
       172800 // 48 hours session
     );
@@ -361,7 +389,7 @@ export async function POST(req: Request) {
       aksi: "LOGIN_SUCCESS",
       entity: "AUTH",
       target: matched.namaLengkap,
-      detail: `Petugas berhasil login ke sistem (${matched.jabatan}).`,
+      detail: `Petugas berhasil login ke sistem (${matched.jabatan}). Sesi: ${sessionId}.`,
       ipAddress: clientIp,
       userAgent,
     });
@@ -387,6 +415,7 @@ export async function POST(req: Request) {
         isSuperAdmin,
         mustChangePassword: isDefault,
         token,
+        sessionId,
       },
     });
 

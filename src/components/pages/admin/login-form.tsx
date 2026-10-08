@@ -175,6 +175,15 @@ export const AdminLoginForm: React.FC = () => {
     setLoading(true);
 
     try {
+      let deviceId = "dev_browser";
+      if (typeof window !== "undefined") {
+        deviceId = localStorage.getItem("p2kd_device_id") || "";
+        if (!deviceId) {
+          deviceId = "dev_" + Math.random().toString(36).substring(2, 10);
+          localStorage.setItem("p2kd_device_id", deviceId);
+        }
+      }
+
       const res = await fetch("/api/admin/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -182,6 +191,12 @@ export const AdminLoginForm: React.FC = () => {
           username: targetUsername,
           password: password.trim(),
           turnstileToken,
+          deviceId,
+          deviceInfo: typeof navigator !== "undefined" ? navigator.userAgent : "Browser",
+          appVersion:
+            typeof navigator !== "undefined" && navigator.userAgent.includes("P2KDApp")
+              ? "2.25.01"
+              : "2.25.01-web",
         }),
       });
 
@@ -202,6 +217,9 @@ export const AdminLoginForm: React.FC = () => {
       if (typeof window !== "undefined" && data.data?.token) {
         localStorage.setItem("admin_token", data.data.token);
         sessionStorage.setItem("admin_token", data.data.token);
+        if (data.data.sessionId) {
+          localStorage.setItem("p2kd_session_id", data.data.sessionId);
+        }
         localStorage.setItem("admin_user_data", JSON.stringify(data.data));
         // Remember account for fast password-only re-entry
         localStorage.setItem(

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Users, FileCheck2, UserCheck, Landmark, MapPinned, ArrowUpRight } from "lucide-react";
+import { Users, FileCheck2, UserCheck, MapPinned, ArrowUpRight } from "lucide-react";
 import { Card, AnimatedCounter } from "@/components/ui";
 
 interface StatsData {
@@ -76,7 +76,6 @@ export const StatsOverview: React.FC = () => {
   const total = data.totalAktif || 0;
   const laki = data.totalLaki || 0;
   const perempuan = data.totalPerempuan || 0;
-  const tps = data.totalTps || 0;
   const rw = data.totalRw || 0;
   const rt = data.totalRt || 0;
 
@@ -131,18 +130,6 @@ export const StatsOverview: React.FC = () => {
       border: "border-teal-200/80 hover:border-teal-400",
     },
     {
-      title: "Tabung Pemilihan",
-      targetValue: tps,
-      renderValue: () => (
-        <AnimatedCounter from={1} to={tps} duration={1200} suffix=" Tabung" />
-      ),
-      renderLabel: () => <span>Wilayah Desa Kalisalak</span>,
-      icon: <Landmark className="w-5 h-5 text-amber-700" />,
-      href: "/tps",
-      bg: "bg-amber-50/70",
-      border: "border-amber-200/80 hover:border-amber-400",
-    },
-    {
       title: "Wilayah Administratif",
       targetValue: rw,
       renderValue: () => (
@@ -173,14 +160,13 @@ export const StatsOverview: React.FC = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-3.5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: i * 0.06 }}
-            className={i === 4 ? "col-span-2 md:col-span-1" : ""}
           >
             <Link href={stat.href}>
               <Card className={`p-3 sm:p-4 transition-all duration-200 bg-white hover:shadow-md cursor-pointer ${stat.border}`}>

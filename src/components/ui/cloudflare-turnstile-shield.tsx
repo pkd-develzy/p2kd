@@ -73,7 +73,7 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
 
     const effectiveTheme: "light" | "dark" | "auto" =
       theme || (variant === "dark" ? "dark" : "auto");
-    const effectiveSize = size || "flexible";
+    const effectiveSize: "normal" | "compact" = size === "compact" ? "compact" : "normal";
 
     const resetWidget = useCallback(() => {
       if (widgetIdRef.current && window.turnstile) {
@@ -209,10 +209,12 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
     return (
       <div className={containerClasses}>
         {/* Cloudflare Widget Render Target */}
-        <div
-          ref={containerRef}
-          className="flex justify-center items-center w-full max-w-full overflow-hidden min-h-[65px] [&_iframe]:max-w-full [&_iframe]:w-full [&_iframe]:rounded-xl"
-        />
+        <div className="flex justify-center items-center w-full max-w-full overflow-hidden min-h-[65px]">
+          <div
+            ref={containerRef}
+            className="flex justify-center items-center w-[300px] max-w-full overflow-hidden [&_iframe]:max-w-full [&_iframe]:rounded-xl transition-transform origin-center scale-95 sm:scale-100 max-[350px]:scale-[0.85]"
+          />
+        </div>
 
         {!isWidgetMounted && loading && !isVerified && (
           <div className="flex items-center justify-center gap-2 py-2 text-xs text-slate-400">

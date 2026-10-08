@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -29,49 +29,48 @@ interface RememberedAccount {
   fotoUrl?: string;
 }
 
+const emptySubscribe = () => () => {};
+
+function getFormattedDateSnapshot(): string {
+  try {
+    return new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date());
+  } catch {
+    return "Pilkades Kalisalak 2027";
+  }
+}
+
+function getStandaloneSnapshot(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in navigator && (navigator as { standalone?: boolean }).standalone === true) ||
+    document.documentElement.classList.contains("is-pwa-app")
+  );
+}
+
 export const AdminLoginForm: React.FC = () => {
   const router = useRouter();
   const toast = useToast();
 
-  const [rememberedAccount, setRememberedAccount] = useState<RememberedAccount | null>(() => {
-    if (typeof window === "undefined") return null;
-    const isRevoked = new URLSearchParams(window.location.search).get("revoked") === "1";
-    if (isRevoked) {
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_user_data");
-      localStorage.removeItem("p2kd_remembered_account");
-      localStorage.removeItem("p2kd_app_locked");
-      sessionStorage.removeItem("admin_token");
-      return null;
-    }
-    try {
-      const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
-      if (rememberedRaw) {
-        const parsed = JSON.parse(rememberedRaw);
-        if (parsed && parsed.username) {
-          return parsed as RememberedAccount;
-        }
-      }
-    } catch {}
-    return null;
-  });
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const currentDateStr = useSyncExternalStore(
+    emptySubscribe,
+    getFormattedDateSnapshot,
+    () => "Pilkades Kalisalak 2027"
+  );
+  const isStandalone = useSyncExternalStore(
+    emptySubscribe,
+    getStandaloneSnapshot,
+    () => false
+  );
 
-  const [username, setUsername] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const isRevoked = new URLSearchParams(window.location.search).get("revoked") === "1";
-    if (isRevoked) return "";
-    try {
-      const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
-      if (rememberedRaw) {
-        const parsed = JSON.parse(rememberedRaw);
-        if (parsed && parsed.username) {
-          return String(parsed.username);
-        }
-      }
-    } catch {}
-    return "";
-  });
-
+  const [rememberedAccount, setRememberedAccount] = useState<RememberedAccount | null>(null);
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -83,65 +82,62 @@ export const AdminLoginForm: React.FC = () => {
     setTurnstileToken(token);
     setIsSecurityVerified(Boolean(token));
   }, []);
-  const [currentDateStr] = useState<string>(() => {
-    try {
-      const now = new Date();
-      return new Intl.DateTimeFormat("id-ID", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }).format(now);
-    } catch {
-      return "Pilkades Kalisalak 2027";
-    }
-  });
 
-  const [isStandalone] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      return (
-        window.matchMedia("(display-mode: standalone)").matches ||
-        ("standalone" in navigator && (navigator as { standalone?: boolean }).standalone === true) ||
-        document.documentElement.classList.contains("is-pwa-app")
-      );
-    }
-    return false;
-  });
+  // Sync client storage and session check after mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (typeof window === "undefined") return;
 
-  // Auto-restore session on mount if NOT locked and no remembered account prompt required
-  React.useEffect(() => {
-    if (typeof window === "undefined") return;
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("revoked") === "1") {
-      toast.error(
-        "Sesi Berakhir",
-        "Sesi login Anda telah dicabut oleh Developer Pusat. Silakan masuk kembali."
-      );
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
-    }
-
-    const isLocked = localStorage.getItem("p2kd_app_locked") === "true";
-    const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
-    const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
-    const storedUserData = localStorage.getItem("admin_user_data");
-
-    // Auto-restore session only if NOT locked and no re-authentication required
-    if (!isLocked && !rememberedRaw && token && storedUserData) {
-      try {
-        const parsed = JSON.parse(storedUserData);
-        const targetRole = (parsed.role || "SUPER_ADMIN").toLowerCase();
-        const targetTps = parsed.assignedTps || "SEMUA";
-        const targetUser = parsed.username || "";
-        const mustChange = Boolean(parsed.mustChangePassword);
-
-        router.replace(
-          `/admin/dashboard?role=${encodeURIComponent(targetRole)}&tps=${encodeURIComponent(
-            targetTps
-          )}&user=${encodeURIComponent(targetUser)}&force_change=${mustChange ? "true" : "false"}`
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("revoked") === "1") {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_user_data");
+        localStorage.removeItem("p2kd_remembered_account");
+        localStorage.removeItem("p2kd_app_locked");
+        sessionStorage.removeItem("admin_token");
+        toast.error(
+          "Sesi Berakhir",
+          "Sesi login Anda telah dicabut oleh Developer Pusat. Silakan masuk kembali."
         );
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
+      try {
+        const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
+        if (rememberedRaw) {
+          const parsed = JSON.parse(rememberedRaw);
+          if (parsed && parsed.username) {
+            setRememberedAccount(parsed as RememberedAccount);
+            setUsername(String(parsed.username));
+          }
+        }
       } catch {}
-    }
+
+      const isLocked = localStorage.getItem("p2kd_app_locked") === "true";
+      const rememberedRaw = localStorage.getItem("p2kd_remembered_account");
+      const token = localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token");
+      const storedUserData = localStorage.getItem("admin_user_data");
+
+      // Auto-restore session only if NOT locked and no re-authentication required
+      if (!isLocked && !rememberedRaw && token && storedUserData) {
+        try {
+          const parsed = JSON.parse(storedUserData);
+          const targetRole = (parsed.role || "SUPER_ADMIN").toLowerCase();
+          const targetTps = parsed.assignedTps || "SEMUA";
+          const targetUser = parsed.username || "";
+          const mustChange = Boolean(parsed.mustChangePassword);
+
+          router.replace(
+            `/admin/dashboard?role=${encodeURIComponent(targetRole)}&tps=${encodeURIComponent(
+              targetTps
+            )}&user=${encodeURIComponent(targetUser)}&force_change=${mustChange ? "true" : "false"}`
+          );
+        } catch {}
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [router, toast]);
 
   const handleSwitchAccount = () => {
@@ -282,9 +278,12 @@ export const AdminLoginForm: React.FC = () => {
         </div>
 
         {/* Live Date Indicator Pill */}
-        <div className="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-white/10 text-xs font-semibold text-amber-300 backdrop-blur-md shadow-lg font-mono">
+        <div 
+          suppressHydrationWarning
+          className="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-white/10 text-xs font-semibold text-amber-300 backdrop-blur-md shadow-lg font-mono"
+        >
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span>{currentDateStr || "Pilkades Kalisalak 2027"}</span>
+          <span suppressHydrationWarning>{currentDateStr || "Pilkades Kalisalak 2027"}</span>
         </div>
       </header>
 
@@ -317,7 +316,7 @@ export const AdminLoginForm: React.FC = () => {
               {/* Login Form */}
               <form onSubmit={handleLogin} className="space-y-4">
                 {/* Username Input or Quick Unlock Card */}
-                {rememberedAccount ? (
+                {mounted && rememberedAccount ? (
                   <div className="p-3.5 rounded-2xl bg-linear-to-r from-blue-950/70 to-slate-900 border border-blue-500/40 flex items-center justify-between shadow-lg">
                     <div className="flex items-center gap-3 overflow-hidden">
                       {rememberedAccount.fotoUrl ? (

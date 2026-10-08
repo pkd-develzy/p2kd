@@ -63,13 +63,19 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   const totalRw = webConfig?.totalRw || 13;
   const totalRt = webConfig?.totalRt || 39;
 
-  // 1. Data Pemilih Metrics (Mengutamakan Live Database Aggregate Stats 7.787)
-  const cloudCount = dbStatus?.cloudStats?.pemilihCount || dbStatus?.localStats?.totalAktif || dbStatus?.localStats?.totalPemilih;
+  // 1. Data Pemilih Metrics (Mengutamakan Live Database Aggregate Stats)
+  const cloudCount = dbStatus?.cloudStats?.pemilihCount ?? dbStatus?.localStats?.totalAktif ?? dbStatus?.localStats?.totalPemilih;
   const activeVoters = voters.filter((v) => v.statusAktif === "AKTIF");
-  const totalAktif = cloudCount || (activeVoters.length > 500 ? activeVoters.length : 7787);
-  const totalLaki = Math.round(totalAktif * 0.505) || 3933;
-  const totalPerempuan = totalAktif - totalLaki || 3854;
-  const totalTms = dbStatus?.localStats?.totalTms || voters.filter((v) => v.statusAktif === "TMS").length;
+  const totalAktif = cloudCount ?? (activeVoters.length > 0 ? activeVoters.length : (dbStatus?.localStats?.totalAktif ?? 0));
+  const countLakiFromVoters = activeVoters.filter((v) => v.jenisKelamin === "L").length;
+  const countPerempuanFromVoters = activeVoters.filter((v) => v.jenisKelamin === "P").length;
+  const totalLaki = countLakiFromVoters > 0
+    ? countLakiFromVoters
+    : (dbStatus?.localStats?.totalLaki ?? (totalAktif > 0 ? Math.round(totalAktif / 2) : 0));
+  const totalPerempuan = countPerempuanFromVoters > 0
+    ? countPerempuanFromVoters
+    : (dbStatus?.localStats?.totalPerempuan ?? (totalAktif > 0 ? totalAktif - totalLaki : 0));
+  const totalTms = dbStatus?.localStats?.totalTms ?? voters.filter((v) => v.statusAktif === "TMS").length;
 
   // 2. Coklit Metrics
   const coklitSelesai = voters.filter(

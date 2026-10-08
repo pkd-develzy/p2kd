@@ -38,8 +38,6 @@ interface TurnstileShieldProps {
   label?: string;
 }
 
-const DEFAULT_SITE_KEY = "0x4AAAAAAEx_igNuBYRNZzT3";
-
 export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, TurnstileShieldProps>(
   (
     {
@@ -63,7 +61,7 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
     const [error, setError] = useState<string | null>(null);
 
     const siteKey =
-      process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITEKEY || DEFAULT_SITE_KEY;
+      process.env.NEXT_PUBLIC_CLOUDFLARE_TURNSTILE_SITEKEY || "";
 
     const resetWidget = useCallback(() => {
       if (widgetIdRef.current && window.turnstile) {
@@ -85,8 +83,14 @@ export const CloudflareTurnstileShield = forwardRef<TurnstileShieldHandle, Turns
     useEffect(() => {
       let isCancelled = false;
 
+      if (!siteKey) {
+        setError("Konfigurasi Cloudflare Turnstile Site Key belum disetel.");
+        setLoading(false);
+        return;
+      }
+
       const renderTurnstile = () => {
-        if (isCancelled || !containerRef.current || !window.turnstile) return;
+        if (isCancelled || !containerRef.current || !window.turnstile || !siteKey) return;
         if (widgetIdRef.current) return;
 
         try {

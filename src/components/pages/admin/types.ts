@@ -130,6 +130,8 @@ export interface DbStatus {
   localStats?: {
     totalPemilih?: number;
     totalAktif?: number;
+    totalLaki?: number;
+    totalPerempuan?: number;
     totalTms?: number;
     totalDps?: number;
     totalDpt?: number;

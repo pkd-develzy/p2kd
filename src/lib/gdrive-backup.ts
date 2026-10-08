@@ -7,9 +7,9 @@
 import { AuditLog } from "@/components/pages/admin/types";
 
 export const GDRIVE_CONFIG = {
-  FOLDER_ID: "1DbuBW3z7N8MdECHc967gJz2G7zRSZ5kk",
-  FOLDER_URL: "https://drive.google.com/drive/folders/1DbuBW3z7N8MdECHc967gJz2G7zRSZ5kk?usp=sharing",
-  DEFAULT_WEBHOOK_URL: "https://script.google.com/macros/s/AKfycbz5r3Fy1d_U5z9UZTtcOUuF9XWaDl5zktNaoRMjmNcy5HtG4J0wd8T3bG065YigVwTA/exec",
+  FOLDER_ID: process.env.NEXT_PUBLIC_GDRIVE_FOLDER_ID || process.env.GDRIVE_FOLDER_ID || "1DbuBW3z7N8MdECHc967gJz2G7zRSZ5kk",
+  FOLDER_URL: process.env.NEXT_PUBLIC_GDRIVE_FOLDER_URL || process.env.GDRIVE_FOLDER_URL || "https://drive.google.com/drive/folders/1DbuBW3z7N8MdECHc967gJz2G7zRSZ5kk?usp=sharing",
+  DEFAULT_WEBHOOK_URL: process.env.GDRIVE_BACKUP_WEBHOOK_URL || process.env.NEXT_PUBLIC_GDRIVE_BACKUP_WEBHOOK_URL || "",
   INTERVAL_HOURS: 48,
   INTERVAL_MS: 48 * 60 * 60 * 1000,
   APP_NAME: "P2KD Kalisalak 2026/2027 - Audit Trail Backup Vault",
@@ -240,6 +240,14 @@ export async function uploadPackageToGdriveWebhook(
     (customWebhookUrl && customWebhookUrl.trim()) ||
     process.env.GDRIVE_BACKUP_WEBHOOK_URL ||
     GDRIVE_CONFIG.DEFAULT_WEBHOOK_URL;
+
+  if (!webhookUrl) {
+    return {
+      success: false,
+      status: "WEBHOOK_FAILED",
+      feedback: "Google Drive Backup Webhook URL belum dikonfigurasi di environment.",
+    };
+  }
 
   try {
     const uploadRes = await fetch(webhookUrl, {

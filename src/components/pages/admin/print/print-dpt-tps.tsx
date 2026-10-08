@@ -152,19 +152,24 @@ export const PrintDptTps: React.FC<PrintDptTpsProps> = ({
       ) : (
         /* Official Document Sheet */
         <div className="bg-white text-black p-6 sm:p-10 rounded-2xl border border-slate-300 shadow-lg max-w-5xl mx-auto font-sans print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full">
+        {/* Header Rujukan Resmi */}
+        <div className="text-right text-[9px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-1">
+          LAMPIRAN XVIII PERATURAN BUPATI TEGAL NOMOR 27 TAHUN 2018 JO NOMOR 31 TAHUN 2019
+        </div>
+
         {/* Kop Surat Resmi */}
         <div className="text-center border-b-2 border-black pb-3 mb-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-slate-600">
-            MODEL A-PILKADES (DPT RESMI)
-          </div>
-          <h3 className="text-sm font-bold uppercase">
-            DAFTAR PEMILIH TETAP (DPT) PEMILIHAN KEPALA DESA KALISALAK TAHUN 2026
-          </h3>
-          <h2 className="text-base font-black uppercase tracking-wide mt-0.5">
-            {(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")} — {tpsObj?.lokasi || "LOKASI TABUNG"}
+          <h4 className="text-xs font-bold uppercase tracking-widest text-slate-700">
+            PANITIA PEMILIHAN KEPALA DESA
+          </h4>
+          <h2 className="text-base font-black uppercase tracking-wide">
+            DAFTAR PEMILIH TETAP (DPT)
           </h2>
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            PEMILIHAN KEPALA DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL
+          </h3>
           <p className="text-[11px] text-slate-600 mt-0.5">
-            Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal • Cakupan Wilayah: RT {tpsObj?.rt || "01"} / RW {tpsObj?.rw || "01"}
+            Wilayah: <strong>{(tpsObj?.namaTps || selectedTps).replace(/TPS/gi, "Tabung")}</strong> ({tpsObj?.lokasi || "Lokasi Pemungutan"}) • Cakupan RT {tpsObj?.rt || "01"} / RW {tpsObj?.rw || "01"}
           </p>
         </div>
 

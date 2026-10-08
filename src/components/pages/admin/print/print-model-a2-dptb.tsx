@@ -96,21 +96,26 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
         </div>
       </div>
 
-      {/* Printable Sheet */}
+      {/* Printable Sheet (Standard Resmi Lampiran XVI Perbup Tegal No 27 Tahun 2018 jo No 31 Tahun 2019) */}
       <div className="bg-white text-black p-6 sm:p-10 rounded-2xl border border-slate-300 shadow-lg max-w-5xl mx-auto font-sans print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full">
-        {/* Kop */}
+        {/* Header Rujukan Resmi */}
+        <div className="text-right text-[9px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-1">
+          LAMPIRAN XVI PERATURAN BUPATI TEGAL NOMOR 27 TAHUN 2018 JO NOMOR 31 TAHUN 2019
+        </div>
+
+        {/* Kop Resmi Panitia Pemilihan Kepala Desa */}
         <div className="text-center border-b-2 border-black pb-3 mb-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-slate-600">
-            MODEL A.2-PILKADES (DAFTAR PEMILIH TAMBAHAN)
-          </div>
-          <h3 className="text-sm font-bold uppercase">
-            DAFTAR PEMILIH TAMBAHAN (DPTb) PEMILIHAN KEPALA DESA KALISALAK 2026/2027
-          </h3>
-          <h2 className="text-base font-black uppercase tracking-wide mt-0.5">
-            WILAYAH: {selectedTps.replace(/TPS/gi, "TABUNG")}
+          <h4 className="text-xs font-bold uppercase tracking-widest text-slate-700">
+            PANITIA PEMILIHAN KEPALA DESA
+          </h4>
+          <h2 className="text-base font-black uppercase tracking-wide">
+            FORM DAFTAR PEMILIH TAMBAHAN
           </h2>
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            PEMILIHAN KEPALA DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL
+          </h3>
           <p className="text-[11px] text-slate-600 mt-0.5">
-            Daftar Pemilih yang Menggunakan Hak Pilih Tambahan dengan KTP-el / Surat Pindah Domisili
+            Wilayah: <strong>{selectedTps.replace(/TPS/gi, "TABUNG")}</strong> • Daftar Pemilih Hasil Tanggapan Masyarakat / Pemilih Baru
           </p>
         </div>
 

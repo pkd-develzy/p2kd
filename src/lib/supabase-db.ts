@@ -371,13 +371,13 @@ export class SupabaseDbService {
 
       return result;
     } catch (err) {
-      console.warn("getAggregateStats failed, using fallback:", err);
+      console.warn("getAggregateStats failed:", err);
       return (
         this.cachedAggregateStats?.data || {
-          totalSemua: 7787,
-          totalAktif: 7787,
-          totalLaki: 3933,
-          totalPerempuan: 3854,
+          totalSemua: 0,
+          totalAktif: 0,
+          totalLaki: 0,
+          totalPerempuan: 0,
           totalTms: 0,
           coklitSelesai: 0,
           tpsCounts: {},
@@ -615,7 +615,7 @@ export class SupabaseDbService {
           dpshpStatus: "AKTIF",
           dptStatus: dptTahapan?.status === "SELESAI" ? "DIKUNCI" : "DRAFT",
           isDptLocked: Boolean(dptTahapan?.is_locked),
-          nomorBeritaAcara: dptTahapan?.nomor_berita_acara || "BA/01/P2KD-KLS/VIII/2026",
+          nomorBeritaAcara: dptTahapan?.nomor_berita_acara || "",
           lockedBy: dptTahapan?.locked_by || undefined,
           lockTimestamp: dptTahapan?.updated_at || undefined,
           lockHashSignature: dptTahapan?.lock_hash || undefined,

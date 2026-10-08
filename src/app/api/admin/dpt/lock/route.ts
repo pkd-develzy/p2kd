@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     }
 
     // Default action is LOCK
-    const baNumber = nomorBeritaAcara || `BA/${Date.now().toString().slice(-4)}/P2KD-KLS/VIII/2026`;
+    const baNumber = (nomorBeritaAcara || "").trim();
     const state = await dataStore.lockDPT(user, baNumber);
 
     return NextResponse.json({

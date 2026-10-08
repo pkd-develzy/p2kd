@@ -325,7 +325,7 @@ export async function GET(req: Request) {
       const summaryRows = [
         { "Parameter": "Nama Kegiatan", "Keterangan": "Pemilihan Kepala Desa (Pilkades) Serentak 2026" },
         { "Parameter": "Desa / Kecamatan", "Keterangan": "Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal" },
-        { "Parameter": "Nomor Berita Acara", "Keterangan": tahapan.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026" },
+        { "Parameter": "Nomor Berita Acara", "Keterangan": tahapan.nomorBeritaAcara || "Manual / Belum Diisi" },
         { "Parameter": "Status DPT Final", "Keterangan": tahapan.isDptLocked ? "DIKUNCI / FINAL (SAH)" : "DRAFT / UJI PUBLIK" },
         { "Parameter": "Segel Digital SHA-256", "Keterangan": tahapan.lockHashSignature || "BELUM_DIKUNCI" },
         { "Parameter": "Total Pemilih Aktif (DPT)", "Keterangan": stats.totalAktif },

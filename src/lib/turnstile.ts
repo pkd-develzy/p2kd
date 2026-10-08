@@ -18,11 +18,14 @@ export async function verifyTurnstileToken(
   const secret =
     process.env.TURNSTILE_SECRET ||
     process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY ||
-    "0x4AAAAAAEx_itsAXbxebd32xo0FLqdOrZA";
+    "";
 
   if (!secret) {
-    // If no secret is configured, bypass check gracefully
-    return { success: true };
+    console.error("Turnstile secret key belum dikonfigurasi di environment!");
+    return {
+      success: false,
+      message: "Konfigurasi keamanan server (Turnstile) belum lengkap.",
+    };
   }
 
   if (

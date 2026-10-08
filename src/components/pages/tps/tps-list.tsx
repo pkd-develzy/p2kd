@@ -27,20 +27,6 @@ interface ApiTpsItem {
   kuotaMaksimal?: number;
 }
 
-const DEFAULT_TABUNG_ITEMS: TabungItem[] = Array.from({ length: 13 }, (_, index) => {
-  const numVal = index + 1;
-  const tabungNum = String(numVal).padStart(2, "0");
-  return {
-    id: `tabung-${tabungNum}`,
-    nomorTabung: tabungNum,
-    namaTabung: `Tabung Pemilihan ${tabungNum}`,
-    pintuMasuk: index < 4 ? "Pintu Masuk Barat (Sektor A)" : index < 8 ? "Pintu Masuk Utara (Sektor B)" : "Pintu Masuk Timur (Sektor C)",
-    wilayahRw: `RW ${tabungNum}`,
-    cakupanRt: "RT 01 s/d RT 03",
-    kuotaPerkiraan: 600,
-  };
-});
-
 export const TpsList: React.FC = () => {
   const [tabungList, setTabungList] = useState<TabungItem[]>(() => {
     if (typeof window !== "undefined") {
@@ -54,9 +40,9 @@ export const TpsList: React.FC = () => {
         // ignore
       }
     }
-    return DEFAULT_TABUNG_ITEMS;
+    return [];
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [mapsUrl, setMapsUrl] = useState("https://www.google.com/maps/search/?api=1&query=Desa+Kalisalak+Margasari+Tegal");
   const [venueName, setVenueName] = useState("Desa Kalisalak");

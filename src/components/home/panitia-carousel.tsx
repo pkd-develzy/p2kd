@@ -24,68 +24,9 @@ export interface PanitiaProfile {
   fotoUrl?: string | null;
 }
 
-// Fallback seed data (Strictly matching Dashboard P2KD settings - No Vice Chairman)
-const DEFAULT_PANITIA_FALLBACK: PanitiaProfile[] = [
-  {
-    id: "p-1",
-    namaLengkap: "KHASANUDIN, S.Pd.SD",
-    jabatan: "Ketua P2KD",
-    seksi: "PIMPINAN",
-    seksiLabel: "Pimpinan Panitia (Ketua)",
-  },
-  {
-    id: "p-2",
-    namaLengkap: "AKHMAD SAIFUDIN, S.Kom",
-    jabatan: "Sekretaris",
-    seksi: "PIMPINAN",
-    seksiLabel: "Pimpinan Panitia (Sekretariat)",
-  },
-  {
-    id: "p-3",
-    namaLengkap: "MOH. FAUZAN, S.Ak",
-    jabatan: "Bendahara",
-    seksi: "PIMPINAN",
-    seksiLabel: "Pimpinan Panitia (Kebendaharaan)",
-  },
-  {
-    id: "p-4",
-    namaLengkap: "AGUS SUPRIYADI",
-    jabatan: "Ketua Seksi 1: Pendaftaran Pemilih",
-    seksi: "SEKSI_PEMILIH",
-    seksiLabel: "Seksi 1: Pendaftaran Pemilih",
-  },
-  {
-    id: "p-5",
-    namaLengkap: "BAMBANG IRAWAN",
-    jabatan: "Ketua Seksi 2: Penjaringan Balon",
-    seksi: "SEKSI_PENJARINGAN",
-    seksiLabel: "Seksi 2: Penjaringan Calon",
-  },
-  {
-    id: "p-6",
-    namaLengkap: "SLAMET RIYADI",
-    jabatan: "Ketua Seksi 3: Penyaringan & Uji Berkas",
-    seksi: "SEKSI_PENYARINGAN",
-    seksiLabel: "Seksi 3: Penyaringan Calon",
-  },
-  {
-    id: "p-7",
-    namaLengkap: "NUR HIDAYAT",
-    jabatan: "Ketua Seksi 4: Pemungutan & Penghitungan",
-    seksi: "SEKSI_PUNGUT_HITUNG",
-    seksiLabel: "Seksi 4: Pungut Hitung",
-  },
-  {
-    id: "p-8",
-    namaLengkap: "DIDI SETIAWAN",
-    jabatan: "Ketua Seksi 5: Logistik, Publikasi & Humas",
-    seksi: "SEKSI_LOGISTIK_PUBLIKASI",
-    seksiLabel: "Seksi 5: Logistik & Humas",
-  },
-];
-
 export const PanitiaCarousel: React.FC = () => {
-  const [panitiaList, setPanitiaList] = useState<PanitiaProfile[]>(DEFAULT_PANITIA_FALLBACK);
+  const [panitiaList, setPanitiaList] = useState<PanitiaProfile[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [direction, setDirection] = useState(1);
@@ -97,11 +38,17 @@ export const PanitiaCarousel: React.FC = () => {
     fetch("/api/panitia")
       .then((res) => res.json())
       .then((json) => {
-        if (isMounted && json.success && Array.isArray(json.data) && json.data.length > 0) {
-          setPanitiaList(json.data);
+        if (isMounted) {
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            setPanitiaList(json.data);
+          }
+          setLoading(false);
         }
       })
-      .catch((err) => console.warn("Load panitia failed:", err));
+      .catch((err) => {
+        console.warn("Load panitia failed:", err);
+        if (isMounted) setLoading(false);
+      });
 
     return () => {
       isMounted = false;
@@ -187,6 +134,19 @@ export const PanitiaCarousel: React.FC = () => {
       transition: { duration: 0.25, ease: "easeIn" as const },
     }),
   };
+
+  if (panitiaList.length === 0) {
+    return (
+      <div className="h-full flex flex-col">
+        <Card className="h-full border-blue-800/40 bg-linear-to-br from-slate-900 via-blue-950 to-indigo-950 text-white p-4 sm:p-6 rounded-3xl shadow-xl flex flex-col justify-center items-center relative overflow-hidden text-center min-h-55">
+          <Users className="w-8 h-8 text-blue-400 mb-2 animate-pulse" />
+          <p className="text-xs text-slate-300 font-medium">
+            {loading ? "Memuat profil panitia resmi..." : "Belum ada data anggota panitia terdaftar."}
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div

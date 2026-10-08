@@ -16,12 +16,12 @@ interface StatsData {
 }
 
 const DEFAULT_STATS: StatsData = {
-  totalAktif: 7787,
-  totalLaki: 3933,
-  totalPerempuan: 3854,
-  totalTps: 13,
-  totalRw: 13,
-  totalRt: 39,
+  totalAktif: 0,
+  totalLaki: 0,
+  totalPerempuan: 0,
+  totalTps: 0,
+  totalRw: 0,
+  totalRt: 0,
 };
 
 export const StatsOverview: React.FC = () => {
@@ -48,12 +48,12 @@ export const StatsOverview: React.FC = () => {
         const json = await res.json();
         if (isMounted && json.success && json.data) {
           const freshStats: StatsData = {
-            totalAktif: Number(json.data.totalAktif) || 7787,
-            totalLaki: Number(json.data.totalLaki) || 3933,
-            totalPerempuan: Number(json.data.totalPerempuan) || 3854,
-            totalTps: Number(json.data.totalTps) || 13,
-            totalRw: Number(json.data.totalRw) || 13,
-            totalRt: Number(json.data.totalRt) || 39,
+            totalAktif: Number(json.data.totalAktif) || 0,
+            totalLaki: Number(json.data.totalLaki) || 0,
+            totalPerempuan: Number(json.data.totalPerempuan) || 0,
+            totalTps: Number(json.data.totalTps) || 0,
+            totalRw: Number(json.data.totalRw) || 0,
+            totalRt: Number(json.data.totalRt) || 0,
           };
           setData(freshStats);
           try {
@@ -73,15 +73,15 @@ export const StatsOverview: React.FC = () => {
     };
   }, []);
 
-  const total = data.totalAktif || 7787;
-  const laki = data.totalLaki || 3933;
-  const perempuan = data.totalPerempuan || 3854;
-  const tps = data.totalTps || 13;
-  const rw = data.totalRw || 13;
-  const rt = data.totalRt || 39;
+  const total = data.totalAktif || 0;
+  const laki = data.totalLaki || 0;
+  const perempuan = data.totalPerempuan || 0;
+  const tps = data.totalTps || 0;
+  const rw = data.totalRw || 0;
+  const rt = data.totalRt || 0;
 
-  const pctLaki = total > 0 ? Math.round((laki / total) * 100) : 51;
-  const pctPerempuan = total > 0 ? Math.round((perempuan / total) * 100) : 49;
+  const pctLaki = total > 0 ? Math.round((laki / total) * 100) : 0;
+  const pctPerempuan = total > 0 ? Math.round((perempuan / total) * 100) : 0;
 
   const stats = [
     {

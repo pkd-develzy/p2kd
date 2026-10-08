@@ -673,7 +673,7 @@ class SystemDataStore {
     dpshpStatus: "AKTIF",
     dptStatus: "DRAFT",
     isDptLocked: false,
-    nomorBeritaAcara: "BA/01/P2KD-KLS/XII/2026",
+    nomorBeritaAcara: "",
   };
 
   private webConfig: PublicWebConfig = {
@@ -717,10 +717,10 @@ class SystemDataStore {
 
   // Live database aggregate metrics (instant 0ms retrieval)
   private aggregateStats = {
-    totalSemua: 7787,
-    totalAktif: 7787,
-    totalLaki: 3933,
-    totalPerempuan: 3854,
+    totalSemua: 0,
+    totalAktif: 0,
+    totalLaki: 0,
+    totalPerempuan: 0,
     totalTms: 0,
     coklitSelesai: 0,
     tpsCounts: {} as Record<string, { total: number; laki: number; perempuan: number }>,
@@ -1644,25 +1644,7 @@ class SystemDataStore {
 
   // --- TPS METHODS ---
   public getTpsList(): MasterTPS[] {
-    if (this.tpsList.length > 0) {
-      return [...this.tpsList];
-    }
-    return Array.from({ length: 13 }, (_, i) => {
-      const rwNum = String(i + 1).padStart(2, "0");
-      return {
-        id: `tps-${rwNum}`,
-        kodeTps: `TPS-${rwNum}`,
-        nomorTps: rwNum,
-        namaTps: `TPS ${rwNum}`,
-        namaTabung: `Tabung RW ${rwNum}`,
-        lokasi: `Wilayah RW ${rwNum}, Desa Kalisalak`,
-        alamat: `Balai Pertemuan Warga RW ${rwNum}, Desa Kalisalak`,
-        rt: "01, 02, 03",
-        rw: rwNum,
-        kuotaMaksimal: 700,
-        status: "AKTIF" as const,
-      };
-    });
+    return [...this.tpsList];
   }
 
   public async addTps(data: Omit<MasterTPS, "id">, user = "Petugas P2KD"): Promise<MasterTPS> {
@@ -2475,7 +2457,7 @@ class SystemDataStore {
 
     const timestamp = new Date().toISOString();
     const activeCount = this.pemilihList.filter((p) => p.statusAktif === "AKTIF").length;
-    const ba = nomorBeritaAcara || `BA/${Date.now().toString().slice(-4)}/P2KD-KLS/VIII/2026`;
+    const ba = (nomorBeritaAcara || "").trim();
     const signaturePayload = `${timestamp}|${activeCount}|KALISALAK-DPT-2026|${lockedBy}|${ba}`;
     const signature = crypto.createHash("sha256").update(signaturePayload).digest("hex");
 
@@ -2519,7 +2501,7 @@ class SystemDataStore {
     };
 
     // Sync to Supabase Cloud
-    await SupabaseDbService.lockDptTahapan(false, this.tahapanState.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026", user, undefined);
+    await SupabaseDbService.lockDptTahapan(false, this.tahapanState.nomorBeritaAcara || "", user, undefined);
 
     this.addAuditLog({
       user,
@@ -2687,11 +2669,11 @@ class SystemDataStore {
 
   // --- STATS AGGREGATION (0ms Instant Live Aggregation) ---
   public getStats() {
-    const totalSemua = this.aggregateStats.totalSemua || (this.pemilihList.length > 500 ? this.pemilihList.length : 7787);
-    const totalAktif = this.aggregateStats.totalAktif || (this.pemilihList.length > 500 ? this.pemilihList.filter(p => p.statusAktif === "AKTIF").length : 7787);
-    const totalLaki = this.aggregateStats.totalLaki || 3933;
-    const totalPerempuan = this.aggregateStats.totalPerempuan || 3854;
-    const totalTms = this.aggregateStats.totalTms || 0;
+    const totalSemua = this.aggregateStats.totalSemua || this.pemilihList.length;
+    const totalAktif = this.aggregateStats.totalAktif || this.pemilihList.filter(p => p.statusAktif === "AKTIF").length;
+    const totalLaki = this.aggregateStats.totalLaki || this.pemilihList.filter(p => p.statusAktif === "AKTIF" && p.jenisKelamin === "L").length;
+    const totalPerempuan = this.aggregateStats.totalPerempuan || this.pemilihList.filter(p => p.statusAktif === "AKTIF" && p.jenisKelamin === "P").length;
+    const totalTms = this.aggregateStats.totalTms || this.pemilihList.filter(p => p.statusAktif === "TMS").length;
 
     const totalAduan = this.aduanList.length;
     const aduanMenunggu = this.aduanList.filter((a) => a.status === "MENUNGGU").length;
@@ -2700,46 +2682,26 @@ class SystemDataStore {
     const totalAnggota = this.anggotaList.length;
     const totalBalon = this.balonList.length;
 
-    const defaultDistribution = [
-      { total: 596, laki: 279, perempuan: 317 }, // RW 01
-      { total: 495, laki: 243, perempuan: 252 }, // RW 02
-      { total: 565, laki: 283, perempuan: 282 }, // RW 03
-      { total: 647, laki: 329, perempuan: 318 }, // RW 04
-      { total: 708, laki: 362, perempuan: 346 }, // RW 05
-      { total: 488, laki: 242, perempuan: 246 }, // RW 06
-      { total: 510, laki: 255, perempuan: 255 }, // RW 07
-      { total: 520, laki: 268, perempuan: 252 }, // RW 08
-      { total: 617, laki: 315, perempuan: 302 }, // RW 09
-      { total: 639, laki: 325, perempuan: 314 }, // RW 10
-      { total: 729, laki: 376, perempuan: 353 }, // RW 11
-      { total: 527, laki: 267, perempuan: 260 }, // RW 12
-      { total: 746, laki: 389, perempuan: 357 }, // RW 13
-    ];
-
     const sourceTps = this.getTpsList();
-    const tpsStats = sourceTps.map((t, idx) => {
+    const tpsStats = sourceTps.map((t) => {
+      const liveCount = this.aggregateStats.tpsCounts[t.nomorTps] || this.aggregateStats.tpsCounts[t.namaTps];
       const pInTps = this.pemilihList.filter(
         (p) =>
           p.statusAktif === "AKTIF" &&
           (p.tps === t.nomorTps || p.tps === t.namaTps || p.tps.includes(t.nomorTps))
       );
-      const l = pInTps.filter((p) => p.jenisKelamin === "L").length;
-      const p = pInTps.filter((p) => p.jenisKelamin === "P").length;
-
-      const fallback = defaultDistribution[idx] || {
-        total: Math.round(totalAktif / Math.max(1, sourceTps.length)),
-        laki: Math.round(totalLaki / Math.max(1, sourceTps.length)),
-        perempuan: Math.round(totalPerempuan / Math.max(1, sourceTps.length)),
-      };
+      const l = liveCount ? liveCount.laki : pInTps.filter((p) => p.jenisKelamin === "L").length;
+      const p = liveCount ? liveCount.perempuan : pInTps.filter((p) => p.jenisKelamin === "P").length;
+      const total = liveCount ? liveCount.total : pInTps.length;
 
       return {
         id: t.id,
         nomorTps: t.nomorTps,
         namaTps: t.namaTps,
         lokasi: t.lokasi,
-        total: pInTps.length > 50 ? pInTps.length : fallback.total,
-        laki: l > 20 ? l : fallback.laki,
-        perempuan: p > 20 ? p : fallback.perempuan,
+        total,
+        laki: l,
+        perempuan: p,
         kuotaMaksimal: t.kuotaMaksimal,
       };
     }).sort((a, b) => {
@@ -2748,9 +2710,9 @@ class SystemDataStore {
       return numA - numB;
     });
 
-    const totalRw = this.webConfig.totalRw || 13;
-    const totalRt = this.webConfig.totalRt || 39;
-    const totalTps = sourceTps.length || 13;
+    const totalRw = this.webConfig.totalRw || 0;
+    const totalRt = this.webConfig.totalRt || 0;
+    const totalTps = sourceTps.length;
 
     const totalPetugas = this.petugasDptList.length;
     const petugasMenunggu = this.petugasDptList.filter((p) => p.status === "MENUNGGU_VERIFIKASI").length;
@@ -2777,6 +2739,7 @@ class SystemDataStore {
       totalTps,
       totalRw,
       totalRt,
+      totalAudit: this.auditLogs.length,
       tpsStats,
       tahapan: this.getTahapanState(),
     };

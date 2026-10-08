@@ -188,7 +188,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
               disabled={isDptLocked}
               value={nomorBeritaAcara}
               onChange={(e) => setNomorBeritaAcara(e.target.value)}
-              placeholder="Contoh: BA/01/P2KD-KLS/XII/2026"
+              placeholder="Kosongkan untuk nomor manual (titik-titik)"
               className="w-full h-10 px-3.5 text-xs rounded-xl border border-slate-300 bg-white font-mono font-bold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
             />
           </div>

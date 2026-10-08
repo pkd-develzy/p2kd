@@ -558,21 +558,26 @@ export const PrintModelA1Dps: React.FC<PrintModelA1DpsProps> = ({
         </div>
       </div>
 
-      {/* Printable Sheet (Standard Resmi Model A.1 DPS Pilkades Kalisalak) */}
+      {/* Printable Sheet (Standard Resmi Lampiran XIV Perbup Tegal No 27 Tahun 2018 jo No 31 Tahun 2019) */}
       <div className="bg-white text-black p-6 sm:p-10 rounded-2xl border border-slate-300 shadow-lg max-w-6xl mx-auto font-sans print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-full">
-        {/* Kop Resmi */}
+        {/* Header Rujukan Resmi */}
+        <div className="text-right text-[9px] font-sans font-bold uppercase tracking-wider text-slate-500 mb-1">
+          LAMPIRAN XIV PERATURAN BUPATI TEGAL NOMOR 27 TAHUN 2018 JO NOMOR 31 TAHUN 2019
+        </div>
+
+        {/* Kop Resmi Panitia Pemilihan Kepala Desa */}
         <div className="text-center border-b-2 border-black pb-3 mb-4">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-slate-600">
-            MODEL A.1-PILKADES (LEMBAR KERJA PEMUTAKHIRAN DPS)
-          </div>
-          <h3 className="text-sm font-bold uppercase">
-            DAFTAR PEMILIH SEMENTARA (DPS) PEMILIHAN KEPALA DESA KALISALAK 2026/2027
-          </h3>
-          <h2 className="text-base font-black uppercase tracking-wide mt-0.5">
-            LEMBAR KERJA COKLIT PANTARLIH • WILAYAH: {activeRwLabel.toUpperCase()} ({activeTabungNama.toUpperCase()})
+          <h4 className="text-xs font-bold uppercase tracking-widest text-slate-700">
+            PANITIA PEMILIHAN KEPALA DESA
+          </h4>
+          <h2 className="text-base font-black uppercase tracking-wide">
+            DAFTAR PEMILIH SEMENTARA (DPS)
           </h2>
+          <h3 className="text-sm font-bold uppercase tracking-wide">
+            PEMILIHAN KEPALA DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL
+          </h3>
           <p className="text-[11px] text-slate-600 mt-0.5">
-            Kecamatan Margasari, Kabupaten Tegal • Format Standar Berkas Faktual Lapangan
+            Wilayah: <strong>{activeRwLabel.toUpperCase()}</strong> ({activeTabungNama.toUpperCase()}) • Lembar Kerja Pemutakhiran Lapangan
           </p>
         </div>
 

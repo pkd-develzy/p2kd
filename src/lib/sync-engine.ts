@@ -115,7 +115,7 @@ export class SyncEngine {
       // 3. Unduh Dataset Pemilih secara Tersegmentasi (Batch 1.000 record per request)
       let batch = 0;
       let hasMore = true;
-      let totalVoters = 7787;
+      let totalVoters = 0;
       let loadedVoters: Voter[] = [];
       let latestServerTimestamp = new Date().toISOString();
 

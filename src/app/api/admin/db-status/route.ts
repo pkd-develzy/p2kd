@@ -41,9 +41,9 @@ export async function GET(req: Request) {
       } else {
         isConnected = true;
         cloudStats = {
-          pemilihCount: typeof pemRes.count === "number" ? pemRes.count : 7787,
-          anggotaCount: typeof agtRes.count === "number" ? agtRes.count : 10,
-          tpsCount: typeof tpsRes.count === "number" ? tpsRes.count : 13,
+          pemilihCount: typeof pemRes.count === "number" ? pemRes.count : 0,
+          anggotaCount: typeof agtRes.count === "number" ? agtRes.count : 0,
+          tpsCount: typeof tpsRes.count === "number" ? tpsRes.count : 0,
         };
       }
     } catch (err: unknown) {
@@ -69,14 +69,16 @@ export async function GET(req: Request) {
       localStats: {
         totalPemilih: localStats.totalSemua,
         totalAktif: localStats.totalAktif,
+        totalLaki: localStats.totalLaki,
+        totalPerempuan: localStats.totalPerempuan,
         totalTms: localStats.totalTms,
         totalDps: localStats.totalAktif,
         totalDpt: 0,
         totalTps: localStats.tpsStats.length,
         totalAduan: localStats.totalAduan,
-        totalPetugas: cloudStats.petugasCount ?? 14,
-        totalAnggota: cloudStats.anggotaCount ?? 10,
-        totalAudit: 144,
+        totalPetugas: cloudStats.petugasCount ?? localStats.totalPetugas ?? 0,
+        totalAnggota: cloudStats.anggotaCount ?? localStats.totalAnggota ?? 0,
+        totalAudit: localStats.totalAudit ?? 0,
         tpsStats: localStats.tpsStats,
       },
       supabaseUrl: isConfigured ? "Server Terkoneksi Aman (Encrypted)" : "Belum terkonfigurasi",

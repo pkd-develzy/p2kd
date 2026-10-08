@@ -11,7 +11,7 @@ import { Voter, TPSItem } from "@/components/pages/admin/types";
  * - Model A.4: Salinan Daftar Pemilih Tetap per Tabung
  */
 
-const KOP_TITLE_1 = "PANITIA PEMILIHAN KEPALA DESA (P2KD)";
+const KOP_TITLE_1 = "PANITIA PEMILIHAN KEPALA DESA";
 const KOP_TITLE_2 = "DESA KALISALAK KECAMATAN MARGASARI KABUPATEN TEGAL";
 const KOP_SUB = "Sekretariat: Gedung Balai Desa Kalisalak, Jl. K. Abdul Latief, Kalisalak, Kec. Margasari, Kabupaten Tegal 52463";
 
@@ -110,8 +110,9 @@ export function exportModelA1Excel(voters: Voter[], selectedTps: string = "SEMUA
 
   const rows: (string | number)[][] = [];
 
-  // Header Title
-  rows.push(["MODEL A.1: DAFTAR PEMILIH SEMENTARA (DPS) PILKADES KALISALAK 2026/2027"]);
+  // Header Title Resmi Perbup Tegal No 27 Tahun 2018 jo No 31 Tahun 2019
+  rows.push(["LAMPIRAN XIV PERATURAN BUPATI TEGAL NOMOR 27 TAHUN 2018 JO NOMOR 31 TAHUN 2019"]);
+  rows.push(["FORM DAFTAR PEMILIH SEMENTARA (DPS) • PEMILIHAN KEPALA DESA KALISALAK"]);
   rows.push(["LEMBAR KERJA PEMUTAKHIRAN & COKLIT FAKTUAL PANTARLIH / KOORDINATOR RW"]);
   rows.push([
     `Wilayah Penugasan: ${selectedTps.replace(/TPS/gi, "Tabung")}`,
@@ -224,8 +225,11 @@ export function exportModelA1Pdf(voters: Voter[], selectedTps: string = "SEMUA")
     y += 6;
 
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text("LAMPIRAN XIV PERBUP TEGAL NO. 27 TAHUN 2018 JO NO. 31 TAHUN 2019", 148.5, y, { align: "center" });
+    y += 4.5;
     doc.setFontSize(10);
-    doc.text("MODEL A.1: DAFTAR PEMILIH SEMENTARA (DPS) & LEMBAR KERJA COKLIT", 148.5, y, { align: "center" });
+    doc.text("FORM DAFTAR PEMILIH SEMENTARA (DPS) • LEMBAR KERJA VERIFIKASI PANTARLIH", 148.5, y, { align: "center" });
     y += 4.5;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
@@ -314,8 +318,9 @@ export function exportModelA2Excel(voters: Voter[], selectedTps: string = "SEMUA
   });
 
   const rows: (string | number)[][] = [];
-  rows.push(["MODEL A.2: DAFTAR PEMILIH TAMBAHAN (DPTb) PILKADES KALISALAK 2026/2027"]);
-  rows.push(["DAFTAR WARGA YANG MENGGUNAKAN HAK PILIH TAMBAHAN DENGAN KTP-EL / SURAT PINDAH"]);
+  rows.push(["LAMPIRAN XVI PERATURAN BUPATI TEGAL NOMOR 27 TAHUN 2018 JO NOMOR 31 TAHUN 2019"]);
+  rows.push(["FORM DAFTAR PEMILIH TAMBAHAN • PEMILIHAN KEPALA DESA KALISALAK"]);
+  rows.push(["DAFTAR WARGA YANG MENGGUNAKAN HAK PILIH TAMBAHAN PASCA PENETAPAN DPS"]);
   rows.push([
     `Wilayah: ${selectedTps.replace(/TPS/gi, "Tabung")}`,
     `Total Pemilih DPTb: ${dptbList.length} Jiwa`,
@@ -422,8 +427,11 @@ export function exportModelA2Pdf(voters: Voter[], selectedTps: string = "SEMUA")
     y += 6;
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.text("MODEL A.2: DAFTAR PEMILIH TAMBAHAN (DPTb) PILKADES KALISALAK", 105, y, { align: "center" });
+    doc.setFontSize(8);
+    doc.text("LAMPIRAN XVI PERBUP TEGAL NO. 27 TAHUN 2018 JO NO. 31 TAHUN 2019", 105, y, { align: "center" });
+    y += 4;
+    doc.setFontSize(9.5);
+    doc.text("FORM DAFTAR PEMILIH TAMBAHAN • PEMILIHAN KEPALA DESA KALISALAK", 105, y, { align: "center" });
     y += 4.5;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
@@ -506,8 +514,9 @@ export function exportModelA3Excel(voters: Voter[], tpsList: TPSItem[]) {
 
   // Sheet 1: Rekapitulasi per Tabung
   const rekapRows: (string | number)[][] = [];
-  rekapRows.push(["MODEL A.3: BUKU INDUK DAFTAR PEMILIH TETAP (DPT) TINGKAT DESA"]);
-  rekapRows.push(["REKAPITULASI DPT PEMILIHAN KEPALA DESA KALISALAK 2026/2027"]);
+  rekapRows.push(["LAMPIRAN XVIII PERATURAN BUPATI TEGAL NOMOR 27 TAHUN 2018 JO NOMOR 31 TAHUN 2019"]);
+  rekapRows.push(["FORM DAFTAR PEMILIH TETAP (DPT) • TINGKAT DESA KALISALAK"]);
+  rekapRows.push(["REKAPITULASI DPT PEMILIHAN KEPALA DESA KALISALAK"]);
   rows_add_meta:
   rekapRows.push([`Total DPT Sah: ${dptVoters.length} Pemilih`, `Tanggal Pengesahan: ${new Date().toLocaleDateString("id-ID")}`]);
   rekapRows.push([]);
@@ -708,7 +717,8 @@ export function exportModelA4Excel(voters: Voter[], selectedTps: string = "Tabun
   );
 
   const rows: (string | number)[][] = [];
-  rows.push(["MODEL A.4: SALINAN DAFTAR PEMILIH TETAP (DPT) PER TABUNG"]);
+  rows.push(["LAMPIRAN XVIII PERATURAN BUPATI TEGAL NOMOR 27 TAHUN 2018 JO NOMOR 31 TAHUN 2019"]);
+  rows.push(["SALINAN DAFTAR PEMILIH TETAP (DPT) PER WILAYAH TABUNG / TPS"]);
   rows.push(["DOKUMEN RESMI UNTUK PETUGAS TABUNG, PENGAWAS, DAN SAKSI CALON KEPALA DESA"]);
   rows.push([
     `Wilayah Penugasan: ${selectedTps.replace(/TPS/gi, "Tabung")}`,

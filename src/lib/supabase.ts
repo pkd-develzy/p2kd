@@ -4,12 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.SUPABASE_URL ||
-  "https://apiastdpwrycnsbskpmy.supabase.co";
+  "https://placeholder-p2kd.supabase.co";
 
 const supabaseAnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "anon-key";
+  "placeholder-anon-key";
 
 const supabaseServiceKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -46,12 +46,12 @@ export const getSupabaseAdmin = () => {
 const supabaseSeksi1Url =
   process.env.NEXT_PUBLIC_SUPABASE_SEKSI1_URL ||
   process.env.SUPABASE_SEKSI1_URL ||
-  "https://ewzhaldoxepheugxjquz.supabase.co";
+  "https://placeholder-seksi1.supabase.co";
 
 const supabaseSeksi1AnonKey =
   process.env.NEXT_PUBLIC_SUPABASE_SEKSI1_ANON_KEY ||
   process.env.SUPABASE_SEKSI1_PUBLISHABLE_KEY ||
-  "anon-key";
+  "placeholder-anon-key";
 
 const supabaseSeksi1ServiceKey =
   process.env.SUPABASE_SEKSI1_SERVICE_ROLE_KEY ||
@@ -86,12 +86,13 @@ export const getSupabaseSeksi1Admin = () => {
 const supabaseServer3Url =
   process.env.NEXT_PUBLIC_SUPABASE_SERVER3_URL ||
   process.env.SUPABASE_SERVER3_URL ||
-  "https://msrefdzbexmkputwbyjc.supabase.co";
+  "https://placeholder-server3.supabase.co";
 
 const supabaseServer3AnonKey =
+  process.env.NEXT_PUBLIC_SERVER3_ANON_KEY ||
   process.env.NEXT_PUBLIC_SUPABASE_SERVER3_ANON_KEY ||
   process.env.SUPABASE_SERVER3_PUBLISHABLE_KEY ||
-  "anon-key";
+  "placeholder-anon-key";
 
 const supabaseServer3ServiceKey =
   process.env.SUPABASE_SERVER3_SERVICE_ROLE_KEY ||

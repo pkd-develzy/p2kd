@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { dataStore, type MasterAnggotaP2KD, type PetugasStatus } from "@/lib/data-store";
 import { generateAuthToken, verifyPassword } from "@/lib/encryption";
-import { isInitialDefaultPassword, DEFAULT_INITIAL_PASSWORDS } from "@/lib/password-policy";
+import { isInitialDefaultPassword } from "@/lib/password-policy";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 
 function normalizeName(str: string): string {
@@ -133,26 +133,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // Canonical Server-Side Cloudflare Turnstile Siteverify (Allow seamless quick-unlock when returning to active session)
-    const isQuickUnlock = turnstileToken === "bypass_quick_unlock";
-
     const clientIp =
       req.headers.get("cf-connecting-ip") ||
       req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
       "127.0.0.1";
     const userAgent = req.headers.get("user-agent") || undefined;
 
-    if (!isQuickUnlock) {
-      const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "login");
-      if (!turnstileCheck.success) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: turnstileCheck.message || "Verifikasi keamanan (Turnstile) wajib diselesaikan.",
-          },
-          { status: 403 }
-        );
-      }
+    const turnstileCheck = await verifyTurnstileToken(turnstileToken, clientIp, "login");
+    if (!turnstileCheck.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: turnstileCheck.message || "Verifikasi keamanan (Turnstile) wajib diselesaikan.",
+        },
+        { status: 403 }
+      );
     }
 
     await dataStore.ensureSynced();
@@ -296,23 +291,16 @@ export async function POST(req: Request) {
       );
     }
 
-    // STRICT PASSWORD VERIFICATION WITH INITIAL SEED COMPATIBILITY
-    const storedPassword = matched.passwordHash || "p2kd2026";
-    let isPasswordValid = verifyPassword(password, storedPassword);
-
-    // If initial default password was used or seeded, allow standard P2KD defaults
-    if (!isPasswordValid) {
-      const isStoredDefault =
-        isInitialDefaultPassword(storedPassword) ||
-        DEFAULT_INITIAL_PASSWORDS.some((def) => verifyPassword(def, storedPassword) || storedPassword === def);
-
-      if (isStoredDefault) {
-        const allowedDefaults = ["p2kd2026", "pantarlih123", "p2kd12345", "admin123", "p2kd2027"];
-        if (allowedDefaults.some((def) => verifyPassword(password, def) || password === def)) {
-          isPasswordValid = true;
-        }
-      }
+    // STRICT PASSWORD VERIFICATION AGAINST DATABASE
+    const storedPassword = matched.passwordHash;
+    if (!storedPassword) {
+      return NextResponse.json(
+        { success: false, message: "Akun ini belum memiliki kata sandi aktif di database." },
+        { status: 403 }
+      );
     }
+
+    const isPasswordValid = verifyPassword(password, storedPassword);
 
     if (!isPasswordValid) {
       dataStore.addAuditLog({

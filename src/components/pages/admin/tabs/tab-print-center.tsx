@@ -492,16 +492,16 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                   </Badge>
                 </div>
                 <h4 className="text-xs font-black text-slate-900">
-                  Berita Acara Pleno DPT (Form BA-DPT)
+                  SK & Berita Acara Pleno DPT (Lampiran XVII)
                 </h4>
                 <p className="text-[11px] text-slate-500 leading-normal">
-                  Dokumen penetapan DPT memuat rekapitulasi 13 Tabung, segel digital SHA-256, dan kolom TTD Ketua P2KD, Sekretaris, & BPD.
+                  Dokumen penetapan DPT resmi sesuai Perbup Tegal No 27/2018 jo 31/2019, rekapitulasi desa, segel digital, dan TTD Panitia.
                 </p>
               </div>
 
               <div className="pt-2 flex items-center justify-between border-t border-slate-100">
                 <span className="text-[10px] font-mono text-slate-500 truncate max-w-30">
-                  {nomorBeritaAcara}
+                  {nomorBeritaAcara || "Nomor: Manual"}
                 </span>
                 <Button
                   variant="primary"
@@ -510,13 +510,13 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                   className="text-xs font-bold"
                 >
                   <Printer className="w-3.5 h-3.5 mr-1" />
-                  Cetak BA
+                  Cetak BA & SK
                 </Button>
               </div>
             </Card>
           )}
 
-          {/* 2. Surat Undangan Nyoblos (Form C6 Digital) */}
+          {/* 2. Surat Undangan Pemilih (Lampiran XXXVIII Perbup Tegal) */}
           <Card className="p-4 bg-white border-slate-200 hover:shadow-md transition-shadow space-y-3 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-start justify-between">
@@ -524,14 +524,14 @@ export const TabPrintCenter: React.FC<TabPrintCenterProps> = ({
                   <Mail className="w-5 h-5" />
                 </div>
                 <Badge variant={dptVotersCount > 0 ? "success" : "warning"} className="text-[10px] font-bold">
-                  MODEL C6 • {dptVotersCount} DPT
+                  LAMPIRAN XXXVIII • {dptVotersCount} DPT
                 </Badge>
               </div>
               <h4 className="text-xs font-black text-slate-900">
-                Surat Undangan Nyoblos (Form C6)
+                Surat Undangan Pemilih & Tanda Terima
               </h4>
               <p className="text-[11px] text-slate-500 leading-normal">
-                Cetak massal surat pemberitahuan pemilih ber-QR Code untuk 13 Tabung. Format 6 kartu undangan per lembar A4.
+                Sesuai Lampiran XXXVIII Perbup Tegal No 27/2018: Surat pemberitahuan pemungutan suara resmi, nomor manual, dan tanda terima KPPS.
               </p>
             </div>
 

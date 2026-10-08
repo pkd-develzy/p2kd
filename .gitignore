@@ -45,4 +45,6 @@ DRAFT DPT KALISALAK.xlsx
 *.xlsx
 *.xls
 *.csv
-
+# temporary local analysis scratchpad
+scratch/
+*.tiff

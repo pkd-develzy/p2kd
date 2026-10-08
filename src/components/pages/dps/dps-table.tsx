@@ -25,22 +25,6 @@ interface ApiTpsStat {
   perempuan: number;
 }
 
-const DEFAULT_DPS_ROWS: DpsRow[] = [
-  { id: 1, rw: "RW 01", dusun: "Desa Kalisalak", tps: "TPS 01", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 596, laki: 279, perempuan: 317 },
-  { id: 2, rw: "RW 02", dusun: "Desa Kalisalak", tps: "TPS 02", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 495, laki: 243, perempuan: 252 },
-  { id: 3, rw: "RW 03", dusun: "Desa Kalisalak", tps: "TPS 03", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 565, laki: 283, perempuan: 282 },
-  { id: 4, rw: "RW 04", dusun: "Desa Kalisalak", tps: "TPS 04", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 647, laki: 329, perempuan: 318 },
-  { id: 5, rw: "RW 05", dusun: "Desa Kalisalak", tps: "TPS 05", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 708, laki: 362, perempuan: 346 },
-  { id: 6, rw: "RW 06", dusun: "Desa Kalisalak", tps: "TPS 06", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 488, laki: 242, perempuan: 246 },
-  { id: 7, rw: "RW 07", dusun: "Desa Kalisalak", tps: "TPS 07", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 510, laki: 255, perempuan: 255 },
-  { id: 8, rw: "RW 08", dusun: "Desa Kalisalak", tps: "TPS 08", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 520, laki: 268, perempuan: 252 },
-  { id: 9, rw: "RW 09", dusun: "Desa Kalisalak", tps: "TPS 09", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 617, laki: 315, perempuan: 302 },
-  { id: 10, rw: "RW 10", dusun: "Desa Kalisalak", tps: "TPS 10", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 639, laki: 325, perempuan: 314 },
-  { id: 11, rw: "RW 11", dusun: "Desa Kalisalak", tps: "TPS 11", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 729, laki: 376, perempuan: 353 },
-  { id: 12, rw: "RW 12", dusun: "Desa Kalisalak", tps: "TPS 12", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 527, laki: 267, perempuan: 260 },
-  { id: 13, rw: "RW 13", dusun: "Desa Kalisalak", tps: "TPS 13", lokasi: "Lapangan Desa Kalisalak", jmlPemilih: 746, laki: 389, perempuan: 357 },
-];
-
 export const DpsTable: React.FC = () => {
   const [dpsList, setDpsList] = useState<DpsRow[]>(() => {
     if (typeof window !== "undefined") {
@@ -54,9 +38,9 @@ export const DpsTable: React.FC = () => {
         // ignore
       }
     }
-    return DEFAULT_DPS_ROWS;
+    return [];
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);

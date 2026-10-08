@@ -93,21 +93,23 @@ export const AdminDashboard: React.FC = () => {
     return null;
   });
 
-  const roleParam = (searchParams.get("role") || storedUser?.role || "").toLowerCase().trim();
-  const tpsParam = searchParams.get("tps") || storedUser?.assignedTps || "";
-  const userParam = searchParams.get("user") || storedUser?.username || "";
+  // 1. Strict Session Authentication & RBAC Resolution
+  const sessionRole = (storedUser?.role || "").toLowerCase().trim();
+  const sessionUsername = (storedUser?.username || "").toLowerCase().trim();
+  const roleParam = sessionRole || (searchParams.get("role") || "").toLowerCase().trim();
+  const tpsParam = storedUser?.assignedTps || searchParams.get("tps") || "";
+  const userParam = sessionUsername || searchParams.get("user") || "";
 
-  // 1. Strict RBAC Resolution: Developer, Ketua P2KD, Seksi 1, and Pantarlih
   const isDeveloperUser =
-    userParam.toLowerCase() === "develzy" ||
-    userParam.toLowerCase() === "developer" ||
-    roleParam === "developer" ||
+    sessionUsername === "develzy" ||
+    sessionUsername === "developer" ||
+    sessionRole === "developer" ||
     storedUser?.role?.toLowerCase() === "developer" ||
     storedUser?.username?.toLowerCase() === "develzy" ||
     storedUser?.username?.toLowerCase() === "developer";
   const isKetuaUser =
-    userParam.toLowerCase() === "admin_kalisalak" ||
-    userParam.toLowerCase() === "khasanudin" ||
+    sessionUsername === "admin_kalisalak" ||
+    sessionUsername === "khasanudin" ||
     (Boolean(storedUser?.nama) && storedUser.nama.toLowerCase().includes("khasanudin")) ||
     (Boolean(storedUser?.jabatan) && storedUser.jabatan.toLowerCase().includes("ketua p2kd"));
 
@@ -339,7 +341,7 @@ export const AdminDashboard: React.FC = () => {
   const [webConfig, setWebConfig] = useState<PublicWebConfig | null>(() => initialCache?.webConfig || null);
   const [isDptLocked, setIsDptLocked] = useState<boolean>(() => Boolean(initialCache?.isDptLocked));
   const [lockHashSignature, setLockHashSignature] = useState<string>(() => initialCache?.lockHashSignature || "");
-  const [nomorBeritaAcara, setNomorBeritaAcara] = useState<string>(() => initialCache?.nomorBeritaAcara || "BA/01/P2KD-KLS/VIII/2026");
+  const [nomorBeritaAcara, setNomorBeritaAcara] = useState<string>(() => initialCache?.nomorBeritaAcara || "");
 
   // User Security Context & Encrypted Namespace
   const userContext = React.useMemo(() => ({
@@ -360,7 +362,7 @@ export const AdminDashboard: React.FC = () => {
     stage: "Menghubungkan ke server...",
     detail: "Menyiapkan sistem keamanan & database lokal...",
     current: 0,
-    total: 7787,
+    total: 0,
     percent: 0,
     isComplete: false,
   });
@@ -1713,15 +1715,15 @@ export const AdminDashboard: React.FC = () => {
             dbStatus?.cloudStats?.pemilihCount ??
             dbStatus?.localStats?.totalDps ??
             dbStatus?.localStats?.totalPemilih ??
-            7787
+            voters.length
           }
           dptCount={dbStatus?.localStats?.totalDpt ?? 0}
-          tpsCount={dbStatus?.localStats?.totalTps ?? tpsList.length ?? 13}
+          tpsCount={dbStatus?.localStats?.totalTps ?? tpsList.length}
           aduanPendingCount={dbStatus?.localStats?.totalAduan ?? totalAduanMenunggu ?? 0}
           isDptLocked={isDptLocked}
-          auditCount={dbStatus?.localStats?.totalAudit ?? auditLogs.length ?? 144}
-          anggotaCount={dbStatus?.cloudStats?.anggotaCount ?? dbStatus?.localStats?.totalAnggota ?? anggotaList.length ?? 10}
-          petugasCount={dbStatus?.cloudStats?.petugasCount ?? dbStatus?.localStats?.totalPetugas ?? petugasCount ?? 14}
+          auditCount={dbStatus?.localStats?.totalAudit ?? auditLogs.length}
+          anggotaCount={dbStatus?.cloudStats?.anggotaCount ?? dbStatus?.localStats?.totalAnggota ?? anggotaList.length}
+          petugasCount={dbStatus?.cloudStats?.petugasCount ?? dbStatus?.localStats?.totalPetugas ?? petugasCount ?? 0}
           dbStatus={dbStatus}
           isAdmin={isAdmin}
           isDeveloper={isDeveloper}

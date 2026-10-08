@@ -29,10 +29,14 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error("API admin stats error:", err);
-    return NextResponse.json({
-      success: true,
-      data: dataStore.getStats(),
-    });
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Gagal mengambil data statistik admin.",
+        error: err instanceof Error ? err.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 

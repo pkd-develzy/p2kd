@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   UserCheck,
   Users,
@@ -157,14 +157,36 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
     });
   };
 
+  // Helper to get admin Bearer token from storage
+  const getAuthHeaders = (): Record<string, string> => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+        : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const hasInitialFetchedRef = useRef(false);
+
   // Fetch Petugas List on initial load (with instant cache first, background silent update)
   useEffect(() => {
+    if (hasInitialFetchedRef.current) return;
+    hasInitialFetchedRef.current = true;
     let isMounted = true;
 
-    fetch("/api/admin/petugas-dpt")
-      .then((res) => res.json())
+    const authHeaders = getAuthHeaders();
+    fetch("/api/admin/petugas-dpt", { headers: authHeaders })
+      .then(async (res) => {
+        if (!res.ok) {
+          if (res.status === 401) {
+            console.warn("Autentikasi admin diperlukan untuk memuat data petugas DPT.");
+          }
+          return null;
+        }
+        return res.json();
+      })
       .then((json) => {
-        if (isMounted && json.success && Array.isArray(json.data)) {
+        if (isMounted && json && json.success && Array.isArray(json.data)) {
           globalCachedPetugasList = json.data;
           setPetugasList(json.data);
           if (typeof window !== "undefined") {
@@ -175,7 +197,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         }
       })
       .catch((err) => {
-        console.error("Gagal mengambil data petugas:", err);
+        console.warn("Gagal mengambil data petugas:", err);
       })
       .finally(() => {
         if (isMounted) setLoading(false);
@@ -190,7 +212,12 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
   const fetchPetugasList = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/petugas-dpt?refresh=true");
+      const authHeaders = getAuthHeaders();
+      const res = await fetch("/api/admin/petugas-dpt?refresh=true", { headers: authHeaders });
+      if (!res.ok) {
+        toast.error("Gagal Memuat", "Gagal menyinkronkan data pendaftar petugas DPT.");
+        return;
+      }
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         globalCachedPetugasList = json.data;
@@ -202,7 +229,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         }
       }
     } catch (err) {
-      console.error("Gagal mengambil data petugas:", err);
+      console.warn("Gagal mengambil data petugas:", err);
     } finally {
       setLoading(false);
     }
@@ -359,9 +386,10 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
             assignedWilayah: editWilayah.trim(),
           };
 
+      const authHeaders = getAuthHeaders();
       const res = await fetch("/api/admin/petugas-dpt", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify(payload),
       });
 
@@ -420,8 +448,10 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
     if (!approved) return;
 
     try {
+      const authHeaders = getAuthHeaders();
       const res = await fetch(`/api/admin/petugas-dpt?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
+        headers: authHeaders,
       });
       const json = await res.json();
       if (json.success) {

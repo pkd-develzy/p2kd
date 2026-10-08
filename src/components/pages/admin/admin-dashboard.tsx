@@ -76,11 +76,14 @@ import { ModalForceChangePassword } from "./modals/modal-force-change-password";
 import { FieldBottomNav } from "./field-bottom-nav";
 import { AdminLockScreen } from "@/features/auth/components/admin-lock-screen";
 import { performSecureLogout } from "@/features/auth/services/auth-cleanup.service";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/cache-query-client";
 import { ModalVoterFormRHF } from "@/features/pemilih/components/modal-voter-form-rhf";
 import { VoterFormValues } from "@/features/pemilih/schemas/voter.schema";
 import { useDashboardUIStore } from "@/stores/use-dashboard-ui-store";
 
 export const AdminDashboard: React.FC = () => {
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const [storedUser] = useState(() => {
     if (typeof window !== "undefined") {
@@ -646,6 +649,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Active Target for Modals
   const [activeVoter, setActiveVoter] = useState<Voter | null>(null);
+  const [selectedVoterId, setSelectedVoterId] = useState<string | null>(null);
   const [activeTps, setActiveTps] = useState<TPSItem | null>(null);
 
   // Dynamic lookup from loaded database member list
@@ -675,13 +679,21 @@ export const AdminDashboard: React.FC = () => {
           : null;
       const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
+      const safeJson = async (res: Response) => {
+        if (!res.ok) return { success: false };
+        try {
+          return await res.json();
+        } catch {
+          return { success: false };
+        }
+      };
+
       const [
         resAduan,
         resTps,
         resAudit,
         resDb,
         resAnggota,
-        resPetugas,
         resConfig,
       ] = await Promise.all([
         fetch("/api/admin/aduan", { cache: "no-store", headers: authHeaders }),
@@ -689,7 +701,6 @@ export const AdminDashboard: React.FC = () => {
         fetch("/api/admin/audit", { cache: "no-store", headers: authHeaders }),
         fetch("/api/admin/db-status", { cache: "no-store", headers: authHeaders }),
         fetch("/api/admin/anggota?refresh=true", { cache: "no-store", headers: authHeaders }),
-        fetch("/api/admin/petugas-dpt", { cache: "no-store", headers: authHeaders }),
         fetch("/api/config", { cache: "no-store" }),
       ]);
 
@@ -699,16 +710,14 @@ export const AdminDashboard: React.FC = () => {
         dataAudit,
         dataDb,
         dataAnggota,
-        dataPetugas,
         dataConfig,
       ] = await Promise.all([
-        resAduan.json(),
-        resTps.json(),
-        resAudit.json(),
-        resDb.json(),
-        resAnggota.json(),
-        resPetugas.json(),
-        resConfig.json(),
+        safeJson(resAduan),
+        safeJson(resTps),
+        safeJson(resAudit),
+        safeJson(resDb),
+        safeJson(resAnggota),
+        safeJson(resConfig),
       ]);
 
       if (dataConfig.success && dataConfig.data) {
@@ -750,16 +759,14 @@ export const AdminDashboard: React.FC = () => {
         setAnggotaList(sorted);
         void LocalAnggotaRepository.setAll(sorted, namespace);
       }
-      if (dataPetugas?.success && Array.isArray(dataPetugas.data)) {
-        setPetugasCount(dataPetugas.data.length);
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem("p2kd_petugas_dpt_cache", JSON.stringify(dataPetugas.data));
-          } catch {}
-        }
-      }
-      if (dataDb.success) {
+      if (dataDb.success && dataDb.data) {
         setDbStatus(dataDb.data);
+        const resolvedPetugasCount =
+          dataDb.data.cloudStats?.petugasCount ??
+          dataDb.data.localStats?.totalPetugas;
+        if (typeof resolvedPetugasCount === "number") {
+          setPetugasCount(resolvedPetugasCount);
+        }
         if (dataDb.data.tahapan) {
           setIsDptLocked(dataDb.data.tahapan.isDptLocked);
           if (dataDb.data.tahapan.lockHashSignature) {
@@ -1137,16 +1144,26 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleOpenEditVoter = (v: Voter) => {
+    setSelectedVoterId(v.id);
     setActiveVoter(v);
     setShowEditVoterModal(true);
   };
 
+  const handleCloseVoterModal = () => {
+    setShowAddVoterModal(false);
+    setShowEditVoterModal(false);
+    setSelectedVoterId(null);
+    setActiveVoter(null);
+  };
+
   const handleSaveEditVoter = (values: VoterFormValues) => {
-    if (!activeVoter) return;
+    const targetId = selectedVoterId || activeVoter?.id;
+    if (!targetId || !activeVoter) return;
 
     const previousVoter = activeVoter;
     const updatedVoter: Voter = {
       ...activeVoter,
+      id: targetId,
       nik: values.nik,
       kk: values.kk || "",
       namaLengkap: values.namaLengkap.trim().toUpperCase(),
@@ -1167,14 +1184,17 @@ export const AdminDashboard: React.FC = () => {
     void LocalPemilihRepository.upsert(updatedVoter, namespace);
     setVoters(LocalPemilihRepository.getAll());
 
-    // 2. Immediately close modal & show success toast
-    setShowEditVoterModal(false);
+    // 2. Optimistically update TanStack Query cache for this specific record
+    queryClient.setQueryData(queryKeys.pemilihDetail(targetId), updatedVoter);
+
+    // 3. Immediately close modal & reset active selection
+    handleCloseVoterModal();
     toast.success("Data Diperbarui", `Perubahan data ${values.namaLengkap} berhasil disimpan.`);
 
-    // 3. Asynchronous background execution (zero UI delay)
+    // 4. Asynchronous background execution (zero UI delay)
     void (async () => {
       try {
-        const res = await fetch(`/api/admin/pemilih/${activeVoter.id}`, {
+        const res = await fetch(`/api/admin/pemilih/${targetId}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1187,7 +1207,14 @@ export const AdminDashboard: React.FC = () => {
         if (!result.success) {
           void LocalPemilihRepository.upsert(previousVoter, namespace);
           setVoters(LocalPemilihRepository.getAll());
+          queryClient.setQueryData(queryKeys.pemilihDetail(targetId), previousVoter);
           toast.error("Gagal Update di Server", result.message || "Data dikembalikan.");
+        } else {
+          // Revalidate cache for this specific voter and lists
+          queryClient.invalidateQueries({ queryKey: queryKeys.pemilihDetail(targetId) });
+          queryClient.invalidateQueries({
+            predicate: (query) => query.queryKey.includes("pemilih"),
+          });
         }
       } catch (err) {
         console.error("Background edit voter error:", err);
@@ -1817,6 +1844,7 @@ export const AdminDashboard: React.FC = () => {
               onOpenEditVoter={handleOpenEditVoter}
               onOpenAddVoter={() => {
                 setActiveVoter(null);
+                setSelectedVoterId(null);
                 setShowAddVoterModal(true);
               }}
               onOpenTms={handleOpenTms}
@@ -1839,6 +1867,7 @@ export const AdminDashboard: React.FC = () => {
               dbStatus={dbStatus}
               onOpenAddVoter={() => {
                 setActiveVoter(null);
+                setSelectedVoterId(null);
                 setShowAddVoterModal(true);
               }}
               onOpenEditVoter={handleOpenEditVoter}
@@ -1865,6 +1894,7 @@ export const AdminDashboard: React.FC = () => {
               dbStatus={dbStatus}
               onOpenAddVoter={() => {
                 setActiveVoter(null);
+                setSelectedVoterId(null);
                 setShowAddVoterModal(true);
               }}
               onOpenEditVoter={handleOpenEditVoter}
@@ -2002,8 +2032,10 @@ export const AdminDashboard: React.FC = () => {
 
       {/* --- MODALS --- */}
       <ModalVoterFormRHF
+        key={showEditVoterModal ? `edit-${selectedVoterId}` : "add-voter"}
         isOpen={showAddVoterModal || showEditVoterModal}
         isEdit={showEditVoterModal}
+        selectedId={showEditVoterModal ? selectedVoterId : null}
         initialValues={
           showEditVoterModal && activeVoter
             ? {
@@ -2024,10 +2056,7 @@ export const AdminDashboard: React.FC = () => {
             : undefined
         }
         tpsList={tpsList}
-        onClose={() => {
-          setShowAddVoterModal(false);
-          setShowEditVoterModal(false);
-        }}
+        onClose={handleCloseVoterModal}
         onSubmit={showAddVoterModal ? handleSaveNewVoter : handleSaveEditVoter}
       />
 

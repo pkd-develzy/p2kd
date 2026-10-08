@@ -79,6 +79,14 @@ export class LocalPemilihRepository {
   }
 
   /**
+   * Ambil data 1 pemilih spesifik berdasarkan ID
+   */
+  public static getById(id: string): Voter | undefined {
+    return this.votersMap.get(id);
+  }
+
+
+  /**
    * Ambil data pemilih khusus RW tertentu (diurutkan berdasarkan No. KK)
    */
   public static getByRw(rwCode: string): Voter[] {

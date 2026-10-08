@@ -20,6 +20,8 @@ export function PwaRegistrar() {
         .register("/sw.js")
         .then((reg) => {
           console.log("P2KD PWA Service Worker Registered:", reg.scope);
+          // Selalu periksa pembaruan Service Worker secara berkala
+          reg.update().catch(() => {});
         })
         .catch((err) => {
           console.warn("PWA Service Worker registration skipped:", err);

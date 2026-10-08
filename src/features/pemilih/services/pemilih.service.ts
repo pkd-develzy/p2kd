@@ -82,4 +82,26 @@ export const PemilihService = {
 
     return res.json();
   },
+
+  async fetchById(id: string, signal?: AbortSignal): Promise<Voter> {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+        : null;
+    const res = await fetch(`/api/admin/pemilih/${id}`, {
+      signal,
+      cache: "no-store",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Gagal memuat rincian data pemilih");
+    }
+
+    const json = await res.json();
+    return json.data as Voter;
+  },
 };

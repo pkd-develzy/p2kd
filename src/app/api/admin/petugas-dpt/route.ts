@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { dataStore, PetugasStatus } from "@/lib/data-store";
-import { verifyAdminSession } from "@/lib/auth-middleware";
+import { verifyAdminSession, isDeveloper, isKetuaP2KD, isSeksiPemilih } from "@/lib/auth-middleware";
+
+export const dynamic = "force-dynamic";
 
 // GET /api/admin/petugas-dpt - Mengambil seluruh data pendaftar petugas DPT bagi Panitia P2KD
 export async function GET(req: Request) {
@@ -44,6 +46,13 @@ export async function PUT(req: Request) {
     const session = verifyAdminSession(req);
     if (!session.authenticated || !session.user) {
       return session.response!;
+    }
+
+    if (!isDeveloper(session.user) && !isKetuaP2KD(session.user) && !isSeksiPemilih(session.user)) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang untuk memverifikasi pendaftar petugas." },
+        { status: 403 }
+      );
     }
 
     const body = await req.json();
@@ -149,6 +158,13 @@ export async function DELETE(req: Request) {
     const session = verifyAdminSession(req);
     if (!session.authenticated || !session.user) {
       return session.response!;
+    }
+
+    if (!isDeveloper(session.user) && !isKetuaP2KD(session.user) && !isSeksiPemilih(session.user)) {
+      return NextResponse.json(
+        { success: false, message: "Akses Ditolak: Anda tidak memiliki wewenang untuk menghapus pendaftar petugas." },
+        { status: 403 }
+      );
     }
 
     const { searchParams } = new URL(req.url);

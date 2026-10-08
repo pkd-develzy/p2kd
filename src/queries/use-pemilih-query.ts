@@ -48,6 +48,17 @@ export function usePemilihQuery(params: FetchPemilihParams, enabled = true, user
   return query;
 }
 
+export function usePemilihDetailQuery(selectedId?: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.pemilihDetail(selectedId || ""),
+    queryFn: ({ signal }) => PemilihService.fetchById(selectedId!, signal),
+    enabled: Boolean(selectedId && enabled),
+    staleTime: 5 * 60 * 1000, // 5 menit data spesifik per record ID aman dalam cache
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export function useCreatePemilihMutation() {
   const queryClient = useQueryClient();
 

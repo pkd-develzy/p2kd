@@ -25,11 +25,12 @@ export async function GET(req: Request) {
       const server3Client = getSupabaseServer3Admin();
 
       // Parallelize queries across all 3 isolated database servers
-      const [pemRes, agtRes, tpsRes, beritaRes] = await Promise.all([
+      const [pemRes, agtRes, tpsRes, beritaRes, petRes] = await Promise.all([
         seksi1Client.from("pemilih").select("*", { count: "exact", head: true }),
         server3Client.from("anggota_p2kd").select("*", { count: "exact", head: true }),
         seksi1Client.from("tps").select("*", { count: "exact", head: true }),
         client.from("berita_artikel").select("*", { count: "exact", head: true }),
+        seksi1Client.from("pendaftaran_petugas_dpt").select("*", { count: "exact", head: true }),
       ]);
 
       latencyMs = Math.max(Date.now() - startTime, 18);
@@ -44,6 +45,7 @@ export async function GET(req: Request) {
           pemilihCount: typeof pemRes.count === "number" ? pemRes.count : 0,
           anggotaCount: typeof agtRes.count === "number" ? agtRes.count : 0,
           tpsCount: typeof tpsRes.count === "number" ? tpsRes.count : 0,
+          petugasCount: typeof petRes.count === "number" ? petRes.count : 0,
         };
       }
     } catch (err: unknown) {

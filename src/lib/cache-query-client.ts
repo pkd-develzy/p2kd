@@ -44,7 +44,7 @@ export const queryKeys = {
     ] as const;
   },
 
-  pemilihDetail: (id: string) => [...queryKeys.all, "pemilih", "detail", id] as const,
+  pemilihDetail: (id: string) => ["pemilih-detail", id] as const,
 };
 
 /**

@@ -15,6 +15,7 @@ import {
   MasterBerita,
   BeritaKategori,
   getAnggotaHierarchyRank,
+  createDefaultTpsList,
 } from "./data-store";
 import { maskNIK, maskKK } from "./encryption";
 import { parseClientSource } from "./utils";
@@ -661,7 +662,7 @@ export class SupabaseDbService {
       const petugasData = (petugasRes.data as SupabasePetugasDptRow[]) || [];
       const beritaData = (beritaRes.data as SupabaseBeritaRow[]) || [];
 
-      const tpsList: MasterTPS[] = ((tpsData as SupabaseTpsRow[]) || []).map((t) => ({
+      const rawTpsList: MasterTPS[] = ((tpsData as SupabaseTpsRow[]) || []).map((t) => ({
         id: t.id,
         kodeTps: t.kode_tps,
         nomorTps: t.nomor_tps,
@@ -678,6 +679,8 @@ export class SupabaseDbService {
         const numB = parseInt((b.rw || b.nomorTps || "").replace(/\D/g, ""), 10) || 0;
         return numA - numB;
       });
+
+      const tpsList: MasterTPS[] = rawTpsList.length > 0 ? rawTpsList : createDefaultTpsList();
 
       const pemilihList: MasterPemilih[] = [];
 

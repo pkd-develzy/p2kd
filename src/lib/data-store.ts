@@ -178,6 +178,25 @@ export interface MasterTPS {
   status: "AKTIF" | "NONAKTIF";
 }
 
+export function createDefaultTpsList(): MasterTPS[] {
+  return Array.from({ length: 13 }, (_, i) => {
+    const num = String(i + 1).padStart(2, "0");
+    return {
+      id: `rw-${num}`,
+      kodeTps: `TPS-${num}`,
+      nomorTps: num,
+      namaTps: `Wilayah RW ${num}`,
+      namaTabung: `Tabung Pemilihan ${num}`,
+      lokasi: "Desa Kalisalak",
+      alamat: "Desa Kalisalak, Kec. Margasari, Kab. Tegal",
+      rt: "RT 01, RT 02, RT 03",
+      rw: `RW ${num}`,
+      kuotaMaksimal: 850,
+      status: "AKTIF" as const,
+    };
+  });
+}
+
 export interface MasterKandidat {
   id: string;
   nomorUrut: number;
@@ -660,7 +679,7 @@ class SystemDataStore {
 
   private pemilihList: MasterPemilih[] = [];
   private aduanList: MasterAduan[] = [];
-  private tpsList: MasterTPS[] = [];
+  private tpsList: MasterTPS[] = createDefaultTpsList();
   private kandidatList: MasterKandidat[] = [];
   private tpsVoteCounts: MasterTpsVoteCount[] = [];
   private anggotaList: MasterAnggotaP2KD[] = [];
@@ -731,6 +750,10 @@ class SystemDataStore {
     breakdownWilayah: [] as Array<Record<string, unknown>>,
     tpsCounts: {} as Record<string, { total: number; laki: number; perempuan: number }>,
   };
+
+  public getAggregateStats() {
+    return { ...this.aggregateStats };
+  }
 
   // Global Session Invalidation Epoch (Unix timestamp in seconds)
   private sessionRevocationEpoch: number = 0;
@@ -820,7 +843,7 @@ class SystemDataStore {
       }
 
       if (res.success && res.data) {
-        if (res.data.tpsList) this.tpsList = res.data.tpsList;
+        if (Array.isArray(res.data.tpsList) && res.data.tpsList.length > 0) this.tpsList = res.data.tpsList;
         if (res.data.pemilihList) this.pemilihList = res.data.pemilihList;
         if (res.data.anggotaList) this.anggotaList = res.data.anggotaList;
         if (res.data.balonList) this.balonList = res.data.balonList;
@@ -2762,7 +2785,7 @@ class SystemDataStore {
 
     const totalRw = this.webConfig.totalRw || 0;
     const totalRt = this.webConfig.totalRt || 0;
-    const totalTps = sourceTps.length;
+    const totalTps = sourceTps.length > 0 ? sourceTps.length : (tpsStats.length > 0 ? tpsStats.length : 13);
 
     const totalPetugas = this.petugasDptList.length;
     const petugasMenunggu = this.petugasDptList.filter((p) => p.status === "MENUNGGU_VERIFIKASI").length;

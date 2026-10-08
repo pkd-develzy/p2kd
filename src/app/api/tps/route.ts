@@ -19,23 +19,43 @@ export async function GET() {
       countsByTps.set(key, stat);
     }
 
+    const aggStats = dataStore.getAggregateStats();
+
     const publicTps = list.map((t) => {
       let total = 0;
       let l = 0;
       let p = 0;
 
-      for (const [key, val] of countsByTps.entries()) {
-        if (key.includes(t.nomorTps) || key.includes(t.namaTps)) {
-          total += val.total;
-          l += val.l;
-          p += val.p;
+      const rawNum = (t.nomorTps || "").replace(/\D/g, "");
+      const padNum = rawNum ? rawNum.padStart(2, "0") : String(t.nomorTps);
+      const rwKey = padNum ? `RW ${padNum}` : "";
+
+      const liveCount =
+        aggStats.tpsCounts[padNum] ||
+        aggStats.tpsCounts[t.nomorTps] ||
+        aggStats.tpsCounts[t.namaTps] ||
+        (rwKey ? aggStats.tpsCounts[rwKey] : undefined) ||
+        (rawNum ? aggStats.tpsCounts[rawNum] : undefined);
+
+      if (liveCount) {
+        total = liveCount.total;
+        l = liveCount.laki;
+        p = liveCount.perempuan;
+      } else {
+        for (const [key, val] of countsByTps.entries()) {
+          if (key.includes(t.nomorTps) || key.includes(t.namaTps)) {
+            total += val.total;
+            l += val.l;
+            p += val.p;
+          }
         }
       }
 
       return {
         id: t.id,
-        nomorTps: t.nomorTps,
+        nomorTps: padNum || t.nomorTps,
         namaTps: t.namaTps,
+        namaTabung: t.namaTabung || `Tabung Pemilihan ${padNum}`,
         lokasi: t.lokasi,
         alamat: t.alamat,
         rt: t.rt,

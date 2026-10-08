@@ -128,6 +128,11 @@ export interface DbStatus {
     petugasCount?: number;
   };
   localStats?: {
+    calonDps?: number;
+    dps?: number;
+    dpt?: number;
+    pemilihTambahan?: number;
+    coklitSelesai?: number;
     totalPemilih?: number;
     totalAktif?: number;
     totalLaki?: number;
@@ -135,17 +140,36 @@ export interface DbStatus {
     totalTms?: number;
     totalDps?: number;
     totalDpt?: number;
+    totalWilayah?: number;
     totalTps?: number;
     totalAduan?: number;
     totalPetugas?: number;
     totalAnggota?: number;
     totalAudit?: number;
-    tpsStats?: Array<{
-      tps: string;
-      namaTps: string;
+    breakdownWilayah?: Array<{
+      rw: string;
+      nama: string;
+      lokasi: string;
       total: number;
-      aktif: number;
-      tms: number;
+      laki: number;
+      perempuan: number;
+      kuotaMaksimal: number;
+      rt?: string;
+    }>;
+    tpsStats?: Array<{
+      id?: string;
+      tps?: string;
+      nomorTps?: string;
+      namaTps: string;
+      lokasi?: string;
+      total: number;
+      aktif?: number;
+      laki?: number;
+      perempuan?: number;
+      tms?: number;
+      kuotaMaksimal?: number;
+      rt?: string;
+      rw?: string;
     }>;
   };
   tahapan?: {
@@ -154,6 +178,8 @@ export interface DbStatus {
     nomorBeritaAcara?: string;
   };
 }
+
+export type DbStatusData = DbStatus;
 
 export interface VoterFormData {
   nik: string;

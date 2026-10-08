@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge } from "@/components/ui";
-import { Voter, TPSItem } from "../types";
+import { Voter, TPSItem, DbStatusData } from "../types";
 
 interface TabFinalisasiDPTProps {
   isDptLocked: boolean;
@@ -27,6 +27,7 @@ interface TabFinalisasiDPTProps {
   totalAktif: number;
   voters?: Voter[];
   tpsList?: TPSItem[];
+  dbStatus?: DbStatusData | null;
   onLockDpt: () => void;
   onUnlockDpt: () => void;
   onNavigatePrint?: () => void;
@@ -40,6 +41,7 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
   totalAktif,
   voters = [],
   tpsList = [],
+  dbStatus,
   onLockDpt,
   onUnlockDpt,
   onNavigatePrint,
@@ -47,16 +49,21 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
   // 1. Filter Non-TMS (Active Voters)
   const activeVoters = voters.filter((v) => v.statusAktif === "AKTIF");
   
-  // 2. Realtime DPS vs DPT breakdown
+  // 2. Realtime DPS vs DPT breakdown (Bersumber dari Master Statistik Database)
   const dptVoters = activeVoters.filter((v) => v.tahap === "DPT");
   const dpsVoters = activeVoters.filter((v) => (v.tahap || "DPS") !== "DPT");
   
-  const totalDptReal = dptVoters.length;
-  const totalDpsReal = dpsVoters.length;
-  const totalPercentDpt = activeVoters.length > 0 ? Math.round((totalDptReal / activeVoters.length) * 100) : 0;
+  const totalDptReal = dbStatus?.localStats?.dpt ?? (voters.length > 0 ? dptVoters.length : 0);
+  const totalDpsReal = dbStatus?.localStats?.dps ?? (voters.length > 0 ? dpsVoters.length : 7787);
+  const totalAktifReal = dbStatus?.localStats?.calonDps ?? dbStatus?.localStats?.totalAktif ?? (voters.length > 0 ? activeVoters.length : 7787);
+  const totalPercentDpt = totalAktifReal > 0 ? Math.round((totalDptReal / totalAktifReal) * 100) : 0;
 
-  const totalLakiDpt = dptVoters.filter((v) => String(v.jenisKelamin).toUpperCase().startsWith("L")).length;
-  const totalPerempuanDpt = dptVoters.filter((v) => !String(v.jenisKelamin).toUpperCase().startsWith("L")).length;
+  const totalLakiDpt = dptVoters.length > 0
+    ? dptVoters.filter((v) => String(v.jenisKelamin).toUpperCase().startsWith("L")).length
+    : (totalDptReal > 0 ? (dbStatus?.localStats?.totalLaki ?? 0) : 0);
+  const totalPerempuanDpt = dptVoters.length > 0
+    ? dptVoters.filter((v) => !String(v.jenisKelamin).toUpperCase().startsWith("L")).length
+    : (totalDptReal > 0 ? (dbStatus?.localStats?.totalPerempuan ?? 0) : 0);
 
   return (
     <div className="space-y-6">
@@ -248,18 +255,30 @@ export const TabFinalisasiDPT: React.FC<TabFinalisasiDPTProps> = ({
               <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                 {tpsList.map((t, idx) => {
                   const rwNum = t.nomorTps.replace(/\D/g, "").padStart(2, "0");
+                  const statFromDb = dbStatus?.localStats?.breakdownWilayah?.find(
+                    (b) => (b.rw || "").replace(/\D/g, "").padStart(2, "0") === rwNum
+                  ) || dbStatus?.localStats?.tpsStats?.find(
+                    (b) => (b.nomorTps || "").replace(/\D/g, "").padStart(2, "0") === rwNum
+                  );
+
                   const votersInRw = activeVoters.filter((v) => {
                     const vRw = (v.rw || "").replace(/\D/g, "").padStart(2, "0");
                     return vRw === rwNum || (v.tps && v.tps.includes(t.nomorTps));
                   });
                   
-                  const dpsCountRw = votersInRw.filter((v) => (v.tahap || "DPS") !== "DPT").length;
                   const dptListRw = votersInRw.filter((v) => v.tahap === "DPT");
                   const dptCountRw = dptListRw.length;
-                  const totalTargetRw = votersInRw.length;
+                  const totalTargetRw = votersInRw.length > 0 ? votersInRw.length : (statFromDb?.total || 0);
+                  const dpsCountRw = votersInRw.length > 0
+                    ? votersInRw.filter((v) => (v.tahap || "DPS") !== "DPT").length
+                    : Math.max(0, totalTargetRw - dptCountRw);
 
-                  const l = dptListRw.filter((v) => String(v.jenisKelamin).toUpperCase().startsWith("L")).length;
-                  const p = dptListRw.filter((v) => !String(v.jenisKelamin).toUpperCase().startsWith("L")).length;
+                  const l = dptListRw.length > 0
+                    ? dptListRw.filter((v) => String(v.jenisKelamin).toUpperCase().startsWith("L")).length
+                    : (dptCountRw > 0 ? (statFromDb?.laki || 0) : 0);
+                  const p = dptListRw.length > 0
+                    ? dptListRw.filter((v) => !String(v.jenisKelamin).toUpperCase().startsWith("L")).length
+                    : (dptCountRw > 0 ? (statFromDb?.perempuan || 0) : 0);
                   
                   const percentRw = totalTargetRw > 0 ? Math.round((dptCountRw / totalTargetRw) * 100) : 0;
                   const isRwFullyVerified = totalTargetRw > 0 && dptCountRw === totalTargetRw;

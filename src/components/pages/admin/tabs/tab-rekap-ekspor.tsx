@@ -4,16 +4,18 @@ import React from "react";
 import { FileSpreadsheet, Layers, UserX, AlertTriangle, Download } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge } from "@/components/ui";
-import { Voter, TPSItem } from "../types";
+import { Voter, TPSItem, DbStatus } from "../types";
 
 interface TabRekapEksporProps {
   tpsList: TPSItem[];
   voters: Voter[];
+  dbStatus?: DbStatus | null;
 }
 
 export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
   tpsList,
   voters,
+  dbStatus,
 }) => {
   return (
     <div className="space-y-5">
@@ -143,13 +145,39 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {tpsList.map((t, idx) => {
-                const votersInTps = voters.filter(
-                  (v) =>
-                    v.statusAktif === "AKTIF" &&
-                    v.tps.toLowerCase().includes(t.nomorTps.toLowerCase())
+                const rwNumStr = t.nomorTps.replace(/\D/g, "");
+                const statItem = dbStatus?.localStats?.breakdownWilayah?.find(
+                  (b) =>
+                    String(b.rw || "").replace(/\D/g, "") === rwNumStr ||
+                    (b.nama && t.namaTps && b.nama.toLowerCase().includes(t.namaTps.toLowerCase()))
                 );
-                const l = votersInTps.filter((v) => v.jenisKelamin === "L").length;
-                const p = votersInTps.filter((v) => v.jenisKelamin === "P").length;
+
+                const l = statItem !== undefined
+                  ? statItem.laki
+                  : voters.filter(
+                      (v) =>
+                        v.statusAktif === "AKTIF" &&
+                        v.tps.toLowerCase().includes(t.nomorTps.toLowerCase()) &&
+                        v.jenisKelamin === "L"
+                    ).length;
+
+                const p = statItem !== undefined
+                  ? statItem.perempuan
+                  : voters.filter(
+                      (v) =>
+                        v.statusAktif === "AKTIF" &&
+                        v.tps.toLowerCase().includes(t.nomorTps.toLowerCase()) &&
+                        v.jenisKelamin === "P"
+                    ).length;
+
+                const totalInTabung = statItem !== undefined
+                  ? statItem.total
+                  : voters.filter(
+                      (v) =>
+                        v.statusAktif === "AKTIF" &&
+                        v.tps.toLowerCase().includes(t.nomorTps.toLowerCase())
+                    ).length;
+
                 return (
                   <tr key={t.id} className="hover:bg-slate-50">
                     <td className="py-2.5 px-3 text-slate-400">{idx + 1}</td>
@@ -157,7 +185,7 @@ export const TabRekapEkspor: React.FC<TabRekapEksporProps> = ({
                     <td className="py-2.5 px-3 text-slate-600">{t.lokasi}</td>
                     <td className="py-2.5 px-3 text-slate-800">{l}</td>
                     <td className="py-2.5 px-3 text-slate-800">{p}</td>
-                    <td className="py-2.5 px-3 font-bold text-blue-700">{votersInTps.length}</td>
+                    <td className="py-2.5 px-3 font-bold text-blue-700">{totalInTabung}</td>
                     <td className="py-2.5 px-3 text-slate-500">{t.kuotaMaksimal} org</td>
                   </tr>
                 );

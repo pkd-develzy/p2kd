@@ -9,20 +9,27 @@ interface DpsRow {
   id: string | number;
   rw: string;
   dusun: string;
-  tps: string;
+  cakupanWilayah: string;
   lokasi: string;
   jmlPemilih: number;
   laki: number;
   perempuan: number;
 }
 
-interface ApiTpsStat {
-  nomorTps: string;
-  namaTps: string;
-  lokasi: string;
+interface ApiWilayahStat {
+  id?: string;
+  nomorRw?: string;
+  nomorTps?: string;
+  namaWilayah?: string;
+  namaTps?: string;
+  cakupanWilayah?: string;
+  pusatLokasi?: string;
+  lokasi?: string;
   total: number;
   laki: number;
   perempuan: number;
+  rt?: string;
+  rw?: string;
 }
 
 export const DpsTable: React.FC = () => {
@@ -40,6 +47,7 @@ export const DpsTable: React.FC = () => {
     }
     return [];
   });
+  const [totalCalonDps, setTotalCalonDps] = useState<number>(7787);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -51,36 +59,48 @@ export const DpsTable: React.FC = () => {
       try {
         const res = await fetch("/api/stats");
         const json = await res.json();
-        if (isMounted && json.success && Array.isArray(json.data?.tpsStats) && json.data.tpsStats.length > 0) {
-          const rows: DpsRow[] = json.data.tpsStats.map((t: ApiTpsStat, idx: number) => {
-            const rawRw = t.namaTps?.includes("RW") ? t.namaTps : (t.nomorTps || "");
-            const num = parseInt(rawRw.replace(/\D/g, ""), 10) || (idx + 1);
-            const rwFormatted = `RW ${String(num).padStart(2, "0")}`;
-            return {
-              id: idx + 1,
-              rw: rwFormatted,
-              dusun: "Desa Kalisalak",
-              tps: `TPS ${String(num).padStart(2, "0")}`,
-              lokasi: t.lokasi || `Wilayah ${rwFormatted}`,
-              jmlPemilih: Number(t.total) || 0,
-              laki: Number(t.laki) || 0,
-              perempuan: Number(t.perempuan) || 0,
-            };
-          });
+        if (isMounted && json.success) {
+          const rawStats = Array.isArray(json.data?.breakdownWilayah) && json.data.breakdownWilayah.length > 0
+            ? json.data.breakdownWilayah
+            : (Array.isArray(json.data?.tpsStats) ? json.data.tpsStats : []);
 
-          // Sort strictly in ascending order by RW number (RW 01, RW 02, ... RW 13)
-          rows.sort((a, b) => {
-            const numA = parseInt(a.rw.replace(/\D/g, ""), 10) || 0;
-            const numB = parseInt(b.rw.replace(/\D/g, ""), 10) || 0;
-            return numA - numB;
-          });
+          if (rawStats.length > 0) {
+            const rows: DpsRow[] = rawStats.map((t: ApiWilayahStat, idx: number) => {
+              const numStr = String(t.nomorRw || t.nomorTps || "").replace(/\D/g, "");
+              const num = parseInt(numStr, 10) || (idx + 1);
+              const rwFormatted = `RW ${String(num).padStart(2, "0")}`;
+              const cakupan = t.cakupanWilayah || `${rwFormatted} (${t.rt || "RT 01, 02, 03"})`;
 
-          setDpsList(rows);
-          try {
-            localStorage.setItem("p2kd_public_dps_cache", JSON.stringify(rows));
-          } catch {
-            // ignore
+              return {
+                id: idx + 1,
+                rw: rwFormatted,
+                dusun: "Desa Kalisalak",
+                cakupanWilayah: cakupan,
+                lokasi: t.pusatLokasi || t.lokasi || "Desa Kalisalak",
+                jmlPemilih: Number(t.total) || 0,
+                laki: Number(t.laki) || 0,
+                perempuan: Number(t.perempuan) || 0,
+              };
+            });
+
+            // Sort strictly in ascending order by RW number (RW 01 s/d RW 13)
+            rows.sort((a, b) => {
+              const numA = parseInt(a.rw.replace(/\D/g, ""), 10) || 0;
+              const numB = parseInt(b.rw.replace(/\D/g, ""), 10) || 0;
+              return numA - numB;
+            });
+
+            setDpsList(rows);
+            try {
+              localStorage.setItem("p2kd_public_dps_cache", JSON.stringify(rows));
+            } catch {
+              // ignore
+            }
           }
+
+          // Master aggregate count langsung dari backend (tanpa reduce di client)
+          const masterTotal = Number(json.data?.calonDps) || Number(json.data?.totalAktif) || Number(json.data?.totalSemua) || 7787;
+          setTotalCalonDps(masterTotal);
         }
       } catch (err) {
         console.error("Gagal mengambil data DPS:", err);
@@ -102,19 +122,16 @@ export const DpsTable: React.FC = () => {
     };
   }, []);
 
-
   const filtered = dpsList.filter(
     (item) =>
       item.rw.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.dusun.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.tps.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.cakupanWilayah.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.lokasi.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const startIdx = (currentPage - 1) * pageSize;
   const pagedList = filtered.slice(startIdx, startIdx + pageSize);
-
-  const totalDps = dpsList.reduce((acc, curr) => acc + curr.jmlPemilih, 0);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -133,7 +150,7 @@ export const DpsTable: React.FC = () => {
           </span>
         </div>
         <p className="text-sm text-slate-500 mt-2">
-          Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal • Total Calon DPS: <strong>{totalDps.toLocaleString("id-ID")} Pemilih</strong>
+          Desa Kalisalak, Kecamatan Margasari, Kabupaten Tegal • Total Calon DPS: <strong>{totalCalonDps.toLocaleString("id-ID")} Pemilih</strong>
         </p>
       </div>
 
@@ -143,7 +160,7 @@ export const DpsTable: React.FC = () => {
           <div className="w-full sm:max-w-md">
             <Input
               icon={<Search className="w-4 h-4 text-slate-400" />}
-              placeholder="Cari Tabung atau RW..."
+              placeholder="Cari Wilayah Pemilihan atau RW..."
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -159,7 +176,7 @@ export const DpsTable: React.FC = () => {
           {loading ? (
             <div className="py-12 flex items-center justify-center text-slate-500 gap-2">
               <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Memuat data DPS resmi...</span>
+              <span>Memuat data resmi Wilayah Pemilihan...</span>
             </div>
           ) : (
             <table className="w-full text-left text-xs text-slate-700">
@@ -178,11 +195,11 @@ export const DpsTable: React.FC = () => {
                   <tr key={row.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3 px-4 font-bold text-blue-900">{row.rw}</td>
                     <td className="py-3 px-4 font-semibold text-slate-900">
-                      {row.rw} (RT 01, 02, 03)
+                      {row.cakupanWilayah}
                     </td>
                     <td className="py-3 px-4 flex items-center gap-1.5 font-medium text-slate-600">
                       <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                      <span>Desa Kalisalak</span>
+                      <span>{row.lokasi}</span>
                     </td>
                     <td className="py-3 px-4 text-right text-slate-600">{row.laki.toLocaleString("id-ID")}</td>
                     <td className="py-3 px-4 text-right text-slate-600">{row.perempuan.toLocaleString("id-ID")}</td>

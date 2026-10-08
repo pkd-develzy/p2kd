@@ -1832,6 +1832,7 @@ export const AdminDashboard: React.FC = () => {
               setSelectedStatusFilter={setSelectedStatusFilter}
               isAdmin={canManageAllWilayah}
               assignedTps={assignedTps}
+              dbStatus={dbStatus}
               onOpenAddVoter={() => {
                 setActiveVoter(null);
                 setShowAddVoterModal(true);
@@ -1857,6 +1858,7 @@ export const AdminDashboard: React.FC = () => {
               setSelectedStatusFilter={setSelectedStatusFilter}
               isAdmin={canManageAllWilayah}
               assignedTps={assignedTps}
+              dbStatus={dbStatus}
               onOpenAddVoter={() => {
                 setActiveVoter(null);
                 setShowAddVoterModal(true);
@@ -1934,6 +1936,7 @@ export const AdminDashboard: React.FC = () => {
               totalAktif={totalAktif}
               voters={voters}
               tpsList={tpsList}
+              dbStatus={dbStatus}
               onLockDpt={handleLockDpt}
               onUnlockDpt={handleUnlockDpt}
               onNavigatePrint={() => setActiveTab("print")}
@@ -1941,7 +1944,7 @@ export const AdminDashboard: React.FC = () => {
           )}
 
           {effectiveActiveTab === "export" && canAccessVoterDataUI && (
-            <TabRekapEkspor tpsList={tpsList} voters={voters} />
+            <TabRekapEkspor tpsList={tpsList} voters={voters} dbStatus={dbStatus} />
           )}
 
           {effectiveActiveTab === "audit" && isDeveloper && (

@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button, Badge, PaginationControl } from "@/components/ui";
-import { Voter, TPSItem } from "../types";
+import { Voter, TPSItem, DbStatus } from "../types";
 import { VirtualVoterTable } from "@/features/pemilih/components/virtual-voter-table";
 import { useDebounce } from "@/hooks/use-debounce";
 
@@ -29,6 +29,7 @@ interface TabMasterPemilihProps {
   setSelectedStatusFilter: (status: string) => void;
   isAdmin?: boolean;
   assignedTps?: string;
+  dbStatus?: DbStatus | null;
   onOpenAddVoter: () => void;
   onOpenEditVoter: (v: Voter) => void;
   onOpenMutasi: (v: Voter) => void;
@@ -49,6 +50,8 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
   selectedStatusFilter,
   setSelectedStatusFilter,
   isAdmin = true,
+  assignedTps,
+  dbStatus,
   onOpenAddVoter,
   onOpenEditVoter,
   onOpenMutasi,
@@ -90,10 +93,25 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
     return true;
   });
 
-  const calonDpsCount = baseScopedVoters.length;
-  const dpsCount = baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA" || v.statusAktif === "AKTIF").length;
-  const dpshpCount = baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA").length;
-  const dpshpAkhirCount = baseScopedVoters.filter((v) => v.statusAktif === "AKTIF" && v.coklitStatus !== "TMS").length;
+  const isDefaultView = !localSearch.trim() && selectedTpsFilter === "SEMUA" && selectedStatusFilter === "SEMUA" && selectedStage === "SEMUA" && (!assignedTps || isAdmin);
+
+  const calonDpsCount = isDefaultView && dbStatus?.localStats?.calonDps
+    ? dbStatus.localStats.calonDps
+    : (baseScopedVoters.length > 0 ? baseScopedVoters.length : (dbStatus?.localStats?.calonDps ?? 7787));
+
+  const dpsCount = isDefaultView && dbStatus?.localStats?.dps
+    ? dbStatus.localStats.dps
+    : (baseScopedVoters.length > 0
+        ? baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA" || v.statusAktif === "AKTIF").length
+        : (dbStatus?.localStats?.dps ?? 7787));
+
+  const dpshpCount = isDefaultView && dbStatus?.localStats?.coklitSelesai
+    ? dbStatus.localStats.coklitSelesai
+    : baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA").length;
+
+  const dpshpAkhirCount = isDefaultView && dbStatus?.localStats?.totalAktif
+    ? dbStatus.localStats.totalAktif
+    : baseScopedVoters.filter((v) => v.statusAktif === "AKTIF" && v.coklitStatus !== "TMS").length;
 
   // 2. Ultra-Fast Instant Client-side Filter (< 1ms across loaded rows)
   const filteredVoters = modeFilteredVoters.filter((v) => {

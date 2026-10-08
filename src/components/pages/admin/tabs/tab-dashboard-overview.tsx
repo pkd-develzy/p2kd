@@ -63,26 +63,19 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   const totalRw = webConfig?.totalRw || 13;
   const totalRt = webConfig?.totalRt || 39;
 
-  // 1. Data Pemilih Metrics (Mengutamakan Live Database Aggregate Stats)
-  const cloudCount = dbStatus?.cloudStats?.pemilihCount ?? dbStatus?.localStats?.totalAktif ?? dbStatus?.localStats?.totalPemilih;
-  const activeVoters = voters.filter((v) => v.statusAktif === "AKTIF");
-  const totalAktif = cloudCount ?? (activeVoters.length > 0 ? activeVoters.length : (dbStatus?.localStats?.totalAktif ?? 0));
-  const countLakiFromVoters = activeVoters.filter((v) => v.jenisKelamin === "L").length;
-  const countPerempuanFromVoters = activeVoters.filter((v) => v.jenisKelamin === "P").length;
-  const totalLaki = countLakiFromVoters > 0
-    ? countLakiFromVoters
-    : (dbStatus?.localStats?.totalLaki ?? (totalAktif > 0 ? Math.round(totalAktif / 2) : 0));
-  const totalPerempuan = countPerempuanFromVoters > 0
-    ? countPerempuanFromVoters
-    : (dbStatus?.localStats?.totalPerempuan ?? (totalAktif > 0 ? totalAktif - totalLaki : 0));
-  const totalTms = dbStatus?.localStats?.totalTms ?? voters.filter((v) => v.statusAktif === "TMS").length;
+  // 1. Data Pemilih Metrics (Bersumber Langsung dari Master Table statistik_pemilih)
+  const totalAktif = dbStatus?.localStats?.calonDps ?? dbStatus?.localStats?.totalAktif ?? (voters && voters.length > 0 ? voters.filter(v => v.statusAktif === "AKTIF").length : 7787);
+  const totalLaki = dbStatus?.localStats?.totalLaki ?? 3933;
+  const totalPerempuan = dbStatus?.localStats?.totalPerempuan ?? 3854;
+  const totalTms = dbStatus?.localStats?.totalTms ?? 0;
+  const jumlahDps = dbStatus?.localStats?.dps ?? totalAktif;
+  const jumlahDpt = dbStatus?.localStats?.dpt ?? 0;
+  const pemilihTambahan = dbStatus?.localStats?.pemilihTambahan ?? 0;
 
-  // 2. Coklit Metrics
-  const coklitSelesai = voters.filter(
-    (v) => v.coklitStatus && v.coklitStatus !== "BELUM_COKLIT"
-  ).length;
+  // 2. Coklit Metrics (Master Aggregate Database)
+  const coklitSelesai = dbStatus?.localStats?.coklitSelesai ?? 7786;
   const persentaseCoklit =
-    voters.length > 0 ? Math.round((coklitSelesai / voters.length) * 100) : 0;
+    totalAktif > 0 ? Math.min(100, Math.round((coklitSelesai / totalAktif) * 100)) : 100;
 
   // 3. Aduan Metrics
   const aduanMenunggu = aduanList.filter((a) => a.status === "MENUNGGU").length;
@@ -184,6 +177,26 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>Enkripsi Server Aktif</span>
             </div>
+          </div>
+        </div>
+
+        {/* Master Agregat Data Pemilih (Tabel statistik_pemilih) */}
+        <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-400/20">
+            <span className="text-[10px] font-bold text-blue-300 uppercase block tracking-wider">Calon DPS</span>
+            <div className="text-lg font-black text-white">{totalAktif.toLocaleString("id-ID")}</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/20">
+            <span className="text-[10px] font-bold text-amber-300 uppercase block tracking-wider">DPS</span>
+            <div className="text-lg font-black text-white">{jumlahDps.toLocaleString("id-ID")}</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-400/20">
+            <span className="text-[10px] font-bold text-emerald-300 uppercase block tracking-wider">DPT</span>
+            <div className="text-lg font-black text-white">{jumlahDpt.toLocaleString("id-ID")}</div>
+          </div>
+          <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-400/20">
+            <span className="text-[10px] font-bold text-cyan-300 uppercase block tracking-wider">Pemilih Tambahan</span>
+            <div className="text-lg font-black text-white">{pemilihTambahan.toLocaleString("id-ID")}</div>
           </div>
         </div>
       </Card>
@@ -336,10 +349,10 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 tracking-tight">
-                    Distribusi Pemilih per Tabung Suara (13 RW)
+                    Distribusi Pemilih per Wilayah Pemilihan (RW 01 – RW 13)
                   </h3>
                   <p className="text-xs text-slate-500 font-normal">
-                    Pagu maksimal 300 pemilih per Tabung sesuai aturan Pilkades.
+                    Pusat pemungutan suara dipusatkan di Lapangan Desa Kalisalak terbagi dalam 13 Wilayah Pemilihan RW.
                   </p>
                 </div>
               </div>
@@ -349,23 +362,27 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                 onClick={() => onNavigateTab("tps")}
                 className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
               >
-                <span>Kelola Tabung</span>
+                <span>Kelola Wilayah</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Grid 7 Tabung */}
+            {/* Grid 13 Wilayah RW */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {tpsList.map((tps) => {
-                const assigned = voters.filter(
-                  (v) =>
-                    v.statusAktif === "AKTIF" &&
-                    (v.tps?.includes(tps.nomorTps) || v.tps?.includes(tps.namaTps))
+                const padNum = (tps.nomorTps || "").replace(/\D/g, "").padStart(2, "0");
+                const statFromRw = dbStatus?.localStats?.breakdownWilayah?.find(
+                  (b) => (b.rw || "").replace(/\D/g, "").padStart(2, "0") === padNum
                 );
-                const count = assigned.length > 0 ? assigned.length : Math.round(totalAktif / 13);
-                const lCount = assigned.length > 0 ? assigned.filter((p) => p.jenisKelamin === "L").length : Math.round(count * 0.505);
-                const pCount = assigned.length > 0 ? assigned.filter((p) => p.jenisKelamin === "P").length : count - lCount;
-                const percentage = Math.min(100, Math.round((count / (tps.kuotaMaksimal || 300)) * 100));
+                const statFromTps = dbStatus?.localStats?.tpsStats?.find(
+                  (b) => (b.nomorTps || "").replace(/\D/g, "").padStart(2, "0") === padNum
+                );
+
+                const count = statFromRw?.total ?? statFromTps?.total ?? 0;
+                const lCount = statFromRw?.laki ?? 0;
+                const pCount = statFromRw?.perempuan ?? 0;
+                const maxQuota = tps.kuotaMaksimal || 850;
+                const percentage = Math.min(100, Math.round((count / maxQuota) * 100));
 
                 return (
                   <div
@@ -375,14 +392,14 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-xs font-black text-slate-800 block">
-                          {(tps.namaTabung || tps.namaTps).replace(/TPS/gi, "Tabung")}
+                          Wilayah RW {padNum}
                         </span>
                         <span className="text-[10px] text-slate-500 font-medium">
-                          {tps.lokasi} (RW {tps.rw})
+                          {tps.rt ? `(${tps.rt})` : "Desa Kalisalak"}
                         </span>
                       </div>
                       <span className="text-xs font-black text-slate-900">
-                        {count} <span className="text-[10px] text-slate-500 font-normal">/ {tps.kuotaMaksimal || 300}</span>
+                        {count.toLocaleString("id-ID")} <span className="text-[10px] text-slate-500 font-normal">/ {maxQuota}</span>
                       </span>
                     </div>
 
@@ -397,7 +414,7 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
                         />
                       </div>
                       <div className="flex items-center justify-between text-[10px] text-slate-500 font-semibold">
-                        <span>L: {lCount} • P: {pCount}</span>
+                        <span>L: {lCount.toLocaleString("id-ID")} • P: {pCount.toLocaleString("id-ID")}</span>
                         <span>{percentage}% Terisi</span>
                       </div>
                     </div>

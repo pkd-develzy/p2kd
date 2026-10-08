@@ -74,8 +74,11 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
         {tpsList.map((t) => {
           const tpsNum = parseInt((t.rw || t.nomorTps || "").replace(/\D/g, ""), 10) || 0;
           const tpsNumStr = tpsNum < 10 ? `0${tpsNum}` : `${tpsNum}`;
-          const dbTpsStat = dbStatus?.localStats?.tpsStats?.find((ts) => {
-            const num = parseInt((ts.tps || ts.namaTps || "").replace(/\D/g, ""), 10);
+          const statFromDb = dbStatus?.localStats?.breakdownWilayah?.find((ts) => {
+            const num = parseInt((ts.rw || ts.nama || "").replace(/\D/g, ""), 10);
+            return num === tpsNum;
+          }) || dbStatus?.localStats?.tpsStats?.find((ts) => {
+            const num = parseInt((ts.nomorTps || ts.namaTps || "").replace(/\D/g, ""), 10);
             return num === tpsNum;
           });
 
@@ -86,13 +89,12 @@ export const TabMasterTPS: React.FC<TabMasterTPSProps> = ({
             return vRwNum === tpsNum || vTpsNum === tpsNum;
           });
 
-          // Prioritaskan hitungan live pemilih, atau fallback ke statistik database
-          const registeredCount =
+          // Mengutamakan data master agregat dari tabel statistik_pemilih
+          const registeredCount = statFromDb?.total ?? (
             voters.length > 0
               ? votersInTps.length
-              : dbTpsStat
-              ? dbTpsStat.aktif || dbTpsStat.total
-              : 0;
+              : 0
+          );
 
           const rwLabel = `RW ${tpsNumStr}`;
           const displayLokasi = t.lokasi && !t.lokasi.includes("Zona RW") ? t.lokasi : "Lapangan Desa Kalisalak";

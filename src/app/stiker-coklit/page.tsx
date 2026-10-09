@@ -49,6 +49,7 @@ interface StikerData {
 
 function StikerCoklitContent() {
   const searchParams = useSearchParams();
+  const qr = searchParams.get("qr") || searchParams.get("token") || "";
   const id = searchParams.get("id") || "";
   const kk = searchParams.get("kk") || "";
   const nik = searchParams.get("nik") || "";
@@ -59,7 +60,7 @@ function StikerCoklitContent() {
 
   useEffect(() => {
     const fetchStikerData = async () => {
-      if (!id && !kk && !nik) {
+      if (!qr && !id && !kk && !nik) {
         setLoading(false);
         setErrorMsg("Parameter QR Code stiker tidak valid.");
         return;
@@ -67,7 +68,9 @@ function StikerCoklitContent() {
 
       setLoading(true);
       try {
-        const query = id
+        const query = qr
+          ? `qr=${encodeURIComponent(qr)}`
+          : id
           ? `id=${encodeURIComponent(id)}`
           : kk
           ? `kk=${encodeURIComponent(kk)}`
@@ -90,7 +93,7 @@ function StikerCoklitContent() {
     };
 
     fetchStikerData();
-  }, [id, kk, nik]);
+  }, [qr, id, kk, nik]);
 
   return (
     <div className="min-h-screen bg-linear-to-b from-slate-900 via-amber-950/20 to-slate-900 text-white py-8 px-4 flex flex-col justify-between">

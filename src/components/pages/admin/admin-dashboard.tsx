@@ -2239,18 +2239,17 @@ export const AdminDashboard: React.FC = () => {
           userRole={computedUserRole}
           userSeksi={computedUserSeksi}
           assignedTps={assignedTps}
-          onOpenScanner={() => setIsScannerOpen(true)}
         />
       )}
 
-      {/* 5. Live Rear Camera QR Verifier Modal (Form C6 / Stiker Coklit) */}
-      {(isPetugasTpsOnly || isFieldOfficer) && (
+      {/* 5. Live Rear Camera QR Verifier Modal (Form C6) untuk Meja Pendaftaran KPPS (Bukan Petugas Coklit Lapangan) */}
+      {isPetugasTpsOnly && !isFieldOfficer && (
         <FloatingQrVerifier
           assignedMeja={assignedTps}
           userName={computedUserName}
           isOpenControlled={isScannerOpen}
           onCloseControlled={() => setIsScannerOpen(false)}
-          showFloatingTrigger={!isFieldOfficer && isPetugasTpsOnly}
+          showFloatingTrigger={isPetugasTpsOnly}
         />
       )}
 

@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import type { MasterPemilih } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
+import { RumahCoklitService } from "@/lib/rumah-coklit-service";
 
 export async function GET(req: Request) {
   try {
     const clientIp = getClientIp(req);
-    const rateLimit = checkRateLimit(`stiker-coklit:${clientIp}`, 30, 60);
+    const rateLimit = checkRateLimit(`stiker-coklit:${clientIp}`, 40, 60);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { success: false, message: `Terlalu banyak permintaan verifikasi stiker. Silakan tunggu ${rateLimit.resetSeconds} detik.` },
@@ -15,17 +16,29 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
+    const qr = searchParams.get("qr") || searchParams.get("token");
     const id = searchParams.get("id");
     const kk = searchParams.get("kk");
     const nik = searchParams.get("nik");
 
-    if (!id && !kk && !nik) {
+    // 1. Model Baru: QR Code Fisik Rumah (1 QR = 1 Rumah = Banyak KK = Banyak Anggota)
+    if (qr || (id && id.toUpperCase().startsWith("KLK-HM"))) {
+      const token = (qr || id || "").trim().toUpperCase();
+      const publicData = await RumahCoklitService.getPublicStikerData(token);
+      if (publicData.success) {
+        return NextResponse.json(publicData);
+      }
+      // If not found as QR, continue to legacy fallback
+    }
+
+    if (!id && !kk && !nik && !qr) {
       return NextResponse.json(
         { success: false, message: "Parameter identitas stiker tidak lengkap." },
         { status: 400 }
       );
     }
 
+    // 2. Legacy Fallback: Mencari pemilih berdasarkan ID / KK / NIK
     let targetVoter: MasterPemilih | null = null;
     if (nik) {
       targetVoter = await SupabaseDbService.findPemilihDirect(nik);
@@ -46,11 +59,11 @@ export async function GET(req: Request) {
     if (!targetVoter) {
       return NextResponse.json({
         success: false,
-        message: "Data rumah / stiker Coklit tidak ditemukan di database resmi.",
+        message: "Data rumah / stiker Coklit tidak ditemukan di database resmi P2KD Kalisalak.",
       });
     }
 
-    // Find all family members with same KK in same RT/RW (or fallback to this voter)
+    // Find all family members with same KK
     let familyVoters: MasterPemilih[] = [];
     if (targetVoter.kk && targetVoter.kk.trim().length > 5) {
       const { data } = await SupabaseDbService.getSeksi1Client()
@@ -71,7 +84,6 @@ export async function GET(req: Request) {
 
     const rwNum = (targetVoter.rw || "01").replace(/\D/g, "").padStart(2, "0");
     const rtNum = (targetVoter.rt || "01").replace(/\D/g, "").padStart(2, "0");
-    const kkMasked = targetVoter.kk ? `${targetVoter.kk.slice(0, 1)}*************${targetVoter.kk.slice(-2)}` : "****************";
 
     const members = familyVoters.map((m: MasterPemilih, idx: number) => {
       const isLaki = String(m.jenisKelamin).toUpperCase().startsWith("L");
@@ -83,7 +95,7 @@ export async function GET(req: Request) {
         jenisKelamin: isLaki ? "Laki-laki (L)" : "Perempuan (P)",
         statusHakPilih: m.tahap === "DPT" ? "Terdaftar di DPT" : "Daftar Pemilih Sementara (DPS)",
         tahap: m.tahap || "DPS",
-        statusCoklit: m.coklitStatus || "SESUAI",
+        statusVerifikasi: m.coklitStatus || "SESUAI",
       };
     });
 
@@ -91,8 +103,11 @@ export async function GET(req: Request) {
       success: true,
       data: {
         id: targetVoter.id,
+        qrToken: id || "LEGACY-STIKER",
+        statusQr: "COMPLETED",
+        statusKunjungan: "SELESAI",
         kepalaKeluarga: targetVoter.namaLengkap,
-        kkMasked,
+        namaStikerManual: targetVoter.namaLengkap,
         alamat: `${targetVoter.alamat} (RT ${rtNum} / RW ${rwNum})`,
         rt: rtNum,
         rw: rwNum,
@@ -102,7 +117,14 @@ export async function GET(req: Request) {
         mejaPendaftaran: `RW ${rwNum}`,
         tanggalCoklit: targetVoter.coklitTanggal || "14 Agustus 2026",
         petugasPantarlih: targetVoter.coklitPetugas || `Petugas Pantarlih RW ${rwNum}`,
+        totalKk: 1,
         totalPemilihRumah: members.length,
+        kks: [
+          {
+            noKk: targetVoter.kk ? `${targetVoter.kk.slice(0, 3)}**********${targetVoter.kk.slice(-3)}` : "****************",
+            kepalaKeluarga: targetVoter.namaLengkap,
+          },
+        ],
         members,
         verifiedAt: new Date().toISOString(),
       },

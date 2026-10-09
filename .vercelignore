@@ -1,0 +1,6 @@
+# Vercel Deployment Ignore Rules
+# Ensure Android native project files never get deployed to Vercel
+android/
+**/android/**
+.github/workflows/build-android.yml
+scripts/

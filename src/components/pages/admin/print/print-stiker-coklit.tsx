@@ -36,6 +36,7 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
   isAdmin,
   onBack,
 }) => {
+  const [stickerMode, setStickerMode] = useState<"BLANK_OFFICIAL" | "REKAPITULASI">("BLANK_OFFICIAL");
   const [selectedTps, setSelectedTps] = useState<string>(
     defaultTps || tpsList[0]?.namaTps || "RW 01"
   );
@@ -83,6 +84,11 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
     if (limitStiker >= uniqueFamilies.length) return uniqueFamilies;
     return uniqueFamilies.slice(0, limitStiker);
   }, [uniqueFamilies, limitStiker]);
+
+  const houseQrTokens = useMemo(() => {
+    const rwStr = activeRwDigits.padStart(2, "0") || "01";
+    return displayedFamilies.map((_, idx) => `KLK-HM-${rwStr}-${((idx + 1) * 1337).toString(16).padStart(4, "0").toUpperCase()}`);
+  }, [activeRwDigits, displayedFamilies]);
 
   const baseUrl =
     typeof window !== "undefined"
@@ -137,9 +143,10 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
           head.kk && head.kk.length > 5
             ? `${head.kk.slice(0, 3)}**********${head.kk.slice(-3)}`
             : "****************";
-        const qrPayloadUrl = `${baseUrl}/stiker-coklit?kk=${encodeURIComponent(
-          head.kk || ""
-        )}&id=${encodeURIComponent(head.id)}`;
+        const houseToken = `KLK-HM-${rwNum}-${((i + 1) * 1337).toString(16).padStart(4, "0").toUpperCase()}`;
+        const qrPayloadUrl = stickerMode === "BLANK_OFFICIAL"
+          ? `${baseUrl}/stiker-coklit?qr=${encodeURIComponent(houseToken)}`
+          : `${baseUrl}/stiker-coklit?kk=${encodeURIComponent(head.kk || "")}&id=${encodeURIComponent(head.id)}`;
 
         // 1. FRAME KARTU UTAMA (BORDER BIRU DONGKER PRESISI)
         doc.setDrawColor(30, 58, 138); // blue-900 (Biru Dongker)
@@ -180,18 +187,17 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
         // 3. HEADER RESMI BIRU DONGKER & AKSEN EMAS
         doc.setFillColor(15, 23, 42); // slate-900 (Biru Dongker Pekat)
         doc.roundedRect(x + 1.2, y + 1.2, stickerW - 2.4, 19.5, 1.8, 1.8, "F");
-        doc.rect(x + 1.2, y + 15, stickerW - 2.4, 5.7, "F"); // ratakan sudut bawah
+        doc.rect(x + 1.2, y + 15, stickerW - 2.4, 5.7, "F");
 
         // Garis Emas Puncak Header
         doc.setFillColor(217, 119, 6); // amber-600 (Emas)
         doc.rect(x + 1.2, y + 1.2, stickerW - 2.4, 1.2, "F");
 
-        // Teks Header (Menggunakan ASCII murni agar tidak korup menjadi karakter '&')
         doc.setFont("helvetica", "bold");
         doc.setFontSize(5.2);
         doc.setTextColor(251, 191, 36); // Amber Gold
         doc.text(
-          "MODEL A.A-PILKADES  :  TANDA BUKTI COKLIT PEMILIH",
+          "MODEL A.A-PILKADES  :  TANDA BUKTI COKLIT RUMAH",
           cx,
           y + 6,
           { align: "center" }
@@ -208,7 +214,7 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(4.8);
-        doc.setTextColor(191, 219, 254); // Blue-200
+        doc.setTextColor(191, 219, 254);
         doc.text(
           "P2KD KECAMATAN MARGASARI, KABUPATEN TEGAL 2026/2027",
           cx,
@@ -216,140 +222,199 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
           { align: "center" }
         );
 
-        // Garis Emas Bawah Header
         doc.setDrawColor(217, 119, 6);
         doc.setLineWidth(0.5);
         doc.line(x + 1.2, y + 20.7, x + stickerW - 1.2, y + 20.7);
 
-        // 4. CARD DATA KEPALA KELUARGA & ALAMAT
-        doc.setFillColor(248, 250, 252); // slate-50
-        doc.setDrawColor(203, 213, 225); // slate-300
-        doc.setLineWidth(0.3);
-        doc.roundedRect(x + 3, y + 22.5, stickerW - 6, 21.5, 1.2, 1.2, "FD");
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(5.2);
-        doc.setTextColor(100, 116, 139); // slate-500
-        doc.text("NO. KARTU KELUARGA (KK):", x + 5, y + 26.5);
-        doc.setFont("courier", "bold");
-        doc.setFontSize(6.8);
-        doc.setTextColor(15, 23, 42);
-        doc.text(maskedKk, x + 36, y + 26.5);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(5.2);
-        doc.setTextColor(100, 116, 139);
-        doc.text("KEPALA KELUARGA:", x + 5, y + 31.5);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(6.8);
-        doc.setTextColor(15, 23, 42);
-        const truncatedHead =
-          head.namaLengkap.length > 25
-            ? `${head.namaLengkap.slice(0, 25)}...`
-            : head.namaLengkap;
-        doc.text(truncatedHead.toUpperCase(), x + 36, y + 31.5);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(5.2);
-        doc.setTextColor(100, 116, 139);
-        doc.text("ALAMAT DOMISILI:", x + 5, y + 36.5);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(6.2);
-        doc.setTextColor(30, 41, 59);
-        doc.text(`RT ${rtNum} / RW ${rwNum}, DESA KALISALAK`, x + 36, y + 36.5);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(5.2);
-        doc.setTextColor(100, 116, 139);
-        doc.text("WILAYAH PENUGASAN:", x + 5, y + 41.5);
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(6.5);
-        doc.setTextColor(30, 58, 138); // blue-900
-        doc.text(`WILAYAH RW ${rwNum}  -  TABUNG ${rwNum}`, x + 36, y + 41.5);
-
-        // 5. TABEL DAFTAR PEMILIH TERDAFTAR (MODERN & TERSTRUKTUR RAPI)
-        // Header Tabel Biru Dongker
-        doc.setFillColor(30, 58, 138); // blue-900
-        doc.roundedRect(x + 3, y + 46, stickerW - 6, 4.8, 1, 1, "F");
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(5.2);
-        doc.setTextColor(255, 255, 255);
-        doc.text("NO", x + 5.5, y + 49.3);
-        doc.text("NAMA PEMILIH TERDAFTAR", x + 13, y + 49.3);
-        doc.text("JK", x + 63, y + 49.3, { align: "center" });
-        doc.text("STATUS", x + 77, y + 49.3, { align: "center" });
-
-        // Baris-baris Pemilih
-        const maxDisplay = 4;
-        const displayedMembers = members.slice(0, maxDisplay);
-        const rowHeight = 4.4;
-
-        displayedMembers.forEach((m, mIdx) => {
-          const rowY = y + 50.8 + mIdx * rowHeight;
-
-          // Striping latar baris
-          if (mIdx % 2 === 1) {
-            doc.setFillColor(248, 250, 252);
-            doc.rect(x + 3, rowY, stickerW - 6, rowHeight, "F");
-          }
-
-          // Garis pemisah antar baris
-          doc.setDrawColor(226, 232, 240);
-          doc.setLineWidth(0.2);
-          doc.line(x + 3, rowY + rowHeight, x + stickerW - 3, rowY + rowHeight);
+        if (stickerMode === "BLANK_OFFICIAL") {
+          // ========================================================
+          // MODE RESMI COKLIT: TOKEN QR RUMAH & ISIAN MANUAL TULIS TANGAN
+          // ========================================================
+          doc.setFillColor(248, 250, 252);
+          doc.setDrawColor(203, 213, 225);
+          doc.setLineWidth(0.3);
+          doc.roundedRect(x + 3, y + 22.5, stickerW - 6, 12, 1.2, 1.2, "FD");
 
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(5.5);
+          doc.setFontSize(5.2);
+          doc.setTextColor(100, 116, 139);
+          doc.text("KODE IDENTITAS RUMAH (QR):", x + 5, y + 26.5);
+          doc.setFont("courier", "bold");
+          doc.setFontSize(7.2);
+          doc.setTextColor(30, 58, 138);
+          doc.text(houseToken, x + 42, y + 26.5);
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5.2);
+          doc.setTextColor(100, 116, 139);
+          doc.text("WILAYAH PENUGASAN:", x + 5, y + 31.5);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(6.2);
           doc.setTextColor(15, 23, 42);
-          doc.text(`${mIdx + 1}.`, x + 5.5, rowY + 3.2);
+          doc.text(`WILAYAH RW ${rwNum}  -  TABUNG ${rwNum}`, x + 42, y + 31.5);
+
+          // AREA ISIAN MANUAL TULIS TANGAN OLEH PETUGAS COKLIT
+          doc.setFillColor(255, 255, 255);
+          doc.setDrawColor(148, 163, 184);
+          doc.setLineWidth(0.4);
+          doc.roundedRect(x + 3, y + 36.5, stickerW - 6, 49, 1.2, 1.2, "D");
+
+          doc.setFillColor(241, 245, 249);
+          doc.rect(x + 3, y + 36.5, stickerW - 6, 5, "F");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5.2);
+          doc.setTextColor(30, 58, 138);
+          doc.text("FORMULIR FAKTUAL RUMAH (DITULIS MANUAL SAAT COKLIT)", cx, y + 40, { align: "center" });
+
+          // Baris-baris isian tulis tangan
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5.2);
+          doc.setTextColor(51, 65, 85);
+
+          const formFields = [
+            { label: "1. Nama Kepala Keluarga / Penghuni:", yOff: 46 },
+            { label: "2. Alamat / Nomor Rumah:", yOff: 53.5 },
+            { label: `3. Wilayah RT / RW:  RT [       ]  /  RW ${rwNum}`, yOff: 61 },
+            { label: "4. Jumlah Kartu Keluarga (KK): [       ] KK", yOff: 68.5 },
+            { label: "5. Jumlah Pemilih: [       ] Jiwa  ( L: [     ]   P: [     ] )", yOff: 76 },
+            { label: "6. Tanggal Coklit: ....... / .................... / 2026", yOff: 83.5 },
+          ];
+
+          formFields.forEach((f) => {
+            doc.text(f.label, x + 5, y + f.yOff);
+            if (f.yOff <= 54) {
+              doc.setDrawColor(203, 213, 225);
+              doc.setLineWidth(0.3);
+              doc.line(x + 48, y + f.yOff + 0.5, x + stickerW - 5, y + f.yOff + 0.5);
+            }
+          });
+        } else {
+          // ========================================================
+          // MODE REKAPITULASI PEMILIH
+          // ========================================================
+          doc.setFillColor(248, 250, 252);
+          doc.setDrawColor(203, 213, 225);
+          doc.setLineWidth(0.3);
+          doc.roundedRect(x + 3, y + 22.5, stickerW - 6, 21.5, 1.2, 1.2, "FD");
 
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(5.8);
-          const truncatedName =
-            m.namaLengkap.length > 27
-              ? `${m.namaLengkap.slice(0, 27)}...`
-              : m.namaLengkap;
-          doc.text(truncatedName.toUpperCase(), x + 13, rowY + 3.2);
+          doc.setFontSize(5.2);
+          doc.setTextColor(100, 116, 139);
+          doc.text("NO. KARTU KELUARGA (KK):", x + 5, y + 26.5);
+          doc.setFont("courier", "bold");
+          doc.setFontSize(6.8);
+          doc.setTextColor(15, 23, 42);
+          doc.text(maskedKk, x + 36, y + 26.5);
 
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5.2);
+          doc.setTextColor(100, 116, 139);
+          doc.text("KEPALA KELUARGA:", x + 5, y + 31.5);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(6.8);
+          doc.setTextColor(15, 23, 42);
+          const truncatedHead =
+            head.namaLengkap.length > 25
+              ? `${head.namaLengkap.slice(0, 25)}...`
+              : head.namaLengkap;
+          doc.text(truncatedHead.toUpperCase(), x + 36, y + 31.5);
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5.2);
+          doc.setTextColor(100, 116, 139);
+          doc.text("ALAMAT DOMISILI:", x + 5, y + 36.5);
           doc.setFont("helvetica", "normal");
-          doc.setFontSize(5.5);
-          doc.setTextColor(71, 85, 105);
-          doc.text(m.jenisKelamin, x + 63, rowY + 3.2, { align: "center" });
+          doc.setFontSize(6.2);
+          doc.setTextColor(30, 41, 59);
+          doc.text(`RT ${rtNum} / RW ${rwNum}, DESA KALISALAK`, x + 36, y + 36.5);
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5.2);
+          doc.setTextColor(100, 116, 139);
+          doc.text("WILAYAH PENUGASAN:", x + 5, y + 41.5);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(6.5);
+          doc.setTextColor(30, 58, 138);
+          doc.text(`WILAYAH RW ${rwNum}  -  TABUNG ${rwNum}`, x + 36, y + 41.5);
+
+          // Header Tabel Biru Dongker
+          doc.setFillColor(30, 58, 138);
+          doc.roundedRect(x + 3, y + 46, stickerW - 6, 4.8, 1, 1, "F");
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(5.2);
+          doc.setTextColor(255, 255, 255);
+          doc.text("NO", x + 5.5, y + 49.3);
+          doc.text("NAMA PEMILIH TERDAFTAR", x + 13, y + 49.3);
+          doc.text("JK", x + 63, y + 49.3, { align: "center" });
+          doc.text("STATUS", x + 77, y + 49.3, { align: "center" });
+
+          const maxDisplay = 4;
+          const displayedMembers = members.slice(0, maxDisplay);
+          const rowHeight = 4.4;
+
+          displayedMembers.forEach((m, mIdx) => {
+            const rowY = y + 50.8 + mIdx * rowHeight;
+            if (mIdx % 2 === 1) {
+              doc.setFillColor(248, 250, 252);
+              doc.rect(x + 3, rowY, stickerW - 6, rowHeight, "F");
+            }
+            doc.setDrawColor(226, 232, 240);
+            doc.setLineWidth(0.2);
+            doc.line(x + 3, rowY + rowHeight, x + stickerW - 3, rowY + rowHeight);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(5.5);
+            doc.setTextColor(15, 23, 42);
+            doc.text(`${mIdx + 1}.`, x + 5.5, rowY + 3.2);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(5.8);
+            const truncatedName =
+              m.namaLengkap.length > 27
+                ? `${m.namaLengkap.slice(0, 27)}...`
+                : m.namaLengkap;
+            doc.text(truncatedName.toUpperCase(), x + 13, rowY + 3.2);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(5.5);
+            doc.setTextColor(71, 85, 105);
+            doc.text(m.jenisKelamin, x + 63, rowY + 3.2, { align: "center" });
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(5);
+            doc.setTextColor(16, 149, 193);
+            doc.text("Hak Pilih Sah", x + 77, rowY + 3.2, { align: "center" });
+          });
+
+          // Banner Catatan Edukasi Pemilih di Bawah Tabel
+          const tableActualHeight = displayedMembers.length * rowHeight;
+          const noteBoxY = y + 51.5 + tableActualHeight;
+          const noteBoxHeight = Math.max(7.5, 34 - tableActualHeight);
+
+          doc.setFillColor(241, 245, 249); // slate-100
+          doc.setDrawColor(203, 213, 225);
+          doc.setLineWidth(0.25);
+          doc.roundedRect(x + 3, noteBoxY, stickerW - 6, noteBoxHeight, 1, 1, "FD");
 
           doc.setFont("helvetica", "bold");
           doc.setFontSize(5);
-          doc.setTextColor(16, 149, 193); // cyan/blue badge
-          doc.text("Hak Pilih Sah", x + 77, rowY + 3.2, { align: "center" });
-        });
+          doc.setTextColor(30, 58, 138); // blue-900
+          doc.text(
+            `TOTAL PEMILIH SAH DI RUMAH INI: ${members.length} JIWA  -  STATUS: MEMENUHI SYARAT (MS)`,
+            x + 5,
+            noteBoxY + 3.5
+          );
 
-        // Banner Catatan Edukasi Pemilih di Bawah Tabel
-        const tableActualHeight = displayedMembers.length * rowHeight;
-        const noteBoxY = y + 51.5 + tableActualHeight;
-        const noteBoxHeight = Math.max(7.5, 34 - tableActualHeight);
-
-        doc.setFillColor(241, 245, 249); // slate-100
-        doc.setDrawColor(203, 213, 225);
-        doc.setLineWidth(0.25);
-        doc.roundedRect(x + 3, noteBoxY, stickerW - 6, noteBoxHeight, 1, 1, "FD");
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(5);
-        doc.setTextColor(30, 58, 138); // blue-900
-        doc.text(
-          `TOTAL PEMILIH SAH DI RUMAH INI: ${members.length} JIWA  -  STATUS: MEMENUHI SYARAT (MS)`,
-          x + 5,
-          noteBoxY + 3.5
-        );
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(4.4);
-        doc.setTextColor(71, 85, 105);
-        doc.text(
-          "Wajib membawa KTP-el / Formulir C6 saat hadir di Tabung Pemilihan Kalisalak.",
-          x + 5,
-          noteBoxY + 6.6
-        );
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(4.4);
+          doc.setTextColor(71, 85, 105);
+          doc.text(
+            "Wajib membawa KTP-el / Formulir C6 saat hadir di Tabung Pemilihan Kalisalak.",
+            x + 5,
+            noteBoxY + 6.6
+          );
+        }
 
         // 6. FOOTER PENGESAHAN: QR CODE & TANDA TANGAN PANTARLIH
         doc.setDrawColor(203, 213, 225);
@@ -486,6 +551,34 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
 
         {/* Toolbar Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* MODE CETAK: STIKER RESMI COKLIT (TULIS TANGAN) vs REKAP */}
+          <div className="flex items-center bg-blue-950/10 p-1 rounded-xl border border-blue-900/30">
+            <button
+              type="button"
+              onClick={() => setStickerMode("BLANK_OFFICIAL")}
+              className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${
+                stickerMode === "BLANK_OFFICIAL"
+                  ? "bg-blue-900 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+              title="Model Resmi: 1 QR = 1 Rumah. Nama ditulis manual oleh petugas saat Coklit faktual."
+            >
+              Mode Resmi Coklit (Tulis Tangan)
+            </button>
+            <button
+              type="button"
+              onClick={() => setStickerMode("REKAPITULASI")}
+              className={`px-3 py-1.5 text-xs font-black rounded-lg transition-all ${
+                stickerMode === "REKAPITULASI"
+                  ? "bg-blue-900 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900"
+              }`}
+              title="Mode Rekapitulasi: Pratinjau cetak daftar pemilih terdata"
+            >
+              Mode Rekapitulasi
+            </button>
+          </div>
+
           {/* Pilihan Wilayah RW */}
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
             <span>Wilayah:</span>
@@ -666,87 +759,147 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
                   </p>
                 </div>
 
-                {/* 2. Informasi Kepala Keluarga & Rumah */}
+                {/* 2. Informasi Kepala Keluarga & Rumah / Area Tulis Tangan */}
                 <div className="p-3.5 space-y-3">
-                  <div className="bg-slate-50/90 p-2.5 rounded-2xl border border-slate-200/90 space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between text-[10.5px]">
-                      <span className="text-slate-500 font-semibold">No. KK (Terlindungi):</span>
-                      <span className="font-mono font-bold text-blue-950 bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                        {maskedKk}
-                      </span>
-                    </div>
+                  {stickerMode === "BLANK_OFFICIAL" ? (
+                    <div className="space-y-3">
+                      <div className="bg-blue-50/70 p-2.5 rounded-2xl border border-blue-200 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500 font-semibold">Kode ID Rumah (QR):</span>
+                          <span className="font-mono font-black text-blue-900 bg-white px-2 py-0.5 rounded-md border border-blue-200">
+                            {houseQrTokens[idx] || `KLK-HM-${rwNum}-${((idx + 1) * 1337).toString(16).padStart(4, "0").toUpperCase()}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-blue-100">
+                          <span className="text-slate-500 font-semibold">Wilayah Penugasan:</span>
+                          <span className="font-bold text-blue-900">
+                            Wilayah RW {rwNum} • Tabung {rwNum}
+                          </span>
+                        </div>
+                      </div>
 
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
-                      <span className="text-slate-500 font-semibold flex items-center gap-1">
-                        <Home className="w-3.5 h-3.5 text-blue-900 shrink-0" />
-                        Kepala Keluarga:
-                      </span>
-                      <span className="font-black uppercase text-slate-950 text-right truncate max-w-45">
-                        {head.namaLengkap}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/60">
-                      <span className="text-slate-500 font-semibold flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                        Alamat Domisili:
-                      </span>
-                      <span className="font-medium text-slate-800 text-right">
-                        RT {rtNum} / RW {rwNum}, Desa Kalisalak
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/60">
-                      <span className="text-slate-500 font-semibold">Wilayah Penugasan:</span>
-                      <span className="font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-[10px]">
-                        Wilayah RW {rwNum} • Tabung {rwNum}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* 3. Tabel Daftar Pemilih Terdaftar (Tabel Rapi & Presisi) */}
-                  <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
-                    <div className="bg-blue-900 text-white px-3 py-1.5 flex items-center justify-between text-[10px] font-bold">
-                      <span className="flex items-center gap-1.5 uppercase tracking-wide">
-                        <Users className="w-3.5 h-3.5 text-amber-300" />
-                        Daftar Pemilih Terdaftar ({members.length} Jiwa)
-                      </span>
-                      <span className="bg-blue-800 text-amber-300 text-[9px] px-2 py-0.2 rounded-full border border-blue-700">
-                        Hak Pilih Sah
-                      </span>
-                    </div>
-
-                    <div className="divide-y divide-slate-100 bg-white text-[11px]">
-                      {members.map((m, mIdx) => (
-                        <div
-                          key={m.id}
-                          className="px-3 py-1.5 flex items-center justify-between hover:bg-slate-50 transition-colors"
-                        >
-                          <div className="flex items-center gap-2 truncate max-w-50">
-                            <span className="font-mono text-[10px] text-slate-400 font-bold w-4">
-                              {mIdx + 1}.
-                            </span>
-                            <span className="font-bold text-slate-900 truncate">
-                              {m.namaLengkap}
+                      {/* Area Tulis Tangan Manual */}
+                      <div className="rounded-2xl border-2 border-dashed border-slate-300 p-3 bg-slate-50/50 space-y-2 text-xs">
+                        <div className="bg-amber-100/70 text-amber-900 px-2 py-1 rounded-lg text-[9.5px] font-bold text-center border border-amber-200">
+                          BIDANG TULIS TANGAN MANUAL OLEH PETUGAS COKLIT
+                        </div>
+                        <div className="space-y-1.5 text-[11px] text-slate-700">
+                          <div className="flex items-baseline gap-1">
+                            <span className="font-bold shrink-0">1. Nama KK / Penghuni:</span>
+                            <span className="border-b border-dotted border-slate-400 flex-1"></span>
+                          </div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="font-bold shrink-0">2. Alamat / No. Rumah:</span>
+                            <span className="border-b border-dotted border-slate-400 flex-1"></span>
+                          </div>
+                          <div className="flex justify-between items-center pt-0.5">
+                            <span className="font-bold">3. Wilayah RT / RW:</span>
+                            <span className="font-semibold text-blue-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                              RT [ &nbsp; ] / RW {rwNum}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
-                              {m.jenisKelamin === "L" ? "L" : "P"}
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold">4. Jumlah KK di Rumah Ini:</span>
+                            <span className="font-semibold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                              [ &nbsp; ] KK
                             </span>
-                            <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                              Sah
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold">5. Jumlah Pemilih:</span>
+                            <span className="font-semibold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200 text-[10px]">
+                              [ &nbsp; ] Jiwa (L: [ &nbsp; ] P: [ &nbsp; ])
                             </span>
+                          </div>
+                          <div className="flex items-baseline gap-1 pt-0.5">
+                            <span className="font-bold shrink-0">6. Tanggal Coklit:</span>
+                            <span className="text-[10px] text-slate-500">...... / .................... / 2026</span>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      <div className="bg-slate-50/90 p-2.5 rounded-2xl border border-slate-200/90 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between text-[10.5px]">
+                          <span className="text-slate-500 font-semibold">No. KK (Terlindungi):</span>
+                          <span className="font-mono font-bold text-blue-900 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                            {maskedKk}
+                          </span>
+                        </div>
 
-                    {/* Banner Edukasi Hak Pilih */}
-                    <div className="bg-slate-50 px-3 py-1.5 border-t border-slate-200 text-[9.5px] text-slate-600 leading-tight">
-                      <strong className="text-blue-900">Catatan Resmi:</strong> Wajib membawa KTP-el atau Formulir C6 saat hadir di Tabung Pemilihan RW {rwNum}.
-                    </div>
-                  </div>
+                        <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                          <span className="text-slate-500 font-semibold flex items-center gap-1">
+                            <Home className="w-3.5 h-3.5 text-blue-900 shrink-0" />
+                            Kepala Keluarga:
+                          </span>
+                          <span className="font-black uppercase text-slate-950 text-right truncate max-w-45">
+                            {head.namaLengkap}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/60">
+                          <span className="text-slate-500 font-semibold flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                            Alamat Domisili:
+                          </span>
+                          <span className="font-medium text-slate-800 text-right">
+                            RT {rtNum} / RW {rwNum}, Desa Kalisalak
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-200/60">
+                          <span className="text-slate-500 font-semibold">Wilayah Penugasan:</span>
+                          <span className="font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 text-[10px]">
+                            Wilayah RW {rwNum} • Tabung {rwNum}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 3. Tabel Daftar Pemilih Terdaftar */}
+                      <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+                        <div className="bg-blue-900 text-white px-3 py-1.5 flex items-center justify-between text-[10px] font-bold">
+                          <span className="flex items-center gap-1.5 uppercase tracking-wide">
+                            <Users className="w-3.5 h-3.5 text-amber-300" />
+                            Daftar Pemilih Terdaftar ({members.length} Jiwa)
+                          </span>
+                          <span className="bg-blue-800 text-amber-300 text-[9px] px-2 py-0.2 rounded-full border border-blue-700">
+                            Hak Pilih Sah
+                          </span>
+                        </div>
+
+                        <div className="divide-y divide-slate-100 bg-white text-[11px]">
+                          {members.map((m, mIdx) => (
+                            <div
+                              key={m.id}
+                              className="px-3 py-1.5 flex items-center justify-between hover:bg-slate-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-2 truncate max-w-50">
+                                <span className="font-mono text-[10px] text-slate-400 font-bold w-4">
+                                  {mIdx + 1}.
+                                </span>
+                                <span className="font-bold text-slate-900 truncate">
+                                  {m.namaLengkap}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                                  {m.jenisKelamin === "L" ? "L" : "P"}
+                                </span>
+                                <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  Sah
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Banner Edukasi Hak Pilih */}
+                        <div className="bg-slate-50 px-3 py-1.5 border-t border-slate-200 text-[9.5px] text-slate-600 leading-tight">
+                          <strong className="text-blue-900">Catatan Resmi:</strong> Wajib membawa KTP-el atau Formulir C6 saat hadir di Tabung Pemilihan RW {rwNum}.
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

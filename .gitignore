@@ -48,3 +48,7 @@ DRAFT DPT KALISALAK.xlsx
 # temporary local analysis scratchpad
 scratch/
 *.tiff
+
+# android native app (separate repository build.apk_p2kd)
+android/
+**/android/**

@@ -1106,7 +1106,8 @@ export const AdminDashboard: React.FC = () => {
       tps: values.tps || `TPS ${values.rw || "01"}`,
       statusAktif: values.statusAktif || "AKTIF",
       alasanTms: values.alasanTms || "",
-      tahap: (values.tahap as "CALON_DPS" | "DPS" | "DPSHP" | "DPT" | "DPTB") || "CALON_DPS",
+      tahap: (values.tahap as "CALON_DPS" | "DPS" | "DPSHP" | "DPT") || "CALON_DPS",
+      sumberData: values.sumberData || "REGULER",
       updatedAt: new Date().toISOString(),
     };
 

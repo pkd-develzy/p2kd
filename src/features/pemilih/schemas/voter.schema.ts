@@ -30,7 +30,8 @@ export const voterFormSchema = z.object({
   rw: z.string().trim().min(1, "RW wajib dipilih"),
   tps: z.string().trim().min(1, "Alokasi TPS / Tabung wajib dipilih"),
   statusAktif: z.enum(["AKTIF", "TMS"]),
-  tahap: z.enum(["CALON_DPS", "DPS", "DPSHP", "DPT", "DPTB"]).optional(),
+  tahap: z.enum(["CALON_DPS", "DPS", "DPSHP", "DPT"]).optional(),
+  sumberData: z.enum(["REGULER", "DPTB"]).optional(),
   alasanTms: z.string().optional(),
 });
 

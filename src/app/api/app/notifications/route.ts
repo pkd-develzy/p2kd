@@ -2,6 +2,47 @@ import { NextResponse } from "next/server";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
 
+interface NotificationPengumuman {
+  id: string;
+  judul: string;
+  ringkasan?: string | null;
+  tanggal?: string | null;
+  created_at?: string | null;
+}
+
+interface NotificationAduan {
+  id?: string | null;
+  nomor_aduan?: string | null;
+  nama_pelapor?: string | null;
+  rt?: string | null;
+  rw?: string | null;
+  isi_aduan?: string | null;
+  jenis_aduan?: string | null;
+  status?: string | null;
+  tanggal?: string | null;
+  created_at?: string | null;
+}
+
+interface NotificationVisit {
+  id: string;
+  qr_token?: string | null;
+  petugas_nama?: string | null;
+  total_anggota?: number | null;
+  status_kunjungan?: string | null;
+  waktu_kunjungan?: string | null;
+  created_at?: string | null;
+}
+
+interface NotificationItemData {
+  id: string;
+  title: string;
+  body: string;
+  category: string;
+  timestamp: string;
+  read: boolean;
+  deepLink: string;
+}
+
 export async function GET(req: Request) {
   try {
     const session = verifyAdminSession(req);
@@ -34,12 +75,13 @@ export async function GET(req: Request) {
       aduanQuery = aduanQuery.eq("rw", rwClean);
     }
 
-    const { data: aduanList } = await aduanQuery;
+    const { data: rawAduanList } = await aduanQuery;
+    const aduanList = (rawAduanList as NotificationAduan[]) || [];
 
     // 2. Ambil pengumuman resmi
-    let pengumumanList: any[] = [];
+    let pengumumanList: NotificationPengumuman[] = [];
     try {
-      pengumumanList = await SupabaseDbService.fetchPengumuman();
+      pengumumanList = (await SupabaseDbService.fetchPengumuman()) as NotificationPengumuman[];
     } catch (e) {
       console.warn("Notifications: pengumuman warning:", e);
     }
@@ -54,13 +96,14 @@ export async function GET(req: Request) {
     if (user.role === "pantarlih" && user.assignedTps) {
       visitQuery = visitQuery.eq("tps", user.assignedTps);
     }
-    const { data: visits } = await visitQuery;
+    const { data: rawVisits } = await visitQuery;
+    const visits = (rawVisits as NotificationVisit[]) || [];
 
     // Konstruksi daftar notifikasi dinamis
-    const notifications: any[] = [];
+    const notifications: NotificationItemData[] = [];
 
     // Notifikasi dari pengumuman
-    (pengumumanList || []).slice(0, 5).forEach((p: any) => {
+    pengumumanList.slice(0, 5).forEach((p) => {
       notifications.push({
         id: `notif-pengumuman-${p.id}`,
         title: `📢 Pengumuman: ${p.judul}`,
@@ -73,26 +116,26 @@ export async function GET(req: Request) {
     });
 
     // Notifikasi dari aduan warga
-    (aduanList || []).slice(0, 10).forEach((a: any) => {
+    aduanList.slice(0, 10).forEach((a) => {
       notifications.push({
-        id: `notif-aduan-${a.id || a.nomor_aduan}`,
-        title: `⚠️ Aduan Warga RT ${a.rt}/RW ${a.rw}`,
-        body: `${a.nama_pelapor}: ${a.isi_aduan || a.jenis_aduan} (${a.status})`,
+        id: `notif-aduan-${a.id || a.nomor_aduan || "aduan"}`,
+        title: `⚠️ Aduan Warga RT ${a.rt || "-"}/RW ${a.rw || "-"}`,
+        body: `${a.nama_pelapor || "Warga"}: ${a.isi_aduan || a.jenis_aduan || "-"} (${a.status || "MENUNGGU"})`,
         category: "ADUAN",
-        timestamp: a.tanggal || a.created_at,
+        timestamp: a.tanggal || a.created_at || new Date().toISOString(),
         read: a.status === "SELESAI",
         deepLink: "activity/aduan",
       });
     });
 
     // Notifikasi dari progres kunjungan / sinkronisasi
-    (visits || []).slice(0, 5).forEach((v: any) => {
+    visits.slice(0, 5).forEach((v) => {
       notifications.push({
         id: `notif-visit-${v.id}`,
-        title: `✅ Coklit Tersimpan: Rumah ${v.qr_token}`,
-        body: `${v.petugas_nama || "Petugas"} mencatat ${v.total_anggota} jiwa. Status: ${v.status_kunjungan}.`,
+        title: `✅ Coklit Tersimpan: Rumah ${v.qr_token || "QR"}`,
+        body: `${v.petugas_nama || "Petugas"} mencatat ${v.total_anggota || 0} jiwa. Status: ${v.status_kunjungan || "SELESAI"}.`,
         category: "SINKRONISASI",
-        timestamp: v.waktu_kunjungan || v.created_at,
+        timestamp: v.waktu_kunjungan || v.created_at || new Date().toISOString(),
         read: true,
         deepLink: "activity/kunjungan",
       });
@@ -111,10 +154,11 @@ export async function GET(req: Request) {
       totalCount: notifications.length,
       notifications,
     });
-  } catch (err: any) {
-    console.error("Error fetching notifications:", err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("Error fetching notifications:", errorMsg);
     return NextResponse.json(
-      { success: false, message: "Gagal memuat daftar notifikasi: " + err.message },
+      { success: false, message: "Gagal memuat daftar notifikasi: " + errorMsg },
       { status: 500 }
     );
   }

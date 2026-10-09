@@ -3,6 +3,72 @@ import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
 import { RumahCoklitService } from "@/lib/rumah-coklit-service";
 
+interface VisitRecord {
+  id: string;
+  qr_token?: string | null;
+  petugas_nama?: string | null;
+  petugas_username?: string | null;
+  total_anggota?: number | null;
+  status_kunjungan?: string | null;
+  nama_stiker_manual?: string | null;
+  stiker_ditempel?: boolean | null;
+  waktu_kunjungan?: string | null;
+  created_at?: string | null;
+  tps?: string | null;
+  total_kk?: number | null;
+  anggota_sesuai?: number | null;
+  anggota_ubah_data?: number | null;
+  anggota_tms?: number | null;
+}
+
+interface AduanRecord {
+  id?: string | null;
+  nomor_aduan?: string | null;
+  nama_pelapor?: string | null;
+  rt?: string | null;
+  rw?: string | null;
+  isi_aduan?: string | null;
+  jenis_aduan?: string | null;
+  status?: string | null;
+  tanggal?: string | null;
+  created_at?: string | null;
+  kontak_pelapor?: string | null;
+}
+
+interface PengumumanRecord {
+  id: string;
+  judul: string;
+  ringkasan?: string | null;
+  isi?: string | null;
+  tanggal?: string | null;
+  created_at?: string | null;
+  nomor?: string | null;
+  kategori?: string | null;
+  lampiranUrl?: string | null;
+}
+
+interface AuditRecord {
+  id: string;
+  aksi: string;
+  modul: string;
+  user_name: string;
+  role: string;
+  created_at: string;
+}
+
+interface UnifiedActivity {
+  id: string;
+  kategori: string;
+  judul: string;
+  deskripsi: string;
+  status: string;
+  waktu: string;
+  aktor: string;
+  tps?: string | null;
+  qrToken?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
 export async function GET(req: Request) {
   try {
     const session = verifyAdminSession(req);
@@ -37,10 +103,11 @@ export async function GET(req: Request) {
       visitQuery = visitQuery.eq("tps", user.assignedTps);
     }
 
-    const { data: visitData, error: visitErr } = await visitQuery;
+    const { data: rawVisitData, error: visitErr } = await visitQuery;
     if (visitErr) {
       console.warn("Activities: visit query warning:", visitErr.message);
     }
+    const visitData = (rawVisitData as VisitRecord[]) || [];
 
     const rwMatch = (user.assignedTps || "").match(/\d+/);
     const assignedRw = rwMatch ? `RW ${rwMatch[0].padStart(2, "0")}` : undefined;
@@ -57,25 +124,27 @@ export async function GET(req: Request) {
       aduanQuery = aduanQuery.eq("rw", rwClean);
     }
 
-    const { data: aduanData, error: aduanErr } = await aduanQuery;
+    const { data: rawAduanData, error: aduanErr } = await aduanQuery;
     if (aduanErr) {
       console.warn("Activities: aduan query warning:", aduanErr.message);
     }
+    const aduanData = (rawAduanData as AduanRecord[]) || [];
 
     // 3. Ambil Pengumuman Resmi
-    let pengumumanList: any[] = [];
+    let pengumumanList: PengumumanRecord[] = [];
     try {
-      pengumumanList = await SupabaseDbService.fetchPengumuman();
+      pengumumanList = (await SupabaseDbService.fetchPengumuman()) as PengumumanRecord[];
     } catch (e) {
       console.warn("Activities: pengumuman warning:", e);
     }
 
     // 4. Ambil Audit Log Terkait Operasi Terkini
-    const { data: auditData } = await server3Client
+    const { data: rawAuditData } = await server3Client
       .from("audit_logs")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(20);
+    const auditData = (rawAuditData as AuditRecord[]) || [];
 
     // 5. Ambil Tugas Lapangan Berjalan
     let taskSummary = {
@@ -94,14 +163,14 @@ export async function GET(req: Request) {
     }
 
     // Transformasi ke format aktivitas terpadu
-    const activitiesList = (visitData || []).map((v: any) => ({
+    const activitiesList: UnifiedActivity[] = visitData.map((v) => ({
       id: v.id,
       kategori: "KUNJUNGAN",
       judul: `Coklit Rumah [${v.qr_token || "QR"}]`,
-      deskripsi: `${v.petugas_nama || "Petugas"} mencatat ${v.total_anggota || 0} jiwa (${v.status_kunjungan}). Stiker: ${v.nama_stiker_manual || (v.stiker_ditempel ? "Ditempel" : "Belum")}`,
-      status: v.status_kunjungan,
-      waktu: v.waktu_kunjungan || v.created_at,
-      aktor: v.petugas_nama || v.petugas_username,
+      deskripsi: `${v.petugas_nama || "Petugas"} mencatat ${v.total_anggota || 0} jiwa (${v.status_kunjungan || "SELESAI"}). Stiker: ${v.nama_stiker_manual || (v.stiker_ditempel ? "Ditempel" : "Belum")}`,
+      status: v.status_kunjungan || "SELESAI",
+      waktu: v.waktu_kunjungan || v.created_at || new Date().toISOString(),
+      aktor: v.petugas_nama || v.petugas_username || "Petugas",
       tps: v.tps,
       qrToken: v.qr_token,
       metadata: {
@@ -112,15 +181,15 @@ export async function GET(req: Request) {
       },
     }));
 
-    const aduanFormatted = (aduanData || []).map((a: any) => ({
-      id: a.id || a.nomor_aduan,
+    const aduanFormatted: UnifiedActivity[] = aduanData.map((a) => ({
+      id: a.id || a.nomor_aduan || "aduan",
       kategori: "ADUAN",
-      judul: `Aduan Warga: ${a.nama_pelapor} (RT ${a.rt}/RW ${a.rw})`,
-      deskripsi: a.isi_aduan || `Jenis: ${a.jenis_aduan}`,
+      judul: `Aduan Warga: ${a.nama_pelapor || "Warga"} (RT ${a.rt || "-"}/RW ${a.rw || "-"})`,
+      deskripsi: a.isi_aduan || `Jenis: ${a.jenis_aduan || "-"}`,
       status: a.status || "MENUNGGU",
-      waktu: a.tanggal || a.created_at,
-      aktor: a.nama_pelapor,
-      tps: `RW ${a.rw}`,
+      waktu: a.tanggal || a.created_at || new Date().toISOString(),
+      aktor: a.nama_pelapor || "Pelapor",
+      tps: `RW ${a.rw || "-"}`,
       metadata: {
         nomorAduan: a.nomor_aduan,
         kontakPelapor: a.kontak_pelapor,
@@ -128,7 +197,7 @@ export async function GET(req: Request) {
       },
     }));
 
-    const pengumumanFormatted = (pengumumanList || []).map((p: any) => ({
+    const pengumumanFormatted: UnifiedActivity[] = pengumumanList.map((p) => ({
       id: p.id,
       kategori: "PENGUMUMAN",
       judul: p.judul,
@@ -144,7 +213,7 @@ export async function GET(req: Request) {
     }));
 
     // Filter berdasarkan kategori jika diminta
-    let mergedList: any[] = [];
+    let mergedList: UnifiedActivity[] = [];
     if (category === "SAYA" || category === "KUNJUNGAN") {
       mergedList = activitiesList;
     } else if (category === "ADUAN") {
@@ -168,7 +237,7 @@ export async function GET(req: Request) {
         tasks: taskSummary,
       },
       data: mergedList.slice(0, limit),
-      auditSummary: (auditData || []).slice(0, 5).map((log: any) => ({
+      auditSummary: auditData.slice(0, 5).map((log) => ({
         id: log.id,
         aksi: log.aksi,
         modul: log.modul,
@@ -177,10 +246,11 @@ export async function GET(req: Request) {
         waktu: log.created_at,
       })),
     });
-  } catch (err: any) {
-    console.error("Error fetching activities hub:", err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("Error fetching activities hub:", errorMsg);
     return NextResponse.json(
-      { success: false, message: "Gagal memuat pusat aktivitas: " + err.message },
+      { success: false, message: "Gagal memuat pusat aktivitas: " + errorMsg },
       { status: 500 }
     );
   }

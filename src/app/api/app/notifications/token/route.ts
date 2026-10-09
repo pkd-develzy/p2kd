@@ -54,10 +54,11 @@ export async function POST(req: Request) {
       message: "Token perangkat berhasil didaftarkan.",
       tokenPreview: token.substring(0, 10) + "...",
     });
-  } catch (err: any) {
-    console.error("Error registering FCM token:", err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("Error registering FCM token:", errorMsg);
     return NextResponse.json(
-      { success: false, message: "Gagal mendaftarkan token perangkat: " + err.message },
+      { success: false, message: "Gagal mendaftarkan token perangkat: " + errorMsg },
       { status: 500 }
     );
   }
@@ -100,10 +101,11 @@ export async function DELETE(req: Request) {
       success: true,
       message: "Token perangkat berhasil dicabut.",
     });
-  } catch (err: any) {
-    console.error("Error revoking FCM token:", err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error("Error revoking FCM token:", errorMsg);
     return NextResponse.json(
-      { success: false, message: "Gagal mencabut token perangkat: " + err.message },
+      { success: false, message: "Gagal mencabut token perangkat: " + errorMsg },
       { status: 500 }
     );
   }

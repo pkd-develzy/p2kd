@@ -35,6 +35,7 @@ import { useConfirm } from "@/hooks/use-confirm";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { compressImage } from "@/lib/image-compressor";
 import { DEFAULT_SYARAT_KADES, DEFAULT_LARANGAN_KADES } from "@/lib/data-store";
+import { formatNamaSaja, formatGelarDepan, formatGelarBelakang } from "@/lib/nama-gelar";
 
 interface TabCalonKadesProps {
   isAdmin: boolean;
@@ -392,6 +393,9 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
 
       const payload = {
         ...formData,
+        namaLengkap: formatNamaSaja(formData.namaLengkap),
+        gelarDepan: formatGelarDepan(formData.gelarDepan),
+        gelarBelakang: formatGelarBelakang(formData.gelarBelakang),
         misi: cleanMisi,
         programUnggulan: cleanProgram,
       };
@@ -761,9 +765,9 @@ export const TabCalonKades: React.FC<TabCalonKadesProps> = ({
                   </div>
 
                   <h3 className="text-base sm:text-lg font-black tracking-tight text-white leading-snug line-clamp-2">
-                    {c.gelarDepan ? `${c.gelarDepan} ` : ""}
-                    {c.namaLengkap}
-                    {c.gelarBelakang ? `, ${c.gelarBelakang}` : ""}
+                    {c.gelarDepan ? `${formatGelarDepan(c.gelarDepan)} ` : ""}
+                    {formatNamaSaja(c.namaLengkap)}
+                    {c.gelarBelakang ? `, ${formatGelarBelakang(c.gelarBelakang)}` : ""}
                   </h3>
 
                   {c.tagline && (

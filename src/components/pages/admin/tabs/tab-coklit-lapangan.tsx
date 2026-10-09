@@ -19,6 +19,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Button, Badge, PaginationControl } from "@/components/ui";
 import { Voter, TPSItem } from "../types";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 interface TabCoklitLapanganProps {
   voters: Voter[];
@@ -381,7 +382,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
                       </div>
 
                       <h4 className="text-sm font-black text-slate-900 tracking-tight">
-                        {voter.namaLengkap}
+                        {formatNamaGelar(voter.namaLengkap)}
                       </h4>
 
                       <div className="text-[11px] text-slate-600 flex flex-wrap items-center gap-x-3 gap-y-0.5">
@@ -402,7 +403,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
                             Diverifikasi oleh:
                           </span>
                           <span className="font-black text-emerald-900 bg-white/90 px-1.5 py-0.5 rounded border border-emerald-200 shadow-2xs">
-                            {voter.coklitPetugas || "Khasanudin, S.Pd.SD (Ketua P2KD)"}
+                            {formatNamaGelar(voter.coklitPetugas || "Khasanudin, S.Pd.SD (Ketua P2KD)")}
                           </span>
                           <span className="text-slate-400">•</span>
                           <span className="text-emerald-700 font-semibold">{voter.coklitTanggal}</span>
@@ -501,7 +502,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
                         {startIdxTable + idx + 1}
                       </td>
                       <td className="py-2.5 px-3 font-bold text-slate-900">
-                        {voter.namaLengkap}
+                        {formatNamaGelar(voter.namaLengkap)}
                       </td>
                       <td className="py-2.5 px-3">
                         <div className="font-mono font-bold text-slate-800">{voter.nik}</div>
@@ -533,7 +534,7 @@ export const TabCoklitLapangan: React.FC<TabCoklitLapanganProps> = ({
                         )}
                         {voter.coklitTanggal && (
                           <div className="text-[9.5px] text-slate-500 mt-1 font-medium leading-tight">
-                            Oleh: <strong className="text-emerald-800 font-bold">{voter.coklitPetugas || "Khasanudin, S.Pd.SD"}</strong>
+                            Oleh: <strong className="text-emerald-800 font-bold">{formatNamaGelar(voter.coklitPetugas || "Khasanudin, S.Pd.SD")}</strong>
                             <span className="block text-[9px] text-slate-400 font-mono">Tgl: {voter.coklitTanggal}</span>
                           </div>
                         )}

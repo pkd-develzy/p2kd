@@ -181,3 +181,11 @@ export function parseClientSource(data?: {
   };
 }
 
+export {
+  formatNamaGelar,
+  formatNamaSaja,
+  formatGelarDepan,
+  formatGelarBelakang,
+  pisahkanNamaDanGelar,
+} from "./nama-gelar";
+

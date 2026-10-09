@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 
+import { formatNamaGelar } from "@/lib/nama-gelar";
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -25,7 +27,7 @@ export async function GET() {
       .filter((a) => a.status === "AKTIF")
       .map((a) => ({
         id: a.id,
-        namaLengkap: a.namaLengkap,
+        namaLengkap: formatNamaGelar(a.namaLengkap),
         jabatan: a.jabatan,
         seksi: a.seksi,
         seksiLabel: a.seksiLabel || a.seksi,

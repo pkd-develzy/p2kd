@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { formatNamaSaja, formatGelarDepan, formatGelarBelakang } from "@/lib/nama-gelar";
 
 interface KandidatItem {
   id: string;
@@ -213,9 +214,9 @@ export const HomeCalonSection: React.FC<HomeCalonSectionProps> = ({
                       </div>
 
                       <h3 className="text-base sm:text-lg font-black tracking-tight text-white leading-snug line-clamp-2">
-                        {c.gelarDepan ? `${c.gelarDepan} ` : ""}
-                        {c.namaLengkap}
-                        {c.gelarBelakang ? `, ${c.gelarBelakang}` : ""}
+                        {c.gelarDepan ? `${formatGelarDepan(c.gelarDepan)} ` : ""}
+                        {formatNamaSaja(c.namaLengkap)}
+                        {c.gelarBelakang ? `, ${formatGelarBelakang(c.gelarBelakang)}` : ""}
                       </h3>
 
                       {c.tagline && (

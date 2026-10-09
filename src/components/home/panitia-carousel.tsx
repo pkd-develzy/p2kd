@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 export interface PanitiaProfile {
   id: string;
@@ -251,7 +252,7 @@ export const PanitiaCarousel: React.FC = () => {
                 </div>
 
                 <h3 className="text-sm sm:text-base font-black text-white tracking-tight leading-snug truncate">
-                  {currentMember?.namaLengkap}
+                  {formatNamaGelar(currentMember?.namaLengkap)}
                 </h3>
 
                 <p className="text-[11px] sm:text-xs font-semibold text-amber-300 truncate flex items-center justify-center gap-1.5">

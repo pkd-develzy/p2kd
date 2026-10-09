@@ -19,6 +19,7 @@ import {
   Smartphone,
   ShieldCheck,
   Trash2,
+  Copy,
 } from "lucide-react";
 import { useSessionPresence } from "@/hooks/use-session-presence";
 import { Card } from "@/components/ui/card";
@@ -27,6 +28,7 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useConfirm } from "@/hooks/use-confirm";
 import { AnggotaP2KD } from "../types";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 interface TabAkunPetugasProps {
   userName: string;
@@ -72,6 +74,25 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [isChangingPass, setIsChangingPass] = useState(false);
+
+  // Active Password reveal & copy state
+  const [showActiveAccountPass, setShowActiveAccountPass] = useState(false);
+  const [isCopiedActivePass, setIsCopiedActivePass] = useState(false);
+
+  const activeAccountPassword =
+    matchedMember?.activePassword ||
+    (userSeksi === "PANTARLIH_LAPANGAN" ? "pantarlih123" : "p2kd2026");
+
+  const handleCopyActiveAccountPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(activeAccountPassword);
+      setIsCopiedActivePass(true);
+      toast.success("Tersalin", "Kata sandi aktif berhasil disalin.");
+      setTimeout(() => setIsCopiedActivePass(false), 2000);
+    } catch {
+      toast.error("Gagal Menyalin", "Tidak dapat menyalin kata sandi.");
+    }
+  };
 
   // Sesi & Presence Perangkat dari PostgreSQL
   const { sessions, revokeSession, isRevoking, refetchSessions } = useSessionPresence(userName);
@@ -337,7 +358,7 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
             </div>
 
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
-              {matchedMember?.namaLengkap || userName}
+              {formatNamaGelar(matchedMember?.namaLengkap || userName)}
             </h1>
 
             <p className="text-xs sm:text-sm text-blue-200 font-semibold flex items-center justify-center sm:justify-start gap-1.5 truncate">
@@ -378,6 +399,37 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
             <div className="text-[10px] text-slate-500">Portal Petugas & Aplikasi Android APK</div>
           </div>
 
+          <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Kata Sandi Aktif</span>
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Aktif</span>
+            </div>
+            <div className="flex items-center justify-between gap-2 pt-0.5">
+              <div className="font-mono font-bold text-slate-900 text-sm">
+                {showActiveAccountPass ? activeAccountPassword : "••••••••"}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setShowActiveAccountPass(!showActiveAccountPass)}
+                  className="p-1 rounded-lg hover:bg-emerald-200/60 text-emerald-700 transition"
+                  title={showActiveAccountPass ? "Sembunyikan" : "Tampilkan Kata Sandi"}
+                >
+                  {showActiveAccountPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-emerald-700" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyActiveAccountPassword}
+                  className="p-1 rounded-lg hover:bg-emerald-200/60 text-emerald-700 transition"
+                  title="Salin Kata Sandi"
+                >
+                  {isCopiedActivePass ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-emerald-700" />}
+                </button>
+              </div>
+            </div>
+            <div className="text-[10px] text-emerald-700/80">Kredensial login petugas saat ini</div>
+          </div>
+
           <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Wilayah Tugas RW</div>
             <div className="font-bold text-blue-900 text-sm">{assignedTps || "Semua Lingkungan RW"}</div>
@@ -390,7 +442,7 @@ export const TabAkunPetugas: React.FC<TabAkunPetugasProps> = ({
             <div className="text-[10px] text-slate-500">P2KD Kalisalak Masa Bakti 2026-2027</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1 sm:col-span-2">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">SK Penetapan BPD</div>
             <div className="font-semibold text-slate-800 text-[11px] truncate" title={matchedMember?.skPenetapan || "Keputusan BPD No. 04/BPD-KLS/VII/2026"}>
               {matchedMember?.skPenetapan || "Keputusan BPD No. 04/BPD-KLS/VII/2026"}

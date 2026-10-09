@@ -44,6 +44,7 @@ import {
   TELEGRAM_GROUP_URL,
   TELEGRAM_PLAYSTORE_URL,
 } from "@/lib/petugas-messages";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 interface TabPetugasDptProps {
   isAdmin?: boolean;
@@ -373,6 +374,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
         ? {
             id: selectedPetugas.id,
             ...editFormData,
+            namaLengkap: formatNamaGelar(editFormData.namaLengkap),
             status: editStatus,
             catatanPanitia: editCatatan.trim(),
             alasanTms: editStatus === "TMS" ? editCatatan.trim() : undefined,
@@ -1001,10 +1003,10 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                           )}
                         </div>
                         <p
-                          className="text-[10px] text-slate-700 font-semibold uppercase truncate mt-0.5 tracking-tight"
-                          title={rwItem.officers.map((o) => o.namaLengkap.toUpperCase()).join(", ")}
+                          className="text-[10px] text-slate-700 font-semibold truncate mt-0.5 tracking-tight"
+                          title={rwItem.officers.map((o) => formatNamaGelar(o.namaLengkap)).join(", ")}
                         >
-                          {rwItem.officers.map((o) => o.namaLengkap.toUpperCase()).join(", ")}
+                          {rwItem.officers.map((o) => formatNamaGelar(o.namaLengkap)).join(", ")}
                         </p>
                       </div>
                     ) : (
@@ -1038,7 +1040,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                 rwCoverageData.find((r) => r.rwCode === rwFilter)?.total || 0
               } Petugas terdaftar
               {rwCoverageData.find((r) => r.rwCode === rwFilter)?.officers?.length ? (
-                <>: <strong className="uppercase">{rwCoverageData.find((r) => r.rwCode === rwFilter)?.officers.map((o) => o.namaLengkap.toUpperCase()).join(", ")}</strong></>
+                <>: <strong>{rwCoverageData.find((r) => r.rwCode === rwFilter)?.officers.map((o) => formatNamaGelar(o.namaLengkap)).join(", ")}</strong></>
               ) : null})
             </span>
             <button
@@ -1199,7 +1201,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                         {item.nomorRegistrasi}
                       </td>
                       <td className="py-3 px-3.5">
-                        <strong className="text-slate-900 block uppercase">{item.namaLengkap}</strong>
+                        <strong className="text-slate-900 block">{formatNamaGelar(item.namaLengkap)}</strong>
                         <span className="font-mono text-[11px] text-slate-400">{item.nik}</span>
                       </td>
                       <td className="py-3 px-3.5">
@@ -1425,6 +1427,7 @@ export const TabPetugasDpt: React.FC<TabPetugasDptProps> = ({
                           type="text"
                           value={editFormData.namaLengkap}
                           onChange={(e) => setEditFormData({ ...editFormData, namaLengkap: e.target.value })}
+                          onBlur={() => setEditFormData((prev) => ({ ...prev, namaLengkap: formatNamaGelar(prev.namaLengkap) }))}
                           className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:border-blue-500 outline-none"
                         />
                       </div>

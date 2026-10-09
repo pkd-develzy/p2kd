@@ -85,6 +85,7 @@ export interface AnggotaP2KD {
   status: "AKTIF" | "NONAKTIF";
   skPenetapan: string;
   fotoUrl?: string;
+  activePassword?: string;
   isActivated?: boolean;
   hasChangedPassword?: boolean;
   lastLoginAt?: string;

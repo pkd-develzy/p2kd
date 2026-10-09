@@ -6,6 +6,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui";
 import { formatNomorManual } from "@/regulations";
 import { KONSIDERAN_HUKUM_PILKADES } from "@/lib/regulations/document-templates";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 interface PrintBeritaAcaraProps {
   nomorBeritaAcara: string;
@@ -385,7 +386,7 @@ export const PrintBeritaAcara: React.FC<PrintBeritaAcaraProps> = ({
               <div className="h-20 flex items-center justify-center">
                 <span className="text-slate-300 italic text-[11px]">(Tanda tangan & Cap Resmi)</span>
               </div>
-              <p className="font-bold underline uppercase">{ketuaP2KD.namaLengkap}</p>
+              <p className="font-bold underline">{formatNamaGelar(ketuaP2KD.namaLengkap)}</p>
             </div>
           </div>
 
@@ -396,7 +397,7 @@ export const PrintBeritaAcara: React.FC<PrintBeritaAcaraProps> = ({
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-[10px]">
               <div className="space-y-8">
-                <p className="font-medium">1. {sekretarisP2KD.namaLengkap}</p>
+                <p className="font-medium">1. {formatNamaGelar(sekretarisP2KD.namaLengkap)}</p>
                 <p className="border-b border-black w-32 mx-auto"></p>
               </div>
               <div className="space-y-8">

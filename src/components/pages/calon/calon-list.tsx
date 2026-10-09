@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { User, Award, CheckCircle2, GraduationCap, Briefcase, Calendar, Sparkles, Loader2, Flag, ArrowRight, ShieldCheck } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge, Logo, Button } from "@/components/ui";
+import { formatNamaSaja, formatGelarDepan, formatGelarBelakang } from "@/lib/nama-gelar";
 
 interface KandidatItem {
   id: string;
@@ -140,7 +141,9 @@ export const CalonList: React.FC = () => {
                     </div>
 
                     <h3 className="text-xl font-black tracking-tight text-white leading-snug">
-                      {c.namaLengkap}{c.gelarBelakang ? `, ${c.gelarBelakang}` : ""}
+                      {c.gelarDepan ? `${formatGelarDepan(c.gelarDepan)} ` : ""}
+                      {formatNamaSaja(c.namaLengkap)}
+                      {c.gelarBelakang ? `, ${formatGelarBelakang(c.gelarBelakang)}` : ""}
                     </h3>
 
                     {c.tagline && (

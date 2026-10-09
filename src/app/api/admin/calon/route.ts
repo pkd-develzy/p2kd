@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 import { uploadImageToCloudinary, deleteImageFromCloudinary } from "@/lib/cloudinary";
+import { formatNamaSaja, formatGelarDepan, formatGelarBelakang } from "@/lib/nama-gelar";
 
 // GET /api/admin/calon - Ambil daftar semua calon kepala desa
 export async function GET(req: Request) {
@@ -119,9 +120,9 @@ export async function POST(req: Request) {
     const newKandidat = await dataStore.addKandidat(
       {
         nomorUrut: Number(nomorUrut),
-        namaLengkap: String(namaLengkap).trim(),
-        gelarDepan: gelarDepan ? String(gelarDepan).trim() : "",
-        gelarBelakang: gelarBelakang ? String(gelarBelakang).trim() : "",
+        namaLengkap: formatNamaSaja(String(namaLengkap)),
+        gelarDepan: gelarDepan ? formatGelarDepan(String(gelarDepan)) : "",
+        gelarBelakang: gelarBelakang ? formatGelarBelakang(String(gelarBelakang)) : "",
         tempatTanggalLahir: tempatTanggalLahir ? String(tempatTanggalLahir).trim() : "Kalisalak",
         pendidikanTerakhir: pendidikanTerakhir ? String(pendidikanTerakhir).trim() : "SLTA / Sederajat",
         pekerjaan: pekerjaan ? String(pekerjaan).trim() : "Wiraswasta",
@@ -225,6 +226,16 @@ export async function PUT(req: Request) {
       ) {
         void deleteImageFromCloudinary(existingKandidat.fotoUrl);
       }
+    }
+
+    if (updateFields.namaLengkap !== undefined) {
+      updateFields.namaLengkap = formatNamaSaja(String(updateFields.namaLengkap));
+    }
+    if (updateFields.gelarDepan !== undefined) {
+      updateFields.gelarDepan = formatGelarDepan(String(updateFields.gelarDepan));
+    }
+    if (updateFields.gelarBelakang !== undefined) {
+      updateFields.gelarBelakang = formatGelarBelakang(String(updateFields.gelarBelakang));
     }
 
     const updated = await dataStore.updateKandidat(

@@ -1,8 +1,8 @@
 import crypto from "crypto";
-import { maskNIK, maskKK, hashPassword } from "./encryption";
+import { maskNIK, maskKK, createStoredPassword } from "./encryption";
 import { SupabaseDbService } from "./supabase-db";
 import { getAutoTabungByRtRw } from "./kalisalak-wilayah";
-import { parseClientSource } from "./utils";
+import { parseClientSource, formatNamaGelar, formatNamaSaja, formatGelarDepan, formatGelarBelakang } from "./utils";
 import {
   filterLogsWithin48Hours,
   partitionLogsBy48Hours,
@@ -246,6 +246,7 @@ export interface MasterAnggotaP2KD {
   skPenetapan: string;
   fotoUrl?: string;
   passwordHash?: string;
+  activePassword?: string;
   isActivated?: boolean;
   hasChangedPassword?: boolean;
   lastLoginAt?: string;
@@ -1196,7 +1197,10 @@ class SystemDataStore {
       });
     }
 
-    return result;
+    return result.map((p) => ({
+      ...p,
+      namaLengkap: formatNamaSaja(p.namaLengkap),
+    }));
   }
 
   public findPemilihByNik(nik: string) {
@@ -1226,6 +1230,7 @@ class SystemDataStore {
 
     const newPemilih: MasterPemilih = {
       ...data,
+      namaLengkap: formatNamaSaja(data.namaLengkap),
       tps: resolvedTps,
       id: newId,
       nikMasked: maskNIK(data.nik),
@@ -1267,6 +1272,7 @@ class SystemDataStore {
     const updated: MasterPemilih = {
       ...existing,
       ...data,
+      ...(data.namaLengkap ? { namaLengkap: formatNamaSaja(data.namaLengkap) } : {}),
       nikMasked: data.nik ? maskNIK(data.nik) : existing.nikMasked,
       updatedAt: new Date().toISOString(),
     };
@@ -1760,13 +1766,21 @@ class SystemDataStore {
 
   // --- KANDIDAT METHODS ---
   public getKandidatList(): MasterKandidat[] {
-    return [...this.kandidatList];
+    return this.kandidatList.map((k) => ({
+      ...k,
+      namaLengkap: formatNamaSaja(k.namaLengkap),
+      gelarDepan: formatGelarDepan(k.gelarDepan),
+      gelarBelakang: formatGelarBelakang(k.gelarBelakang),
+    }));
   }
 
   public async addKandidat(data: Omit<MasterKandidat, "id">, user = "Panitia P2KD"): Promise<MasterKandidat> {
     const newId = `knd-${Date.now().toString(36)}`;
     const newKandidat: MasterKandidat = {
       ...data,
+      namaLengkap: formatNamaSaja(data.namaLengkap),
+      gelarDepan: formatGelarDepan(data.gelarDepan),
+      gelarBelakang: formatGelarBelakang(data.gelarBelakang),
       id: newId,
     };
     this.kandidatList.push(newKandidat);
@@ -1795,6 +1809,9 @@ class SystemDataStore {
     const updated = {
       ...this.kandidatList[idx],
       ...data,
+      ...(data.namaLengkap ? { namaLengkap: formatNamaSaja(data.namaLengkap) } : {}),
+      ...(data.gelarDepan !== undefined ? { gelarDepan: formatGelarDepan(data.gelarDepan) } : {}),
+      ...(data.gelarBelakang !== undefined ? { gelarBelakang: formatGelarBelakang(data.gelarBelakang) } : {}),
     };
     this.kandidatList[idx] = updated;
     this.kandidatList.sort((a, b) => a.nomorUrut - b.nomorUrut);
@@ -1960,7 +1977,10 @@ class SystemDataStore {
       if (a.id) seenIds.add(a.id);
       if (u) seenUsernames.add(u);
       if (cleanNik.length === 16) seenNiks.add(cleanNik);
-      deduplicated.push(a);
+      deduplicated.push({
+        ...a,
+        namaLengkap: formatNamaGelar(a.namaLengkap),
+      });
     }
 
     // Sort strictly by official hierarchy: Ketua -> Wakil -> Sekretaris -> Bendahara -> Seksi 1 (Pemilih) -> Seksi 2 -> Seksi 3 -> Seksi 4 -> Seksi 5 -> Pantarlih RW 01-13
@@ -1993,6 +2013,7 @@ class SystemDataStore {
     const newId = `agt-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
     const newAnggota: MasterAnggotaP2KD = {
       ...data,
+      namaLengkap: formatNamaGelar(data.namaLengkap),
       id: newId,
     };
     this.anggotaList.push(newAnggota);
@@ -2025,6 +2046,7 @@ class SystemDataStore {
     const updated: MasterAnggotaP2KD = {
       ...existing,
       ...data,
+      ...(data.namaLengkap ? { namaLengkap: formatNamaGelar(data.namaLengkap) } : {}),
     };
     this.anggotaList[idx] = updated;
 
@@ -2120,7 +2142,7 @@ class SystemDataStore {
       const updated = await this.updateAnggota(
         existing.id,
         {
-          namaLengkap: petugas.namaLengkap.trim(),
+          namaLengkap: formatNamaGelar(petugas.namaLengkap),
           nik: cleanNik || existing.nik,
           jabatan: jabatanTitle,
           assignedTps: assignedWilayah,
@@ -2137,12 +2159,12 @@ class SystemDataStore {
     const existingUsernames = this.anggotaList.map((a) => a.username);
     const username = generateUsernameFromLastName(petugas.namaLengkap, existingUsernames);
 
-    const defaultPass = "p2kd2026";
-    const passwordHash = hashPassword(defaultPass);
+    const defaultPass = "pantarlih123";
+    const passwordHash = createStoredPassword(defaultPass);
 
     const newAnggota = await this.addAnggota(
       {
-        namaLengkap: petugas.namaLengkap.trim(),
+        namaLengkap: formatNamaGelar(petugas.namaLengkap),
         nik: cleanNik || ("332801" + Math.floor(1000000000 + Math.random() * 9000000000)),
         jabatan: jabatanTitle,
         seksi: "PANTARLIH_LAPANGAN",
@@ -2174,17 +2196,22 @@ class SystemDataStore {
 
   // --- SEKSI PENJARINGAN METHODS ---
   public getBalonList() {
-    return [...this.balonList];
+    return this.balonList.map((b) => ({
+      ...b,
+      namaLengkap: formatNamaGelar(b.namaLengkap),
+    }));
   }
 
   public getBalonById(id: string) {
-    return this.balonList.find((b) => b.id === id);
+    const b = this.balonList.find((b) => b.id === id);
+    return b ? { ...b, namaLengkap: formatNamaGelar(b.namaLengkap) } : undefined;
   }
 
   public async addBalon(data: Omit<MasterBalonPenjaringan, "id">, user = "seksi_penjaringan"): Promise<MasterBalonPenjaringan> {
     const newId = `bln-${Date.now().toString(36)}`;
     const newBalon: MasterBalonPenjaringan = {
       ...data,
+      namaLengkap: formatNamaGelar(data.namaLengkap),
       id: newId,
     };
     this.balonList.push(newBalon);
@@ -2213,6 +2240,7 @@ class SystemDataStore {
     const updated: MasterBalonPenjaringan = {
       ...existing,
       ...data,
+      ...(data.namaLengkap ? { namaLengkap: formatNamaGelar(data.namaLengkap) } : {}),
     };
     this.balonList[idx] = updated;
 
@@ -2291,11 +2319,15 @@ class SystemDataStore {
 
   // --- PETUGAS PENDATAAN DPT (PANTARLIH / COKLIT) METHODS ---
   public getPetugasDptList(): MasterPetugasDpt[] {
-    return [...this.petugasDptList];
+    return this.petugasDptList.map((p) => ({
+      ...p,
+      namaLengkap: formatNamaGelar(p.namaLengkap),
+    }));
   }
 
   public getPetugasDptById(id: string): MasterPetugasDpt | undefined {
-    return this.petugasDptList.find((p) => p.id === id);
+    const p = this.petugasDptList.find((p) => p.id === id);
+    return p ? { ...p, namaLengkap: formatNamaGelar(p.namaLengkap) } : undefined;
   }
 
   public getPetugasDptByRegAndWa(nomorRegistrasi: string, nomorWa: string): MasterPetugasDpt | undefined {
@@ -2342,6 +2374,7 @@ class SystemDataStore {
     const newPetugas: MasterPetugasDpt = {
       ...data,
       id,
+      namaLengkap: formatNamaGelar(data.namaLengkap),
       nomorRegistrasi,
       nikMasked: maskNIK(data.nik),
       noKkMasked: maskKK(data.noKk),
@@ -2385,6 +2418,7 @@ class SystemDataStore {
     const updated: MasterPetugasDpt = {
       ...existing,
       ...updateData,
+      ...(updateData.namaLengkap ? { namaLengkap: formatNamaGelar(updateData.namaLengkap) } : {}),
       nikMasked: updateData.nik ? (updateData.nik.length >= 16 ? `${updateData.nik.slice(0, 1)}*************${updateData.nik.slice(-2)}` : updateData.nik) : existing.nikMasked,
       noKkMasked: updateData.noKk ? (updateData.noKk.length >= 16 ? `${updateData.noKk.slice(0, 1)}*************${updateData.noKk.slice(-2)}` : updateData.noKk) : existing.noKkMasked,
       updatedAt: now,

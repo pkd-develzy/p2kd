@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
-import { hashPassword, verifyPassword, generateAuthToken } from "@/lib/encryption";
+import { verifyPassword, generateAuthToken, createStoredPassword } from "@/lib/encryption";
 import { validatePasswordPolicy, isInitialDefaultPassword, checkLeakedPasswordHIBP } from "@/lib/password-policy";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession } from "@/lib/auth-middleware";
@@ -141,8 +141,8 @@ export async function POST(req: Request) {
       }
     }
 
-    // Hash new password
-    const newPasswordHash = hashPassword(newPassword);
+    // Hash and encrypt new password for management view
+    const newPasswordHash = createStoredPassword(newPassword);
 
     // Update in dataStore
     dataStore.updateAnggota(

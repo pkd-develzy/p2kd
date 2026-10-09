@@ -4,6 +4,7 @@ import { dataStore } from "@/lib/data-store";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 function normalizeDate(dateStr: string): string {
   if (!dateStr) return "";
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
         found: true,
         data: {
           nik: voter.nikMasked,
-          nama: voter.namaLengkap,
+          nama: formatNamaGelar(voter.namaLengkap),
           jenisKelamin: voter.jenisKelamin,
           tps: "-",
           lokasiTps: "-",
@@ -157,7 +158,7 @@ export async function POST(req: Request) {
       found: true,
       data: {
         nik: voter.nikMasked,
-        nama: voter.namaLengkap,
+        nama: formatNamaGelar(voter.namaLengkap),
         jenisKelamin: voter.jenisKelamin,
         tps: voter.tps,
         lokasiTps: matchedTps?.lokasi || "Desa Kalisalak",

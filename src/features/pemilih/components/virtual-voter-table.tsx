@@ -6,6 +6,7 @@ import { CheckSquare, Square, Edit, ArrowRightLeft, UserX, Trash2, UserCheck, Ro
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Voter } from "@/components/pages/admin/types";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 interface VirtualVoterTableProps {
   voters: Voter[];
@@ -121,7 +122,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
 
               {/* Nama & JK */}
               <div className="flex-1 min-w-45 px-3 truncate">
-                <div className="font-bold text-slate-900 truncate">{p.namaLengkap}</div>
+                <div className="font-bold text-slate-900 truncate">{formatNamaGelar(p.namaLengkap)}</div>
                 <div className="text-[10px] text-slate-500 truncate">
                   {isLaki ? "Laki-laki" : "Perempuan"} • Lahir: {p.tempatLahir}, {p.tanggalLahir}
                 </div>

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession, isDeveloper, isSeksiPemilih } from "@/lib/auth-middleware";
-import { hashPassword, verifyPassword } from "@/lib/encryption";
+import { verifyPassword, createStoredPassword, resolveActivePassword } from "@/lib/encryption";
 import { DEFAULT_INITIAL_PASSWORDS, isInitialDefaultPassword } from "@/lib/password-policy";
 import { uploadImageToCloudinary, deleteImageFromCloudinary } from "@/lib/cloudinary";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 function checkIsActivated(passwordHash?: string): boolean {
   if (!passwordHash) return false;
@@ -106,9 +107,13 @@ export async function GET(req: Request) {
 
       const stats = loginStats.get(u);
       const isAct = checkIsActivated(agt.passwordHash);
+      const defaultPass = agt.seksi === "PANTARLIH_LAPANGAN" ? "pantarlih123" : "p2kd2026";
+      const activePass = resolveActivePassword(agt.passwordHash, defaultPass);
 
       const item = {
         ...agt,
+        namaLengkap: formatNamaGelar(agt.namaLengkap),
+        activePassword: activePass,
         isActivated: isAct,
         hasChangedPassword: isAct,
         loginCount: stats?.count || 0,
@@ -201,8 +206,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const plainPass = password || customPassword || "p2kd2026";
-    const passwordHash = hashPassword(plainPass);
+    const plainPass = password || customPassword || (seksi === "PANTARLIH_LAPANGAN" ? "pantarlih123" : "p2kd2026");
+    const passwordHash = createStoredPassword(plainPass);
 
     let finalFotoUrl = fotoUrl ? String(fotoUrl).trim() : undefined;
     if (finalFotoUrl && (finalFotoUrl.startsWith("data:image/") || finalFotoUrl.startsWith("data:application/"))) {
@@ -227,7 +232,7 @@ export async function POST(req: Request) {
 
     const newAnggota = await dataStore.addAnggota(
       {
-        namaLengkap: namaLengkap.trim(),
+        namaLengkap: formatNamaGelar(namaLengkap),
         nik: nik ? nik.trim() : "332801" + Math.floor(1000000000 + Math.random() * 9000000000),
         jabatan: jabatan.trim(),
         seksi,
@@ -245,10 +250,13 @@ export async function POST(req: Request) {
       user.nama || user.username
     );
 
+    const sanitizedData = sanitizeAnggota(newAnggota) as typeof newAnggota & { activePassword?: string };
+    sanitizedData.activePassword = plainPass;
+
     return NextResponse.json({
       success: true,
       message: `Anggota ${newAnggota.namaLengkap} (${newAnggota.username}) berhasil didaftarkan. Kata sandi: '${plainPass}'.`,
-      data: sanitizeAnggota(newAnggota),
+      data: sanitizedData,
     });
   } catch {
     return NextResponse.json(
@@ -358,13 +366,13 @@ export async function PUT(req: Request) {
           { status: 404 }
         );
       }
-      const resetHash = hashPassword(resetRes.defaultPassword);
+      const resetHash = createStoredPassword(resetRes.defaultPassword);
       await dataStore.updateAnggota(id, { passwordHash: resetHash }, userName);
 
       return NextResponse.json({
         success: true,
         message: `Kata sandi akun ${resetRes.username} berhasil direset ke '${resetRes.defaultPassword}'.`,
-        data: resetRes,
+        data: { ...resetRes, activePassword: resetRes.defaultPassword },
       });
     }
 
@@ -385,7 +393,7 @@ export async function PUT(req: Request) {
         );
       }
 
-      const passwordHash = hashPassword(newPassword);
+      const passwordHash = createStoredPassword(newPassword);
       await dataStore.updateAnggota(id, { passwordHash }, userName);
 
       dataStore.addAuditLog({
@@ -401,13 +409,14 @@ export async function PUT(req: Request) {
       return NextResponse.json({
         success: true,
         message: `Kata sandi akun ${agt.username} berhasil diperbarui.`,
-        data: { username: agt.username, updated: true },
+        data: { username: agt.username, updated: true, activePassword: newPassword },
       });
     }
 
     // If updating member fields and new password supplied
     if (customPassword || password) {
-      updateFields.passwordHash = hashPassword(customPassword || password);
+      const p = customPassword || password;
+      updateFields.passwordHash = createStoredPassword(p);
     }
 
     // Process photo update and upload to Cloudinary
@@ -445,6 +454,9 @@ export async function PUT(req: Request) {
     }
 
     delete (updateFields as Record<string, unknown>).user;
+    if (updateFields.namaLengkap) {
+      updateFields.namaLengkap = formatNamaGelar(updateFields.namaLengkap);
+    }
 
     const updated = await dataStore.updateAnggota(id, updateFields, userName);
     if (!updated) {
@@ -454,10 +466,14 @@ export async function PUT(req: Request) {
       );
     }
 
+    const sanitized = sanitizeAnggota(updated) as typeof updated & { activePassword?: string };
+    const defaultFallback = updated.seksi === "PANTARLIH_LAPANGAN" ? "pantarlih123" : "p2kd2026";
+    sanitized.activePassword = resolveActivePassword(updated.passwordHash, defaultFallback);
+
     return NextResponse.json({
       success: true,
       message: "Data anggota P2KD berhasil diperbarui.",
-      data: sanitizeAnggota(updated),
+      data: sanitized,
     });
   } catch {
     return NextResponse.json(

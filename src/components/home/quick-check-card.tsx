@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 interface VoterResult {
   found: boolean;
@@ -378,7 +379,7 @@ export const QuickCheckCard: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                     <div className="bg-white/80 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">
                       <span className="text-slate-500 text-[11px] font-semibold block mb-0.5">Nama Lengkap:</span>
-                      <strong className="text-slate-900 text-base font-bold">{result.nama}</strong>
+                      <strong className="text-slate-900 text-base font-bold">{result.nama ? formatNamaGelar(result.nama) : "-"}</strong>
                     </div>
 
                     <div className="bg-white/80 p-3.5 rounded-2xl border border-emerald-100 shadow-2xs">

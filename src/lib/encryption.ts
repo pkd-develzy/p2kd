@@ -118,15 +118,78 @@ export function hashPassword(password: string): string {
 }
 
 /**
- * Verifies a plain text password against stored hash.
+ * Creates stored password format that combines one-way PBKDF2 hash
+ * and AES-256-GCM reversible ciphertext for authorized administrative view:
+ * Format: "salt:hash$$iv:authTag:cipher"
+ */
+export function createStoredPassword(password: string): string {
+  const hash = hashPassword(password);
+  const encrypted = encryptData(password);
+  return `${hash}$$${encrypted}`;
+}
+
+/**
+ * Resolves the currently active plain text password from stored record.
+ * Handles dual-mode "$$cipher", plain text, and common default passwords.
+ */
+export function resolveActivePassword(storedHashOrPlain?: string, defaultFallback = "p2kd2026"): string {
+  if (!storedHashOrPlain) return defaultFallback;
+
+  // 1. If stored with reversible AES-256-GCM cipher
+  if (storedHashOrPlain.includes("$$")) {
+    const parts = storedHashOrPlain.split("$$");
+    if (parts[1]) {
+      const decrypted = decryptData(parts[1]);
+      if (decrypted && decrypted !== "[DECRYPTION_FAILED]") {
+        return decrypted;
+      }
+    }
+  }
+
+  // 2. If stored as direct plain text without ":"
+  if (!storedHashOrPlain.includes(":")) {
+    return storedHashOrPlain;
+  }
+
+  // 3. Test against common default passwords
+  const candidates = [
+    defaultFallback,
+    "pantarlih123",
+    "p2kd2026",
+    "p2kd12345",
+    "p2kd2027",
+    "admin123",
+    "12345678",
+    "123456789",
+    "kalisalak2026",
+    "kalisalak2027",
+    "admin_kalisalak",
+  ];
+
+  for (const candidate of candidates) {
+    if (verifyPassword(candidate, storedHashOrPlain)) {
+      return candidate;
+    }
+  }
+
+  return defaultFallback;
+}
+
+/**
+ * Verifies a plain text password against stored hash or dual-mode hash.
  * Also supports fallback backward-compatibility for initial setup defaults.
  */
 export function verifyPassword(plain: string, storedHashOrPlain: string): boolean {
   if (!plain || !storedHashOrPlain) return false;
 
+  // Strip cipher suffix if stored in "salt:hash$$cipher" format
+  const hashPart = storedHashOrPlain.includes("$$")
+    ? storedHashOrPlain.split("$$")[0]
+    : storedHashOrPlain;
+
   // 1. If stored in salt:hash format
-  if (storedHashOrPlain.includes(":")) {
-    const [salt, originalHash] = storedHashOrPlain.split(":");
+  if (hashPart.includes(":")) {
+    const [salt, originalHash] = hashPart.split(":");
     if (!salt || !originalHash) return false;
     try {
       const computedHash = crypto.pbkdf2Sync(plain, salt, 10000, 64, "sha512").toString("hex");
@@ -140,7 +203,7 @@ export function verifyPassword(plain: string, storedHashOrPlain: string): boolea
   }
 
   // 2. Fallback for plain initial seed default passwords (e.g. "p2kd2026")
-  return plain === storedHashOrPlain;
+  return plain === hashPart;
 }
 
 /**

@@ -1120,9 +1120,15 @@ export const AdminDashboard: React.FC = () => {
     // 3. Asynchronous background execution (zero UI delay)
     void (async () => {
       try {
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+            : null;
+        const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
         const res = await fetch("/api/admin/pemilih", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({ ...values, user: currentUser }),
         });
         const result = await res.json();
@@ -1194,9 +1200,15 @@ export const AdminDashboard: React.FC = () => {
     // 4. Asynchronous background execution (zero UI delay)
     void (async () => {
       try {
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("admin_token") || sessionStorage.getItem("admin_token")
+            : null;
+        const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
         const res = await fetch(`/api/admin/pemilih/${targetId}`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", ...authHeaders },
           body: JSON.stringify({
             ...values,
             user: currentUser,
@@ -2056,6 +2068,8 @@ export const AdminDashboard: React.FC = () => {
             : undefined
         }
         tpsList={tpsList}
+        isFieldOfficer={isFieldOfficer}
+        officerAssignedTps={assignedTps}
         onClose={handleCloseVoterModal}
         onSubmit={showAddVoterModal ? handleSaveNewVoter : handleSaveEditVoter}
       />

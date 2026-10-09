@@ -4,9 +4,13 @@ import {
   verifyAdminSession,
   canAccessVoterData,
   isAuthorizedForVoterTps,
+  isPantarlih,
+  isSeksiPemilih,
   isDeveloper,
   isKetuaP2KD,
 } from "@/lib/auth-middleware";
+import { normalizeWilayahCode, getAutoTabungByRtRw } from "@/lib/kalisalak-wilayah";
+import { formatNamaGelar } from "@/lib/nama-gelar";
 
 export async function GET(
   req: Request,
@@ -108,8 +112,43 @@ export async function PUT(
       );
     }
 
+    const isFieldOfficer = isPantarlih(user) && !isKetuaP2KD(user) && !isDeveloper(user) && !isSeksiPemilih(user);
+
+    if (isFieldOfficer) {
+      const officerRwDigits = (user.assignedTps || "").replace(/\D/g, "");
+      const assignedRwCode = officerRwDigits.padStart(2, "0");
+
+      if (updates.rw && normalizeWilayahCode(updates.rw) !== assignedRwCode) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Akses Ditolak: Anda hanya berwenang mengelola pemilih di wilayah RW ${assignedRwCode}. Dilarang memindahkan pemilih ke RW lain.`,
+          },
+          { status: 403 }
+        );
+      }
+
+      if (updates.rt && !["01", "02", "03"].includes(normalizeWilayahCode(updates.rt))) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Format RT tidak valid. Pilihan RT wajib RT 01, RT 02, atau RT 03.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     if (updates.namaLengkap) {
-      updates.namaLengkap = updates.namaLengkap.toUpperCase();
+      updates.namaLengkap = formatNamaGelar(updates.namaLengkap);
+    }
+
+    if (updates.rw || updates.rt) {
+      const targetRw = normalizeWilayahCode(updates.rw || existing.rw);
+      const targetRt = normalizeWilayahCode(updates.rt || existing.rt);
+      updates.rw = targetRw;
+      updates.rt = targetRt;
+      updates.tps = getAutoTabungByRtRw(targetRw, targetRt, dataStore.getTpsList());
     }
 
     const updated = await dataStore.updatePemilih(

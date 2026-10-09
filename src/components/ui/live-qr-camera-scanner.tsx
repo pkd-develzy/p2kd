@@ -10,7 +10,7 @@ import {
   AlertCircle,
   Upload,
   SwitchCamera,
-  ImageIcon,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +18,58 @@ interface LiveQrCameraScannerProps {
   onScanSuccess: (decodedText: string) => void;
   onClose?: () => void;
   fps?: number;
+}
+
+/**
+ * Optimalkan foto beresolusi tinggi (khas kamera HP Android 12MP-48MP)
+ * menjadi ukuran proporsional (max 1280px) pada memory canvas agar cepat dipindai
+ * dan tidak membuat WebView APK mengalami out-of-memory.
+ */
+async function preprocessImageForQr(file: File): Promise<File> {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith("image/")) {
+      return resolve(file);
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const maxDim = 1280;
+      let { width, height } = img;
+      if (width <= maxDim && height <= maxDim) {
+        return resolve(file);
+      }
+      if (width > height) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(file);
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            resolve(new File([blob], "scanned-qr.jpg", { type: "image/jpeg" }));
+          } else {
+            resolve(file);
+          }
+        },
+        "image/jpeg",
+        0.88
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
 }
 
 export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
@@ -44,6 +96,21 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [currentFacingMode, setCurrentFacingMode] = useState<"environment" | "user">("environment");
   const [isProcessingFile, setIsProcessingFile] = useState(false);
+
+  // Deteksi lingkungan APK / Android WebView via useSyncExternalStore (hindari render cascading)
+  const isApkEnvironment = React.useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (typeof navigator === "undefined") return false;
+      const ua = navigator.userAgent || "";
+      return (
+        /wv|WebView|Android.*Version\/[0-9.]+\s+Chrome/i.test(ua) ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        Boolean((window as any)?.Android || (window as any)?.AndroidBridge)
+      );
+    },
+    () => false
+  );
 
   // Stop scanner safely
   const stopScanner = useCallback(async () => {
@@ -77,33 +144,53 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
       isStartingRef.current = true;
       setCameraError(null);
 
-      // Verify secure context (HTTPS or localhost)
-      if (typeof window !== "undefined" && window.isSecureContext === false) {
-        setCameraError(
-          "Kamera browser membutuhkan koneksi aman HTTPS. Pastikan alamat website menggunakan awalan 'https://'."
-        );
-        isStartingRef.current = false;
-        return;
+      // Polyfill mediaDevices untuk Android WebView lama jika belum terpasang
+      if (typeof navigator !== "undefined") {
+        if (!navigator.mediaDevices) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (navigator as any).mediaDevices = {};
+        }
+        if (!navigator.mediaDevices.getUserMedia) {
+          const legacyGetUserMedia =
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (navigator as any).webkitGetUserMedia ||
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (navigator as any).mozGetUserMedia ||
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (navigator as any).msGetUserMedia;
+          if (legacyGetUserMedia) {
+            navigator.mediaDevices.getUserMedia = (constraints: MediaStreamConstraints) => {
+              return new Promise((resolve, reject) => {
+                legacyGetUserMedia.call(navigator, constraints, resolve, reject);
+              });
+            };
+          }
+        }
       }
 
-      // Verify mediaDevices support
+      // Jangan memblokir secara agresif hanya karena isSecureContext false (sering terjadi di WebView APK)
+      if (typeof window !== "undefined" && window.isSecureContext === false) {
+        console.warn("Camera running in non-secure context (typical in APK WebViews / IP dev). Proceeding...");
+      }
+
+      // Cek ketersediaan getUserMedia
       if (
         typeof navigator === "undefined" ||
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
       ) {
         setCameraError(
-          "Fitur kamera web tidak didukung oleh browser/perangkat ini. Anda dapat menggunakan opsi 'Ambil Foto / Unggah QR'."
+          "Streaming video langsung tidak didukung pada sistem browser/WebView ini. Gunakan tombol 'Buka Kamera HP Langsung' di bawah untuk memindai."
         );
         isStartingRef.current = false;
         return;
       }
 
       try {
-        // Clean up previous instance first
+        // Bersihkan instance sebelumnya
         await stopScanner();
 
-        // Check if element is ready in DOM
+        // Pastikan container DOM sudah siap
         const targetElement = document.getElementById(readerElementId);
         if (!targetElement) {
           console.warn("Reader DOM element not found yet, retrying...");
@@ -122,7 +209,7 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
 
         scannerRef.current = html5QrCode;
 
-        // Dynamic responsive qrbox config: do NOT force 1:1 aspect ratio to avoid OverconstrainedError on Android
+        // Dynamic responsive qrbox config: toleran terhadap rasio layar smartphone
         const scanConfig = {
           fps: fps,
           qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
@@ -149,7 +236,7 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
 
         let started = false;
 
-        // 1. Try preferred facing mode (environment = rear camera, user = front)
+        // 1. Percobaan 1: Preferred facing mode (environment = kamera belakang HP)
         try {
           await html5QrCode.start(
             { facingMode: preferredFacing },
@@ -160,14 +247,13 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
           started = true;
           setCurrentFacingMode(preferredFacing);
         } catch (errFacing) {
-          console.warn(`Direct facingMode (${preferredFacing}) failed, attempting fallbacks:`, errFacing);
+          console.warn(`Direct facingMode (${preferredFacing}) failed:`, errFacing);
         }
 
-        // 2. If preferred failed, try opposite facing mode
+        // 2. Percobaan 2: Coba facing mode sebaliknya jika percobaan 1 gagal
         if (!started && !isUnmountedRef.current) {
           const alternateFacing = preferredFacing === "environment" ? "user" : "environment";
           try {
-            // Re-instantiate if needed to reset internal state
             await html5QrCode.stop().catch(() => {});
             await html5QrCode.start(
               { facingMode: alternateFacing },
@@ -182,14 +268,13 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
           }
         }
 
-        // 3. Fallback: Enumerate cameras and pick primary camera (index 0)
+        // 3. Percobaan 3: Enumerate perangkat kamera secara langsung
         if (!started && !isUnmountedRef.current) {
           try {
             const cameras = await Html5Qrcode.getCameras();
             if (cameras && cameras.length > 0) {
-              // Pick primary camera (or one with back/environment in label)
               const rearCam = cameras.find((c) =>
-                /back|rear|environment|belakang/i.test(c.label)
+                /back|rear|environment|belakang|main/i.test(c.label)
               );
               const chosenCameraId = (rearCam || cameras[0]).id;
 
@@ -207,13 +292,13 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
         }
 
         if (!started) {
-          throw new Error("Semua metode inisialisasi kamera gagal.");
+          throw new Error("Gagal menginisialisasi streaming kamera video.");
         }
 
         if (!isUnmountedRef.current) {
           setIsScanning(true);
 
-          // Check flashlight / torch capability
+          // Cek kapabilitas lampu senter (torch)
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const capabilities = html5QrCode.getRunningTrackCapabilities() as any;
@@ -227,29 +312,30 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
       } catch (err: unknown) {
         console.error("Failed to start camera:", err);
         const errString = String(err).toLowerCase();
-        let message = "Kamera belum aktif. Tekan tombol Coba Aktifkan Ulang Kamera di bawah.";
+        let message = "Kamera live belum aktif. Tekan 'Coba Aktifkan Ulang' atau gunakan 'Buka Kamera HP Langsung'.";
 
         if (
           errString.includes("permission") ||
           errString.includes("notallowed") ||
           errString.includes("denied")
         ) {
-          message =
-            "Izin kamera ditolak. Buka pengaturan browser atau izin aplikasi HP Anda, izinkan akses kamera, lalu coba lagi.";
+          message = isApkEnvironment
+            ? "Sistem WebView APK membatasi streaming video langsung di dalam browser internal. Namun kamera HP Anda siap digunakan melalui tombol Kamera Bawaan di bawah!"
+            : "Izin kamera ditolak oleh browser. Buka pengaturan izin aplikasi HP Anda, atau gunakan tombol 'Buka Kamera HP Langsung' di bawah.";
         } else if (
           errString.includes("notreadable") ||
           errString.includes("trackstart") ||
           errString.includes("could not start video source")
         ) {
           message =
-            "Kamera sedang dipakai oleh aplikasi lain atau sistem kamera sedang sibuk. Tutup aplikasi kamera lain lalu coba lagi.";
+            "Kamera sedang dipakai oleh aplikasi lain atau sistem kamera sedang sibuk. Tutup aplikasi kamera lain lalu coba lagi, atau gunakan tombol di bawah.";
         } else if (
           errString.includes("notfound") ||
           errString.includes("devicesnotfound")
         ) {
-          message = "Perangkat kamera tidak terdeteksi pada HP / komputer Anda.";
+          message = "Perangkat kamera tidak terdeteksi. Silakan gunakan tombol 'Buka Kamera HP Langsung'.";
         } else if (errString.includes("overconstrained")) {
-          message = "Resolusi kamera tidak kompatibel. Tekan 'Coba Aktifkan Ulang Kamera'.";
+          message = "Resolusi kamera tidak kompatibel. Gunakan tombol 'Buka Kamera HP Langsung'.";
         }
 
         if (!isUnmountedRef.current) {
@@ -260,17 +346,17 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
         isStartingRef.current = false;
       }
     },
-    [currentFacingMode, fps, readerElementId, stopScanner]
+    [currentFacingMode, fps, isApkEnvironment, readerElementId, stopScanner]
   );
 
-  // Switch between back & front camera
+  // Ganti kamera depan / belakang
   const handleSwitchCamera = async () => {
     const nextFacing = currentFacingMode === "environment" ? "user" : "environment";
     setCurrentFacingMode(nextFacing);
     await startScanner(nextFacing);
   };
 
-  // Toggle torch / flash
+  // Toggle lampu senter
   const toggleTorch = async () => {
     if (!scannerRef.current || !hasTorch) return;
     try {
@@ -288,29 +374,69 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
     }
   };
 
-  // Scan from uploaded photo/file
+  // Pindai dari foto kamera bawaan HP / native Android camera capture
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     setIsProcessingFile(true);
+    setCameraError(null);
+
+    // Buat helper container terisolasi agar tidak bertabrakan dengan reader live video
+    const helperId = `qr-file-helper-${Date.now()}`;
+    const helperDiv = document.createElement("div");
+    helperDiv.id = helperId;
+    helperDiv.style.position = "fixed";
+    helperDiv.style.top = "-9999px";
+    helperDiv.style.left = "-9999px";
+    helperDiv.style.width = "100px";
+    helperDiv.style.height = "100px";
+    document.body.appendChild(helperDiv);
+
     try {
-      // Create a temporary scanner instance or use existing
-      let tempScanner = scannerRef.current;
-      if (!tempScanner) {
-        tempScanner = new Html5Qrcode(readerElementId, { verbose: false });
+      // Optimalkan ukuran gambar HP agar cepat diproses & tidak crash
+      const fileToScan = await preprocessImageForQr(rawFile);
+      const fileScanner = new Html5Qrcode(helperId, { verbose: false });
+
+      let decodedText: string | null = null;
+      try {
+        decodedText = await fileScanner.scanFile(fileToScan, false);
+      } catch {
+        // Fallback: coba berkas asli jika versi resize tidak membaca
+        if (fileToScan !== rawFile) {
+          try {
+            decodedText = await fileScanner.scanFile(rawFile, false);
+          } catch {
+            // ignore
+          }
+        }
       }
 
-      const decodedText = await tempScanner.scanFile(file, false);
+      try {
+        await fileScanner.clear();
+      } catch {}
+
       if (decodedText && onScanSuccessRef.current) {
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+          try {
+            navigator.vibrate([40, 60, 40]);
+          } catch {}
+        }
         onScanSuccessRef.current(decodedText);
+      } else {
+        setCameraError(
+          "QR Code tidak terdeteksi pada foto. Pastikan posisi stiker/QR tegak, tidak blur, dan pencahayaan cukup, lalu coba jepret ulang."
+        );
       }
     } catch (err) {
       console.warn("File QR scan failed:", err);
       setCameraError(
-        "Gambar tidak memuat QR Code yang terbaca jelas. Pastikan foto tegak, fokus, dan pencahayaan cukup."
+        "Gagal membaca QR Code dari foto. Pastikan foto tegak, cukup cahaya, lalu coba foto kembali."
       );
     } finally {
+      if (document.body.contains(helperDiv)) {
+        document.body.removeChild(helperDiv);
+      }
       setIsProcessingFile(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -322,7 +448,6 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
   useEffect(() => {
     isUnmountedRef.current = false;
 
-    // Small timeout ensures modal DOM element is rendered
     const timer = setTimeout(() => {
       startScanner();
     }, 150);
@@ -336,7 +461,7 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 shadow-2xl flex flex-col items-center">
-      {/* Hidden file input for native camera snapshot / gallery upload */}
+      {/* Hidden file input untuk kamera bawaan Android (Native Camera Intent via capture="environment") */}
       <input
         ref={fileInputRef}
         type="file"
@@ -346,9 +471,23 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
         onChange={handleFileUpload}
       />
 
-      {/* Live Video Container */}
+      {/* Indikator Mode APK Android jika terdeteksi */}
+      {isApkEnvironment && (
+        <div className="w-full bg-slate-900/90 border-b border-slate-800 px-3 py-1 flex items-center justify-between text-[10px] text-slate-300">
+          <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+            <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Mode Aplikasi APK Android</span>
+          </div>
+          <span className="text-[9px] text-slate-400 font-mono">Camera Native Ready</span>
+        </div>
+      )}
+
+      {/* Live Video Viewport Container */}
       <div className="relative w-full max-w-85 aspect-square flex items-center justify-center overflow-hidden rounded-2xl bg-black">
-        <div id={readerElementId} className="w-full h-full object-cover [&_video]:object-cover [&_video]:w-full [&_video]:h-full" />
+        <div
+          id={readerElementId}
+          className="w-full h-full object-cover [&_video]:object-cover [&_video]:w-full [&_video]:h-full"
+        />
 
         {/* Laser Scanning Overlay Animation */}
         {isScanning && !cameraError && (
@@ -372,22 +511,44 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
           </div>
         )}
 
-        {/* Camera Error Fallback View */}
+        {/* Camera Fallback / Error View */}
         {cameraError && (
-          <div className="absolute inset-0 p-5 bg-slate-900/95 text-white flex flex-col items-center justify-center text-center space-y-3 z-20">
-            <div className="p-3 rounded-full bg-rose-500/10 border border-rose-500/30">
-              <CameraOff className="w-8 h-8 text-rose-400" />
+          <div className="absolute inset-0 p-4 bg-slate-900/95 text-white flex flex-col items-center justify-center text-center space-y-3 z-20 overflow-y-auto">
+            <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/30">
+              <CameraOff className="w-7 h-7 text-emerald-400" />
             </div>
+
             <div className="space-y-1">
-              <h4 className="text-xs font-bold text-rose-300 flex items-center justify-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5" /> Kamera Belum Aktif
+              <h4 className="text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                Gunakan Kamera Bawaan HP
               </h4>
-              <p className="text-[11px] text-slate-300 max-w-65 leading-relaxed">
+              <p className="text-[11px] text-slate-300 max-w-70 leading-relaxed font-normal">
                 {cameraError}
               </p>
             </div>
 
-            <div className="flex flex-col w-full max-w-65 gap-2 pt-1">
+            {/* Tombol Aksi Utama: Langsung Buka Kamera Android */}
+            <div className="flex flex-col w-full max-w-72 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingFile}
+                className="w-full px-4 py-3 rounded-2xl text-xs sm:text-sm font-black bg-linear-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-white shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 transition cursor-pointer active:scale-95"
+              >
+                {isProcessingFile ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Menganalisis QR Code...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 text-white" />
+                    <span>Buka Kamera HP Langsung (Jepret)</span>
+                  </>
+                )}
+              </button>
+
               <Button
                 size="sm"
                 variant="outline"
@@ -395,27 +556,8 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
                 className="text-xs font-bold bg-white/10 text-white border-white/20 hover:bg-white/20 w-full"
               >
                 <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                Coba Aktifkan Ulang Kamera
+                Coba Aktifkan Ulang Live Video
               </Button>
-
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessingFile}
-                className="px-3 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-              >
-                {isProcessingFile ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Menganalisis Gambar...</span>
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Ambil Foto QR / Unggah Gambar</span>
-                  </>
-                )}
-              </button>
             </div>
           </div>
         )}
@@ -424,27 +566,43 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
       {/* Control Buttons Footer Bar */}
       <div className="w-full p-2.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
         <div className="flex items-center gap-1.5 font-mono text-[10px] text-emerald-400">
-          <span className={`w-2 h-2 rounded-full ${isScanning ? "bg-emerald-400 animate-ping" : "bg-slate-500"}`} />
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isScanning ? "bg-emerald-400 animate-ping" : "bg-emerald-500"
+            }`}
+          />
           <span>
             {isScanning
               ? currentFacingMode === "environment"
                 ? "Kamera Belakang Aktif"
                 : "Kamera Depan Aktif"
-              : "Kamera Siap"}
+              : "Kamera HP Siap"}
           </span>
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Switch Camera Button */}
+          {/* Tombol Kamera Bawaan HP Langsung */}
           <button
             type="button"
-            onClick={handleSwitchCamera}
-            title="Ganti Kamera Belakang / Depan"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+            title="Buka Kamera HP Bawaan / Jepret Foto QR"
+            className="p-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1 text-[11px] font-black shadow-md cursor-pointer active:scale-95 transition-all"
           >
-            <SwitchCamera className="w-3.5 h-3.5 text-blue-400" />
-            <span className="hidden sm:inline">Ganti Kamera</span>
+            <Camera className="w-3.5 h-3.5 text-white" />
+            <span>Kamera HP</span>
           </button>
+
+          {/* Switch Camera Button (hanya relevan jika live stream aktif) */}
+          {isScanning && (
+            <button
+              type="button"
+              onClick={handleSwitchCamera}
+              title="Ganti Kamera Belakang / Depan"
+              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+            >
+              <SwitchCamera className="w-3.5 h-3.5 text-blue-400" />
+            </button>
+          )}
 
           {/* Torch Button if available */}
           {hasTorch && (
@@ -458,26 +616,32 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{isTorchOn ? "Lampu Nyala" : "Lampu"}</span>
             </button>
           )}
 
-          {/* Quick Snapshot / Upload QR code button */}
+          {/* Galeri / Upload Berkas QR */}
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            title="Buka Kamera HP Bawaan / Galeri"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+            onClick={() => {
+              if (fileInputRef.current) {
+                fileInputRef.current.removeAttribute("capture");
+                fileInputRef.current.click();
+                setTimeout(() => {
+                  fileInputRef.current?.setAttribute("capture", "environment");
+                }, 1000);
+              }
+            }}
+            title="Pilih Foto dari Galeri HP"
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
           >
             <Upload className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Foto QR</span>
           </button>
 
           {/* Reload / Refresh Button */}
           <button
             type="button"
             onClick={() => startScanner()}
-            title="Muat Ulang Kamera"
+            title="Muat Ulang Kamera Live"
             className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />

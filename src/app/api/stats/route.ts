@@ -15,7 +15,10 @@ export async function GET() {
     if (aggStats) {
       stats.calonDps = aggStats.calonDps ?? stats.calonDps;
       stats.dps = aggStats.dps ?? stats.dps;
+      stats.dpshp = aggStats.dpshp ?? stats.dpshp;
+      stats.dpshpDibenahi = aggStats.dpshpDibenahi ?? stats.dpshpDibenahi;
       stats.dpt = aggStats.dpt ?? stats.dpt;
+      stats.dptb = aggStats.dptb ?? stats.dptb;
       stats.pemilihTambahan = aggStats.pemilihTambahan ?? stats.pemilihTambahan;
       stats.totalSemua = aggStats.totalSemua || stats.totalSemua;
       stats.totalAktif = aggStats.totalAktif || stats.totalAktif;

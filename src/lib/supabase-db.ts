@@ -19,6 +19,15 @@ import {
 } from "./data-store";
 import { maskNIK, maskKK } from "./encryption";
 import { parseClientSource } from "./utils";
+import type {
+  VoterStage,
+  VoterSource,
+  VoterCorrectionItem,
+  VoterStageHistoryItem,
+  PembenahanType,
+  ValidationStatus,
+} from "@/types/voter-stages";
+import { validateStageTransition } from "@/types/voter-stages";
 
 interface SupabaseBeritaRow {
   id: string;
@@ -75,6 +84,11 @@ interface SupabasePemilihRow {
   coklit_catatan?: string | null;
   coklit_petugas?: string | null;
   tahap?: string | null;
+  sumber_data?: string | null;
+  dps_at?: string | null;
+  dpshp_at?: string | null;
+  dpt_at?: string | null;
+  is_dpshp_verified?: boolean | null;
   updated_at?: string | null;
 }
 
@@ -314,7 +328,10 @@ export class SupabaseDbService {
     data: {
       calonDps?: number;
       dps?: number;
+      dpshp?: number;
+      dpshpDibenahi?: number;
       dpt?: number;
+      dptb?: number;
       pemilihTambahan?: number;
       totalSemua: number;
       totalAktif: number;
@@ -357,14 +374,17 @@ export class SupabaseDbService {
   public static async getStatistikPemilih(forceRefresh = false) {
     const stats = await this.getAggregateStats(forceRefresh);
     return {
-      calonDps: stats.calonDps ?? stats.totalAktif ?? 7787,
-      dps: stats.dps ?? stats.totalAktif ?? 7787,
+      calonDps: stats.calonDps ?? 0,
+      dps: stats.dps ?? 0,
+      dpshp: stats.dpshp ?? 0,
+      dpshpDibenahi: stats.dpshpDibenahi ?? 0,
       dpt: stats.dpt ?? 0,
+      dptb: stats.dptb ?? 0,
       pemilihTambahan: stats.pemilihTambahan ?? 0,
-      totalPemilih: stats.totalSemua ?? 7787,
-      totalAktif: stats.totalAktif ?? 7787,
-      totalLaki: stats.totalLaki ?? 3933,
-      totalPerempuan: stats.totalPerempuan ?? 3854,
+      totalPemilih: stats.totalSemua ?? 0,
+      totalAktif: stats.totalAktif ?? 0,
+      totalLaki: stats.totalLaki ?? 0,
+      totalPerempuan: stats.totalPerempuan ?? 0,
       totalTms: stats.totalTms ?? 0,
       totalDisabilitas: stats.totalDisabilitas ?? 0,
       coklitSelesai: stats.coklitSelesai ?? 0,
@@ -448,9 +468,12 @@ export class SupabaseDbService {
 
         const result = {
           calonDps: Number(dbStats.calon_dps ?? 0),
-          dps: Number(dbStats.dps ?? 7787),
+          dps: Number(dbStats.dps ?? 0),
+          dpshp: Number(dbStats.dpshp ?? 0),
+          dpshpDibenahi: Number(dbStats.dpshp_dibenahi ?? 0),
           dpt: Number(dbStats.dpt ?? 0),
-          pemilihTambahan: Number(dbStats.dp_tambahan ?? dbStats.pemilih_tambahan ?? 0),
+          dptb: Number(dbStats.dptb ?? dbStats.dp_tambahan ?? 0),
+          pemilihTambahan: Number(dbStats.dptb ?? dbStats.dp_tambahan ?? dbStats.pemilih_tambahan ?? 0),
           totalSemua: Number(dbStats.total_terdaftar ?? dbStats.total_pemilih ?? 7787),
           totalAktif: Number(dbStats.total_aktif ?? 7787),
           totalLaki: Number(dbStats.total_laki ?? 3933),
@@ -563,8 +586,11 @@ export class SupabaseDbService {
 
       const result = {
         calonDps: totalAktifVal,
-        dps: totalAktifVal,
+        dps: 0,
+        dpshp: 0,
+        dpshpDibenahi: 0,
         dpt: 0,
+        dptb: 0,
         pemilihTambahan: 0,
         totalSemua: totalSemuaVal,
         totalAktif: totalAktifVal,
@@ -591,8 +617,11 @@ export class SupabaseDbService {
       return (
         this.cachedAggregateStats?.data || {
           calonDps: 7787,
-          dps: 7787,
+          dps: 0,
+          dpshp: 0,
+          dpshpDibenahi: 0,
           dpt: 0,
+          dptb: 0,
           pemilihTambahan: 0,
           totalSemua: 7787,
           totalAktif: 7787,
@@ -1033,8 +1062,9 @@ export class SupabaseDbService {
       coklitStatus: (p.coklit_status as MasterPemilih["coklitStatus"]) || "BELUM_COKLIT",
       coklitTanggal: p.coklit_tanggal || undefined,
       coklitCatatan: p.coklit_catatan || undefined,
-      coklitPetugas: p.coklit_petugas || undefined,
-      tahap: (p.tahap as "DPS" | "DPT") || "DPS",
+      tahap: (p.tahap?.toUpperCase() as VoterStage) || "CALON_DPS",
+      sumberData: (p.sumber_data?.toUpperCase() as VoterSource) || "REGULER",
+      isDpshpVerified: Boolean(p.is_dpshp_verified),
       updatedAt: p.updated_at || new Date().toISOString(),
     };
   }
@@ -1330,47 +1360,525 @@ export class SupabaseDbService {
   }
 
   /**
-   * Promosi / Pindahkan Pemilih dari DPS ke DPT (atau kembalikan ke DPS).
+   * Transisi Status Tahapan Pemilih Tunggal (Strict State Machine)
+   */
+  public static async transitionPemilihTahap(
+    id: string,
+    targetTahap: VoterStage,
+    petugas = "Petugas P2KD",
+    role = "SEKSI_PEMILIH",
+    alasan = "Penetapan tahapan resmi",
+    batchRef?: string
+  ): Promise<{ success: boolean; message: string; fromTahap?: VoterStage; toTahap?: VoterStage }> {
+    try {
+      if (!id) return { success: false, message: "ID pemilih tidak valid." };
+
+      const client = this.getSeksi1Client();
+      const { data: voter, error: fetchErr } = await client
+        .from("pemilih")
+        .select("id, nama_lengkap, nik, tahap, sumber_data, is_dpshp_verified, dps_at, dpshp_at, dpt_at")
+        .eq("id", id)
+        .single();
+
+      if (fetchErr || !voter) {
+        return { success: false, message: "Data pemilih tidak ditemukan di database." };
+      }
+
+      const currentTahap = (voter.tahap || "CALON_DPS") as VoterStage;
+
+      // Cek pembenahan sah jika targetnya adalah DPSHP
+      let hasValidCorrection = voter.is_dpshp_verified === true;
+      if (!hasValidCorrection && targetTahap === "DPSHP") {
+        const { data: corrections } = await client
+          .from("pemilih_pembenahan_dpshp")
+          .select("id")
+          .eq("pemilih_id", id)
+          .eq("status_validasi", "VALID")
+          .eq("is_eligible_dpshp", true)
+          .limit(1);
+        if (corrections && corrections.length > 0) {
+          hasValidCorrection = true;
+        }
+      }
+
+      // Validasi transisi state machine
+      const validation = validateStageTransition(currentTahap, targetTahap, {
+        hasValidCorrection,
+        sumberData: (voter.sumber_data || "REGULER") as VoterSource,
+      });
+
+      if (!validation.allowed) {
+        return { success: false, message: validation.message, fromTahap: currentTahap, toTahap: targetTahap };
+      }
+
+      // Bangun payload update
+      const now = new Date().toISOString();
+      const updatePayload: Record<string, unknown> = {
+        tahap: targetTahap,
+        updated_at: now,
+      };
+
+      if (targetTahap === "DPS" && !voter.dps_at) {
+        updatePayload.dps_at = now;
+      } else if (targetTahap === "DPSHP") {
+        updatePayload.dpshp_at = now;
+        updatePayload.is_dpshp_verified = true;
+      } else if (targetTahap === "DPT") {
+        updatePayload.dpt_at = now;
+      }
+
+      // Update tabel pemilih
+      const { error: updateErr } = await client
+        .from("pemilih")
+        .update(updatePayload)
+        .eq("id", id);
+
+      if (updateErr) {
+        console.error("Gagal update tahap pemilih:", updateErr);
+        return { success: false, message: `Gagal memperbarui status ke database: ${updateErr.message}` };
+      }
+
+      // Catat riwayat audit transisi ke pemilih_riwayat_tahap
+      await client.from("pemilih_riwayat_tahap").insert({
+        pemilih_id: id,
+        tahap_asal: currentTahap,
+        tahap_tujuan: targetTahap,
+        alasan: alasan || `Transisi tahap resmi dari ${currentTahap} ke ${targetTahap}`,
+        petugas,
+        role_petugas: role,
+        batch_ref: batchRef || null,
+        metadata: { timestamp: now, sumberData: voter.sumber_data },
+      });
+
+      // Recalculate stats & invalidate cache
+      this.invalidateCache();
+      try {
+        await client.rpc("recalculate_statistik_pemilih");
+      } catch (rpcErr) {
+        console.warn("recalculate_statistik_pemilih rpc warning:", rpcErr);
+      }
+
+      return {
+        success: true,
+        message: `Berhasil mengubah tahap pemilih dari ${currentTahap} menjadi ${targetTahap}.`,
+        fromTahap: currentTahap,
+        toTahap: targetTahap,
+      };
+    } catch (err: unknown) {
+      console.error("Exception transitionPemilihTahap:", err);
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan internal.";
+      return { success: false, message: msg };
+    }
+  }
+
+  /**
+   * Batch Transisi Status Tahapan Pemilih (Pleno Penetapan Massal)
+   */
+  public static async batchTransitionPemilihTahap(
+    ids: string[],
+    targetTahap: VoterStage,
+    petugas = "Petugas P2KD",
+    role = "SEKSI_PEMILIH",
+    alasan = "Penetapan tahapan pleno",
+    batchRef?: string
+  ): Promise<{ success: boolean; count: number; failedCount: number; message: string; errors?: string[] }> {
+    try {
+      if (!ids || ids.length === 0) {
+        return { success: false, count: 0, failedCount: 0, message: "Daftar ID pemilih kosong." };
+      }
+
+      const client = this.getSeksi1Client();
+      const { data: voters, error: fetchErr } = await client
+        .from("pemilih")
+        .select("id, nama_lengkap, nik, tahap, sumber_data, is_dpshp_verified, dps_at, dpshp_at, dpt_at")
+        .in("id", ids);
+
+      if (fetchErr || !voters || voters.length === 0) {
+        return { success: false, count: 0, failedCount: ids.length, message: "Data pemilih tidak ditemukan." };
+      }
+
+      const validVoters: Array<{
+        id: string;
+        nama_lengkap: string;
+        nik: string;
+        tahap: string | null;
+        sumber_data: string | null;
+        is_dpshp_verified: boolean;
+        dps_at: string | null;
+        dpshp_at: string | null;
+        dpt_at: string | null;
+      }> = [];
+      const errors: string[] = [];
+      const now = new Date().toISOString();
+
+      for (const voter of (voters as Array<{
+        id: string;
+        nama_lengkap: string;
+        nik: string;
+        tahap: string | null;
+        sumber_data: string | null;
+        is_dpshp_verified: boolean;
+        dps_at: string | null;
+        dpshp_at: string | null;
+        dpt_at: string | null;
+      }>)) {
+        const currentTahap = (voter.tahap || "CALON_DPS") as VoterStage;
+        const validation = validateStageTransition(currentTahap, targetTahap, {
+          hasValidCorrection: voter.is_dpshp_verified === true,
+          sumberData: (voter.sumber_data || "REGULER") as VoterSource,
+        });
+
+        if (!validation.allowed) {
+          errors.push(`${voter.nama_lengkap} (${voter.id}): ${validation.message}`);
+        } else {
+          validVoters.push(voter);
+        }
+      }
+
+      if (validVoters.length === 0) {
+        return {
+          success: false,
+          count: 0,
+          failedCount: ids.length,
+          message: `Tidak ada pemilih yang memenuhi syarat transisi ke ${targetTahap}.${errors.length > 0 ? " " + errors[0] : ""}`,
+          errors: errors.slice(0, 5),
+        };
+      }
+
+      const validIds = validVoters.map((v: { id: string }) => v.id);
+
+      const updatePayload: Record<string, unknown> = {
+        tahap: targetTahap,
+        updated_at: now,
+      };
+      if (targetTahap === "DPS") {
+        updatePayload.dps_at = now;
+      } else if (targetTahap === "DPSHP") {
+        updatePayload.dpshp_at = now;
+        updatePayload.is_dpshp_verified = true;
+      } else if (targetTahap === "DPT") {
+        updatePayload.dpt_at = now;
+      }
+
+      const { error: updateErr } = await client
+        .from("pemilih")
+        .update(updatePayload)
+        .in("id", validIds);
+
+      if (updateErr) {
+        console.error("batchTransitionPemilihTahap update error:", updateErr);
+        return {
+          success: false,
+          count: 0,
+          failedCount: ids.length,
+          message: `Gagal memperbarui status: ${updateErr.message}`,
+        };
+      }
+
+      // Catat riwayat audit
+      const auditRows = validVoters.map((v: { id: string; tahap: string | null; sumber_data: string | null }) => ({
+        pemilih_id: v.id,
+        tahap_asal: v.tahap || "CALON_DPS",
+        tahap_tujuan: targetTahap,
+        alasan,
+        petugas,
+        role_petugas: role,
+        batch_ref: batchRef || null,
+        metadata: { timestamp: now, sumberData: v.sumber_data },
+      }));
+
+      // Insert in chunks of 500 to avoid payload limit
+      for (let i = 0; i < auditRows.length; i += 500) {
+        const chunk = auditRows.slice(i, i + 500);
+        await client.from("pemilih_riwayat_tahap").insert(chunk);
+      }
+
+      // Log to Server 3 audit
+      try {
+        await this.getServer3Client().from("audit_logs").insert({
+          user_name: petugas,
+          role,
+          aksi: `TRANSISI_TAHAP_${targetTahap}`,
+          entity: "PEMILIH",
+          target: `${validIds.length} Pemilih`,
+          detail: `Berhasil mengubah tahap ${validIds.length} pemilih ke ${targetTahap}. Alasan: ${alasan}`,
+          ip_address: "127.0.0.1",
+        });
+      } catch {
+        // non-blocking
+      }
+
+      this.invalidateCache();
+      try {
+        await client.rpc("recalculate_statistik_pemilih");
+      } catch (rpcErr) {
+        console.warn("recalculate_statistik_pemilih rpc warning:", rpcErr);
+      }
+
+      return {
+        success: true,
+        count: validIds.length,
+        failedCount: ids.length - validIds.length,
+        message: `Berhasil memproses penetapan ${validIds.length} pemilih ke tahap ${targetTahap}.${errors.length > 0 ? ` (${errors.length} data ditolak karena tidak memenuhi syarat tahapan).` : ""}`,
+        errors: errors.length > 0 ? errors.slice(0, 5) : undefined,
+      };
+    } catch (err: unknown) {
+      console.error("Exception batchTransitionPemilihTahap:", err);
+      const msg = err instanceof Error ? err.message : "Terjadi kesalahan internal server.";
+      return { success: false, count: 0, failedCount: ids.length, message: msg };
+    }
+  }
+
+  /**
+   * Promosi / Pindahkan Pemilih (Backward compatible wrapper yang aman)
    */
   public static async promotePemilihToDpt(
     ids: string[],
     user = "Petugas P2KD",
-    targetTahap: "DPS" | "DPT" = "DPT"
-  ): Promise<{ success: boolean; count: number }> {
+    targetTahap: "DPS" | "DPSHP" | "DPT" | "CALON_DPS" = "DPT"
+  ): Promise<{ success: boolean; count: number; message?: string }> {
+    const res = await this.batchTransitionPemilihTahap(
+      ids,
+      targetTahap as VoterStage,
+      user,
+      "SEKSI_PEMILIH",
+      `Penetapan tahap ${targetTahap} melalui konsol admin`
+    );
+    return { success: res.success, count: res.count, message: res.message };
+  }
+
+  /**
+   * Buat Catatan Pembenahan Data DPS (Syarat Sah DPSHP)
+   */
+  public static async createPembenahanDpshp(data: {
+    pemilihId: string;
+    jenisPembenahan: PembenahanType;
+    fieldChanged?: string;
+    oldValue?: string;
+    newValue?: string;
+    alasan: string;
+    petugasPengusul: string;
+    autoValidate?: boolean;
+    petugasPemvalidasi?: string;
+  }): Promise<{ success: boolean; id?: string; message: string }> {
     try {
-      if (!ids || ids.length === 0) return { success: false, count: 0 };
-
-      const { data, error } = await this.getSeksi1Client()
+      const client = this.getSeksi1Client();
+      const { data: voter, error: vErr } = await client
         .from("pemilih")
-        .update({
-          tahap: targetTahap,
-          updated_at: new Date().toISOString(),
-        })
-        .in("id", ids)
-        .select("id");
+        .select("id, nama_lengkap, tahap")
+        .eq("id", data.pemilihId)
+        .single();
 
-      if (error) {
-        console.error("Error updating pemilih tahap in Supabase:", error);
-        return { success: false, count: 0 };
+      if (vErr || !voter) {
+        return { success: false, message: "Data pemilih tidak ditemukan." };
+      }
+
+      const isValidated = data.autoValidate === true;
+      const now = new Date().toISOString();
+
+      const { data: inserted, error: insErr } = await client
+        .from("pemilih_pembenahan_dpshp")
+        .insert({
+          pemilih_id: data.pemilihId,
+          tahap_asal: voter.tahap || "DPS",
+          jenis_pembenahan: data.jenisPembenahan,
+          field_changed: data.fieldChanged || null,
+          old_value: data.oldValue || null,
+          new_value: data.newValue || null,
+          alasan: data.alasan,
+          status_validasi: isValidated ? "VALID" : "PENDING",
+          is_eligible_dpshp: isValidated,
+          petugas_pengusul: data.petugasPengusul,
+          petugas_pemvalidasi: isValidated ? (data.petugasPemvalidasi || data.petugasPengusul) : null,
+          validated_at: isValidated ? now : null,
+        })
+        .select("id")
+        .single();
+
+      if (insErr || !inserted) {
+        console.error("createPembenahanDpshp error:", insErr);
+        return { success: false, message: `Gagal mencatat pembenahan: ${insErr?.message || "Database error"}` };
+      }
+
+      if (isValidated) {
+        await client
+          .from("pemilih")
+          .update({ is_dpshp_verified: true, updated_at: now })
+          .eq("id", data.pemilihId);
+
+        try {
+          await client.rpc("recalculate_statistik_pemilih");
+        } catch {}
       }
 
       this.invalidateCache();
+      return {
+        success: true,
+        id: inserted.id,
+        message: isValidated
+          ? "Pembenahan DPS berhasil dicatat dan disahkan sebagai dasar DPSHP."
+          : "Usulan pembenahan berhasil dicatat (status: Menunggu Validasi Pleno).",
+      };
+    } catch (err: unknown) {
+      console.error("Exception createPembenahanDpshp:", err);
+      return { success: false, message: "Terjadi kesalahan internal server." };
+    }
+  }
 
-      // Log Audit to Server 3
-      await this.getServer3Client().from("audit_logs").insert({
-        user_name: user,
-        role: "ADMIN / SEKSI PEMILIH",
-        aksi: targetTahap === "DPT" ? "VERIFIKASI_MASUK_DPT" : "KEMBALIKAN_KE_DPS",
-        entity: "PEMILIH",
-        target: `${ids.length} Pemilih`,
-        detail: `Berhasil mengubah status tahap ${ids.length} pemilih menjadi ${targetTahap}.`,
-        ip_address: "127.0.0.1",
-      });
+  /**
+   * Validasi atau Tolak Pembenahan DPSHP
+   */
+  public static async validatePembenahanDpshp(
+    pembenahanId: string,
+    statusValidasi: ValidationStatus,
+    petugasPemvalidasi: string
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const client = this.getSeksi1Client();
+      const { data: record, error: fErr } = await client
+        .from("pemilih_pembenahan_dpshp")
+        .select("id, pemilih_id, status_validasi")
+        .eq("id", pembenahanId)
+        .single();
 
-      return { success: true, count: (data || []).length };
+      if (fErr || !record) {
+        return { success: false, message: "Catatan pembenahan tidak ditemukan." };
+      }
+
+      const isValid = statusValidasi === "VALID";
+      const now = new Date().toISOString();
+
+      const { error: uErr } = await client
+        .from("pemilih_pembenahan_dpshp")
+        .update({
+          status_validasi: statusValidasi,
+          is_eligible_dpshp: isValid,
+          petugas_pemvalidasi: petugasPemvalidasi,
+          validated_at: now,
+          updated_at: now,
+        })
+        .eq("id", pembenahanId);
+
+      if (uErr) {
+        return { success: false, message: `Gagal memperbarui validasi: ${uErr.message}` };
+      }
+
+      if (isValid) {
+        await client
+          .from("pemilih")
+          .update({ is_dpshp_verified: true, updated_at: now })
+          .eq("id", record.pemilih_id);
+      } else {
+        // Cek apakah masih ada pembenahan valid lain untuk pemilih ini
+        const { data: otherValid } = await client
+          .from("pemilih_pembenahan_dpshp")
+          .select("id")
+          .eq("pemilih_id", record.pemilih_id)
+          .eq("status_validasi", "VALID")
+          .neq("id", pembenahanId)
+          .limit(1);
+
+        if (!otherValid || otherValid.length === 0) {
+          await client
+            .from("pemilih")
+            .update({ is_dpshp_verified: false, updated_at: now })
+            .eq("id", record.pemilih_id);
+        }
+      }
+
+      this.invalidateCache();
+      try {
+        await client.rpc("recalculate_statistik_pemilih");
+      } catch {}
+
+      return {
+        success: true,
+        message: `Status pembenahan berhasil diubah menjadi ${statusValidasi}.`,
+      };
+    } catch (err: unknown) {
+      console.error("Exception validatePembenahanDpshp:", err);
+      return { success: false, message: "Terjadi kesalahan internal server." };
+    }
+  }
+
+  /**
+   * Ambil Riwayat Transisi Tahap Pemilih
+   */
+  public static async getRiwayatTahapList(pemilihId: string): Promise<VoterStageHistoryItem[]> {
+    try {
+      const { data, error } = await this.getSeksi1Client()
+        .from("pemilih_riwayat_tahap")
+        .select("*")
+        .eq("pemilih_id", pemilihId)
+        .order("created_at", { ascending: false });
+
+      if (error || !data) return [];
+      return (data as Array<Record<string, any>>).map((r: Record<string, any>) => ({
+        id: r.id,
+        pemilihId: r.pemilih_id,
+        tahapAsal: r.tahap_asal,
+        tahapTujuan: r.tahap_tujuan,
+        alasan: r.alasan,
+        petugas: r.petugas,
+        rolePetugas: r.role_petugas,
+        batchRef: r.batch_ref || undefined,
+        metadata: r.metadata || {},
+        createdAt: r.created_at,
+      }));
     } catch (err) {
-      console.error("Exception promotePemilihToDpt:", err);
-      return { success: false, count: 0 };
+      console.warn("getRiwayatTahapList error:", err);
+      return [];
+    }
+  }
+
+  /**
+   * Ambil Daftar Pembenahan DPSHP
+   */
+  public static async getPembenahanDpshpList(options?: {
+    pemilihId?: string;
+    statusValidasi?: ValidationStatus;
+    limit?: number;
+  }): Promise<VoterCorrectionItem[]> {
+    try {
+      let q = this.getSeksi1Client()
+        .from("pemilih_pembenahan_dpshp")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (options?.pemilihId) {
+        q = q.eq("pemilih_id", options.pemilihId);
+      }
+      if (options?.statusValidasi) {
+        q = q.eq("status_validasi", options.statusValidasi);
+      }
+      if (options?.limit) {
+        q = q.limit(options.limit);
+      }
+
+      const { data, error } = await q;
+      if (error || !data) return [];
+
+      return (data as Array<Record<string, any>>).map((r: Record<string, any>) => ({
+        id: r.id,
+        pemilihId: r.pemilih_id,
+        tahapAsal: r.tahap_asal,
+        jenisPembenahan: r.jenis_pembenahan,
+        fieldChanged: r.field_changed || undefined,
+        oldValue: r.old_value || undefined,
+        newValue: r.new_value || undefined,
+        alasan: r.alasan,
+        statusValidasi: r.status_validasi,
+        isEligibleDpshp: r.is_eligible_dpshp,
+        petugasPengusul: r.petugas_pengusul,
+        petugasPemvalidasi: r.petugas_pemvalidasi || undefined,
+        validatedAt: r.validated_at || undefined,
+        metadata: r.metadata || {},
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+      }));
+    } catch (err) {
+      console.warn("getPembenahanDpshpList error:", err);
+      return [];
     }
   }
 

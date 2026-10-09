@@ -28,6 +28,7 @@ import {
   AnggotaP2KD,
   SeksiP2KDType,
 } from "./types";
+import type { VoterStage } from "@/types/voter-stages";
 import { PublicWebConfig, getAnggotaHierarchyRank } from "@/lib/data-store";
 
 import { AdminSidebar } from "./sidebar";
@@ -1359,27 +1360,51 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  // --- PROMOSI / ROLLBACK PEMILIH DPS <-> DPT (OPTIMISTIC NON-BLOCKING) ---
-  const handlePromoteToDpt = (ids: string[]) => {
+  // --- PROMOSI / ROLLBACK PEMILIH SESUAI ALUR TAHAPAN RESMI ---
+  const handlePromoteToDpt = (ids: string[], explicitTarget?: VoterStage) => {
     if (!ids || ids.length === 0) return;
-    const targetVoters = LocalPemilihRepository.getAll().filter((v) => ids.includes(v.id));
-    const updatedList = targetVoters.map((v) => ({ ...v, tahap: "DPT" as const }));
+    const allLocal = LocalPemilihRepository.getAll();
+    const targetVoters = allLocal.filter((v) => ids.includes(v.id));
+    if (targetVoters.length === 0) return;
+
+    // Tentukan target tahap secara valid sesuai aturan
+    const firstStage = targetVoters[0].tahap || "CALON_DPS";
+    let targetTahap: VoterStage = explicitTarget || "DPS";
+
+    if (!explicitTarget) {
+      if (firstStage === "CALON_DPS") {
+        targetTahap = "DPS";
+      } else if (firstStage === "DPS") {
+        targetTahap = "DPSHP";
+      } else if (firstStage === "DPSHP") {
+        targetTahap = "DPT";
+      }
+    }
+
+    const updatedList = targetVoters.map((v) => ({ ...v, tahap: targetTahap }));
     void LocalPemilihRepository.upsertBatch(updatedList, namespace);
     setVoters(LocalPemilihRepository.getAll());
 
-    toast.success("Verifikasi Masuk DPT", `${ids.length} data pemilih langsung dipindahkan ke DPT.`);
+    toast.success(`Transisi ke ${targetTahap}`, `${ids.length} pemilih berhasil diajukan ke tahap ${targetTahap}.`);
 
-    // 2. Asynchronous background sync
+    // Asynchronous background sync via stage-transition API
     void (async () => {
       try {
-        const res = await fetch("/api/admin/pemilih/promosi-dpt", {
+        const res = await fetch("/api/admin/pemilih/stage-transition", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids, targetTahap: "DPT", user: currentUser }),
+          body: JSON.stringify({
+            ids,
+            targetTahap,
+            alasan: `Penetapan status ${targetTahap} melalui konsol admin`,
+          }),
         });
         const result = await res.json();
         if (!result.success) {
-          toast.error("Gagal Sinkronisasi DPT", result.message || "Tidak dapat memindahkan data di server.");
+          toast.error("Gagal Transisi Tahap di Server", result.message || "Tidak dapat memindahkan data di server.");
+          // Revert optimistic update
+          void LocalPemilihRepository.upsertBatch(targetVoters, namespace);
+          setVoters(LocalPemilihRepository.getAll());
         }
       } catch (err) {
         console.error("Background promote error:", err);
@@ -1389,24 +1414,45 @@ export const AdminDashboard: React.FC = () => {
 
   const handleRollbackToDps = (ids: string[]) => {
     if (!ids || ids.length === 0) return;
-    const targetVoters = LocalPemilihRepository.getAll().filter((v) => ids.includes(v.id));
-    const updatedList = targetVoters.map((v) => ({ ...v, tahap: "DPS" as const }));
+    const allLocal = LocalPemilihRepository.getAll();
+    const targetVoters = allLocal.filter((v) => ids.includes(v.id));
+    if (targetVoters.length === 0) return;
+
+    const firstStage = targetVoters[0].tahap || "DPT";
+    let targetTahap: VoterStage = "DPSHP";
+
+    if (firstStage === "DPT") {
+      targetTahap = "DPSHP";
+    } else if (firstStage === "DPSHP") {
+      targetTahap = "DPS";
+    } else if (firstStage === "DPS") {
+      targetTahap = "CALON_DPS";
+    }
+
+    const updatedList = targetVoters.map((v) => ({ ...v, tahap: targetTahap }));
     void LocalPemilihRepository.upsertBatch(updatedList, namespace);
     setVoters(LocalPemilihRepository.getAll());
 
-    toast.warning("Dikembalikan ke DPS", `${ids.length} data pemilih dikembalikan ke DPS.`);
+    toast.warning(`Rollback ke ${targetTahap}`, `${ids.length} pemilih dikembalikan ke ${targetTahap}.`);
 
-    // 2. Asynchronous background sync
+    // Asynchronous background sync via stage-transition API
     void (async () => {
       try {
-        const res = await fetch("/api/admin/pemilih/promosi-dpt", {
+        const res = await fetch("/api/admin/pemilih/stage-transition", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids, targetTahap: "DPS", user: currentUser }),
+          body: JSON.stringify({
+            ids,
+            targetTahap,
+            alasan: `Rollback status ke ${targetTahap} melalui konsol admin`,
+          }),
         });
         const result = await res.json();
         if (!result.success) {
           toast.error("Gagal Rollback di Server", result.message || "Tidak dapat mengembalikan data.");
+          // Revert optimistic update
+          void LocalPemilihRepository.upsertBatch(targetVoters, namespace);
+          setVoters(LocalPemilihRepository.getAll());
         }
       } catch (err) {
         console.error("Background rollback error:", err);

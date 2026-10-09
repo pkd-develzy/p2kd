@@ -173,45 +173,67 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                   <Badge variant="danger" className="text-[10px] font-bold">
                     TMS: {p.alasanTms || "Tidak Memenuhi"}
                   </Badge>
-                ) : p.coklitStatus === "SESUAI" ? (
-                  <Badge variant="success" className="text-[10px] font-bold">
-                    ✓ Sesuai
+                ) : p.tahap === "DPT" ? (
+                  <Badge variant="success" className="text-[10px] font-bold bg-emerald-100 text-emerald-800 border-emerald-300">
+                    DPT Tetap
                   </Badge>
-                ) : p.coklitStatus === "UBAH_DATA" ? (
-                  <Badge variant="warning" className="text-[10px] font-bold">
-                    Koreksi
+                ) : p.tahap === "DPSHP" ? (
+                  <Badge variant="info" className="text-[10px] font-bold bg-teal-100 text-teal-800 border-teal-300">
+                    DPSHP
+                  </Badge>
+                ) : p.tahap === "DPS" ? (
+                  <Badge variant="warning" className="text-[10px] font-bold bg-amber-100 text-amber-800 border-amber-300">
+                    DPS (Pleno)
                   </Badge>
                 ) : (
-                  <Badge variant="default" className="text-[10px] font-bold">
-                    {mode === "DPT" ? "DPT Tetap" : "Calon DPS"}
+                  <Badge variant="default" className="text-[10px] font-bold bg-blue-100 text-blue-800 border-blue-300">
+                    Calon DPS
                   </Badge>
+                )}
+                {p.sumberData === "DPTB" && (
+                  <span className="block mt-0.5 text-[9px] font-black text-purple-700 bg-purple-50 px-1 py-0.2 rounded border border-purple-200">
+                    Sumber: DPTb
+                  </span>
                 )}
               </div>
 
               {/* Actions */}
               <div className="w-36 px-3 shrink-0 flex items-center justify-center gap-1">
-                {/* Promote to DPT in DPS mode */}
-                {mode === "DPS" && onPromoteToDpt && p.statusAktif === "AKTIF" && (
-                  <button
-                    type="button"
-                    onClick={() => onPromoteToDpt([p.id])}
-                    title="Verifikasi & Pindahkan Masuk ke DPT"
-                    className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border border-emerald-300 transition-colors cursor-pointer"
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                  </button>
-                )}
-
-                {/* Rollback to DPS in DPT mode */}
-                {mode === "DPT" && onRollbackToDps && (
-                  <button
-                    type="button"
-                    onClick={() => onRollbackToDps([p.id])}
-                    title="Kembalikan ke DPS (Perbaikan Data)"
-                    className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-300 transition-colors cursor-pointer"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </button>
+                {/* Stage-aware Action Button */}
+                {p.tahap === "DPT" ? (
+                  onRollbackToDps && (
+                    <button
+                      type="button"
+                      onClick={() => onRollbackToDps([p.id])}
+                      title="Kembalikan ke DPSHP"
+                      className="p-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white border border-amber-300 transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  )
+                ) : (
+                  onPromoteToDpt && p.statusAktif === "AKTIF" && (
+                    <button
+                      type="button"
+                      onClick={() => onPromoteToDpt([p.id])}
+                      title={
+                        p.tahap === "DPSHP"
+                          ? "Pleno Final: Sahkan Masuk ke DPT"
+                          : p.tahap === "DPS"
+                          ? "Usulkan ke DPSHP (Hasil Pembenahan)"
+                          : "Pleno Penetapan: Masuk ke DPS"
+                      }
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                        p.tahap === "DPSHP"
+                          ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white border-emerald-300"
+                          : p.tahap === "DPS"
+                          ? "bg-teal-50 text-teal-700 hover:bg-teal-600 hover:text-white border-teal-300"
+                          : "bg-blue-50 text-blue-700 hover:bg-blue-600 hover:text-white border-blue-300"
+                      }`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                    </button>
+                  )
                 )}
 
                 <Button
@@ -314,18 +336,27 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                   <Badge variant="danger" className="text-[10px] font-bold">
                     TMS: {p.alasanTms || "Tidak Memenuhi"}
                   </Badge>
-                ) : p.coklitStatus === "SESUAI" ? (
-                  <Badge variant="success" className="text-[10px] font-bold">
-                    ✓ Sesuai
+                ) : p.tahap === "DPT" ? (
+                  <Badge variant="success" className="text-[10px] font-bold bg-emerald-100 text-emerald-800 border-emerald-300">
+                    DPT Tetap
                   </Badge>
-                ) : p.coklitStatus === "UBAH_DATA" ? (
-                  <Badge variant="warning" className="text-[10px] font-bold">
-                    Koreksi
+                ) : p.tahap === "DPSHP" ? (
+                  <Badge variant="info" className="text-[10px] font-bold bg-teal-100 text-teal-800 border-teal-300">
+                    DPSHP
+                  </Badge>
+                ) : p.tahap === "DPS" ? (
+                  <Badge variant="warning" className="text-[10px] font-bold bg-amber-100 text-amber-800 border-amber-300">
+                    DPS (Pleno)
                   </Badge>
                 ) : (
-                  <Badge variant="default" className="text-[10px] font-bold">
-                    {mode === "DPT" ? "DPT Tetap" : "Calon DPS"}
+                  <Badge variant="default" className="text-[10px] font-bold bg-blue-100 text-blue-800 border-blue-300">
+                    Calon DPS
                   </Badge>
+                )}
+                {p.sumberData === "DPTB" && (
+                  <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1 py-0.2 rounded border border-purple-200">
+                    DPTb
+                  </span>
                 )}
 
                 {isAdmin && (
@@ -386,18 +417,8 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
 
             {/* 4. Touch-Friendly Action Buttons: Balanced 2x2 Grid with Zero Empty Space */}
             <div className="pt-3 grid grid-cols-2 gap-2 border-t border-slate-100">
-              {/* Tombol 1: Masuk DPT (atau Ke DPS) */}
-              {mode === "DPS" ? (
-                <button
-                  type="button"
-                  disabled={p.statusAktif !== "AKTIF" || !onPromoteToDpt}
-                  onClick={() => onPromoteToDpt?.([p.id])}
-                  className="w-full h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                >
-                  <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Masuk DPT</span>
-                </button>
-              ) : (
+              {/* Tombol 1: Transisi Tahap Sesuai Status Aktual */}
+              {p.tahap === "DPT" ? (
                 <button
                   type="button"
                   disabled={!onRollbackToDps}
@@ -405,7 +426,25 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                   className="w-full h-10 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Ke DPS</span>
+                  <span className="truncate">Ke DPSHP</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={p.statusAktif !== "AKTIF" || !onPromoteToDpt}
+                  onClick={() => onPromoteToDpt?.([p.id])}
+                  className={`w-full h-10 px-3 rounded-xl disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer ${
+                    p.tahap === "DPSHP"
+                      ? "bg-emerald-600 hover:bg-emerald-500"
+                      : p.tahap === "DPS"
+                      ? "bg-teal-600 hover:bg-teal-500"
+                      : "bg-blue-600 hover:bg-blue-500"
+                  }`}
+                >
+                  <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">
+                    {p.tahap === "DPSHP" ? "Masuk DPT" : p.tahap === "DPS" ? "Usul DPSHP" : "Tetapkan DPS"}
+                  </span>
                 </button>
               )}
 

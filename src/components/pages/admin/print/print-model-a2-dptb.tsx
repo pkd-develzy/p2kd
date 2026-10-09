@@ -26,7 +26,7 @@ export const PrintModelA2Dptb: React.FC<PrintModelA2DptbProps> = ({
   // DPTb: Pemilih yang terdaftar sebagai pemilih tambahan resmi (BARU / DPTb pasca-DPS)
   const dptbList = voters.filter((v) => {
     const isTpsMatch = matchTpsVoter(v.tps, selectedTps) || matchTpsVoter(v.rw, selectedTps);
-    return isTpsMatch && v.statusAktif === "AKTIF" && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.tahap === "DPTB");
+    return isTpsMatch && v.statusAktif === "AKTIF" && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.sumberData === "DPTB" || (v.tahap as string) === "DPTB");
   });
 
   const lCount = dptbList.filter((v) => v.jenisKelamin === "L").length;

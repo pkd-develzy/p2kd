@@ -16,7 +16,9 @@ export interface Voter {
   kecamatan: string;
   tps: string;
   statusAktif: "AKTIF" | "TMS" | "MUTASI_KELUAR";
-  tahap?: "DPS" | "DPT" | "DPTB";
+  tahap?: "CALON_DPS" | "DPS" | "DPSHP" | "DPT";
+  sumberData?: "REGULER" | "DPTB";
+  isDpshpVerified?: boolean;
   alasanTms?: string;
   disabilitas?: string;
   coklitStatus?: "BELUM_COKLIT" | "SESUAI" | "UBAH_DATA" | "TMS" | "BARU";
@@ -131,7 +133,10 @@ export interface DbStatus {
   localStats?: {
     calonDps?: number;
     dps?: number;
+    dpshp?: number;
+    dpshpDibenahi?: number;
     dpt?: number;
+    dptb?: number;
     pemilihTambahan?: number;
     coklitSelesai?: number;
     totalPemilih?: number;

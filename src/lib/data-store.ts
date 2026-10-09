@@ -28,7 +28,9 @@ export interface MasterPemilih {
   kecamatan: string;
   tps: string; // e.g. "001" or "TPS 001"
   statusAktif: "AKTIF" | "TMS" | "MUTASI_KELUAR";
-  tahap?: "DPS" | "DPT";
+  tahap?: "CALON_DPS" | "DPS" | "DPSHP" | "DPT";
+  sumberData?: "REGULER" | "DPTB";
+  isDpshpVerified?: boolean;
   alasanTms?: string;
   disabilitas?: string;
   coklitStatus?: "BELUM_COKLIT" | "SESUAI" | "UBAH_DATA" | "TMS" | "BARU";
@@ -738,8 +740,11 @@ class SystemDataStore {
   // Live database aggregate metrics (instant 0ms retrieval)
   private aggregateStats = {
     calonDps: 7787,
-    dps: 7787,
+    dps: 0,
+    dpshp: 0,
+    dpshpDibenahi: 0,
     dpt: 0,
+    dptb: 0,
     pemilihTambahan: 0,
     totalSemua: 7787,
     totalAktif: 7787,
@@ -2878,9 +2883,12 @@ class SystemDataStore {
     const petugasDitetapkan = this.petugasDptList.filter((p) => p.status === "DITETAPKAN").length;
 
     const calonDps = this.aggregateStats.calonDps ?? totalAktif;
-    const dps = this.aggregateStats.dps ?? totalAktif;
+    const dps = this.aggregateStats.dps ?? 0;
+    const dpshp = this.aggregateStats.dpshp ?? 0;
+    const dpshpDibenahi = this.aggregateStats.dpshpDibenahi ?? 0;
     const dpt = this.aggregateStats.dpt ?? 0;
-    const pemilihTambahan = this.aggregateStats.pemilihTambahan ?? 0;
+    const dptb = this.aggregateStats.dptb ?? this.aggregateStats.pemilihTambahan ?? 0;
+    const pemilihTambahan = dptb;
     const breakdownWilayah = (this.aggregateStats.breakdownWilayah && this.aggregateStats.breakdownWilayah.length > 0)
       ? this.aggregateStats.breakdownWilayah
       : tpsStats;
@@ -2888,7 +2896,10 @@ class SystemDataStore {
     return {
       calonDps,
       dps,
+      dpshp,
+      dpshpDibenahi,
       dpt,
+      dptb,
       pemilihTambahan,
       totalSemua,
       totalAktif,

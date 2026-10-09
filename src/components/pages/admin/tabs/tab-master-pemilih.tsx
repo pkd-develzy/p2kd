@@ -62,7 +62,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedStage, setSelectedStage] = useState<"SEMUA" | "CALON_DPS" | "DPS" | "DPSHP" | "DPSHP_AKHIR">("SEMUA");
+  const [selectedStage, setSelectedStage] = useState<"SEMUA" | "CALON_DPS" | "DPS" | "DPSHP" | "DPT" | "DPTB">("SEMUA");
 
   // Local debounced search for ultra-smooth 60 FPS input experience
   const [localSearch, setLocalSearch] = useState(searchTerm);
@@ -78,12 +78,12 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
     if (mode === "DPT") {
       return v.tahap === "DPT";
     } else {
-      return v.tahap !== "DPT"; // Default to DPS
+      return v.tahap !== "DPT"; // Calon DPS, DPS, DPSHP
     }
   });
 
   // Base Scoped Voters for 4-Stage Grid Statistics
-  const baseScopedVoters = modeFilteredVoters.filter((v) => {
+  const baseScopedVoters = voters.filter((v) => {
     if (selectedTpsFilter !== "SEMUA") {
       const rwTarget = selectedTpsFilter.replace(/\D/g, "");
       const matchRw = v.rw && v.rw.replace(/\D/g, "") === rwTarget;
@@ -95,37 +95,40 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
 
   const isDefaultView = !localSearch.trim() && selectedTpsFilter === "SEMUA" && selectedStatusFilter === "SEMUA" && selectedStage === "SEMUA" && (!assignedTps || isAdmin);
 
-  const calonDpsCount = isDefaultView && dbStatus?.localStats?.calonDps
+  const calonDpsCount = isDefaultView && dbStatus?.localStats?.calonDps !== undefined
     ? dbStatus.localStats.calonDps
-    : (baseScopedVoters.length > 0 ? baseScopedVoters.length : (dbStatus?.localStats?.calonDps ?? 7787));
+    : baseScopedVoters.filter((v) => (v.tahap || "CALON_DPS") === "CALON_DPS").length;
 
-  const dpsCount = isDefaultView && dbStatus?.localStats?.dps
+  const dpsCount = isDefaultView && dbStatus?.localStats?.dps !== undefined
     ? dbStatus.localStats.dps
-    : (baseScopedVoters.length > 0
-        ? baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA" || v.statusAktif === "AKTIF").length
-        : (dbStatus?.localStats?.dps ?? 7787));
+    : baseScopedVoters.filter((v) => v.tahap === "DPS").length;
 
-  const dpshpCount = isDefaultView && dbStatus?.localStats?.coklitSelesai
-    ? dbStatus.localStats.coklitSelesai
-    : baseScopedVoters.filter((v) => v.coklitStatus === "SESUAI" || v.coklitStatus === "UBAH_DATA").length;
+  const dpshpCount = isDefaultView && dbStatus?.localStats?.dpshp !== undefined
+    ? dbStatus.localStats.dpshp
+    : baseScopedVoters.filter((v) => v.tahap === "DPSHP").length;
 
-  const dpshpAkhirCount = isDefaultView && dbStatus?.localStats?.totalAktif
-    ? dbStatus.localStats.totalAktif
-    : baseScopedVoters.filter((v) => v.statusAktif === "AKTIF" && v.coklitStatus !== "TMS").length;
+  const dptCount = isDefaultView && dbStatus?.localStats?.dpt !== undefined
+    ? dbStatus.localStats.dpt
+    : (voters.filter((v) => v.tahap === "DPT").length || (dbStatus?.localStats?.dpt ?? 0));
+
+  const dptbCount = isDefaultView && dbStatus?.localStats?.dptb !== undefined
+    ? dbStatus.localStats.dptb
+    : voters.filter((v) => v.sumberData === "DPTB").length;
 
   // 2. Ultra-Fast Instant Client-side Filter (< 1ms across loaded rows)
   const filteredVoters = modeFilteredVoters.filter((v) => {
     // Stage Filter for Grid
-    if (mode === "DPS" && selectedStage !== "SEMUA") {
+    if (selectedStage !== "SEMUA") {
       if (selectedStage === "CALON_DPS") {
-        // Data saat ini adalah Calon DPS
-        if (v.tahap === "DPT") return false;
+        if ((v.tahap || "CALON_DPS") !== "CALON_DPS") return false;
       } else if (selectedStage === "DPS") {
-        if (v.coklitStatus !== "SESUAI" && v.coklitStatus !== "UBAH_DATA" && v.statusAktif !== "AKTIF") return false;
+        if (v.tahap !== "DPS") return false;
       } else if (selectedStage === "DPSHP") {
-        if (v.coklitStatus !== "SESUAI" && v.coklitStatus !== "UBAH_DATA") return false;
-      } else if (selectedStage === "DPSHP_AKHIR") {
-        if (v.statusAktif !== "AKTIF" || v.coklitStatus === "TMS") return false;
+        if (v.tahap !== "DPSHP") return false;
+      } else if (selectedStage === "DPT") {
+        if (v.tahap !== "DPT") return false;
+      } else if (selectedStage === "DPTB") {
+        if (v.sumberData !== "DPTB") return false;
       }
     }
 
@@ -318,7 +321,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                   Tahap 2
                 </span>
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "DPS" ? "bg-white/20 text-white" : "bg-amber-50 text-amber-700"}`}>
-                  Uji Publik
+                  Pleno Penetapan
                 </span>
               </div>
               <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">DPS</div>
@@ -345,7 +348,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                   Tahap 3
                 </span>
                 <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "DPSHP" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700"}`}>
-                  Perbaikan
+                  Pembenahan Sah
                 </span>
               </div>
               <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">DPSHP</div>
@@ -353,34 +356,34 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                 {dpshpCount}
               </div>
               <div className={`text-[10px] mt-1 truncate ${selectedStage === "DPSHP" ? "text-teal-200" : "text-slate-500"}`}>
-                Hasil Pemutakhiran
+                Hasil Pembenahan Valid
               </div>
             </button>
 
-            {/* Stage 4: DPSHP AKHIR */}
+            {/* Stage 4: DPT */}
             <button
               type="button"
-              onClick={() => setSelectedStage(selectedStage === "DPSHP_AKHIR" ? "SEMUA" : "DPSHP_AKHIR")}
+              onClick={() => setSelectedStage(selectedStage === "DPT" ? "SEMUA" : "DPT")}
               className={`p-3.5 sm:p-4 rounded-3xl border text-left transition-all cursor-pointer relative overflow-hidden ${
-                selectedStage === "DPSHP_AKHIR"
+                selectedStage === "DPT"
                   ? "bg-linear-to-br from-indigo-600 to-purple-700 text-white border-indigo-500 shadow-lg shadow-indigo-600/30 scale-[1.02]"
                   : "bg-white hover:bg-slate-50 border-slate-200/90 text-slate-800 shadow-xs"
               }`}
             >
               <div className="flex items-center justify-between gap-1">
-                <span className={`text-[10px] font-black uppercase tracking-wider ${selectedStage === "DPSHP_AKHIR" ? "text-indigo-200" : "text-indigo-600"}`}>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${selectedStage === "DPT" ? "text-indigo-200" : "text-indigo-600"}`}>
                   Tahap 4
                 </span>
-                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "DPSHP_AKHIR" ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700"}`}>
-                  Siap Pleno
+                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${selectedStage === "DPT" ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700"}`}>
+                  Pleno Final
                 </span>
               </div>
-              <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">DPSHP AKHIR</div>
-              <div className={`text-xl sm:text-2xl font-black mt-0.5 ${selectedStage === "DPSHP_AKHIR" ? "text-white" : "text-slate-900"}`}>
-                {dpshpAkhirCount}
+              <div className="text-xs sm:text-sm font-black mt-2 tracking-tight">DPT</div>
+              <div className={`text-xl sm:text-2xl font-black mt-0.5 ${selectedStage === "DPT" ? "text-white" : "text-slate-900"}`}>
+                {dptCount}
               </div>
-              <div className={`text-[10px] mt-1 truncate ${selectedStage === "DPSHP_AKHIR" ? "text-indigo-200" : "text-slate-500"}`}>
-                Validasi Menuju DPT
+              <div className={`text-[10px] mt-1 truncate ${selectedStage === "DPT" ? "text-indigo-200" : "text-slate-500"}`}>
+                Daftar Pemilih Tetap
               </div>
             </button>
           </div>
@@ -530,16 +533,34 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
             {/* Desktop Table Body */}
             {filteredVoters.length === 0 ? (
               <div className="py-12 text-center text-slate-400">
-                <div className="flex flex-col items-center justify-center gap-2">
+                <div className="flex flex-col items-center justify-center gap-2 max-w-md mx-auto">
                   <Users className="w-8 h-8 text-slate-300" />
-                  <div>
-                    Tidak ada data pemilih yang berada di <strong>{mode === "DPT" ? "DPT" : "Calon DPS"}</strong> untuk kriteria pencarian ini.
+                  <div className="text-sm font-semibold text-slate-700">
+                    {selectedStage === "DPSHP" ? (
+                      "Belum Ada Data Pemilih DPSHP (0)"
+                    ) : selectedStage === "DPS" ? (
+                      "Belum Ada Data Pemilih DPS (0)"
+                    ) : selectedStage === "DPT" ? (
+                      "Belum Ada Data Pemilih DPT (0)"
+                    ) : selectedStage === "DPTB" ? (
+                      "Belum Ada Data Pemilih Tambahan DPTb (0)"
+                    ) : (
+                      `Tidak ada data pemilih yang berada di tahap ${mode === "DPT" ? "DPT" : "Calon DPS"}`
+                    )}
                   </div>
-                  {mode === "DPT" && (
-                    <p className="text-xs text-slate-400">
-                      Silakan verifikasi data dari menu <strong>1.1 Calon DPS (Data Pemilih Saat Ini)</strong> terlebih dahulu.
-                    </p>
-                  )}
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    {selectedStage === "DPSHP" ? (
+                      "Indikator DPSHP bernilai 0 karena belum ada data DPS yang melalui dan lolos proses pembenahan sah. Seluruh 7.787 data pemilih saat ini masih berada di tahap awal Calon DPS."
+                    ) : selectedStage === "DPS" ? (
+                      "Belum ada data Calon DPS yang diproses dan ditetapkan menjadi DPS melalui sidang pleno."
+                    ) : selectedStage === "DPT" ? (
+                      "DPT hanya dapat ditetapkan dari data DPSHP yang telah memenuhi syarat sidang pleno final penetapan DPT."
+                    ) : selectedStage === "DPTB" ? (
+                      "Data pemilih tambahan (DPTb) belum tercatat. Setiap pemilih tambahan wajib diproses ke DPS terlebih dahulu sebelum tahapan berikutnya."
+                    ) : (
+                      "Sesuaikan kata kunci pencarian atau reset filter untuk menampilkan data pemilih."
+                    )}
+                  </p>
                 </div>
               </div>
             ) : (

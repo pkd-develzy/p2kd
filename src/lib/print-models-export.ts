@@ -314,7 +314,7 @@ export function exportModelA2Excel(voters: Voter[], selectedTps: string = "SEMUA
   // Pemilih Tambahan: terdaftar sebagai BARU atau DPTb (BUKAN seluruh DPS)
   const dptbList = voters.filter((v) => {
     const isTpsMatch = matchTpsVoter(v.tps, selectedTps);
-    return isTpsMatch && v.statusAktif === "AKTIF" && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.tahap === "DPTB");
+    return isTpsMatch && v.statusAktif === "AKTIF" && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.sumberData === "DPTB" || (v.tahap as string) === "DPTB");
   });
 
   const rows: (string | number)[][] = [];
@@ -404,7 +404,7 @@ export function exportModelA2Excel(voters: Voter[], selectedTps: string = "SEMUA
 export function exportModelA2Pdf(voters: Voter[], selectedTps: string = "SEMUA") {
   const dptbList = voters.filter((v) => {
     const isTpsMatch = matchTpsVoter(v.tps, selectedTps);
-    return isTpsMatch && v.statusAktif === "AKTIF" && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.tahap === "DPTB");
+    return isTpsMatch && v.statusAktif === "AKTIF" && (v.coklitStatus === "BARU" || v.disabilitas === "DPTB" || v.sumberData === "DPTB" || (v.tahap as string) === "DPTB");
   });
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });

@@ -151,12 +151,36 @@ export async function PUT(
       updates.tps = getAutoTabungByRtRw(targetRw, targetRt, dataStore.getTpsList());
     }
 
+    // Cegah manipulasi status tahapan secara langsung tanpa melalui state machine
+    if ("tahap" in updates) {
+      delete (updates as Record<string, unknown>).tahap;
+    }
+
     const updated = await dataStore.updatePemilih(
       id,
       updates,
       user.nama || user.username,
       alasan || "Perbaikan data manual oleh petugas"
     );
+
+    // Jika pemilih sedang berada di tahap DPS, catat perubahan ini ke riwayat pembenahan DPSHP sah
+    if (existing.tahap === "DPS") {
+      try {
+        const { SupabaseDbService } = await import("@/lib/supabase-db");
+        const jenis = (updates.rw || updates.rt) ? "MUTASI_WILAYAH" : "KOREKSI_IDENTITAS";
+        await SupabaseDbService.createPembenahanDpshp({
+          pemilihId: id,
+          jenisPembenahan: jenis,
+          fieldChanged: Object.keys(updates).join(", "),
+          alasan: alasan || "Pembenahan data pemilih DPS oleh petugas",
+          petugasPengusul: user.nama || user.username || "Petugas",
+          autoValidate: true,
+          petugasPemvalidasi: user.nama || user.username,
+        });
+      } catch (err) {
+        console.warn("Auto pembenahan DPS log warning:", err);
+      }
+    }
 
     // Kirim notifikasi otomatis aktivitas perbaikan data ke grup Telegram (tanpa simpan database)
     try {

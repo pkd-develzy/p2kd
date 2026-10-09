@@ -64,13 +64,16 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   const totalRt = webConfig?.totalRt || 39;
 
   // 1. Data Pemilih Metrics (Bersumber Langsung dari Master Table statistik_pemilih)
-  const totalAktif = dbStatus?.localStats?.calonDps ?? dbStatus?.localStats?.totalAktif ?? (voters && voters.length > 0 ? voters.filter(v => v.statusAktif === "AKTIF").length : 7787);
+  const totalAktif = dbStatus?.localStats?.totalAktif ?? (voters && voters.length > 0 ? voters.filter(v => v.statusAktif === "AKTIF").length : 7787);
   const totalLaki = dbStatus?.localStats?.totalLaki ?? 3933;
   const totalPerempuan = dbStatus?.localStats?.totalPerempuan ?? 3854;
   const totalTms = dbStatus?.localStats?.totalTms ?? 0;
-  const jumlahDps = dbStatus?.localStats?.dps ?? totalAktif;
+  const jumlahCalonDps = dbStatus?.localStats?.calonDps ?? 7787;
+  const jumlahDps = dbStatus?.localStats?.dps ?? 0;
+  const jumlahDpshp = dbStatus?.localStats?.dpshp ?? 0;
   const jumlahDpt = dbStatus?.localStats?.dpt ?? 0;
-  const pemilihTambahan = dbStatus?.localStats?.pemilihTambahan ?? 0;
+  const jumlahDptb = dbStatus?.localStats?.dptb ?? 0;
+  const pemilihTambahan = jumlahDptb;
 
   // 2. Coklit Metrics (Master Aggregate Database)
   const coklitSelesai = dbStatus?.localStats?.coklitSelesai ?? 7786;
@@ -181,22 +184,26 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
         </div>
 
         {/* Master Agregat Data Pemilih (Tabel statistik_pemilih) */}
-        <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-2 sm:grid-cols-5 gap-2.5">
           <div className="p-3 rounded-2xl bg-blue-500/10 border border-blue-400/20">
             <span className="text-[10px] font-bold text-blue-300 uppercase block tracking-wider">Calon DPS</span>
-            <div className="text-lg font-black text-white">{totalAktif.toLocaleString("id-ID")}</div>
+            <div className="text-lg font-black text-white">{jumlahCalonDps.toLocaleString("id-ID")}</div>
           </div>
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-400/20">
-            <span className="text-[10px] font-bold text-amber-300 uppercase block tracking-wider">DPS</span>
+            <span className="text-[10px] font-bold text-amber-300 uppercase block tracking-wider">DPS (Pleno)</span>
             <div className="text-lg font-black text-white">{jumlahDps.toLocaleString("id-ID")}</div>
           </div>
+          <div className="p-3 rounded-2xl bg-teal-500/10 border border-teal-400/20">
+            <span className="text-[10px] font-bold text-teal-300 uppercase block tracking-wider">DPSHP (Dibenahi)</span>
+            <div className="text-lg font-black text-white">{jumlahDpshp.toLocaleString("id-ID")}</div>
+          </div>
           <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-400/20">
-            <span className="text-[10px] font-bold text-emerald-300 uppercase block tracking-wider">DPT</span>
+            <span className="text-[10px] font-bold text-emerald-300 uppercase block tracking-wider">DPT (Tetap)</span>
             <div className="text-lg font-black text-white">{jumlahDpt.toLocaleString("id-ID")}</div>
           </div>
           <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-400/20">
-            <span className="text-[10px] font-bold text-cyan-300 uppercase block tracking-wider">Pemilih Tambahan</span>
-            <div className="text-lg font-black text-white">{pemilihTambahan.toLocaleString("id-ID")}</div>
+            <span className="text-[10px] font-bold text-cyan-300 uppercase block tracking-wider">DPTb (Tambahan)</span>
+            <div className="text-lg font-black text-white">{jumlahDptb.toLocaleString("id-ID")}</div>
           </div>
         </div>
       </Card>

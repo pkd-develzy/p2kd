@@ -40,8 +40,8 @@ export async function POST(req: Request) {
 
     if (!result.success) {
       return NextResponse.json(
-        { success: false, message: "Gagal memperbarui status tahap pemilih di server." },
-        { status: 500 }
+        { success: false, message: result.message || "Gagal memperbarui status tahap pemilih di server." },
+        { status: 400 }
       );
     }
 
@@ -53,9 +53,9 @@ export async function POST(req: Request) {
       void notifyPetugasActivity({
         namaPetugas: userName,
         rolePetugas: user.role === "pantarlih" ? `Pantarlih ${user.assignedTps || ""}` : (user.role || "Petugas P2KD"),
-        aktivitas: `Promosi Tahap Pemilih ke ${targetTahap}`,
-        perubahanStatus: `CALON DPS ➜ ${targetTahap} (${result.count} Pemilih)`,
-        rincian: `Berhasil memindahkan ${result.count} data pemilih menuju ${targetTahap} menjelang penetapan pleno resmi.`,
+        aktivitas: `Penetapan Tahap Pemilih ke ${targetTahap}`,
+        perubahanStatus: `Menuju ${targetTahap} (${result.count} Pemilih)`,
+        rincian: result.message || `Berhasil memindahkan ${result.count} data pemilih menuju ${targetTahap}.`,
       }).catch(() => {});
     } catch {
       // non-blocking

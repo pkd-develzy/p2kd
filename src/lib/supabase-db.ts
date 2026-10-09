@@ -92,6 +92,38 @@ interface SupabasePemilihRow {
   updated_at?: string | null;
 }
 
+interface SupabaseRiwayatTahapRow {
+  id: string;
+  pemilih_id: string;
+  tahap_asal: VoterStage;
+  tahap_tujuan: VoterStage;
+  alasan: string;
+  petugas: string;
+  role_petugas: string;
+  batch_ref?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+interface SupabasePembenahanRow {
+  id: string;
+  pemilih_id: string;
+  tahap_asal: VoterStage;
+  jenis_pembenahan: PembenahanType;
+  field_changed?: string | null;
+  old_value?: string | null;
+  new_value?: string | null;
+  alasan: string;
+  status_validasi: ValidationStatus;
+  is_eligible_dpshp: boolean;
+  petugas_pengusul: string;
+  petugas_pemvalidasi?: string | null;
+  validated_at?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
 interface SupabaseAnggotaRow {
   id: string;
   nama_lengkap: string;
@@ -1813,7 +1845,7 @@ export class SupabaseDbService {
         .order("created_at", { ascending: false });
 
       if (error || !data) return [];
-      return (data as Array<Record<string, any>>).map((r: Record<string, any>) => ({
+      return (data as unknown as SupabaseRiwayatTahapRow[]).map((r) => ({
         id: r.id,
         pemilihId: r.pemilih_id,
         tahapAsal: r.tahap_asal,
@@ -1858,7 +1890,7 @@ export class SupabaseDbService {
       const { data, error } = await q;
       if (error || !data) return [];
 
-      return (data as Array<Record<string, any>>).map((r: Record<string, any>) => ({
+      return (data as unknown as SupabasePembenahanRow[]).map((r) => ({
         id: r.id,
         pemilihId: r.pemilih_id,
         tahapAsal: r.tahap_asal,

@@ -860,15 +860,33 @@ export class RumahCoklitService {
     // 2. Ambil token QR UNASSIGNED siap pakai untuk wilayah tugas
     let qrQuery = client
       .from("qr_rumah")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("status", "UNASSIGNED")
       .order("created_at", { ascending: true });
     if (rwFilter && rwFilter !== "SEMUA") {
-      qrQuery = qrQuery.eq("assigned_rw", rwFilter);
+      const rwDigits = rwFilter.replace(/\D/g, "").padStart(2, "0");
+      qrQuery = qrQuery.or(`assigned_rw.eq.${rwFilter},assigned_rw.eq.RW ${rwDigits},assigned_rw.is.null`);
     }
-    const { data: unassignedQrs } = await qrQuery.limit(50);
+    const { data: unassignedQrs, count: qrCount } = await qrQuery.limit(100);
 
-    // 3. Hitung ringkasan status
+    // 3. Hitung jumlah pemilih terdaftar di wilayah tugas
+    let totalPemilihWilayah = 0;
+    if (rwFilter && rwFilter !== "SEMUA") {
+      const rwDigits = rwFilter.replace(/\D/g, "").padStart(2, "0");
+      const rwNum = parseInt(rwDigits, 10);
+      const { count: pmlCount } = await client
+        .from("pemilih")
+        .select("id", { count: "exact", head: true })
+        .or(`rw.eq.${rwDigits},rw.eq.${rwNum},tps.ilike.%RW ${rwDigits}%,tps.ilike.%TPS ${rwDigits}%`);
+      totalPemilihWilayah = pmlCount || 0;
+    } else {
+      const { count: pmlCount } = await client
+        .from("pemilih")
+        .select("id", { count: "exact", head: true });
+      totalPemilihWilayah = pmlCount || 0;
+    }
+
+    // 4. Hitung ringkasan status
     const totalRumah = rumahList?.length || 0;
     const selesaiRumah = (rumahList || []).filter((r: Record<string, unknown>) => r.status_pendataan === "SELESAI").length;
     const perluFollowUp = (rumahList || []).filter((r: Record<string, unknown>) => r.status_pendataan === "PERLU_TINDAK_LANJUT").length;
@@ -880,7 +898,8 @@ export class RumahCoklitService {
         totalRumah,
         selesaiRumah,
         perluFollowUp,
-        stikerTersedia: unassignedQrs?.length || 0,
+        stikerTersedia: qrCount ?? (unassignedQrs?.length || 0),
+        totalPemilihWilayah,
       },
       rumahList: (rumahList || []).map((r: Record<string, unknown>) => ({
         id: String(r.id),

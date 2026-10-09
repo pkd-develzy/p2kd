@@ -1212,7 +1212,11 @@ export class SupabaseDbService {
         q = q.eq("status_aktif", filter.statusAktif);
       }
       if (filter?.tahap && filter.tahap !== "SEMUA" && !filter.tahap.toUpperCase().includes("SEMUA")) {
-        q = q.eq("tahap", filter.tahap);
+        if (filter.tahap === "DPS" || filter.tahap === "BAHAN_COKLIT" || filter.tahap === "DP4") {
+          q = q.or(`tahap.eq.${filter.tahap},tahap.eq.CALON_DPS`);
+        } else {
+          q = q.eq("tahap", filter.tahap);
+        }
       }
 
       const { data, count, error } = await q;
@@ -1228,6 +1232,54 @@ export class SupabaseDbService {
     } catch (err) {
       console.warn("fetchPemilihPaged failed:", err);
       return { data: [], total: 0 };
+    }
+  }
+
+  /**
+   * Cari data pemilih berdasarkan nama, NIK, No KK, atau alamat
+   */
+  public static async searchPemilih(
+    queryText: string,
+    filter?: { tps?: string; limit?: number }
+  ): Promise<MasterPemilih[]> {
+    try {
+      const clean = String(queryText || "").trim();
+      if (!clean) return [];
+
+      const safeLimit = Math.min(100, Math.max(1, filter?.limit || 50));
+      let q = this.getSeksi1Client()
+        .from("pemilih")
+        .select(
+          "id, nik, no_kk, nama_lengkap, tempat_lahir, tanggal_lahir, jenis_kelamin, status_perkawinan, alamat, rt, rw, desa, kecamatan, tps, disabilitas, status_aktif, alasan_tms, coklit_status, coklit_tanggal, coklit_catatan, tahap, created_at, updated_at"
+        )
+        .order("nama_lengkap")
+        .limit(safeLimit);
+
+      // Search by NIK or Nama or Alamat
+      const digits = clean.replace(/\D/g, "");
+      if (digits.length >= 4) {
+        q = q.or(`nik.ilike.%${digits}%,no_kk.ilike.%${digits}%,nama_lengkap.ilike.%${clean}%`);
+      } else {
+        q = q.ilike("nama_lengkap", `%${clean}%`);
+      }
+
+      if (filter?.tps && filter.tps !== "SEMUA" && !filter.tps.toUpperCase().includes("SEMUA")) {
+        const tpsDigits = filter.tps.replace(/\D/g, "");
+        if (tpsDigits) {
+          const num = parseInt(tpsDigits, 10);
+          const formatted2Digit = num < 10 ? `0${num}` : `${num}`;
+          q = q.or(
+            `rw.eq.${formatted2Digit},rw.eq.${num},tps.ilike.%${filter.tps}%,tps.ilike.%RW ${formatted2Digit}%,tps.ilike.%TPS ${formatted2Digit}%`
+          );
+        }
+      }
+
+      const { data, error } = await q;
+      if (error || !data) return [];
+      return (data as SupabasePemilihRow[]).map((p) => this.mapSupabasePemilihRow(p));
+    } catch (err) {
+      console.warn("searchPemilih failed:", err);
+      return [];
     }
   }
 

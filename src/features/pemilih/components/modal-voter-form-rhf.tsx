@@ -207,7 +207,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-voter-form-title"
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md overscroll-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-9999 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-md overscroll-none animate-in fade-in duration-200"
     >
       {/* Click outside backdrop */}
       <div className="absolute inset-0 -z-10" onClick={onClose} aria-hidden="true" />

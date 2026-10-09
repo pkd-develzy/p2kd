@@ -281,7 +281,7 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
 
   // Konten Modal Pemindai QR
   const modalContent = isModalOpen ? (
-    <div className="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-9999 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
       {/* Hidden Native Camera Input untuk mode APK Android */}
       <input
         ref={apkNativeInputRef}

@@ -19,6 +19,7 @@ import {
 import { Button, Logo } from "@/components/ui";
 import { useToast } from "@/hooks/use-toast";
 import { CloudflareTurnstileShield, TurnstileShieldHandle } from "@/components/ui/cloudflare-turnstile-shield";
+import { AppleWelcomeScreen } from "@/components/ui/apple-welcome-screen";
 
 interface RememberedAccount {
   username: string;
@@ -252,6 +253,12 @@ export const AdminLoginForm: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full bg-slate-950 text-white flex flex-col justify-between overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white">
+      {/* Apple-Style Handwriting Welcome Screen */}
+      <AppleWelcomeScreen
+        officerName={rememberedAccount?.nama}
+        assignedRw={rememberedAccount?.assignedTps}
+      />
+
       {/* Background Hero Image with Deep Luxury Gradient Overlay */}
       <div
         className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-transform duration-1000 scale-105"

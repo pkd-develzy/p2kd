@@ -33,6 +33,7 @@ import { PublicWebConfig, getAnggotaHierarchyRank } from "@/lib/data-store";
 
 import { AdminSidebar } from "./sidebar";
 import { AdminHeader } from "./header";
+import { AppleWelcomeScreen } from "@/components/ui/apple-welcome-screen";
 
 import dynamic from "next/dynamic";
 
@@ -1786,6 +1787,12 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-slate-100/90 text-slate-900 w-full max-w-full overflow-x-clip">
+      {/* 0. Premium Apple-Style Latin Cursive Welcome Screen */}
+      <AppleWelcomeScreen
+        officerName={computedUserName}
+        assignedRw={assignedTps}
+      />
+
       {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={isConfirmOpen}

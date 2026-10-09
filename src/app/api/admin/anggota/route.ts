@@ -3,7 +3,7 @@ import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession, isDeveloper, isSeksiPemilih } from "@/lib/auth-middleware";
 import { hashPassword, verifyPassword } from "@/lib/encryption";
 import { DEFAULT_INITIAL_PASSWORDS, isInitialDefaultPassword } from "@/lib/password-policy";
-import { uploadImageToCloudinary } from "@/lib/cloudinary";
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from "@/lib/cloudinary";
 
 function checkIsActivated(passwordHash?: string): boolean {
   if (!passwordHash) return false;
@@ -213,6 +213,15 @@ export async function POST(req: Request) {
         }
       } catch (uploadErr) {
         console.error("Gagal mengunggah foto profil anggota baru ke Cloudinary:", uploadErr);
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Gagal mengunggah foto profil ke Cloudinary: " +
+              (uploadErr instanceof Error ? uploadErr.message : "Kesalahan koneksi Cloudinary"),
+          },
+          { status: 500 }
+        );
       }
     }
 
@@ -313,7 +322,24 @@ export async function PUT(req: Request) {
           }
         } catch (uploadErr) {
           console.error("Gagal mengunggah foto profil petugas ke Cloudinary:", uploadErr);
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "Gagal mengunggah foto profil ke Cloudinary: " +
+                (uploadErr instanceof Error ? uploadErr.message : "Kesalahan koneksi Cloudinary"),
+            },
+            { status: 500 }
+          );
         }
+      }
+
+      if (
+        targetMember.fotoUrl &&
+        targetMember.fotoUrl !== finalFotoUrl &&
+        targetMember.fotoUrl.includes("cloudinary.com")
+      ) {
+        void deleteImageFromCloudinary(targetMember.fotoUrl);
       }
 
       const updated = await dataStore.updateAnggota(targetMember.id, { fotoUrl: finalFotoUrl }, userName);
@@ -384,19 +410,41 @@ export async function PUT(req: Request) {
       updateFields.passwordHash = hashPassword(customPassword || password);
     }
 
-    if (updateFields.fotoUrl && typeof updateFields.fotoUrl === "string") {
-      const finalFotoUrl = updateFields.fotoUrl.trim();
+    // Process photo update and upload to Cloudinary
+    const rawFoto = fotoUrl !== undefined ? fotoUrl : updateFields.fotoUrl;
+    if (rawFoto !== undefined) {
+      let finalFotoUrl = String(rawFoto).trim();
       if (finalFotoUrl.startsWith("data:image/") || finalFotoUrl.startsWith("data:application/")) {
         try {
           const upl = await uploadImageToCloudinary(finalFotoUrl, "p2kd_petugas");
           if (upl?.secure_url) {
-            updateFields.fotoUrl = upl.secure_url;
+            finalFotoUrl = upl.secure_url;
           }
         } catch (uploadErr) {
           console.error("Gagal mengunggah foto profil anggota ke Cloudinary:", uploadErr);
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "Gagal mengunggah foto profil ke Cloudinary: " +
+                (uploadErr instanceof Error ? uploadErr.message : "Kesalahan koneksi Cloudinary"),
+            },
+            { status: 500 }
+          );
         }
       }
+      const existingMember = id ? dataStore.getAnggotaById(id) : undefined;
+      if (
+        existingMember?.fotoUrl &&
+        existingMember.fotoUrl !== finalFotoUrl &&
+        existingMember.fotoUrl.includes("cloudinary.com")
+      ) {
+        void deleteImageFromCloudinary(existingMember.fotoUrl);
+      }
+      updateFields.fotoUrl = finalFotoUrl;
     }
+
+    delete (updateFields as Record<string, unknown>).user;
 
     const updated = await dataStore.updateAnggota(id, updateFields, userName);
     if (!updated) {
@@ -448,6 +496,10 @@ export async function DELETE(req: Request) {
     }
 
     await dataStore.ensureSynced();
+    const existingMember = dataStore.getAnggotaById(id);
+    if (existingMember?.fotoUrl && existingMember.fotoUrl.includes("cloudinary.com")) {
+      void deleteImageFromCloudinary(existingMember.fotoUrl);
+    }
     const success = await dataStore.deleteAnggota(id, user.nama || user.username);
     if (!success) {
       return NextResponse.json(

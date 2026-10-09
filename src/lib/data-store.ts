@@ -2014,7 +2014,11 @@ class SystemDataStore {
   }
 
   public async updateAnggota(id: string, data: Partial<MasterAnggotaP2KD>, user = "admin_kalisalak"): Promise<MasterAnggotaP2KD | null> {
-    const idx = this.anggotaList.findIndex((a) => a.id === id);
+    let idx = this.anggotaList.findIndex((a) => a.id === id);
+    if (idx === -1 && data.username) {
+      const cleanU = data.username.toLowerCase().trim();
+      idx = this.anggotaList.findIndex((a) => a.username?.toLowerCase().trim() === cleanU);
+    }
     if (idx === -1) return null;
 
     const existing = this.anggotaList[idx];
@@ -2025,7 +2029,7 @@ class SystemDataStore {
     this.anggotaList[idx] = updated;
 
     // Sync to Supabase Cloud
-    await SupabaseDbService.updateAnggota(id, data);
+    await SupabaseDbService.updateAnggota(existing.id, data);
 
     this.addAuditLog({
       user,

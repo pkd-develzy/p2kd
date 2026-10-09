@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dataStore } from "@/lib/data-store";
 import { verifyAdminSession } from "@/lib/auth-middleware";
+import { uploadImageToCloudinary, deleteImageFromCloudinary } from "@/lib/cloudinary";
 
 // GET /api/admin/calon - Ambil daftar semua calon kepala desa
 export async function GET(req: Request) {
@@ -94,6 +95,27 @@ export async function POST(req: Request) {
 
     await dataStore.ensureSynced();
 
+    let finalFotoUrl = fotoUrl ? String(fotoUrl).trim() : "";
+    if (finalFotoUrl && (finalFotoUrl.startsWith("data:image/") || finalFotoUrl.startsWith("data:application/"))) {
+      try {
+        const upl = await uploadImageToCloudinary(finalFotoUrl, "p2kd_calon");
+        if (upl?.secure_url) {
+          finalFotoUrl = upl.secure_url;
+        }
+      } catch (uploadErr) {
+        console.error("Gagal mengunggah foto calon ke Cloudinary:", uploadErr);
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Gagal mengunggah foto calon ke Cloudinary: " +
+              (uploadErr instanceof Error ? uploadErr.message : "Kesalahan server Cloudinary"),
+          },
+          { status: 500 }
+        );
+      }
+    }
+
     const newKandidat = await dataStore.addKandidat(
       {
         nomorUrut: Number(nomorUrut),
@@ -107,7 +129,7 @@ export async function POST(req: Request) {
         visi: visi ? String(visi).trim() : "",
         misi: Array.isArray(misi) ? misi : [],
         programUnggulan: Array.isArray(programUnggulan) ? programUnggulan : [],
-        fotoUrl: fotoUrl || "",
+        fotoUrl: finalFotoUrl,
         warnaTema: warnaTema || "#1e3a8a",
         statusVerifikasi: statusVerifikasi || "MEMENUHI_SYARAT",
       },
@@ -166,9 +188,43 @@ export async function PUT(req: Request) {
     }
 
     await dataStore.ensureSynced();
+    const existingKandidat = dataStore.getKandidatList().find((k) => k.id === id);
 
     if (updateFields.nomorUrut !== undefined) {
       updateFields.nomorUrut = Number(updateFields.nomorUrut);
+    }
+
+    if (updateFields.fotoUrl !== undefined) {
+      let finalFotoUrl = String(updateFields.fotoUrl).trim();
+      if (finalFotoUrl.startsWith("data:image/") || finalFotoUrl.startsWith("data:application/")) {
+        try {
+          const upl = await uploadImageToCloudinary(finalFotoUrl, "p2kd_calon");
+          if (upl?.secure_url) {
+            finalFotoUrl = upl.secure_url;
+          }
+        } catch (uploadErr) {
+          console.error("Gagal mengunggah foto calon ke Cloudinary:", uploadErr);
+          return NextResponse.json(
+            {
+              success: false,
+              message:
+                "Gagal mengunggah foto calon ke Cloudinary: " +
+                (uploadErr instanceof Error ? uploadErr.message : "Kesalahan server Cloudinary"),
+            },
+            { status: 500 }
+          );
+        }
+      }
+      updateFields.fotoUrl = finalFotoUrl;
+
+      // Auto-delete previous image in Cloudinary if replaced
+      if (
+        existingKandidat?.fotoUrl &&
+        existingKandidat.fotoUrl !== finalFotoUrl &&
+        existingKandidat.fotoUrl.includes("cloudinary.com")
+      ) {
+        void deleteImageFromCloudinary(existingKandidat.fotoUrl);
+      }
     }
 
     const updated = await dataStore.updateKandidat(

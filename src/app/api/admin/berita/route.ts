@@ -109,6 +109,15 @@ export async function POST(req: Request) {
         finalGambarUrl = upl.secure_url;
       } catch (uploadErr) {
         console.error("Gagal mengunggah foto berita ke Cloudinary:", uploadErr);
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Gagal mengunggah foto berita ke Cloudinary: " +
+              (uploadErr instanceof Error ? uploadErr.message : "Kesalahan server Cloudinary"),
+          },
+          { status: 500 }
+        );
       }
     }
 
@@ -178,6 +187,15 @@ export async function PUT(req: Request) {
         updates.gambarUrl = upl.secure_url;
       } catch (uploadErr) {
         console.error("Gagal mengunggah foto baru berita ke Cloudinary:", uploadErr);
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Gagal mengunggah foto baru berita ke Cloudinary: " +
+              (uploadErr instanceof Error ? uploadErr.message : "Kesalahan server Cloudinary"),
+          },
+          { status: 500 }
+        );
       }
     }
 

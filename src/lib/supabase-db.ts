@@ -1062,6 +1062,29 @@ export class SupabaseDbService {
   }
 
   /**
+   * Cari data pemilih spesifik langsung berdasarkan ID UUID/String atau NIK
+   */
+  public static async findPemilihByIdOrNik(identifier: string): Promise<MasterPemilih | null> {
+    try {
+      const clean = String(identifier || "").trim();
+      if (!clean) return null;
+
+      const client = this.getSeksi1Client();
+      const { data, error } = await client
+        .from("pemilih")
+        .select("*")
+        .or(`id.eq.${clean},nik.eq.${clean}`)
+        .limit(1)
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return this.mapSupabasePemilihRow(data as SupabasePemilihRow);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Fetch voters with strict safeguard to prevent massive 10,000-row memory dump.
    * Digunakan untuk keperluan legacy/spesifik (misal 1 TPS) dengan batas aman.
    */

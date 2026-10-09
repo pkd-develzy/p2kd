@@ -70,6 +70,49 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
     refetch: refetchDetail,
   } = usePemilihDetailQuery(selectedId, isOpen && isEdit && Boolean(selectedId));
 
+  // Compute initial form values immediately so edit mode starts with available card data
+  const initialFormValues = useMemo<VoterFormValues>(() => {
+    if (isEdit && initialValues) {
+      const rw = officerRw || normalizeWilayahCode(initialValues.rw || "01");
+      const rt = normalizeWilayahCode(initialValues.rt || "01");
+      const autoTps = getAutoTabungByRtRw(rw, rt, tpsList);
+      return {
+        nik: initialValues.nik || "",
+        kk: initialValues.kk || "",
+        namaLengkap: formatNamaGelar(initialValues.namaLengkap || ""),
+        tempatLahir: initialValues.tempatLahir || "Batang",
+        tanggalLahir: initialValues.tanggalLahir || "",
+        jenisKelamin: (initialValues.jenisKelamin as "L" | "P") || "L",
+        statusPerkawinan: (initialValues.statusPerkawinan as "S" | "B" | "P") || "S",
+        alamat: initialValues.alamat || "Kalisalak",
+        rt,
+        rw,
+        tps: initialValues.tps || autoTps,
+        statusAktif: initialValues.statusAktif === "TMS" ? "TMS" : "AKTIF",
+        tahap: (initialValues.tahap as "DPS" | "DPT") || "DPS",
+        alasanTms: initialValues.alasanTms || "",
+      };
+    }
+    const defaultRw = officerRw || normalizeWilayahCode(initialValues?.rw || "01");
+    const defaultRt = normalizeWilayahCode(initialValues?.rt || "01");
+    return {
+      nik: "",
+      kk: "",
+      namaLengkap: "",
+      tempatLahir: "Batang",
+      tanggalLahir: "",
+      jenisKelamin: "L",
+      statusPerkawinan: "S",
+      alamat: "Kalisalak",
+      rt: defaultRt,
+      rw: defaultRw,
+      tps: getAutoTabungByRtRw(defaultRw, defaultRt, tpsList),
+      statusAktif: "AKTIF",
+      tahap: "DPS",
+      alasanTms: "",
+    };
+  }, [isEdit, initialValues, officerRw, tpsList]);
+
   const {
     register,
     handleSubmit,
@@ -80,22 +123,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
     formState: { errors, isSubmitting },
   } = useForm<VoterFormValues>({
     resolver: zodResolver(voterFormSchema),
-    defaultValues: {
-      nik: "",
-      kk: "",
-      namaLengkap: "",
-      tempatLahir: "Batang",
-      tanggalLahir: "",
-      jenisKelamin: "L",
-      statusPerkawinan: "S",
-      alamat: "Kalisalak",
-      rt: "01",
-      rw: officerRw || "01",
-      tps: getAutoTabungByRtRw(officerRw || "01", "01", tpsList),
-      statusAktif: "AKTIF",
-      tahap: "DPS",
-      alasanTms: "",
-    },
+    defaultValues: initialFormValues,
   });
 
   const selectedRw = useWatch({ control, name: "rw" });
@@ -111,9 +139,11 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
     };
   }, [isOpen]);
 
-  // 2. EDIT MODE: Synchronize form with specific selected record from server query
+  // 2. EDIT MODE: Synchronize form with specific selected record from server query or initialValues
   useEffect(() => {
-    if (isOpen && isEdit && voterDetail && voterDetail.id === selectedId) {
+    if (!isOpen || !isEdit) return;
+
+    if (voterDetail && voterDetail.id === selectedId) {
       const rw = officerRw || normalizeWilayahCode(voterDetail.rw || "01");
       const rt = normalizeWilayahCode(voterDetail.rt || "01");
       const autoTps = getAutoTabungByRtRw(rw, rt, tpsList);
@@ -134,8 +164,29 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
         tahap: (voterDetail.tahap as "DPS" | "DPT") || "DPS",
         alasanTms: voterDetail.alasanTms || "",
       });
+    } else if (initialValues && initialValues.nik) {
+      const rw = officerRw || normalizeWilayahCode(initialValues.rw || "01");
+      const rt = normalizeWilayahCode(initialValues.rt || "01");
+      const autoTps = getAutoTabungByRtRw(rw, rt, tpsList);
+
+      reset({
+        nik: initialValues.nik || "",
+        kk: initialValues.kk || "",
+        namaLengkap: formatNamaGelar(initialValues.namaLengkap || ""),
+        tempatLahir: initialValues.tempatLahir || "Batang",
+        tanggalLahir: initialValues.tanggalLahir || "",
+        jenisKelamin: (initialValues.jenisKelamin as "L" | "P") || "L",
+        statusPerkawinan: (initialValues.statusPerkawinan as "S" | "B" | "P") || "S",
+        alamat: initialValues.alamat || "Kalisalak",
+        rt,
+        rw,
+        tps: initialValues.tps || autoTps,
+        statusAktif: initialValues.statusAktif === "TMS" ? "TMS" : "AKTIF",
+        tahap: (initialValues.tahap as "DPS" | "DPT") || "DPS",
+        alasanTms: initialValues.alasanTms || "",
+      });
     }
-  }, [isOpen, isEdit, voterDetail, selectedId, reset, tpsList, officerRw]);
+  }, [isOpen, isEdit, voterDetail, initialValues, selectedId, reset, tpsList, officerRw]);
 
   // 3. CREATE MODE: Reset to default values with officer's assigned RW
   useEffect(() => {
@@ -199,7 +250,8 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
 
   if (!isOpen || !mounted) return null;
 
-  const isLoadingRecord = isEdit && isFetchingDetail && !voterDetail;
+  const hasAvailableData = Boolean(voterDetail || (isEdit && initialValues && initialValues.nik));
+  const isLoadingRecord = isEdit && isFetchingDetail && !hasAvailableData;
   const autoTpsName = getAutoTabungByRtRw(officerRw || selectedRw || "01", selectedRt || "01", tpsList);
 
   const modalContent = (
@@ -267,7 +319,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
                   </p>
                 </div>
               </div>
-            ) : isEdit && isDetailError ? (
+            ) : isEdit && isDetailError && !hasAvailableData ? (
               <div className="py-12 px-4 text-center space-y-3">
                 <div className="w-10 h-10 mx-auto rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5" />
@@ -505,7 +557,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
               type="submit"
               variant="primary"
               size="sm"
-              disabled={isSubmitting || isLoadingRecord}
+              disabled={isSubmitting || isLoadingRecord || (isEdit && isDetailError && !hasAvailableData)}
               className="rounded-xl px-5 py-2 font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/25 transition-all"
             >
               {isSubmitting ? (

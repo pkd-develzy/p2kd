@@ -1217,6 +1217,23 @@ class SystemDataStore {
     return this.findPemilihById(id);
   }
 
+  public async getPemilihByIdAsync(id: string): Promise<MasterPemilih | null> {
+    const mem = this.findPemilihById(id);
+    if (mem) return mem;
+
+    const fromDb = await SupabaseDbService.findPemilihByIdOrNik(id);
+    if (fromDb) {
+      const existIdx = this.pemilihList.findIndex((p) => p.id === fromDb.id || p.nik === fromDb.nik);
+      if (existIdx >= 0) {
+        this.pemilihList[existIdx] = fromDb;
+      } else {
+        this.pemilihList.push(fromDb);
+      }
+      return fromDb;
+    }
+    return null;
+  }
+
   public async addPemilih(
     data: Omit<MasterPemilih, "id" | "updatedAt" | "nikMasked">,
     user = "Petugas P2KD"
@@ -1265,7 +1282,12 @@ class SystemDataStore {
       throw new Error("DPT telah dikunci dan disegel. Tidak dapat mengubah data pemilih.");
     }
 
-    const idx = this.pemilihList.findIndex((p) => p.id === id);
+    let idx = this.pemilihList.findIndex((p) => p.id === id);
+    if (idx === -1) {
+      const loaded = await this.getPemilihByIdAsync(id);
+      if (!loaded) return null;
+      idx = this.pemilihList.findIndex((p) => p.id === id);
+    }
     if (idx === -1) return null;
 
     const existing = this.pemilihList[idx];
@@ -1304,7 +1326,12 @@ class SystemDataStore {
       throw new Error("DPT telah dikunci. Tidak dapat menandai TMS.");
     }
 
-    const idx = this.pemilihList.findIndex((p) => p.id === id);
+    let idx = this.pemilihList.findIndex((p) => p.id === id);
+    if (idx === -1) {
+      const loaded = await this.getPemilihByIdAsync(id);
+      if (!loaded) return null;
+      idx = this.pemilihList.findIndex((p) => p.id === id);
+    }
     if (idx === -1) return null;
 
     this.pemilihList[idx].statusAktif = "TMS";
@@ -1333,7 +1360,11 @@ class SystemDataStore {
   }
 
   public async deletePemilih(id: string, user = "Petugas P2KD"): Promise<boolean> {
-    const idx = this.pemilihList.findIndex((p) => p.id === id);
+    let idx = this.pemilihList.findIndex((p) => p.id === id);
+    if (idx === -1) {
+      await this.getPemilihByIdAsync(id);
+      idx = this.pemilihList.findIndex((p) => p.id === id);
+    }
     const target = idx !== -1 ? this.pemilihList[idx] : null;
     if (idx !== -1) {
       this.pemilihList.splice(idx, 1);
@@ -1368,7 +1399,12 @@ class SystemDataStore {
       throw new Error("DPT telah dikunci. Tidak dapat memindahkan TPS.");
     }
 
-    const idx = this.pemilihList.findIndex((p) => p.id === id);
+    let idx = this.pemilihList.findIndex((p) => p.id === id);
+    if (idx === -1) {
+      const loaded = await this.getPemilihByIdAsync(id);
+      if (!loaded) return null;
+      idx = this.pemilihList.findIndex((p) => p.id === id);
+    }
     if (idx === -1) return null;
 
     const tpsAsal = this.pemilihList[idx].tps;
@@ -1397,7 +1433,12 @@ class SystemDataStore {
     catatan = "",
     petugas = "Koordinator RW"
   ): Promise<MasterPemilih | null> {
-    const idx = this.pemilihList.findIndex((p) => p.id === id);
+    let idx = this.pemilihList.findIndex((p) => p.id === id);
+    if (idx === -1) {
+      const loaded = await this.getPemilihByIdAsync(id);
+      if (!loaded) return null;
+      idx = this.pemilihList.findIndex((p) => p.id === id);
+    }
     if (idx === -1) return null;
 
     const todayStr = new Date().toISOString().split("T")[0];
@@ -1438,7 +1479,12 @@ class SystemDataStore {
     rwBaru = "01",
     user = "Petugas P2KD"
   ): Promise<MasterPemilih | null> {
-    const idx = this.pemilihList.findIndex((p) => p.id === id);
+    let idx = this.pemilihList.findIndex((p) => p.id === id);
+    if (idx === -1) {
+      const loaded = await this.getPemilihByIdAsync(id);
+      if (!loaded) return null;
+      idx = this.pemilihList.findIndex((p) => p.id === id);
+    }
     if (idx === -1) return null;
 
     this.pemilihList[idx].tps = tpsBaru;

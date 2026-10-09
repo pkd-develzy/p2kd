@@ -309,7 +309,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                 </span>
               </div>
 
-              <div>
+              <div className="flex items-center gap-1.5">
                 {p.statusAktif === "TMS" ? (
                   <Badge variant="danger" className="text-[10px] font-bold">
                     TMS: {p.alasanTms || "Tidak Memenuhi"}
@@ -326,6 +326,18 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                   <Badge variant="default" className="text-[10px] font-bold">
                     {mode === "DPT" ? "DPT Tetap" : "Calon DPS"}
                   </Badge>
+                )}
+
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => onDeleteVoter(p)}
+                    className="w-7 h-7 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 flex items-center justify-center active:scale-95 transition-all cursor-pointer ml-1"
+                    title="Hapus Pemilih"
+                    aria-label="Hapus Pemilih"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
             </div>
@@ -372,73 +384,60 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
               </div>
             </div>
 
-            {/* 4. Touch-Friendly Action Buttons */}
-            <div className="pt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100">
-              {/* Masuk DPT (jika mode DPS) */}
-              {mode === "DPS" && onPromoteToDpt && p.statusAktif === "AKTIF" && (
+            {/* 4. Touch-Friendly Action Buttons: Balanced 2x2 Grid with Zero Empty Space */}
+            <div className="pt-3 grid grid-cols-2 gap-2 border-t border-slate-100">
+              {/* Tombol 1: Masuk DPT (atau Ke DPS) */}
+              {mode === "DPS" ? (
                 <button
                   type="button"
-                  onClick={() => onPromoteToDpt([p.id])}
-                  className="flex-1 min-w-27.5 h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                  disabled={p.statusAktif !== "AKTIF" || !onPromoteToDpt}
+                  onClick={() => onPromoteToDpt?.([p.id])}
+                  className="w-full h-10 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:bg-slate-300 disabled:text-slate-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
                 >
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>Masuk DPT</span>
+                  <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Masuk DPT</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={!onRollbackToDps}
+                  onClick={() => onRollbackToDps?.([p.id])}
+                  className="w-full h-10 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Ke DPS</span>
                 </button>
               )}
 
-              {/* Kembalikan ke DPS (jika mode DPT) */}
-              {mode === "DPT" && onRollbackToDps && (
-                <button
-                  type="button"
-                  onClick={() => onRollbackToDps([p.id])}
-                  className="flex-1 min-w-27.5 h-9 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Ke DPS</span>
-                </button>
-              )}
-
-              {/* Koreksi Data */}
+              {/* Tombol 2: Koreksi Data */}
               <button
                 type="button"
                 onClick={() => onOpenEditVoter(p)}
-                className="h-9 px-3 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+                className="w-full h-10 px-3 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               >
-                <Edit className="w-3.5 h-3.5" />
-                <span>Koreksi</span>
+                <Edit className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Koreksi</span>
               </button>
 
-              {/* Mutasi TPS */}
+              {/* Tombol 3: Mutasi TPS */}
               <button
                 type="button"
                 onClick={() => onOpenMutasi(p)}
-                className="h-9 px-3 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+                className="w-full h-10 px-3 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               >
-                <ArrowRightLeft className="w-3.5 h-3.5" />
-                <span>Mutasi</span>
+                <ArrowRightLeft className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Mutasi</span>
               </button>
 
-              {/* TMS */}
+              {/* Tombol 4: TMS */}
               <button
                 type="button"
                 onClick={() => onOpenTms(p)}
-                className="h-9 px-3 rounded-xl border border-rose-200 bg-rose-50/70 text-rose-700 hover:bg-rose-100 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+                className="w-full h-10 px-3 rounded-xl border border-rose-200 bg-rose-50/70 text-rose-700 hover:bg-rose-100 font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               >
-                <UserX className="w-3.5 h-3.5" />
-                <span>TMS</span>
+                <UserX className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">TMS</span>
               </button>
-
-              {/* Hapus Pemilih */}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => onDeleteVoter(p)}
-                  className="h-9 w-9 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 flex items-center justify-center active:scale-95 transition-all ml-auto cursor-pointer"
-                  title="Hapus Pemilih"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
             </div>
           </div>
         );

@@ -35,7 +35,7 @@ export async function GET(
 
     await dataStore.ensureSynced();
     const { id } = await params;
-    const voter = dataStore.getPemilihById(id);
+    const voter = await dataStore.getPemilihByIdAsync(id);
 
     if (!voter) {
       return NextResponse.json(
@@ -93,7 +93,7 @@ export async function PUT(
     const body = await req.json();
     const { alasan, ...updates } = body;
 
-    const existing = dataStore.getPemilihById(id);
+    const existing = await dataStore.getPemilihByIdAsync(id);
     if (!existing) {
       return NextResponse.json(
         { success: false, message: "Data pemilih tidak ditemukan." },
@@ -215,7 +215,7 @@ export async function DELETE(
     const mode = searchParams.get("mode"); // "tms" or "delete"
     const alasanTms = searchParams.get("alasan") || "MENINGGAL";
 
-    const existing = dataStore.getPemilihById(id);
+    const existing = await dataStore.getPemilihByIdAsync(id);
     if (!existing) {
       return NextResponse.json(
         { success: false, message: "Data pemilih tidak ditemukan." },

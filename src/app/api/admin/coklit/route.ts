@@ -113,7 +113,7 @@ export async function PUT(req: Request) {
     }
 
     await dataStore.ensureSynced();
-    const targetVoter = dataStore.getPemilihById(voterId);
+    const targetVoter = await dataStore.getPemilihByIdAsync(voterId);
     if (!targetVoter) {
       return NextResponse.json(
         { success: false, message: "Data pemilih tidak ditemukan." },

@@ -39,7 +39,7 @@ export async function POST(
       );
     }
 
-    const existing = dataStore.getPemilihById(id);
+    const existing = await dataStore.getPemilihByIdAsync(id);
     if (!existing) {
       return NextResponse.json(
         { success: false, message: "Data pemilih tidak ditemukan." },

@@ -100,7 +100,7 @@ export const AppleWelcomeScreen: React.FC<AppleWelcomeScreenProps> = ({
           className="absolute -bottom-32 -right-32 w-96 h-96 bg-teal-500/12 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: "1s" }}
         />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-blue-600/10 rounded-full blur-[130px] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-130 h-130 bg-blue-600/10 rounded-full blur-[130px] pointer-events-none" />
       </div>
 
       {/* Skip Button Top Right */}
@@ -124,7 +124,7 @@ export const AppleWelcomeScreen: React.FC<AppleWelcomeScreenProps> = ({
             alt="Logo P2KD Kalisalak"
             width={18}
             height={18}
-            className="w-[18px] h-[18px] object-contain"
+            className="w-4.5 h-4.5 object-contain"
             priority
           />
           <span className="text-[10px] sm:text-[11px] font-black tracking-widest uppercase text-slate-300">
@@ -137,7 +137,7 @@ export const AppleWelcomeScreen: React.FC<AppleWelcomeScreenProps> = ({
       {/* 3. Centerpiece: Iconic Apple Latin Handwriting Cursive Script Animation */}
       <div className="relative z-10 my-auto flex flex-col items-center justify-center text-center px-4 max-w-xl">
         {/* SVG Handwriting Canvas with Gradient Stroke & Shimmer */}
-        <div className="relative w-full max-w-[340px] sm:max-w-[480px] aspect-[16/9] flex items-center justify-center">
+        <div className="relative w-full max-w-85 sm:max-w-120 aspect-video flex items-center justify-center">
           <svg
             viewBox="0 0 540 220"
             className="w-full h-full drop-shadow-[0_0_35px_rgba(52,211,153,0.35)]"

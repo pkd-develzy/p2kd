@@ -379,7 +379,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                 <button
                   type="button"
                   onClick={() => onPromoteToDpt([p.id])}
-                  className="flex-1 min-w-[110px] h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 min-w-27.5 h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
                 >
                   <UserCheck className="w-3.5 h-3.5" />
                   <span>Masuk DPT</span>
@@ -391,7 +391,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                 <button
                   type="button"
                   onClick={() => onRollbackToDps([p.id])}
-                  className="flex-1 min-w-[110px] h-9 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                  className="flex-1 min-w-27.5 h-9 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Ke DPS</span>

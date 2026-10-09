@@ -1793,6 +1793,8 @@ export const AdminDashboard: React.FC = () => {
           isFieldOfficer={isFieldOfficer}
           assignedTps={assignedTps}
           isDptLocked={isDptLocked}
+          userName={computedUserName}
+          userFoto={dbMatchedMember?.fotoUrl}
           onOpenChangePassword={() => {
             setIsForcedChangePassword(false);
             setShowChangePasswordModal(true);

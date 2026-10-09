@@ -35,9 +35,12 @@ export const C6QrScanner: React.FC<C6QrScannerProps> = ({ onScanSuccess, onClose
         await html5QrCode.start(
           { facingMode: "environment" },
           {
-            fps: 10,
-            qrbox: { width: 250, height: 250 },
-            aspectRatio: 1.0,
+            fps: 12,
+            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+              const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              const size = Math.max(160, Math.floor(minEdge * 0.72));
+              return { width: size, height: size };
+            },
           },
           (decodedText: string) => {
             if (mounted) {

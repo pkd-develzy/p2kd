@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   QrCode,
   Search,
@@ -71,7 +71,7 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
     setActiveMode("CAMERA");
   };
 
-  const handleVerifyPayload = async (queryStr: string) => {
+  const handleVerifyPayload = useCallback(async (queryStr: string) => {
     if (!queryStr.trim()) return;
 
     setLoading(true);
@@ -119,16 +119,16 @@ export const FloatingQrVerifier: React.FC<FloatingQrVerifierProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     handleVerifyPayload(inputQuery);
   };
 
-  const handleCameraScan = (decodedText: string) => {
+  const handleCameraScan = useCallback((decodedText: string) => {
     handleVerifyPayload(decodedText);
-  };
+  }, [handleVerifyPayload]);
 
   const handleMarkAttendance = () => {
     if (!result) return;

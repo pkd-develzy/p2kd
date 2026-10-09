@@ -8,197 +8,278 @@ import {
   RefreshCw,
   Zap,
   AlertCircle,
-  Upload,
-  SwitchCamera,
-  Smartphone,
+  CheckCircle2,
+  ScanLine,
+  Keyboard,
+  ShieldCheck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+
+// Deklarasi global untuk Native BarcodeDetector API (Chromium / Android WebView Hardware Accelerated)
+declare global {
+  interface Window {
+    BarcodeDetector?: {
+      new (options?: { formats: string[] }): {
+        detect: (image: ImageBitmapSource) => Promise<Array<{ rawValue: string; format: string }>>;
+      };
+      getSupportedFormats: () => Promise<string[]>;
+    };
+  }
+}
+
+export type ScannerStatus =
+  | "INIT"
+  | "REQUESTING_PERMISSION"
+  | "STARTING_STREAM"
+  | "READY"
+  | "DETECTED"
+  | "PROCESSING"
+  | "ERROR"
+  | "STOPPED";
 
 interface LiveQrCameraScannerProps {
   onScanSuccess: (decodedText: string) => void;
   onClose?: () => void;
+  onOpenManualInput?: () => void;
+  officerName?: string;
+  assignedRw?: string;
   fps?: number;
-}
-
-/**
- * Optimalkan foto beresolusi tinggi (khas kamera HP Android 12MP-48MP)
- * menjadi ukuran proporsional (max 1280px) pada memory canvas agar cepat dipindai
- * dan tidak membuat WebView APK mengalami out-of-memory.
- */
-async function preprocessImageForQr(file: File): Promise<File> {
-  return new Promise((resolve) => {
-    if (!file.type.startsWith("image/")) {
-      return resolve(file);
-    }
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      const maxDim = 1280;
-      let { width, height } = img;
-      if (width <= maxDim && height <= maxDim) {
-        return resolve(file);
-      }
-      if (width > height) {
-        height = Math.round((height * maxDim) / width);
-        width = maxDim;
-      } else {
-        width = Math.round((width * maxDim) / height);
-        height = maxDim;
-      }
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return resolve(file);
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => {
-          if (blob) {
-            resolve(new File([blob], "scanned-qr.jpg", { type: "image/jpeg" }));
-          } else {
-            resolve(file);
-          }
-        },
-        "image/jpeg",
-        0.88
-      );
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(file);
-    };
-    img.src = url;
-  });
 }
 
 export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
   onScanSuccess,
+  onOpenManualInput,
+  officerName = "Petugas P2KD",
+  assignedRw = "Kalisalak",
   fps = 15,
 }) => {
-  const [readerElementId] = useState(
-    () => `qr-reader-${Math.random().toString(36).substring(2, 9)}`
+  const [containerId] = useState(
+    () => `qr-reader-container-${Math.random().toString(36).substring(2, 9)}`
   );
 
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const html5ScannerRef = useRef<Html5Qrcode | null>(null);
+  const animFrameIdRef = useRef<number | null>(null);
   const isStartingRef = useRef(false);
   const isUnmountedRef = useRef(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const hasDetectedRef = useRef(false);
   const onScanSuccessRef = useRef(onScanSuccess);
 
   useEffect(() => {
     onScanSuccessRef.current = onScanSuccess;
   }, [onScanSuccess]);
 
-  const [isScanning, setIsScanning] = useState(false);
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  // Status Lifecycle State
+  const [status, setStatus] = useState<ScannerStatus>("INIT");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cameraLabel, setCameraLabel] = useState<string>("Kamera Belakang");
   const [hasTorch, setHasTorch] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
-  const [currentFacingMode, setCurrentFacingMode] = useState<"environment" | "user">("environment");
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const [activeEngine, setActiveEngine] = useState<"HARDWARE_BARCODE_DETECTOR" | "HTML5_QRCODE">("HTML5_QRCODE");
 
-  // Deteksi lingkungan APK / Android WebView via useSyncExternalStore (hindari render cascading)
-  const isApkEnvironment = React.useSyncExternalStore(
-    () => () => {},
-    () => {
-      if (typeof navigator === "undefined") return false;
-      const ua = navigator.userAgent || "";
-      return (
-        /wv|WebView|Android.*Version\/[0-9.]+\s+Chrome/i.test(ua) ||
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        Boolean((window as any)?.Android || (window as any)?.AndroidBridge)
-      );
-    },
-    () => false
-  );
-
-  // Stop scanner safely
+  // Hentikan seluruh resource kamera & scanner secara bersih (cegah memory leak & thread tertinggal)
   const stopScanner = useCallback(async () => {
-    const scanner = scannerRef.current;
-    if (scanner) {
+    if (animFrameIdRef.current) {
+      cancelAnimationFrame(animFrameIdRef.current);
+      animFrameIdRef.current = null;
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch {}
+      });
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    if (html5ScannerRef.current) {
       try {
-        if (scanner.isScanning) {
-          await scanner.stop();
+        if (html5ScannerRef.current.isScanning) {
+          await html5ScannerRef.current.stop();
         }
       } catch (err) {
-        console.warn("Warn stopping scanner:", err);
+        console.warn("Warn stopping html5QrCode:", err);
       }
       try {
-        await scanner.clear();
-      } catch (err) {
-        console.warn("Warn clearing scanner DOM:", err);
-      }
-      scannerRef.current = null;
+        await html5ScannerRef.current.clear();
+      } catch {}
+      html5ScannerRef.current = null;
     }
+
     if (!isUnmountedRef.current) {
-      setIsScanning(false);
-      setHasTorch(false);
       setIsTorchOn(false);
+      setHasTorch(false);
     }
   }, []);
 
-  // Start scanner with cascade fallbacks
-  const startScanner = useCallback(
-    async (preferredFacing: "environment" | "user" = currentFacingMode) => {
-      if (isStartingRef.current || isUnmountedRef.current) return;
-      isStartingRef.current = true;
-      setCameraError(null);
+  // Handler Sukses Pemindaian Terpadu dengan Debounce & Haptic Feedback
+  const handleScanSuccess = useCallback((rawText: string) => {
+    if (hasDetectedRef.current || isUnmountedRef.current) return;
+    hasDetectedRef.current = true;
 
-      // Polyfill mediaDevices untuk Android WebView lama jika belum terpasang
-      if (typeof navigator !== "undefined") {
-        if (!navigator.mediaDevices) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (navigator as any).mediaDevices = {};
-        }
-        if (!navigator.mediaDevices.getUserMedia) {
-          const legacyGetUserMedia =
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (navigator as any).webkitGetUserMedia ||
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (navigator as any).mozGetUserMedia ||
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (navigator as any).msGetUserMedia;
-          if (legacyGetUserMedia) {
-            navigator.mediaDevices.getUserMedia = (constraints: MediaStreamConstraints) => {
-              return new Promise((resolve, reject) => {
-                legacyGetUserMedia.call(navigator, constraints, resolve, reject);
-              });
-            };
-          }
+    setStatus("DETECTED");
+
+    // Haptic vibration feedback
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate([45, 60, 45]);
+      } catch {}
+    }
+
+    setTimeout(() => {
+      if (!isUnmountedRef.current) {
+        setStatus("PROCESSING");
+        if (onScanSuccessRef.current) {
+          onScanSuccessRef.current(rawText);
         }
       }
+    }, 200);
+  }, []);
 
-      // Jangan memblokir secara agresif hanya karena isSecureContext false (sering terjadi di WebView APK)
-      if (typeof window !== "undefined" && window.isSecureContext === false) {
-        console.warn("Camera running in non-secure context (typical in APK WebViews / IP dev). Proceeding...");
-      }
+  // Inisialisasi Alur Kamera Native Belakang
+  const startScanner = useCallback(async () => {
+    if (isStartingRef.current || isUnmountedRef.current) return;
+    isStartingRef.current = true;
+    hasDetectedRef.current = false;
+    setErrorMessage(null);
+    setStatus("REQUESTING_PERMISSION");
 
-      // Cek ketersediaan getUserMedia
+    try {
+      await stopScanner();
+
       if (
         typeof navigator === "undefined" ||
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
       ) {
-        setCameraError(
-          "Streaming video langsung tidak didukung pada sistem browser/WebView ini. Gunakan tombol 'Buka Kamera HP Langsung' di bawah untuk memindai."
+        throw new Error(
+          "Perangkat atau WebView tidak mendukung akses media getUserMedia. Pastikan izin kamera aktif."
         );
-        isStartingRef.current = false;
-        return;
       }
 
-      try {
-        // Bersihkan instance sebelumnya
-        await stopScanner();
+      // 1. Minta akses kamera belakang secara presisi dengan ideal environment
+      setStatus("STARTING_STREAM");
+      const baseConstraints: MediaStreamConstraints = {
+        audio: false,
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280, min: 640 },
+          height: { ideal: 720, min: 480 },
+        },
+      };
 
-        // Pastikan container DOM sudah siap
-        const targetElement = document.getElementById(readerElementId);
-        if (!targetElement) {
-          console.warn("Reader DOM element not found yet, retrying...");
-          isStartingRef.current = false;
-          return;
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(baseConstraints);
+      } catch (permErr: unknown) {
+        console.warn("getUserMedia with ideal facingMode failed, retrying with basic constraint:", permErr);
+        // Fallback constraint tanpa constraint resolusi jika perangkat terbatas
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: "environment" },
+        });
+      }
+
+      streamRef.current = stream;
+
+      // 2. Evaluasi Video Track Belakang & Cek Kapabilitas Lampu Senter (Torch)
+      const videoTrack = stream.getVideoTracks()[0];
+      if (!videoTrack || videoTrack.readyState !== "live") {
+        throw new Error("Track video kamera tidak aktif atau gagal menghasilkan frame.");
+      }
+
+      // Deteksi nama kamera aktual
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter((d) => d.kind === "videoinput");
+        const backDevice = videoDevices.find((d) =>
+          /back|rear|environment|belakang|main|0/i.test(d.label)
+        );
+        const resolvedLabel = backDevice?.label || videoTrack.label || "Kamera Belakang (Environment)";
+        setCameraLabel(resolvedLabel);
+      } catch {
+        setCameraLabel("Kamera Belakang Aktif");
+      }
+
+      // Cek kapabilitas lampu senter
+      try {
+        const capabilities = videoTrack.getCapabilities?.() as { torch?: boolean } | undefined;
+        if (capabilities?.torch) {
+          setHasTorch(true);
+        }
+      } catch {
+        setHasTorch(false);
+      }
+
+      // 3. Cek dukungan Native BarcodeDetector API (Hardware Accelerated)
+      const supportsNativeDetector =
+        typeof window !== "undefined" &&
+        Boolean(window.BarcodeDetector);
+
+      if (supportsNativeDetector && videoRef.current) {
+        // --- JALUR A: NATIVE HARDWARE ACCELERATED DECODER ---
+        setActiveEngine("HARDWARE_BARCODE_DETECTOR");
+        const videoElement = videoRef.current;
+        videoElement.srcObject = stream;
+        videoElement.setAttribute("playsinline", "true");
+        videoElement.setAttribute("webkit-playsinline", "true");
+        videoElement.muted = true;
+
+        await videoElement.play();
+
+        const barcodeDetector = new window.BarcodeDetector!({
+          formats: ["qr_code", "code_128", "ean_13"],
+        });
+
+        // Loop analisis frame throttled ke FPS target agar hemat daya baterai
+        let lastScanTime = 0;
+        const scanIntervalMs = Math.round(1000 / fps);
+
+        const detectFrame = async (timestamp: number) => {
+          if (isUnmountedRef.current || hasDetectedRef.current) return;
+
+          if (timestamp - lastScanTime >= scanIntervalMs) {
+            lastScanTime = timestamp;
+            if (
+              videoElement.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
+              videoElement.videoWidth > 0
+            ) {
+              try {
+                const barcodes = await barcodeDetector.detect(videoElement);
+                if (barcodes && barcodes.length > 0) {
+                  const firstCode = barcodes[0].rawValue;
+                  if (firstCode && firstCode.trim().length > 0) {
+                    handleScanSuccess(firstCode.trim());
+                    return;
+                  }
+                }
+              } catch {
+                // Ignore transient frame decode drops
+              }
+            }
+          }
+
+          animFrameIdRef.current = requestAnimationFrame(detectFrame);
+        };
+
+        animFrameIdRef.current = requestAnimationFrame(detectFrame);
+        setStatus("READY");
+      } else {
+        // --- JALUR B: HTML5-QRCODE ENGINE DENGAN DEVICE ID TERVERIFIKASI ---
+        setActiveEngine("HTML5_QRCODE");
+
+        // Tunggu elemen container DOM terpasang
+        const container = document.getElementById(containerId);
+        if (!container) {
+          throw new Error("Container DOM pemindai belum siap.");
         }
 
-        const html5QrCode = new Html5Qrcode(readerElementId, {
+        const html5QrCode = new Html5Qrcode(containerId, {
           formatsToSupport: [
             Html5QrcodeSupportedFormats.QR_CODE,
             Html5QrcodeSupportedFormats.CODE_128,
@@ -207,445 +288,336 @@ export const LiveQrCameraScanner: React.FC<LiveQrCameraScannerProps> = ({
           verbose: false,
         });
 
-        scannerRef.current = html5QrCode;
+        html5ScannerRef.current = html5QrCode;
 
-        // Dynamic responsive qrbox config: toleran terhadap rasio layar smartphone
         const scanConfig = {
           fps: fps,
           qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const size = Math.max(160, Math.floor(minEdge * 0.72));
+            const size = Math.max(180, Math.floor(minEdge * 0.72));
             return { width: size, height: size };
           },
         };
 
-        const handleSuccess = (decodedText: string) => {
-          if (typeof window !== "undefined" && "vibrate" in navigator) {
-            try {
-              navigator.vibrate([40, 60, 40]);
-            } catch {
-              // ignore
-            }
+        await html5QrCode.start(
+          { facingMode: { ideal: "environment" } },
+          scanConfig,
+          (decodedText) => {
+            handleScanSuccess(decodedText);
+          },
+          () => {
+            // Abaikan frame kosong saat pemindaian berlangsung
           }
-          if (onScanSuccessRef.current) {
-            onScanSuccessRef.current(decodedText);
-          }
-        };
-
-        const handleFrame = () => {};
-
-        let started = false;
-
-        // 1. Percobaan 1: Preferred facing mode (environment = kamera belakang HP)
-        try {
-          await html5QrCode.start(
-            { facingMode: preferredFacing },
-            scanConfig,
-            handleSuccess,
-            handleFrame
-          );
-          started = true;
-          setCurrentFacingMode(preferredFacing);
-        } catch (errFacing) {
-          console.warn(`Direct facingMode (${preferredFacing}) failed:`, errFacing);
-        }
-
-        // 2. Percobaan 2: Coba facing mode sebaliknya jika percobaan 1 gagal
-        if (!started && !isUnmountedRef.current) {
-          const alternateFacing = preferredFacing === "environment" ? "user" : "environment";
-          try {
-            await html5QrCode.stop().catch(() => {});
-            await html5QrCode.start(
-              { facingMode: alternateFacing },
-              scanConfig,
-              handleSuccess,
-              handleFrame
-            );
-            started = true;
-            setCurrentFacingMode(alternateFacing);
-          } catch (errAlt) {
-            console.warn(`Alternate facingMode (${alternateFacing}) failed:`, errAlt);
-          }
-        }
-
-        // 3. Percobaan 3: Enumerate perangkat kamera secara langsung
-        if (!started && !isUnmountedRef.current) {
-          try {
-            const cameras = await Html5Qrcode.getCameras();
-            if (cameras && cameras.length > 0) {
-              const rearCam = cameras.find((c) =>
-                /back|rear|environment|belakang|main/i.test(c.label)
-              );
-              const chosenCameraId = (rearCam || cameras[0]).id;
-
-              await html5QrCode.start(
-                chosenCameraId,
-                scanConfig,
-                handleSuccess,
-                handleFrame
-              );
-              started = true;
-            }
-          } catch (errCamList) {
-            console.warn("Camera enumeration start failed:", errCamList);
-          }
-        }
-
-        if (!started) {
-          throw new Error("Gagal menginisialisasi streaming kamera video.");
-        }
-
-        if (!isUnmountedRef.current) {
-          setIsScanning(true);
-
-          // Cek kapabilitas lampu senter (torch)
-          try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const capabilities = html5QrCode.getRunningTrackCapabilities() as any;
-            if (capabilities?.torch) {
-              setHasTorch(true);
-            }
-          } catch {
-            setHasTorch(false);
-          }
-        }
-      } catch (err: unknown) {
-        console.error("Failed to start camera:", err);
-        const errString = String(err).toLowerCase();
-        let message = "Kamera live belum aktif. Tekan 'Coba Aktifkan Ulang' atau gunakan 'Buka Kamera HP Langsung'.";
-
-        if (
-          errString.includes("permission") ||
-          errString.includes("notallowed") ||
-          errString.includes("denied")
-        ) {
-          message = isApkEnvironment
-            ? "Sistem WebView APK membatasi streaming video langsung di dalam browser internal. Namun kamera HP Anda siap digunakan melalui tombol Kamera Bawaan di bawah!"
-            : "Izin kamera ditolak oleh browser. Buka pengaturan izin aplikasi HP Anda, atau gunakan tombol 'Buka Kamera HP Langsung' di bawah.";
-        } else if (
-          errString.includes("notreadable") ||
-          errString.includes("trackstart") ||
-          errString.includes("could not start video source")
-        ) {
-          message =
-            "Kamera sedang dipakai oleh aplikasi lain atau sistem kamera sedang sibuk. Tutup aplikasi kamera lain lalu coba lagi, atau gunakan tombol di bawah.";
-        } else if (
-          errString.includes("notfound") ||
-          errString.includes("devicesnotfound")
-        ) {
-          message = "Perangkat kamera tidak terdeteksi. Silakan gunakan tombol 'Buka Kamera HP Langsung'.";
-        } else if (errString.includes("overconstrained")) {
-          message = "Resolusi kamera tidak kompatibel. Gunakan tombol 'Buka Kamera HP Langsung'.";
-        }
-
-        if (!isUnmountedRef.current) {
-          setCameraError(message);
-          setIsScanning(false);
-        }
-      } finally {
-        isStartingRef.current = false;
-      }
-    },
-    [currentFacingMode, fps, isApkEnvironment, readerElementId, stopScanner]
-  );
-
-  // Ganti kamera depan / belakang
-  const handleSwitchCamera = async () => {
-    const nextFacing = currentFacingMode === "environment" ? "user" : "environment";
-    setCurrentFacingMode(nextFacing);
-    await startScanner(nextFacing);
-  };
-
-  // Toggle lampu senter
-  const toggleTorch = async () => {
-    if (!scannerRef.current || !hasTorch) return;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const track = (scannerRef.current as any).getRunningTrackCameraCapabilities();
-      if (track) {
-        await scannerRef.current.applyVideoConstraints({
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          advanced: [{ torch: !isTorchOn } as any],
-        });
-        setIsTorchOn(!isTorchOn);
-      }
-    } catch (err) {
-      console.warn("Torch error:", err);
-    }
-  };
-
-  // Pindai dari foto kamera bawaan HP / native Android camera capture
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawFile = e.target.files?.[0];
-    if (!rawFile) return;
-
-    setIsProcessingFile(true);
-    setCameraError(null);
-
-    // Buat helper container terisolasi agar tidak bertabrakan dengan reader live video
-    const helperId = `qr-file-helper-${Date.now()}`;
-    const helperDiv = document.createElement("div");
-    helperDiv.id = helperId;
-    helperDiv.style.position = "fixed";
-    helperDiv.style.top = "-9999px";
-    helperDiv.style.left = "-9999px";
-    helperDiv.style.width = "100px";
-    helperDiv.style.height = "100px";
-    document.body.appendChild(helperDiv);
-
-    try {
-      // Optimalkan ukuran gambar HP agar cepat diproses & tidak crash
-      const fileToScan = await preprocessImageForQr(rawFile);
-      const fileScanner = new Html5Qrcode(helperId, { verbose: false });
-
-      let decodedText: string | null = null;
-      try {
-        decodedText = await fileScanner.scanFile(fileToScan, false);
-      } catch {
-        // Fallback: coba berkas asli jika versi resize tidak membaca
-        if (fileToScan !== rawFile) {
-          try {
-            decodedText = await fileScanner.scanFile(rawFile, false);
-          } catch {
-            // ignore
-          }
-        }
-      }
-
-      try {
-        await fileScanner.clear();
-      } catch {}
-
-      if (decodedText && onScanSuccessRef.current) {
-        if (typeof window !== "undefined" && "vibrate" in navigator) {
-          try {
-            navigator.vibrate([40, 60, 40]);
-          } catch {}
-        }
-        onScanSuccessRef.current(decodedText);
-      } else {
-        setCameraError(
-          "QR Code tidak terdeteksi pada foto. Pastikan posisi stiker/QR tegak, tidak blur, dan pencahayaan cukup, lalu coba jepret ulang."
         );
-      }
-    } catch (err) {
-      console.warn("File QR scan failed:", err);
-      setCameraError(
-        "Gagal membaca QR Code dari foto. Pastikan foto tegak, cukup cahaya, lalu coba foto kembali."
-      );
-    } finally {
-      if (document.body.contains(helperDiv)) {
-        document.body.removeChild(helperDiv);
-      }
-      setIsProcessingFile(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
 
-  // Mount effect
+        setStatus("READY");
+      }
+    } catch (err: unknown) {
+      console.error("[LiveQrCameraScanner] Gagal menginisialisasi kamera belakang:", err);
+      const errStr = String(err).toLowerCase();
+      let userFriendlyMsg = "Kamera belakang belum aktif. Tekan tombol Coba Aktifkan Ulang di bawah.";
+
+      if (
+        errStr.includes("notallowed") ||
+        errStr.includes("permission") ||
+        errStr.includes("denied")
+      ) {
+        userFriendlyMsg =
+          "Izin kamera belum diberikan. Izinkan akses kamera pada info aplikasi Android agar kamera dapat dibuka langsung.";
+      } else if (
+        errStr.includes("notreadable") ||
+        errStr.includes("trackstart") ||
+        errStr.includes("could not start video source")
+      ) {
+        userFriendlyMsg =
+          "Sensor kamera sedang digunakan oleh sistem atau aplikasi lain. Tutup aplikasi kamera HP lalu coba aktifkan kembali.";
+      } else if (errStr.includes("notfound") || errStr.includes("devicesnotfound")) {
+        userFriendlyMsg = "Perangkat kamera belakang tidak terdeteksi pada ponsel ini.";
+      } else if (errStr.includes("overconstrained")) {
+        userFriendlyMsg = "Resolusi kamera tidak didukung sensor perangkat. Coba aktifkan ulang.";
+      }
+
+      if (!isUnmountedRef.current) {
+        setErrorMessage(userFriendlyMsg);
+        setStatus("ERROR");
+      }
+    } finally {
+      isStartingRef.current = false;
+    }
+  }, [containerId, fps, handleScanSuccess, stopScanner]);
+
+  // Toggle Torch / Flashlight
+  const toggleTorch = useCallback(async () => {
+    if (!streamRef.current || !hasTorch) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (!track) return;
+
+    try {
+      const nextState = !isTorchOn;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (track as any).applyConstraints({
+        advanced: [{ torch: nextState }],
+      });
+      setIsTorchOn(nextState);
+    } catch (err) {
+      console.warn("Gagal mengubah status lampu senter:", err);
+    }
+  }, [hasTorch, isTorchOn]);
+
+  // Efek Lifecycle: Jalankan kamera saat mounted, bersihkan saat unmounted
   useEffect(() => {
     isUnmountedRef.current = false;
-
     const timer = setTimeout(() => {
-      startScanner();
+      void startScanner();
     }, 150);
 
     return () => {
       isUnmountedRef.current = true;
       clearTimeout(timer);
-      stopScanner();
+      void stopScanner();
     };
   }, [startScanner, stopScanner]);
 
-  return (
-    <div className="relative w-full rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 shadow-2xl flex flex-col items-center">
-      {/* Hidden file input untuk kamera bawaan Android (Native Camera Intent via capture="environment") */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={handleFileUpload}
-      />
-
-      {/* Indikator Mode APK Android jika terdeteksi */}
-      {isApkEnvironment && (
-        <div className="w-full bg-slate-900/90 border-b border-slate-800 px-3 py-1 flex items-center justify-between text-[10px] text-slate-300">
-          <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-            <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Mode Aplikasi APK Android</span>
+  // Badge Status Deskriptif
+  const getStatusBadge = () => {
+    switch (status) {
+      case "INIT":
+      case "REQUESTING_PERMISSION":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-amber-400 text-[11px] font-bold backdrop-blur-md shadow-md animate-pulse">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+            <span>Meminta Izin Kamera...</span>
           </div>
-          <span className="text-[9px] text-slate-400 font-mono">Camera Native Ready</span>
-        </div>
-      )}
+        );
+      case "STARTING_STREAM":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-slate-700/80 text-teal-300 text-[11px] font-bold backdrop-blur-md shadow-md animate-pulse">
+            <Camera className="w-3.5 h-3.5 text-teal-400" />
+            <span>Menghubungkan Sensor Belakang...</span>
+          </div>
+        );
+      case "READY":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/90 border border-emerald-500/40 text-emerald-300 text-[11px] font-black backdrop-blur-md shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span>Kamera Belakang Siap • Memindai</span>
+          </div>
+        );
+      case "DETECTED":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-600 text-white text-[11px] font-black backdrop-blur-md shadow-xl animate-bounce">
+            <CheckCircle2 className="w-4 h-4 text-white" />
+            <span>QR Terdeteksi! Membaca Data...</span>
+          </div>
+        );
+      case "PROCESSING":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-600 text-white text-[11px] font-black backdrop-blur-md shadow-xl">
+            <RefreshCw className="w-4 h-4 animate-spin text-white" />
+            <span>Memproses Verifikasi...</span>
+          </div>
+        );
+      case "ERROR":
+        return (
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-rose-950/90 border border-rose-500/50 text-rose-300 text-[11px] font-bold backdrop-blur-md shadow-md">
+            <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
+            <span>Kamera Belum Aktif</span>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
-      {/* Live Video Viewport Container */}
-      <div className="relative w-full max-w-85 aspect-square flex items-center justify-center overflow-hidden rounded-2xl bg-black">
-        <div
-          id={readerElementId}
-          className="w-full h-full object-cover [&_video]:object-cover [&_video]:w-full [&_video]:h-full"
+  return (
+    <div className="w-full flex flex-col bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl relative">
+      {/* 1. Header Identitas Pemindai Native */}
+      <div className="p-3.5 sm:p-4 bg-linear-to-r from-slate-900 via-slate-950 to-slate-900 border-b border-slate-800/80 flex items-center justify-between text-white shrink-0 z-20">
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-2xl bg-linear-to-br from-emerald-500 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-600/30 border border-emerald-400/30">
+            <ScanLine className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black tracking-wider uppercase text-emerald-400">
+                P2KD KALISALAK
+              </span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-bold">
+                NATIVE v2.25.01
+              </span>
+            </div>
+            <h4 className="text-xs sm:text-sm font-black text-white tracking-tight flex items-center gap-1">
+              Pemindai QR C6 & Stiker Coklit
+            </h4>
+          </div>
+        </div>
+
+        <div className="text-right hidden sm:block">
+          <div className="text-[10px] text-slate-400 font-medium">Petugas Aktif</div>
+          <div className="text-xs font-bold text-slate-200">
+            {officerName} • {assignedRw}
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Area Live Camera Viewport */}
+      <div className="relative w-full aspect-4/3 sm:aspect-16/10 bg-black flex items-center justify-center overflow-hidden">
+        {/* Video stream container untuk Hardware BarcodeDetector */}
+        <video
+          ref={videoRef}
+          className={`absolute inset-0 w-full h-full object-cover z-0 ${
+            activeEngine === "HARDWARE_BARCODE_DETECTOR" && status === "READY"
+              ? "opacity-100"
+              : "opacity-0"
+          }`}
+          playsInline
+          muted
+          autoPlay
         />
 
-        {/* Laser Scanning Overlay Animation */}
-        {isScanning && !cameraError && (
-          <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-            {/* Viewfinder Target Box */}
-            <div className="w-56 h-56 border-2 border-emerald-400/90 rounded-2xl relative shadow-[0_0_25px_rgba(52,211,153,0.3)]">
-              {/* Corner Accents */}
-              <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
-              <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
-              <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
+        {/* Container DOM untuk Html5Qrcode fallback */}
+        <div
+          id={containerId}
+          className={`absolute inset-0 w-full h-full object-cover z-0 [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_canvas]:hidden ${
+            activeEngine === "HTML5_QRCODE" && status === "READY"
+              ? "opacity-100"
+              : "opacity-0"
+          }`}
+        />
 
-              {/* Animated Laser Line */}
-              <div className="w-full h-1 bg-linear-to-r from-transparent via-emerald-400 to-transparent absolute top-0 animate-[scan_2s_ease-in-out_infinite] shadow-[0_0_12px_#34d399]" />
+        {/* Status Overlay Badge (Top Center) */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+          {getStatusBadge()}
+        </div>
+
+        {/* 3. Reticle Pemindaian Dark Premium dengan Sudut Emerald & Laser Line */}
+        {status === "READY" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 p-6">
+            <div className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 shadow-[0_0_24px_rgba(16,185,129,0.15)] flex items-center justify-center">
+              {/* Sudut Frame Reticle Emerald Tebal */}
+              <div className="absolute -top-1 -left-1 w-7 h-7 border-t-4 border-l-4 border-emerald-400 rounded-tl-xl" />
+              <div className="absolute -top-1 -right-1 w-7 h-7 border-t-4 border-r-4 border-emerald-400 rounded-tr-xl" />
+              <div className="absolute -bottom-1 -left-1 w-7 h-7 border-b-4 border-l-4 border-emerald-400 rounded-bl-xl" />
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 border-b-4 border-r-4 border-emerald-400 rounded-br-xl" />
+
+              {/* Titik Pusat Fokus */}
+              <div className="w-2 h-2 rounded-full bg-emerald-400/80 shadow-[0_0_8px_#34d399]" />
+
+              {/* Animated Laser Scanning Beam */}
+              <div className="w-full h-1 bg-linear-to-r from-transparent via-emerald-400 to-transparent absolute top-0 animate-[scan_2s_ease-in-out_infinite] shadow-[0_0_16px_#10b981]" />
             </div>
 
-            <div className="mt-4 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md text-[10px] text-emerald-300 font-bold tracking-wider uppercase border border-emerald-400/30 flex items-center gap-1.5 animate-pulse">
-              <Camera className="w-3 h-3 text-emerald-400" />
+            <div className="mt-4 px-3.5 py-1.2 rounded-full bg-black/80 backdrop-blur-md text-[10.5px] text-emerald-300 font-bold tracking-wide uppercase border border-emerald-500/30 flex items-center gap-1.5 shadow-lg">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>Arahkan Kamera ke QR Code C6 / Stiker</span>
             </div>
           </div>
         )}
 
-        {/* Camera Fallback / Error View */}
-        {cameraError && (
-          <div className="absolute inset-0 p-4 bg-slate-900/95 text-white flex flex-col items-center justify-center text-center space-y-3 z-20 overflow-y-auto">
-            <div className="p-3 rounded-full bg-emerald-500/10 border border-emerald-500/30">
-              <CameraOff className="w-7 h-7 text-emerald-400" />
+        {/* 4. State Tampilan Error / Permission Denied */}
+        {status === "ERROR" && (
+          <div className="absolute inset-0 p-5 bg-slate-950/95 text-white flex flex-col items-center justify-center text-center space-y-4 z-20">
+            <div className="w-16 h-16 rounded-3xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shadow-lg">
+              <CameraOff className="w-8 h-8 text-rose-400" />
             </div>
 
-            <div className="space-y-1">
-              <h4 className="text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
-                Gunakan Kamera Bawaan HP
+            <div className="space-y-1.5 max-w-sm">
+              <h4 className="text-sm font-black text-rose-300 flex items-center justify-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-400" />
+                Akses Kamera Belum Siap
               </h4>
-              <p className="text-[11px] text-slate-300 max-w-70 leading-relaxed font-normal">
-                {cameraError}
+              <p className="text-xs text-slate-300 leading-relaxed font-normal">
+                {errorMessage || "Sensor kamera belum merespons. Tekan tombol Coba Aktifkan Ulang."}
               </p>
             </div>
 
-            {/* Tombol Aksi Utama: Langsung Buka Kamera Android */}
-            <div className="flex flex-col w-full max-w-72 gap-2 pt-1">
+            <div className="flex flex-col w-full max-w-xs gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessingFile}
-                className="w-full px-4 py-3 rounded-2xl text-xs sm:text-sm font-black bg-linear-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-400 hover:to-teal-400 text-white shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-2 transition cursor-pointer active:scale-95"
+                onClick={() => startScanner()}
+                className="w-full py-3 px-4 rounded-2xl bg-linear-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
               >
-                {isProcessingFile ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Menganalisis QR Code...</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera className="w-4 h-4 text-white" />
-                    <span>Buka Kamera HP Langsung (Jepret)</span>
-                  </>
-                )}
+                <RefreshCw className="w-4 h-4 text-white" />
+                <span>Coba Aktifkan Ulang Kamera</span>
               </button>
 
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => startScanner()}
-                className="text-xs font-bold bg-white/10 text-white border-white/20 hover:bg-white/20 w-full"
-              >
-                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                Coba Aktifkan Ulang Live Video
-              </Button>
+              {onOpenManualInput && (
+                <button
+                  type="button"
+                  onClick={onOpenManualInput}
+                  className="w-full py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Keyboard className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Input NIK / Nomor Manual</span>
+                </button>
+              )}
             </div>
+          </div>
+        )}
+
+        {/* Loading Spinner saat menginisialisasi */}
+        {(status === "INIT" || status === "REQUESTING_PERMISSION" || status === "STARTING_STREAM") && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950 z-10">
+            <div className="w-12 h-12 rounded-2xl border-2 border-emerald-500/30 border-t-emerald-400 animate-spin" />
+            <span className="text-xs font-bold text-slate-300 animate-pulse">
+              Menghubungkan Sensor Kamera Belakang...
+            </span>
           </div>
         )}
       </div>
 
-      {/* Control Buttons Footer Bar */}
-      <div className="w-full p-2.5 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
-        <div className="flex items-center gap-1.5 font-mono text-[10px] text-emerald-400">
+      {/* 5. Kontrol Footer Bar Terintegrasi */}
+      <div className="w-full p-3 bg-slate-900/95 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300 z-20">
+        <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400 truncate max-w-[55%]">
           <span
-            className={`w-2 h-2 rounded-full ${
-              isScanning ? "bg-emerald-400 animate-ping" : "bg-emerald-500"
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              status === "READY" ? "bg-emerald-400 shadow-[0_0_8px_#34d399]" : "bg-slate-600"
             }`}
           />
-          <span>
-            {isScanning
-              ? currentFacingMode === "environment"
-                ? "Kamera Belakang Aktif"
-                : "Kamera Depan Aktif"
-              : "Kamera HP Siap"}
-          </span>
+          <span className="truncate">{cameraLabel}</span>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {/* Tombol Kamera Bawaan HP Langsung */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            title="Buka Kamera HP Bawaan / Jepret Foto QR"
-            className="p-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1 text-[11px] font-black shadow-md cursor-pointer active:scale-95 transition-all"
-          >
-            <Camera className="w-3.5 h-3.5 text-white" />
-            <span>Kamera HP</span>
-          </button>
-
-          {/* Switch Camera Button (hanya relevan jika live stream aktif) */}
-          {isScanning && (
-            <button
-              type="button"
-              onClick={handleSwitchCamera}
-              title="Ganti Kamera Belakang / Depan"
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
-            >
-              <SwitchCamera className="w-3.5 h-3.5 text-blue-400" />
-            </button>
-          )}
-
-          {/* Torch Button if available */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Tombol Flashlight / Senter jika sensor mendukung */}
           {hasTorch && (
             <button
               type="button"
               onClick={toggleTorch}
-              className={`p-1.5 rounded-lg border text-[11px] flex items-center gap-1 transition-colors cursor-pointer ${
+              title={isTorchOn ? "Matikan Lampu Senter" : "Nyalakan Lampu Senter"}
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
                 isTorchOn
-                  ? "bg-amber-500 text-slate-950 border-amber-400 font-bold"
+                  ? "bg-amber-500 text-slate-950 border-amber-400 shadow-md"
                   : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
               }`}
             >
               <Zap className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{isTorchOn ? "Flash On" : "Flash"}</span>
             </button>
           )}
 
-          {/* Galeri / Upload Berkas QR */}
-          <button
-            type="button"
-            onClick={() => {
-              if (fileInputRef.current) {
-                fileInputRef.current.removeAttribute("capture");
-                fileInputRef.current.click();
-                setTimeout(() => {
-                  fileInputRef.current?.setAttribute("capture", "environment");
-                }, 1000);
-              }
-            }}
-            title="Pilih Foto dari Galeri HP"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
-          >
-            <Upload className="w-3.5 h-3.5" />
-          </button>
-
-          {/* Reload / Refresh Button */}
+          {/* Tombol Muat Ulang Kamera */}
           <button
             type="button"
             onClick={() => startScanner()}
-            title="Muat Ulang Kamera Live"
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer"
+            title="Muat Ulang Kamera Belakang"
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 cursor-pointer transition-all active:scale-95"
           >
             <RefreshCw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline font-bold">Reload</span>
           </button>
+
+          {/* Tombol Input NIK Manual jika QR rusak */}
+          {onOpenManualInput && (
+            <button
+              type="button"
+              onClick={onOpenManualInput}
+              title="Input NIK atau Nomor C6 Manual"
+              className="p-2 px-2.5 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 text-white font-bold flex items-center gap-1 shadow-md shadow-emerald-700/20 cursor-pointer transition-all active:scale-95"
+            >
+              <Keyboard className="w-3.5 h-3.5 text-white" />
+              <span>Input Manual</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

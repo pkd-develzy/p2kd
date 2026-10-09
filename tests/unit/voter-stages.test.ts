@@ -1,10 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  validateStageTransition,
-  VoterStage,
-  VoterSource,
-  ValidationStatus,
-} from "@/types/voter-stages";
+import { validateStageTransition } from "@/types/voter-stages";
 
 describe("Audit & Validasi Transisi Alur Tahapan Pemilih P2KD Kalisalak", () => {
   // Skenario 1: Seluruh data masih berupa Calon DPS -> DPSHP harus 0 & Calon DPS tidak boleh loncat

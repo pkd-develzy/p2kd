@@ -73,7 +73,6 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
   const jumlahDpshp = dbStatus?.localStats?.dpshp ?? 0;
   const jumlahDpt = dbStatus?.localStats?.dpt ?? 0;
   const jumlahDptb = dbStatus?.localStats?.dptb ?? 0;
-  const pemilihTambahan = jumlahDptb;
 
   // 2. Coklit Metrics (Master Aggregate Database)
   const coklitSelesai = dbStatus?.localStats?.coklitSelesai ?? 7786;

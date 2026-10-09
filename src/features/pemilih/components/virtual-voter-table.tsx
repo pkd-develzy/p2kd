@@ -46,7 +46,6 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
   onRollbackToDps,
   isAdmin = true,
   startIdx = 0,
-  mode = "DPS",
   height = 560,
   viewMode = "auto",
 }) => {

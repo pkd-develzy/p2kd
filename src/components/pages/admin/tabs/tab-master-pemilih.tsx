@@ -267,15 +267,28 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
               <LayoutGrid className="w-4 h-4 text-blue-600" />
               <span>Tahapan Pemutakhiran Data Pemilih</span>
             </div>
-            {selectedStage !== "SEMUA" && (
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setSelectedStage("SEMUA")}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                onClick={() => setSelectedStage(selectedStage === "DPTB" ? "SEMUA" : "DPTB")}
+                className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border transition-all cursor-pointer ${
+                  selectedStage === "DPTB"
+                    ? "bg-purple-600 text-white border-purple-500 shadow-xs"
+                    : "bg-purple-50 text-purple-700 hover:bg-purple-100 border-purple-200"
+                }`}
               >
-                Tampilkan Semua Tahapan
+                DPTb: {dptbCount}
               </button>
-            )}
+              {selectedStage !== "SEMUA" && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedStage("SEMUA")}
+                  className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                >
+                  Tampilkan Semua
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">

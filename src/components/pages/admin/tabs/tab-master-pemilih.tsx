@@ -497,9 +497,10 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
         </div>
       </Card>
 
-      {/* Table of Voters */}
+      {/* Table & Cards of Voters */}
       <Card className="overflow-hidden bg-white border-slate-200 shadow-sm rounded-2xl">
-        <div className="overflow-x-auto">
+        {/* 1. DESKTOP VIEW (≥ md): Spreadsheet Table dengan Virtualizer */}
+        <div className="hidden md:block overflow-x-auto">
           <div className="min-w-225">
             {/* Header */}
             <div className="flex items-center bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-xs py-3">
@@ -526,7 +527,7 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
               <div className="w-36 px-3 shrink-0 text-center">Aksi Petugas</div>
             </div>
 
-            {/* Virtualized Table Body */}
+            {/* Desktop Table Body */}
             {filteredVoters.length === 0 ? (
               <div className="py-12 text-center text-slate-400">
                 <div className="flex flex-col items-center justify-center gap-2">
@@ -556,9 +557,60 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
                 startIdx={startIdx}
                 mode={mode}
                 height={540}
+                viewMode="desktop"
               />
             )}
           </div>
+        </div>
+
+        {/* 2. MOBILE NATIVE VIEW (< md): 100% Full-Width Cards, NOL Scroll Kanan-Kiri */}
+        <div className="block md:hidden w-full">
+          {/* Mobile Batch Action & Status Bar */}
+          <div className="flex items-center justify-between p-3 bg-slate-50/90 border-b border-slate-200 text-xs">
+            <button
+              type="button"
+              onClick={handleSelectAllPaged}
+              className="flex items-center gap-2 font-bold text-slate-700 hover:text-slate-900 cursor-pointer"
+            >
+              {pagedVoters.length > 0 && pagedVoters.every((v) => selectedIds.includes(v.id)) ? (
+                <CheckSquare className="w-4 h-4 text-blue-600" />
+              ) : (
+                <Square className="w-4 h-4 text-slate-400" />
+              )}
+              <span>Pilih Semua Halaman ({pagedVoters.length})</span>
+            </button>
+            {selectedIds.length > 0 && (
+              <Badge variant="primary" className="text-[10px] font-bold">
+                {selectedIds.length} Terpilih
+              </Badge>
+            )}
+          </div>
+
+          {/* Mobile Cards Container */}
+          {filteredVoters.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 px-4">
+              <Users className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <div className="text-xs font-semibold">Tidak ada data pemilih untuk pencarian ini.</div>
+            </div>
+          ) : (
+            <div className="p-3 w-full">
+              <VirtualVoterTable
+                voters={pagedVoters}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onOpenEditVoter={onOpenEditVoter}
+                onOpenMutasi={onOpenMutasi}
+                onOpenTms={onOpenTms}
+                onDeleteVoter={onDeleteVoter}
+                onPromoteToDpt={onPromoteToDpt}
+                onRollbackToDps={onRollbackToDps}
+                isAdmin={isAdmin}
+                startIdx={startIdx}
+                mode={mode}
+                viewMode="mobile"
+              />
+            </div>
+          )}
         </div>
 
         <div className="px-4 pb-4">

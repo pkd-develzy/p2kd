@@ -2,7 +2,16 @@
 
 import React, { useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { CheckSquare, Square, Edit, ArrowRightLeft, UserX, Trash2, UserCheck, RotateCcw } from "lucide-react";
+import {
+  CheckSquare,
+  Square,
+  Edit,
+  ArrowRightLeft,
+  UserX,
+  Trash2,
+  UserCheck,
+  RotateCcw,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Voter } from "@/components/pages/admin/types";
@@ -22,6 +31,7 @@ interface VirtualVoterTableProps {
   startIdx?: number;
   mode?: "DPS" | "DPT";
   height?: number | string;
+  viewMode?: "auto" | "desktop" | "mobile";
 }
 
 export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
@@ -38,6 +48,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
   startIdx = 0,
   mode = "DPS",
   height = 560,
+  viewMode = "auto",
 }) => {
   "use no memo";
   const parentRef = useRef<HTMLDivElement>(null);
@@ -53,7 +64,8 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
     return null;
   }
 
-  return (
+  // 1. DESKTOP SPREADSHEET TABLE ROW RENDERER
+  const renderDesktopTable = () => (
     <div
       ref={parentRef}
       style={{ height: typeof height === "number" ? `${height}px` : height }}
@@ -75,8 +87,13 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
           const rwNum = (p.rw || "01").replace(/\D/g, "").padStart(2, "0");
           const wilayahRwDisplay = `Wilayah RW ${rwNum}`;
           const maskedNikDisplay =
-            p.nikMasked || (p.nik ? `${p.nik.slice(0, 1)}*************${p.nik.slice(-2)}` : "****************");
-          const maskedKkDisplay = p.kk ? `${p.kk.slice(0, 1)}*************${p.kk.slice(-2)}` : "-";
+            p.nikMasked ||
+            (p.nik
+              ? `${p.nik.slice(0, 1)}*************${p.nik.slice(-2)}`
+              : "****************");
+          const maskedKkDisplay = p.kk
+            ? `${p.kk.slice(0, 1)}*************${p.kk.slice(-2)}`
+            : "-";
           const isLaki = String(p.jenisKelamin).toUpperCase().startsWith("L");
 
           return (
@@ -117,14 +134,19 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
               {/* NIK */}
               <div className="w-44 px-3 font-mono font-bold text-slate-900 shrink-0 truncate">
                 {maskedNikDisplay}
-                <div className="text-[10px] text-slate-400 font-normal">KK: {maskedKkDisplay}</div>
+                <div className="text-[10px] text-slate-400 font-normal">
+                  KK: {maskedKkDisplay}
+                </div>
               </div>
 
               {/* Nama & JK */}
               <div className="flex-1 min-w-45 px-3 truncate">
-                <div className="font-bold text-slate-900 truncate">{formatNamaGelar(p.namaLengkap)}</div>
+                <div className="font-bold text-slate-900 truncate">
+                  {formatNamaGelar(p.namaLengkap)}
+                </div>
                 <div className="text-[10px] text-slate-500 truncate">
-                  {isLaki ? "Laki-laki" : "Perempuan"} • Lahir: {p.tempatLahir}, {p.tanggalLahir}
+                  {isLaki ? "Laki-laki" : "Perempuan"} • Lahir: {p.tempatLahir},{" "}
+                  {p.tanggalLahir}
                 </div>
               </div>
 
@@ -133,7 +155,9 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                 <div className="font-semibold text-slate-900">
                   RT {rtNum} / RW {rwNum}
                 </div>
-                <div className="text-[10px] text-slate-500 truncate">Desa Kalisalak</div>
+                <div className="text-[10px] text-slate-500 truncate">
+                  Desa Kalisalak
+                </div>
               </div>
 
               {/* RW */}
@@ -195,7 +219,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                   variant="ghost"
                   onClick={() => onOpenEditVoter(p)}
                   title="Koreksi Data"
-                  className="h-7 w-7 p-0 text-slate-600 hover:text-blue-600"
+                  className="h-7 w-7 p-0 text-slate-600 hover:text-blue-600 cursor-pointer"
                 >
                   <Edit className="w-3.5 h-3.5" />
                 </Button>
@@ -204,7 +228,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                   variant="ghost"
                   onClick={() => onOpenMutasi(p)}
                   title="Pindah Wilayah TPS"
-                  className="h-7 w-7 p-0 text-slate-600 hover:text-amber-600"
+                  className="h-7 w-7 p-0 text-slate-600 hover:text-amber-600 cursor-pointer"
                 >
                   <ArrowRightLeft className="w-3.5 h-3.5" />
                 </Button>
@@ -213,7 +237,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                   variant="ghost"
                   onClick={() => onOpenTms(p)}
                   title="Tandai TMS"
-                  className="h-7 w-7 p-0 text-slate-600 hover:text-rose-600"
+                  className="h-7 w-7 p-0 text-slate-600 hover:text-rose-600 cursor-pointer"
                 >
                   <UserX className="w-3.5 h-3.5" />
                 </Button>
@@ -223,7 +247,7 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
                     variant="ghost"
                     onClick={() => onDeleteVoter(p)}
                     title="Hapus Pemilih"
-                    className="h-7 w-7 p-0 text-slate-600 hover:text-rose-700"
+                    className="h-7 w-7 p-0 text-slate-600 hover:text-rose-700 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
@@ -234,5 +258,207 @@ export const VirtualVoterTable: React.FC<VirtualVoterTableProps> = ({
         })}
       </div>
     </div>
+  );
+
+  // 2. MOBILE NATIVE VOTER CARD RENDERER (100% Full-Width, Nol Scroll Kanan-Kiri)
+  const renderMobileCards = () => (
+    <div className="space-y-3 w-full">
+      {voters.map((p, idx) => {
+        const isSelected = selectedIds.includes(p.id);
+        const rtNum = (p.rt || "01").replace(/\D/g, "").padStart(2, "0");
+        const rwNum = (p.rw || "01").replace(/\D/g, "").padStart(2, "0");
+        const maskedNikDisplay =
+          p.nikMasked ||
+          (p.nik
+            ? `${p.nik.slice(0, 1)}*************${p.nik.slice(-2)}`
+            : "****************");
+        const maskedKkDisplay = p.kk
+          ? `${p.kk.slice(0, 1)}*************${p.kk.slice(-2)}`
+          : "-";
+        const isLaki = String(p.jenisKelamin).toUpperCase().startsWith("L");
+
+        return (
+          <div
+            key={p.id}
+            className={`w-full p-3.5 sm:p-4 rounded-2xl bg-white border transition-all ${
+              isSelected
+                ? "border-blue-500 bg-blue-50/25 ring-2 ring-blue-500/20 shadow-xs"
+                : "border-slate-200 shadow-2xs hover:border-slate-300"
+            }`}
+          >
+            {/* 1. Header Bar: Checkbox + No. Urut + Wilayah RW/RT + Status Badge */}
+            <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onToggleSelect(p.id)}
+                  className="p-1 -m-1 text-slate-500 hover:text-slate-800 cursor-pointer"
+                  title={isSelected ? "Batal Pilih" : "Pilih Pemilih"}
+                >
+                  {isSelected ? (
+                    <CheckSquare className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <Square className="w-5 h-5 text-slate-300" />
+                  )}
+                </button>
+                <span className="text-[11px] font-mono font-bold text-slate-400">
+                  #{startIdx + idx + 1}
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  RW {rwNum} • RT {rtNum}
+                </span>
+              </div>
+
+              <div>
+                {p.statusAktif === "TMS" ? (
+                  <Badge variant="danger" className="text-[10px] font-bold">
+                    TMS: {p.alasanTms || "Tidak Memenuhi"}
+                  </Badge>
+                ) : p.coklitStatus === "SESUAI" ? (
+                  <Badge variant="success" className="text-[10px] font-bold">
+                    ✓ Sesuai
+                  </Badge>
+                ) : p.coklitStatus === "UBAH_DATA" ? (
+                  <Badge variant="warning" className="text-[10px] font-bold">
+                    Koreksi
+                  </Badge>
+                ) : (
+                  <Badge variant="default" className="text-[10px] font-bold">
+                    {mode === "DPT" ? "DPT Tetap" : "Calon DPS"}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* 2. Identitas Pemilih: Nama Balok, Gender & Tanggal Lahir */}
+            <div className="pt-2.5 space-y-1">
+              <div className="text-sm font-black text-slate-900 tracking-tight leading-snug">
+                {formatNamaGelar(p.namaLengkap)}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-500 font-medium">
+                <span
+                  className={`inline-flex items-center font-bold px-1.5 py-0.5 rounded text-[10px] ${
+                    isLaki
+                      ? "bg-sky-50 text-sky-700 border border-sky-200"
+                      : "bg-pink-50 text-pink-700 border border-pink-200"
+                  }`}
+                >
+                  {isLaki ? "Laki-laki" : "Perempuan"}
+                </span>
+                <span>•</span>
+                <span>
+                  Lahir: {p.tempatLahir}, {p.tanggalLahir}
+                </span>
+              </div>
+            </div>
+
+            {/* 3. Nomor Dokumen (Proteksi NIK & KK) */}
+            <div className="mt-2.5 grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-slate-50/90 border border-slate-100 text-[11px] font-mono">
+              <div>
+                <span className="text-[9px] uppercase font-bold text-slate-400 font-sans block">
+                  NIK Sensor
+                </span>
+                <span className="font-bold text-slate-800 tracking-tight">
+                  {maskedNikDisplay}
+                </span>
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-bold text-slate-400 font-sans block">
+                  Nomor KK
+                </span>
+                <span className="text-slate-600 tracking-tight">
+                  {maskedKkDisplay}
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Touch-Friendly Action Buttons */}
+            <div className="pt-3 flex flex-wrap items-center gap-1.5 border-t border-slate-100">
+              {/* Masuk DPT (jika mode DPS) */}
+              {mode === "DPS" && onPromoteToDpt && p.statusAktif === "AKTIF" && (
+                <button
+                  type="button"
+                  onClick={() => onPromoteToDpt([p.id])}
+                  className="flex-1 min-w-[110px] h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Masuk DPT</span>
+                </button>
+              )}
+
+              {/* Kembalikan ke DPS (jika mode DPT) */}
+              {mode === "DPT" && onRollbackToDps && (
+                <button
+                  type="button"
+                  onClick={() => onRollbackToDps([p.id])}
+                  className="flex-1 min-w-[110px] h-9 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Ke DPS</span>
+                </button>
+              )}
+
+              {/* Koreksi Data */}
+              <button
+                type="button"
+                onClick={() => onOpenEditVoter(p)}
+                className="h-9 px-3 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                <span>Koreksi</span>
+              </button>
+
+              {/* Mutasi TPS */}
+              <button
+                type="button"
+                onClick={() => onOpenMutasi(p)}
+                className="h-9 px-3 rounded-xl border border-amber-200 bg-amber-50/70 text-amber-800 hover:bg-amber-100 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5" />
+                <span>Mutasi</span>
+              </button>
+
+              {/* TMS */}
+              <button
+                type="button"
+                onClick={() => onOpenTms(p)}
+                className="h-9 px-3 rounded-xl border border-rose-200 bg-rose-50/70 text-rose-700 hover:bg-rose-100 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all cursor-pointer"
+              >
+                <UserX className="w-3.5 h-3.5" />
+                <span>TMS</span>
+              </button>
+
+              {/* Hapus Pemilih */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => onDeleteVoter(p)}
+                  className="h-9 w-9 rounded-xl border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 flex items-center justify-center active:scale-95 transition-all ml-auto cursor-pointer"
+                  title="Hapus Pemilih"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  if (viewMode === "desktop") {
+    return renderDesktopTable();
+  }
+
+  if (viewMode === "mobile") {
+    return renderMobileCards();
+  }
+
+  // viewMode === "auto" -> Responsive Dual-Mode
+  return (
+    <>
+      <div className="hidden md:block w-full">{renderDesktopTable()}</div>
+      <div className="block md:hidden w-full">{renderMobileCards()}</div>
+    </>
   );
 };

@@ -89,7 +89,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
         rw,
         tps: initialValues.tps || autoTps,
         statusAktif: initialValues.statusAktif === "TMS" ? "TMS" : "AKTIF",
-        tahap: (initialValues.tahap as "DPS" | "DPT") || "DPS",
+        tahap: initialValues.tahap || "CALON_DPS",
         alasanTms: initialValues.alasanTms || "",
       };
     }
@@ -108,7 +108,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
       rw: defaultRw,
       tps: getAutoTabungByRtRw(defaultRw, defaultRt, tpsList),
       statusAktif: "AKTIF",
-      tahap: "DPS",
+      tahap: "CALON_DPS",
       alasanTms: "",
     };
   }, [isEdit, initialValues, officerRw, tpsList]);
@@ -161,7 +161,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
         rw,
         tps: voterDetail.tps || autoTps,
         statusAktif: voterDetail.statusAktif === "TMS" ? "TMS" : "AKTIF",
-        tahap: (voterDetail.tahap as "DPS" | "DPT") || "DPS",
+        tahap: voterDetail.tahap || "CALON_DPS",
         alasanTms: voterDetail.alasanTms || "",
       });
     } else if (initialValues && initialValues.nik) {
@@ -182,7 +182,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
         rw,
         tps: initialValues.tps || autoTps,
         statusAktif: initialValues.statusAktif === "TMS" ? "TMS" : "AKTIF",
-        tahap: (initialValues.tahap as "DPS" | "DPT") || "DPS",
+        tahap: initialValues.tahap || "CALON_DPS",
         alasanTms: initialValues.alasanTms || "",
       });
     }
@@ -208,7 +208,7 @@ export const ModalVoterFormRHF: React.FC<ModalVoterFormRHFProps> = ({
         rw,
         tps: initialValues?.tps || autoTps,
         statusAktif: initialValues?.statusAktif || "AKTIF",
-        tahap: initialValues?.tahap || "DPS",
+        tahap: initialValues?.tahap || "CALON_DPS",
         alasanTms: initialValues?.alasanTms || "",
       });
     }

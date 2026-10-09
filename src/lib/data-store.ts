@@ -1531,7 +1531,7 @@ class SystemDataStore {
         ...v,
         id: newId,
         nikMasked: maskNIK(v.nik),
-        tahap: v.tahap || "DPS",
+        tahap: v.tahap || "CALON_DPS",
         statusAktif: v.statusAktif || "AKTIF",
         coklitStatus: v.coklitStatus || "BELUM_COKLIT",
         updatedAt: new Date().toISOString(),

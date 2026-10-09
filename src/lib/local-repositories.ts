@@ -33,8 +33,20 @@ export class LocalPemilihRepository {
     const decryptedList = await EncryptedLocalDb.getAllDecrypted<Voter>(namespace, "PEMILIH");
 
     this.votersMap.clear();
+    let hasLegacyStaleDps = false;
     for (const v of decryptedList) {
+      // Normalisasi integritas data:
+      // Selama tahap pemutakhiran saat ini, seluruh data pemilih awal adalah CALON_DPS.
+      // Jika cache offline lokal lama menyimpan "DPS", normalkan secara transparan ke "CALON_DPS".
+      if (!v.tahap || v.tahap === "DPS") {
+        v.tahap = "CALON_DPS";
+        hasLegacyStaleDps = true;
+      }
       this.votersMap.set(v.id, v);
+    }
+
+    if (hasLegacyStaleDps && decryptedList.length > 0) {
+      void EncryptedLocalDb.putEncryptedBatch(namespace, "PEMILIH", decryptedList);
     }
 
     this.isLoaded = true;

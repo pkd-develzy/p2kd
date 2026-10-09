@@ -95,13 +95,24 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
 
   const isDefaultView = !localSearch.trim() && selectedTpsFilter === "SEMUA" && selectedStatusFilter === "SEMUA" && selectedStage === "SEMUA" && (!assignedTps || isAdmin);
 
+  // Jika DPS belum pernah diplenokan secara resmi di sistem (dbStatus.localStats.dps === 0),
+  // maka seluruh data lapangan pra-pleno sah berstatus CALON_DPS.
+  const isDpsEstablished = (dbStatus?.localStats?.dps ?? 0) > 0;
+
+  const resolveVoterStage = (v: typeof baseScopedVoters[number]) => {
+    if (!isDpsEstablished) {
+      return v.tahap === "DPT" ? "DPT" : "CALON_DPS";
+    }
+    return (v.tahap || "CALON_DPS");
+  };
+
   const calonDpsCount = isDefaultView && dbStatus?.localStats?.calonDps !== undefined
     ? dbStatus.localStats.calonDps
-    : baseScopedVoters.filter((v) => (v.tahap || "CALON_DPS") === "CALON_DPS").length;
+    : baseScopedVoters.filter((v) => resolveVoterStage(v) === "CALON_DPS").length;
 
   const dpsCount = isDefaultView && dbStatus?.localStats?.dps !== undefined
     ? dbStatus.localStats.dps
-    : baseScopedVoters.filter((v) => v.tahap === "DPS").length;
+    : (!isDpsEstablished ? 0 : baseScopedVoters.filter((v) => v.tahap === "DPS").length);
 
   const dpshpCount = isDefaultView && dbStatus?.localStats?.dpshp !== undefined
     ? dbStatus.localStats.dpshp
@@ -119,10 +130,11 @@ export const TabMasterPemilih: React.FC<TabMasterPemilihProps> = ({
   const filteredVoters = modeFilteredVoters.filter((v) => {
     // Stage Filter for Grid
     if (selectedStage !== "SEMUA") {
+      const currentStage = resolveVoterStage(v);
       if (selectedStage === "CALON_DPS") {
-        if ((v.tahap || "CALON_DPS") !== "CALON_DPS") return false;
+        if (currentStage !== "CALON_DPS") return false;
       } else if (selectedStage === "DPS") {
-        if (v.tahap !== "DPS") return false;
+        if (currentStage !== "DPS") return false;
       } else if (selectedStage === "DPSHP") {
         if (v.tahap !== "DPSHP") return false;
       } else if (selectedStage === "DPT") {

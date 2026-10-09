@@ -326,7 +326,7 @@ export class SupabaseDbService {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static _server3AdminClient: any = null;
 
-  private static get adminClient() {
+  public static get adminClient() {
     if (!this._adminClient) {
       this._adminClient = getSupabaseAdmin();
     }

@@ -7,7 +7,7 @@
  * 4. Bypass transparan untuk API (/api/*) & database queries
  */
 
-const CACHE_NAME = "p2kd-kalisalak-v2.28.00-opt";
+const CACHE_NAME = "p2kd-kalisalak-v2.28.01-live-camera";
 
 const PRECACHE_ASSETS = [
   "/",

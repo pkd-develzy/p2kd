@@ -33,7 +33,7 @@ export const APP_BUILD_INFO: AppBuildIdentity = {
   apkDownloadUrl: "https://github.com/pkd-develzy/build.apk_p2kd/releases/latest/download/PETUGAS_P2KD.apk",
   apkFileName: "PETUGAS_P2KD.apk",
   apkSizeBytes: 49097728,
-  apkSha256: "PETUGAS_P2KD_OFFICIAL_RELEASE_V1103",
+  apkSha256: "fbd69304880c3adf15d98d7da6ae67adb101fa988403e6a7ab597f4e7a81f733",
   releaseNotes: [
     "Pembaruan Resmi Aplikasi PETUGAS P2KD v1.10.3 Pilkades Kalisalak.",
     "Tema Visual Baru: Eksekutif Putih Bersih & Biru Dongker Berwibawa (Executive Clean White & Deep Navy).",

@@ -32,8 +32,8 @@ export const APP_BUILD_INFO: AppBuildIdentity = {
   latestVersion: "1.9.1",
   apkDownloadUrl: "https://github.com/pkd-develzy/build.apk_p2kd/releases/latest/download/PETUGAS_P2KD.apk",
   apkFileName: "PETUGAS_P2KD.apk",
-  apkSizeBytes: 49073152,
-  apkSha256: "PETUGAS_P2KD_OFFICIAL_RELEASE_V191",
+  apkSizeBytes: 49097728,
+  apkSha256: "01ab7078738cb23b507aa1e66c33c7ebad91d4a60a11864582831bb59f4c89eb",
   releaseNotes: [
     "Pembaruan Resmi Aplikasi PETUGAS P2KD v1.9.1 Pilkades Kalisalak.",
     "Fitur Detail Pemilih Instan: Ketuk data warga untuk melihat seluruh rincian informasi lengkap (Read-Only).",

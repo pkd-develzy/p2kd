@@ -20,7 +20,8 @@ export interface MasterPemilih {
   tempatLahir: string;
   tanggalLahir: string; // YYYY-MM-DD
   jenisKelamin: "L" | "P";
-  statusPerkawinan: "B" | "S" | "P";
+  statusPerkawinan: "B" | "S" | "P" | string;
+  usia?: number;
   alamat: string;
   rt: string;
   rw: string;

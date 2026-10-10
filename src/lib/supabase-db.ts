@@ -1072,6 +1072,28 @@ export class SupabaseDbService {
   /**
    * Universal mapper from Supabase raw row to MasterPemilih object
    */
+  public static calculateAge(tanggalLahir?: string | null): number {
+    if (!tanggalLahir) return 0;
+    try {
+      const parts = tanggalLahir.trim().split(/[-/]/);
+      if (parts.length >= 3) {
+        const year = parts[0].length === 4 ? parseInt(parts[0], 10) : parseInt(parts[2], 10);
+        const month = parts[0].length === 4 ? parseInt(parts[1], 10) : parseInt(parts[1], 10);
+        const day = parts[0].length === 4 ? parseInt(parts[2], 10) : parseInt(parts[0], 10);
+        if (year && year >= 1900 && year <= 2026) {
+          const today = new Date();
+          let age = today.getFullYear() - year;
+          const m = today.getMonth() + 1 - month;
+          if (m < 0 || (m === 0 && today.getDate() < day)) {
+            age--;
+          }
+          return age >= 0 ? age : 0;
+        }
+      }
+    } catch {}
+    return 0;
+  }
+
   public static mapSupabasePemilihRow(p: SupabasePemilihRow): MasterPemilih {
     return {
       id: p.id,
@@ -1083,6 +1105,7 @@ export class SupabaseDbService {
       tanggalLahir: p.tanggal_lahir,
       jenisKelamin: String(p.jenis_kelamin || "L").toUpperCase().startsWith("L") ? "L" : "P",
       statusPerkawinan: (p.status_perkawinan as "B" | "S" | "P") || "S",
+      usia: this.calculateAge(p.tanggal_lahir),
       alamat: p.alamat || `RT ${p.rt || "01"} / RW ${p.rw || "01"}, Desa Kalisalak`,
       rt: p.rt || "01",
       rw: p.rw || "01",

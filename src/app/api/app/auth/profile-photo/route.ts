@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         foto_url: fotoUrl,
         updated_at: new Date().toISOString(),
       })
-      .or(`username.ilike.${user.username},nama_lengkap.ilike.${user.username}`);
+      .eq("username", user.username);
 
     if (errUpdate) {
       console.warn("Update anggota_p2kd warning:", errUpdate.message);

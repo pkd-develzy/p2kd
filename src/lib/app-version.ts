@@ -46,7 +46,7 @@ export const APP_BUILD_INFO: AppBuildIdentity = {
     "Fitur Pindah RW: Mendukung mutasi pemilih antar-RW dalam Desa Kalisalak.",
     "Scanner QR Cerdas: Auto-provisioning otomatis nomor rumah ganjil dan genap.",
     "Kunci Wilayah Kalisalak: Alamat desa terkunci dan RT berupa pilihan dropdown RT 01 s/d RT 03.",
-    "Keamanan Perbankan: Layar kunci cepat 6-digit PIN & Biometrik Sidik Jari gaya SeaBank.",
+    "Sistem Keamanan Terenkripsi: Layar akses cepat 6-digit PIN & Biometrik Sidik Jari Resmi P2KD.",
     "Kunci Otomatis (Auto-Lock): Proteksi otomatis saat aplikasi diminimize.",
   ],
 };

@@ -155,19 +155,66 @@ export async function POST(req: Request) {
       );
     }
 
-    // Ensure role authorization: Pantarlih, Seksi 1, Ketua, or Developer
+    // Hak Akses Khusus: Hanya Petugas Lapangan Pantarlih dan Koordinator Seksi 1 (plus developer)
     const roleUpper = (matched.role || "").toUpperCase();
-    const isSuperAdmin =
-      roleUpper === "SUPER_ADMIN" ||
+    const seksiUpper = (matched.seksi || "").toUpperCase();
+    const jabatanLower = (matched.jabatan || "").toLowerCase();
+    const usernameLower = (matched.username || "").toLowerCase();
+
+    const isDeveloperOrAdmin =
+      usernameLower === "develzy" ||
+      usernameLower === "developer" ||
       roleUpper === "DEVELOPER" ||
-      matched.username.toLowerCase() === "develzy" ||
-      matched.jabatan.toLowerCase().includes("ketua");
+      roleUpper === "SUPER_ADMIN";
+
+    const isPantarlihOfficer =
+      roleUpper === "PANTARLIH" ||
+      roleUpper === "PETUGAS" ||
+      jabatanLower.includes("pantarlih") ||
+      jabatanLower.includes("coklit");
+
+    const isSeksi1Coordinator =
+      seksiUpper === "SEKSI1" ||
+      seksiUpper.includes("PEMILIH") ||
+      jabatanLower.includes("seksi 1") ||
+      jabatanLower.includes("seksi i") ||
+      jabatanLower.includes("koordinator") ||
+      jabatanLower.includes("ketua");
+
+    if (!isDeveloperOrAdmin && !isPantarlihOfficer && !isSeksi1Coordinator) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "FORBIDDEN_ROLE",
+          message: "Akses Ditolak: Aplikasi ini khusus diperuntukkan bagi Petugas Lapangan Pantarlih dan Koordinator Seksi 1 (Pemutakhiran Data Pemilih).",
+        },
+        { status: 403 }
+      );
+    }
+
+    const isSuperAdmin = isDeveloperOrAdmin || jabatanLower.includes("ketua");
 
     const assignedTps = matched.assignedTps || "SEMUA";
     let assignedRw = "SEMUA";
     const rwMatch = assignedTps.match(/\d+/);
     if (rwMatch) {
       assignedRw = `RW ${rwMatch[0].padStart(2, "0")}`;
+    }
+
+    // Ambil foto profil terbaru dari database Cloudinary jika ada
+    let finalFotoUrl = matched.fotoUrl || null;
+    try {
+      const s3 = SupabaseDbService.getServer3Client();
+      const { data: userRow } = await s3
+        .from("anggota_p2kd")
+        .select("foto_url")
+        .eq("username", matched.username)
+        .maybeSingle();
+      if (userRow?.foto_url) {
+        finalFotoUrl = userRow.foto_url;
+      }
+    } catch {
+      // fallback to memory
     }
 
     // Single Active Device Session Generation
@@ -232,7 +279,7 @@ export async function POST(req: Request) {
         assignedTps,
         assignedRw,
         kontakWa: matched.kontakWa,
-        fotoUrl: matched.fotoUrl || null,
+        fotoUrl: finalFotoUrl || null,
         isSuperAdmin,
       },
     });

@@ -59,7 +59,9 @@ export async function GET(req: Request) {
     const cleanStatus = statusParam !== "SEMUA" ? statusParam : undefined;
     const cleanTahap = tahapParam !== "SEMUA" ? tahapParam : undefined;
 
-    const limit = Math.min(100, Math.max(1, limitParam));
+    // Field officers need full voter data in their assigned area for complete offline caching & instant search
+    const maxLimit = isFieldOfficer || cleanTps ? 2000 : 500;
+    const limit = Math.min(maxLimit, Math.max(1, limitParam));
     const offset = Math.max(0, (pageParam - 1) * limit);
 
     // 1. Search Query
@@ -182,14 +184,21 @@ export async function PATCH(req: Request) {
       patchPayload.status_aktif = "AKTIF";
 
       if (updates) {
-        if (updates.namaLengkap) patchPayload.nama_lengkap = updates.namaLengkap;
-        if (updates.tempatLahir) patchPayload.tempat_lahir = updates.tempatLahir;
-        if (updates.tanggalLahir) patchPayload.tanggal_lahir = updates.tanggalLahir;
-        if (updates.jenisKelamin) patchPayload.jenis_kelamin = updates.jenisKelamin;
-        if (updates.statusPerkawinan) patchPayload.status_perkawinan = updates.statusPerkawinan;
+        if (updates.nik && String(updates.nik).trim().length >= 16) {
+          patchPayload.nik = String(updates.nik).trim();
+        }
+        if (updates.noKk || updates.no_kk) {
+          const valKk = String(updates.noKk || updates.no_kk).trim();
+          if (valKk.length >= 16) patchPayload.no_kk = valKk;
+        }
+        if (updates.namaLengkap || updates.nama_lengkap) patchPayload.nama_lengkap = updates.namaLengkap || updates.nama_lengkap;
+        if (updates.tempatLahir || updates.tempat_lahir) patchPayload.tempat_lahir = updates.tempatLahir || updates.tempat_lahir;
+        if (updates.tanggalLahir || updates.tanggal_lahir) patchPayload.tanggal_lahir = updates.tanggalLahir || updates.tanggal_lahir;
+        if (updates.jenisKelamin || updates.jenis_kelamin) patchPayload.jenis_kelamin = updates.jenisKelamin || updates.jenis_kelamin;
+        if (updates.statusPerkawinan || updates.status_perkawinan) patchPayload.status_perkawinan = updates.statusPerkawinan || updates.status_perkawinan;
         if (updates.alamat) patchPayload.alamat = updates.alamat;
-        if (updates.rt) patchPayload.rt = String(updates.rt).padStart(2, "0");
-        if (updates.rw) patchPayload.rw = String(updates.rw).padStart(2, "0");
+        if (updates.rt) patchPayload.rt = String(updates.rt).replace(/\D/g, "").padStart(2, "0");
+        if (updates.rw) patchPayload.rw = String(updates.rw).replace(/\D/g, "").padStart(2, "0");
         if (updates.disabilitas) patchPayload.disabilitas = updates.disabilitas;
         if (updates.tps) patchPayload.tps = updates.tps;
       }

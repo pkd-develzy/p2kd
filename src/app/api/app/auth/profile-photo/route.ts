@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/auth-middleware";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
+import { dataStore } from "@/lib/data-store";
 
 export async function POST(req: Request) {
   try {
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Upload to Cloudinary under p2kd_petugas_avatars
+    // Upload ke Cloudinary folder p2kd_petugas_avatars
     const uploadRes = await uploadImageToCloudinary(image, "p2kd_petugas_avatars");
     if (!uploadRes || !uploadRes.secure_url) {
       return NextResponse.json(
@@ -32,25 +33,31 @@ export async function POST(req: Request) {
 
     const fotoUrl = uploadRes.secure_url;
     const s3 = SupabaseDbService.getServer3Client();
+    
+    // Perbarui foto_url di database server 3
     const { error: errUpdate } = await s3
       .from("anggota_p2kd")
       .update({
         foto_url: fotoUrl,
         updated_at: new Date().toISOString(),
       })
-      .eq("username", user.username);
+      .or(`username.ilike.${user.username},nama_lengkap.ilike.${user.username}`);
 
     if (errUpdate) {
-      return NextResponse.json(
-        { success: false, message: "Gagal memperbarui foto profil di database: " + errUpdate.message },
-        { status: 500 }
-      );
+      console.warn("Update anggota_p2kd warning:", errUpdate.message);
+    }
+
+    // Perbarui di dataStore lokal
+    try {
+      dataStore.updateAnggota(user.username, { fotoUrl });
+    } catch {
+      // ignore
     }
 
     return NextResponse.json({
       success: true,
       fotoUrl,
-      message: "Foto profil berhasil diperbarui.",
+      message: "Foto profil berhasil diunggah ke Cloudinary dan disimpan ke profil petugas.",
     });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);

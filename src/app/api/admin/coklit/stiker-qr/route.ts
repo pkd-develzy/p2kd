@@ -23,13 +23,24 @@ export async function GET(req: Request) {
 
     const client = SupabaseDbService.getSeksi1Client();
 
-    // 1. Ambil token resmi dari qr_rumah untuk wilayah RW ini
+    // 1. Hitung jumlah riil Kepala Keluarga (KK) di RW ini dari database DPT
+    const { count: totalVotersInRw } = await client
+      .from("pemilih")
+      .select("id", { count: "exact", head: true })
+      .eq("rw", rwClean);
+
+    // Estimasi wajar KK (rata-rata 2.5 - 3 pemilih per KK) ditambah margin cadangan
+    const estimatedKkInRw = totalVotersInRw ? Math.ceil(totalVotersInRw / 2.5) : 50;
+    const requestedCount = parseInt(searchParams.get("count") || "0", 10);
+    const finalStickerLimit = requestedCount > 0 ? Math.min(requestedCount, 300) : Math.min(estimatedKkInRw, 150);
+
+    // 2. Ambil token resmi dari qr_rumah untuk wilayah RW ini sesuai batas data riil
     const { data: qrRows } = await client
       .from("qr_rumah")
       .select("qr_token, status, assigned_rw, assigned_tps")
       .eq("assigned_rw", rwStr)
       .order("created_at", { ascending: true })
-      .limit(100);
+      .limit(finalStickerLimit);
 
     // 2. Ambil rumah yang SUDAH terdata dari lapangan (untuk Mode Rekapitulasi)
     const { data: registeredHouses } = await client

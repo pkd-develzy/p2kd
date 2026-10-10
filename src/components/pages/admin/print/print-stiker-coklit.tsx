@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Voter, TPSItem } from "../types";
 import {
   Printer,
@@ -43,9 +43,23 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
   const [paperSize, setPaperSize] = useState<"A4" | "A3">("A4");
   const [limitStiker, setLimitStiker] = useState<number>(4);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
+  const [dbQrTokens, setDbQrTokens] = useState<string[]>([]);
+  const [registeredHouses, setRegisteredHouses] = useState<any[]>([]);
 
   // Filter pemilih aktif sesuai RW/Tabung yang dipilih
   const activeRwDigits = selectedTps.replace(/\D/g, "");
+
+  useEffect(() => {
+    fetch(`/api/admin/coklit/stiker-qr?rw=${activeRwDigits}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          if (data.qrTokens?.length) setDbQrTokens(data.qrTokens);
+          setRegisteredHouses(data.registeredHouses || []);
+        }
+      })
+      .catch(() => {});
+  }, [activeRwDigits]);
   const tpsObj = tpsList.find((t) => t.namaTps === selectedTps) || tpsList[0];
 
   const tpsVoters = useMemo(() => {
@@ -87,8 +101,11 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
 
   const houseQrTokens = useMemo(() => {
     const rwStr = activeRwDigits.padStart(2, "0") || "01";
-    return displayedFamilies.map((_, idx) => `KLK-HM-${rwStr}-${((idx + 1) * 1337).toString(16).padStart(4, "0").toUpperCase()}`);
-  }, [activeRwDigits, displayedFamilies]);
+    return displayedFamilies.map((_, idx) => {
+      if (dbQrTokens[idx]) return dbQrTokens[idx];
+      return `KLK-HM-${rwStr}-${((idx + 1) * 1337).toString(16).padStart(4, "0").toUpperCase()}`;
+    });
+  }, [activeRwDigits, displayedFamilies, dbQrTokens]);
 
   const baseUrl =
     typeof window !== "undefined"
@@ -695,8 +712,34 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
       </div>
 
       {/* ========================================================
-          GRID STIKER COKLIT MODERN (BIRU DONGKER & WATERMARK)
+          KONDISI REKAPITULASI LAPANGAN KOSONG (0 DATA)
           ======================================================== */}
+      {stickerMode === "REKAPITULASI" && registeredHouses.length === 0 ? (
+        <div className="max-w-2xl mx-auto my-12 bg-white rounded-3xl p-8 border-2 border-amber-300 shadow-sm text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-amber-100 text-amber-700 mx-auto flex items-center justify-center">
+            <ShieldCheck className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-black text-slate-900">
+            Belum Ada Data Rekapitulasi Coklit di Wilayah {selectedTps}
+          </h3>
+          <p className="text-sm text-slate-600 leading-relaxed">
+            Sesuai standar operasional P2KD Kalisalak, <strong>Mode Rekapitulasi Model A.A</strong> baru akan terisi otomatis secara real-time setelah petugas Pantarlih menautkan stiker QR fisik dengan data warga di lapangan via aplikasi mobile.
+          </p>
+          <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs text-slate-500 font-semibold">
+            Status Lapangan: <strong>0 Rumah Terdata</strong> • Silakan gunakan <strong>Mode Resmi Coklit (Tulis Tangan)</strong> untuk mencetak blanko stiker ber-QR yang akan dibawa petugas ke lapangan.
+          </div>
+          <button
+            type="button"
+            onClick={() => setStickerMode("BLANK_OFFICIAL")}
+            className="px-4 py-2 bg-blue-900 text-white font-bold text-xs rounded-xl hover:bg-blue-800 transition shadow-sm cursor-pointer"
+          >
+            Beralih ke Cetak Blanko Resmi Ber-QR
+          </button>
+        </div>
+      ) : (
+      /* ========================================================
+          GRID STIKER COKLIT MODERN (BIRU DONGKER & WATERMARK)
+          ======================================================== */
       <div
         className={`grid gap-5 max-w-7xl mx-auto ${
           paperSize === "A3"
@@ -956,6 +999,7 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
           );
         })}
       </div>
+      )}
     </div>
   );
 };

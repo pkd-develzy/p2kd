@@ -313,6 +313,7 @@ export interface PetugasActivityPayload {
   targetWarga?: string;
   wilayah?: string;
   perubahanStatus?: string; // e.g. "CALON DPS ➜ SESUAI", "CALON DPS ➜ TMS", "CALON DPS ➜ DPT"
+  appVersion?: string; // Versi APK Android Petugas
 }
 
 export async function notifyPetugasActivity(
@@ -343,14 +344,17 @@ export async function notifyPetugasActivity(
     }) + " WIB"
   );
 
+  const versionTag = payload.appVersion || "1.7.3";
+
   const message = `
 📢 <b>LAPORAN AKTIVITAS PETUGAS PANTARLIH</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 👤 <b>Petugas Siapa :</b> <b>${payload.namaPetugas}</b>${payload.rolePetugas ? ` (${payload.rolePetugas})` : ""}
 🕒 <b>Waktu         :</b> ${waktuStr}
 ⚡ <b>Aktivitas     :</b> <b>${payload.aktivitas}</b>
-${payload.perubahanStatus ? `🔄 <b>Perubahan     :</b> <code>${payload.perubahanStatus}</code>\n` : ""}${payload.targetWarga ? `👥 <b>Nama Warga    :</b> <b>${payload.targetWarga}</b>\n` : ""}${payload.wilayah ? `📍 <b>Wilayah       :</b> ${payload.wilayah}\n` : ""}${payload.rincian ? `📝 <b>Keterangan    :</b> <i>${payload.rincian}</i>\n` : ""}━━━━━━━━━━━━━━━━━━━━━━━━━
-📱 <i>Aplikasi Lapangan P2KD Desa Kalisalak</i>
+${payload.perubahanStatus ? `🔄 <b>Perubahan     :</b> <code>${payload.perubahanStatus}</code>\n` : ""}${payload.targetWarga ? `👥 <b>Nama Warga    :</b> <b>${payload.targetWarga}</b>\n` : ""}${payload.wilayah ? `📍 <b>Wilayah       :</b> ${payload.wilayah}\n` : ""}${payload.rincian ? `📝 <b>Keterangan    :</b> <i>${payload.rincian}</i>\n` : ""}📲 <b>Versi APK     :</b> <code>v${versionTag}</code>
+━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 <i>Aplikasi Lapangan P2KD Desa Kalisalak (v${versionTag})</i>
 `.trim();
 
   try {

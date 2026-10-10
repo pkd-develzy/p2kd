@@ -137,9 +137,21 @@ export class RumahCoklitService {
     members?: AnggotaKeluargaItem[];
     kunjunganTerakhir?: KunjunganCoklitItem | null;
   }> {
-    const token = (rawToken || "").trim().toUpperCase();
+    let token = (rawToken || "").trim();
     if (!token) {
       return { success: false, valid: false, message: "Token QR tidak boleh kosong." };
+    }
+
+    // Smart Token Extractor: Support direct token, URL query param (?qr= or ?token=), or URL path (/qr/...)
+    const tokenMatch = token.match(/KLK-HM-\d{2}-[A-Za-z0-9]+/i);
+    if (tokenMatch) {
+      token = tokenMatch[0].toUpperCase();
+    } else if (token.includes("qr=")) {
+      token = decodeURIComponent(token.split("qr=")[1].split("&")[0]).trim().toUpperCase();
+    } else if (token.includes("token=")) {
+      token = decodeURIComponent(token.split("token=")[1].split("&")[0]).trim().toUpperCase();
+    } else {
+      token = token.toUpperCase();
     }
 
     const client = this.getClient();
@@ -148,7 +160,7 @@ export class RumahCoklitService {
     const { data: qrRow, error: qrErr } = await client
       .from("qr_rumah")
       .select("*")
-      .eq("qr_token", token)
+      .ilike("qr_token", token)
       .maybeSingle();
 
     if (qrErr || !qrRow) {

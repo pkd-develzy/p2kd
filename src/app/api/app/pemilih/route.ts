@@ -212,6 +212,21 @@ export async function PATCH(req: Request) {
       );
     }
 
+    const appVersion = req.headers.get("x-app-version") || "1.7.3";
+    try {
+      const { notifyPetugasActivity } = await import("@/lib/telegram");
+      void notifyPetugasActivity({
+        namaPetugas: officerName,
+        rolePetugas: `Pantarlih ${voter.tps || user.assignedTps || ""}`,
+        aktivitas: `Aksi Coklit: ${action}`,
+        targetWarga: voter.nama_lengkap,
+        wilayah: `${voter.tps || ""}, RT ${voter.rt || ""}/RW ${voter.rw || ""}`,
+        perubahanStatus: action === "TMS" ? `TMS (${alasanTms})` : action,
+        rincian: action === "UBAH_DATA" ? "Perbaikan data warga" : undefined,
+        appVersion,
+      }).catch(() => {});
+    } catch {}
+
     return NextResponse.json({
       success: true,
       action,
@@ -341,6 +356,20 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
+
+    const appVersion = req.headers.get("x-app-version") || "1.7.3";
+    try {
+      const { notifyPetugasActivity } = await import("@/lib/telegram");
+      void notifyPetugasActivity({
+        namaPetugas: officerName,
+        rolePetugas: `Pantarlih ${newRow.tps || ""}`,
+        aktivitas: "Tambah Pemilih Baru Lapangan",
+        targetWarga: newRow.nama_lengkap,
+        wilayah: `${newRow.tps || ""}, RT ${newRow.rt}/RW ${newRow.rw}`,
+        perubahanStatus: "PEMILIH BARU (POTENSIAL) ➜ SESUAI",
+        appVersion,
+      }).catch(() => {});
+    } catch {}
 
     return NextResponse.json({
       success: true,

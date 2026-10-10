@@ -21,25 +21,25 @@ export interface AppBuildIdentity {
 }
 
 export const APP_BUILD_INFO: AppBuildIdentity = {
-  appVersion: "1.5.1",
-  buildNumber: "2026101007",
-  gitCommit: "100f44f",
-  buildDate: "2026-10-10T07:40:00+07:00",
+  appVersion: "1.7.3",
+  buildNumber: "2026101010",
+  gitCommit: "1a3fd5e",
+  buildDate: "2026-10-10T09:40:00+07:00",
   environment: "production",
   apiVersion: "v2.0-core",
-  databaseSchemaVersion: "2026.10.10_coklit_v151",
+  databaseSchemaVersion: "2026.10.10_coklit_v173",
   minSupportedVersion: "1.0.0",
-  latestVersion: "1.5.1",
+  latestVersion: "1.7.3",
   apkDownloadUrl: "https://github.com/pkd-develzy/build.apk_p2kd/releases/latest/download/PETUGAS_P2KD.apk",
   apkFileName: "PETUGAS_P2KD.apk",
   apkSizeBytes: 37715968,
-  apkSha256: "PETUGAS_P2KD_OFFICIAL_RELEASE_V151",
+  apkSha256: "PETUGAS_P2KD_OFFICIAL_RELEASE_V173",
   releaseNotes: [
-    "Pembaruan Resmi Aplikasi PETUGAS P2KD Pilkades Kalisalak.",
-    "Integrasi Logo Resmi Institusi P2KD Kalisalak beresolusi tinggi.",
-    "Perbaikan layout keyboard mobile dengan imePadding (tidak tertutup saat mengetik).",
-    "Sistem izin otomatis Kamera, Lokasi GPS, dan Notifikasi saat pertama kali dibuka.",
-    "Koneksi langsung tanpa redirect ke database Supabase dan API server.",
+    "Pembaruan Resmi Aplikasi PETUGAS P2KD v1.7.3 Pilkades Kalisalak.",
+    "Smart QR Token Parser (pembacaan presisi stiker URL maupun raw token).",
+    "Pembaruan visual dan fungsional Menu Lainnya menjadi pusat kendali eksekutif.",
+    "Penyelarasan Mode Rekapitulasi murni berbasis data lapangan.",
+    "Pencatatan versi APK resmi pada setiap log aktivitas dan notifikasi sistem.",
   ],
 };
 

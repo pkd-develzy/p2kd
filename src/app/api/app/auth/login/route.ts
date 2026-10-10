@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { dataStore, type MasterAnggotaP2KD } from "@/lib/data-store";
 import { generateAuthToken, verifyPassword } from "@/lib/encryption";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limiter";
@@ -169,6 +170,39 @@ export async function POST(req: Request) {
       assignedRw = `RW ${rwMatch[0].padStart(2, "0")}`;
     }
 
+    // Single Active Device Session Generation
+    const newSessionId = crypto.randomUUID();
+    dataStore.registerUserSession(matched.username, newSessionId);
+
+    // Asynchronously record session in Server 3 user_sessions
+    try {
+      const s3 = SupabaseDbService.getServer3Client();
+      await s3
+        .from("user_sessions")
+        .update({
+          status: "TERMINATED",
+          logout_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("username", matched.username)
+        .eq("status", "ACTIVE");
+
+      await s3.from("user_sessions").insert({
+        user_id: matched.id,
+        username: matched.username,
+        session_id: newSessionId,
+        device_id: body.deviceId || "android-device",
+        device_info: body.deviceInfo || req.headers.get("user-agent") || "Android App PETUGAS P2KD",
+        ip_address: clientIp,
+        app_version: body.appVersion || "1.6.0",
+        status: "ACTIVE",
+        login_at: new Date().toISOString(),
+        last_seen_at: new Date().toISOString(),
+      });
+    } catch (sessErr) {
+      console.warn("User sessions tracking warning:", sessErr);
+    }
+
     // Generate cryptographic HMAC token valid for 7 days for mobile app
     const token = generateAuthToken(
       {
@@ -179,6 +213,7 @@ export async function POST(req: Request) {
         jabatan: matched.jabatan,
         assignedTps,
         isSuperAdmin,
+        sessionId: newSessionId,
       },
       7 * 24 * 3600
     );

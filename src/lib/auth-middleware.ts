@@ -73,7 +73,7 @@ export function verifyAdminSession(req: Request): SessionVerificationResult {
     };
   }
 
-  // Check if session was revoked globally by developer
+  // 1. Check if session was revoked globally by developer
   const minValidEpoch = dataStore.getSessionRevocationEpoch();
   const tokenIat = payload.iat || 0;
   if (minValidEpoch > 0 && tokenIat > 0 && tokenIat < minValidEpoch) {
@@ -84,6 +84,21 @@ export function verifyAdminSession(req: Request): SessionVerificationResult {
           success: false,
           code: "SESSION_REVOKED",
           message: "Akses Ditolak: Sesi login Anda telah dikeluarkan oleh Developer. Silakan masuk kembali.",
+        },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // 2. Check Single Active Device Concurrency (1 Akun = 1 HP Aktif)
+  if (payload.sessionId && !dataStore.isUserSessionActive(payload.username, payload.sessionId)) {
+    return {
+      authenticated: false,
+      response: NextResponse.json(
+        {
+          success: false,
+          code: "SESSION_TERMINATED_OTHER_DEVICE",
+          message: "Akses Ditolak: Akun Anda telah masuk di perangkat lain. Sesi pada perangkat ini telah diakhiri otomatis demi keamanan.",
         },
         { status: 401 }
       ),

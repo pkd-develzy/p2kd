@@ -761,6 +761,26 @@ class SystemDataStore {
     return { ...this.aggregateStats };
   }
 
+  // Single Device Concurrency Registry (username -> active sessionId)
+  private activeUserSessions: Map<string, string> = new Map();
+
+  public registerUserSession(username: string, sessionId: string): void {
+    if (username && sessionId) {
+      this.activeUserSessions.set(username.toLowerCase().trim(), sessionId);
+    }
+  }
+
+  public isUserSessionActive(username: string, sessionId?: string): boolean {
+    if (!sessionId) return true;
+    const active = this.activeUserSessions.get(username.toLowerCase().trim());
+    if (!active) return true;
+    return active === sessionId;
+  }
+
+  public clearUserSession(username: string): void {
+    this.activeUserSessions.delete(username.toLowerCase().trim());
+  }
+
   // Global Session Invalidation Epoch (Unix timestamp in seconds)
   private sessionRevocationEpoch: number = 0;
 
@@ -773,6 +793,8 @@ class SystemDataStore {
       this.sessionRevocationEpoch = epoch;
     }
   }
+
+
 
   public async revokeAllSessions(byUser: string, byUsername: string, ipAddress = "127.0.0.1"): Promise<number> {
     const epoch = Math.floor(Date.now() / 1000);

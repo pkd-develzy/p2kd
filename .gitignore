@@ -52,3 +52,8 @@ scratch/
 # android native app (separate repository build.apk_p2kd)
 android/
 **/android/**
+
+# IDE agent skills and local assistant configs
+.agents/
+skills-lock.json
+

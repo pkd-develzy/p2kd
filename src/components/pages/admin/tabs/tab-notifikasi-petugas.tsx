@@ -10,9 +10,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
-  Sparkles,
-  Users,
-  Megaphone,
 } from "lucide-react";
 
 interface NotifikasiPetugasItem {
@@ -56,7 +53,24 @@ export const TabNotifikasiPetugas: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    let isMounted = true;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/admin/notifikasi-petugas");
+        const json = await res.json();
+        if (isMounted && json.success && Array.isArray(json.notifications)) {
+          setNotifications(json.notifications);
+        }
+      } catch (e) {
+        console.error("Gagal memuat notifikasi:", e);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    load();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -130,7 +144,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-blue-900/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="p-6 rounded-2xl bg-linear-to-r from-slate-900 via-blue-950 to-slate-900 border border-blue-900/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-blue-600/30 border border-blue-400/40 flex items-center justify-center text-blue-400 shadow-inner">
             <Smartphone className="w-6 h-6 animate-pulse" />

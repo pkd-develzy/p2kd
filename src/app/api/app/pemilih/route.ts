@@ -202,9 +202,21 @@ export async function PATCH(req: Request) {
         if (updates.disabilitas) patchPayload.disabilitas = updates.disabilitas;
         if (updates.tps) patchPayload.tps = updates.tps;
       }
+    } else if (action === "PINDAH_RW") {
+      const targetRw = String(updates?.rw || (updates as Record<string, unknown>)?.targetRw || "01").replace(/\D/g, "").padStart(2, "0");
+      const targetRt = String(updates?.rt || (updates as Record<string, unknown>)?.targetRt || "01").replace(/\D/g, "").padStart(2, "0");
+      const alasan = String((updates as Record<string, unknown>)?.alasanMutasi || (updates as Record<string, unknown>)?.alasan || "Pindah domisili antar-RW dalam Desa Kalisalak");
+
+      patchPayload.rw = targetRw;
+      patchPayload.rt = targetRt;
+      patchPayload.tps = `TPS ${targetRw}`;
+      patchPayload.coklit_status = "PINDAH_RW";
+      patchPayload.verifikasi_status = "MUTASI";
+      patchPayload.status_aktif = "AKTIF";
+      patchPayload.coklit_catatan = `Mutasi Pindah RW ke RW ${targetRw} RT ${targetRt}: ${alasan}`;
     } else {
       return NextResponse.json(
-        { success: false, message: "Aksi tidak dikenali. Gunakan COCOK, TMS, atau UBAH_DATA." },
+        { success: false, message: "Aksi tidak dikenali. Gunakan COCOK, TMS, UBAH_DATA, atau PINDAH_RW." },
         { status: 400 }
       );
     }
@@ -221,7 +233,7 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const appVersion = req.headers.get("x-app-version") || "1.7.3";
+    const appVersion = req.headers.get("x-app-version") || "1.10.3";
     try {
       const { notifyPetugasActivity } = await import("@/lib/telegram");
       void notifyPetugasActivity({
@@ -366,7 +378,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const appVersion = req.headers.get("x-app-version") || "1.7.3";
+    const appVersion = req.headers.get("x-app-version") || "1.10.3";
     try {
       const { notifyPetugasActivity } = await import("@/lib/telegram");
       void notifyPetugasActivity({

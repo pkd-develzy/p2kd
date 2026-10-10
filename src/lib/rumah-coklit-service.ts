@@ -164,6 +164,56 @@ export class RumahCoklitService {
       .maybeSingle();
 
     if (qrErr || !qrRow) {
+      // Auto-Provisioning Cerdas: Jika token berformat resmi KLK-HM tapi belum tercatat di qr_rumah (misal baru digenerate saat cetak di dashboard)
+      const isOfficialFormat = /^KLK-HM-\d{2}-[A-Za-z0-9]+$/i.test(token);
+      if (isOfficialFormat) {
+        const rwDigits = token.split("-")[2] || "01";
+        const rwStr = `RW ${rwDigits}`;
+        const tpsStr = `TPS ${rwDigits}`;
+        const newQrId = `qr-${token.toLowerCase()}`;
+        const nowIso = new Date().toISOString();
+
+        const insertPayload = {
+          id: newQrId,
+          qr_token: token,
+          status: "AVAILABLE",
+          assigned_rw: rwStr,
+          assigned_tps: tpsStr,
+          batch_ref: "AUTO_PROVISION_SCAN",
+          created_at: nowIso,
+          updated_at: nowIso,
+        };
+
+        const { data: insertedQr, error: insErr } = await client
+          .from("qr_rumah")
+          .upsert(insertPayload, { onConflict: "qr_token" })
+          .select("*")
+          .maybeSingle();
+
+        if (!insErr && insertedQr) {
+          const autoQr: QrRumahItem = {
+            id: insertedQr.id,
+            qrToken: insertedQr.qr_token,
+            status: insertedQr.status as QrRumahStatus,
+            batchRef: insertedQr.batch_ref,
+            assignedTps: insertedQr.assigned_tps,
+            assignedRw: insertedQr.assigned_rw,
+            assignedPetugas: insertedQr.assigned_petugas,
+            createdAt: insertedQr.created_at,
+            updatedAt: insertedQr.updated_at,
+          };
+          return {
+            success: true,
+            valid: true,
+            qr: autoQr,
+            rumah: null,
+            kks: [],
+            members: [],
+            kunjunganTerakhir: null,
+          };
+        }
+      }
+
       return {
         success: false,
         valid: false,

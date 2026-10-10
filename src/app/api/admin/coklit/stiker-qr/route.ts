@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     const client = SupabaseDbService.getSeksi1Client();
 
     // 1. Ambil token resmi dari qr_rumah untuk wilayah RW ini
-    const { data: qrRows, error: qrErr } = await client
+    const { data: qrRows } = await client
       .from("qr_rumah")
       .select("qr_token, status, assigned_rw, assigned_tps")
       .eq("assigned_rw", rwStr)
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
       .limit(100);
 
     // 2. Ambil rumah yang SUDAH terdata dari lapangan (untuk Mode Rekapitulasi)
-    const { data: registeredHouses, error: houseErr } = await client
+    const { data: registeredHouses } = await client
       .from("rumah")
       .select(`
         id,

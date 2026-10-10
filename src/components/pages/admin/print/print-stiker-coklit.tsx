@@ -44,7 +44,7 @@ export const PrintStikerCoklit: React.FC<PrintStikerCoklitProps> = ({
   const [limitStiker, setLimitStiker] = useState<number>(4);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState<boolean>(false);
   const [dbQrTokens, setDbQrTokens] = useState<string[]>([]);
-  const [registeredHouses, setRegisteredHouses] = useState<any[]>([]);
+  const [registeredHouses, setRegisteredHouses] = useState<Record<string, unknown>[]>([]);
 
   // Filter pemilih aktif sesuai RW/Tabung yang dipilih
   const activeRwDigits = selectedTps.replace(/\D/g, "");

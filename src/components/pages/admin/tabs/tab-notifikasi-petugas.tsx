@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
   Bell,
   Send,
@@ -10,6 +11,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Info,
+  ImageIcon,
+  Upload,
+  LayoutTemplate,
+  X,
 } from "lucide-react";
 
 interface NotifikasiPetugasItem {
@@ -20,6 +25,8 @@ interface NotifikasiPetugasItem {
   target_role: string;
   target_tps: string;
   author: string;
+  image_url?: string | null;
+  is_banner?: boolean;
   is_active: boolean;
   created_at: string;
 }
@@ -36,6 +43,12 @@ export const TabNotifikasiPetugas: React.FC = () => {
   const [kategori, setKategori] = useState<"INFORMASI" | "PENTING" | "INSTRUKSI" | "PEMBARUAN">("INFORMASI");
   const [targetRole, setTargetRole] = useState("SEMUA");
   const [targetTps, setTargetTps] = useState("SEMUA");
+  
+  // Banner Pengumuman Gambar (In-App Announcement Banner)
+  const [isBanner, setIsBanner] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchNotifications = async () => {
     setIsLoading(true);
@@ -73,6 +86,48 @@ export const TabNotifikasiPetugas: React.FC = () => {
     };
   }, []);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setStatusMessage({ type: "error", text: "File harus berupa format gambar (PNG / JPG / WebP)." });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setStatusMessage({ type: "error", text: "Ukuran gambar maksimal 5 MB." });
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setStatusMessage(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.secure_url || data.url) {
+        const uploadedUrl = data.secure_url || data.url;
+        setImageUrl(uploadedUrl);
+        setIsBanner(true); // Otomatis aktifkan banner jika mengunggah gambar
+        setStatusMessage({ type: "success", text: "Gambar poster banner berhasil diunggah!" });
+      } else {
+        setStatusMessage({ type: "error", text: data.message || "Gagal mengunggah gambar." });
+      }
+    } catch {
+      setStatusMessage({ type: "error", text: "Terjadi kesalahan saat mengunggah gambar." });
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!judul.trim() || !pesan.trim()) {
@@ -92,13 +147,22 @@ export const TabNotifikasiPetugas: React.FC = () => {
           kategori,
           target_role: targetRole,
           target_tps: targetTps,
+          image_url: imageUrl.trim() || null,
+          is_banner: isBanner,
         }),
       });
       const json = await res.json();
       if (json.success) {
-        setStatusMessage({ type: "success", text: "Notifikasi berhasil disiarkan ke aplikasi Android petugas!" });
+        setStatusMessage({ 
+          type: "success", 
+          text: isBanner 
+            ? "Banner pengumuman bergambar berhasil diterbitkan ke Beranda Aplikasi Petugas!" 
+            : "Notifikasi berhasil disiarkan ke aplikasi Android petugas!" 
+        });
         setJudul("");
         setPesan("");
+        setImageUrl("");
+        setIsBanner(false);
         setKategori("INFORMASI");
         fetchNotifications();
       } else {
@@ -155,7 +219,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-medium">Khusus Android</span>
             </h2>
             <p className="text-xs text-slate-300 mt-1">
-              Kelola siaran pemberitahuan, instruksi lapangan, dan rilis pembaruan langsung ke notifikasi HP petugas Coklit P2KD. (Terpisah dari Website Publik).
+              Kelola siaran pemberitahuan, poster banner beranda, dan rilis pembaruan langsung ke HP petugas Coklit P2KD. (Terpisah 100% dari Portal Publik).
             </p>
           </div>
         </div>
@@ -184,23 +248,23 @@ export const TabNotifikasiPetugas: React.FC = () => {
 
       {/* Grid: Form Kirim & Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Form Kirim Notifikasi (7 Cols) */}
+        {/* Form Kirim Notifikasi & Banner (7 Cols) */}
         <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
           <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-4 pb-3 border-b border-slate-800">
             <Send className="w-4 h-4 text-blue-400" />
-            Terbitkan Notifikasi Baru ke HP Petugas
+            Terbitkan Notifikasi atau Banner Beranda ke HP Petugas
           </h3>
 
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Judul Notifikasi <span className="text-rose-400">*</span>
+                Judul Notifikasi / Banner <span className="text-rose-400">*</span>
               </label>
               <input
                 type="text"
                 value={judul}
                 onChange={(e) => setJudul(e.target.value)}
-                placeholder="Contoh: Rapat Koordinasi Rekapitulasi RW 05 Jam 14:00"
+                placeholder="Contoh: Batas Akhir Coklit RW 04 Hari Ini Jam 17:00"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500 transition"
               />
             </div>
@@ -210,7 +274,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">Kategori</label>
                 <select
                   value={kategori}
-                  onChange={(e) => setKategori(e.target.value as unknown as "INFORMASI")}
+                  onChange={(e) => setKategori(e.target.value as "INFORMASI")}
                   className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-blue-500 transition"
                 >
                   <option value="INFORMASI">INFORMASI (Biru)</option>
@@ -259,12 +323,100 @@ export const TabNotifikasiPetugas: React.FC = () => {
                 Isi Pesan Notifikasi <span className="text-rose-400">*</span>
               </label>
               <textarea
-                rows={4}
+                rows={3}
                 value={pesan}
                 onChange={(e) => setPesan(e.target.value)}
-                placeholder="Tuliskan arahan, penjelasan teknis, batas waktu, atau tautan instruksi yang harus dipahami petugas lapangan..."
+                placeholder="Tuliskan arahan, penjelasan teknis, batas waktu, atau instruksi kerja yang harus dipahami petugas lapangan..."
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500 transition"
               />
+            </div>
+
+            {/* In-App Announcement Banner Settings */}
+            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <LayoutTemplate className="w-4 h-4 text-emerald-400" />
+                  <div>
+                    <span className="text-xs font-bold text-white block">
+                      Tampilkan Sebagai Banner di Beranda Aplikasi
+                    </span>
+                    <span className="text-[11px] text-slate-400 block">
+                      Muncul di kartu papan pengumuman Beranda aplikasi HP petugas (menggantikan banner lama).
+                    </span>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isBanner}
+                    onChange={(e) => setIsBanner(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-9 h-5 bg-slate-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              {/* Unggah Gambar Banner Poster */}
+              <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-blue-400" />
+                    Poster / Foto Banner (PNG, JPG, WebP)
+                  </label>
+                  {imageUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setImageUrl("")}
+                      className="text-[11px] text-rose-400 hover:underline flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" /> Hapus Gambar
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    placeholder="https://res.cloudinary.com/... atau unggah gambar langsung"
+                    className="flex-1 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500"
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+                  >
+                    {isUploadingImage ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    Upload Gambar
+                  </button>
+                </div>
+
+                {imageUrl && (
+                  <div className="relative mt-2 rounded-lg overflow-hidden border border-slate-800 max-h-36 bg-slate-900">
+                    <Image
+                      src={imageUrl}
+                      alt="Banner Preview"
+                      width={600}
+                      height={144}
+                      className="w-full h-36 object-cover"
+                      unoptimized
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end pt-2">
@@ -276,12 +428,12 @@ export const TabNotifikasiPetugas: React.FC = () => {
                 {isSubmitting ? (
                   <>
                     <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    Menyiarkan Notifikasi...
+                    Menyiarkan...
                   </>
                 ) : (
                   <>
                     <Send className="w-3.5 h-3.5" />
-                    Kirim ke Aplikasi Petugas
+                    {isBanner ? "Terbitkan Sebagai Banner Beranda" : "Kirim ke Aplikasi Petugas"}
                   </>
                 )}
               </button>
@@ -292,38 +444,77 @@ export const TabNotifikasiPetugas: React.FC = () => {
         {/* Live Preview Tampilan di HP Petugas (5 Cols) */}
         <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-3 pb-3 border-b border-slate-800">
-              <Smartphone className="w-4 h-4 text-emerald-400" />
-              Simulasi Tampilan di HP Petugas
+            <h3 className="text-sm font-bold text-white flex items-center justify-between mb-3 pb-3 border-b border-slate-800">
+              <span className="flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-emerald-400" />
+                Simulasi Tampilan di HP Petugas
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold">
+                {isBanner ? "Papan Beranda HP" : "Layar Lonceng"}
+              </span>
             </h3>
             <p className="text-xs text-slate-400 mb-4">
-              Kartu notifikasi akan langsung muncul di Layar Pusat Notifikasi (Icon Lonceng) pada aplikasi PETUGAS P2KD.
+              {isBanner 
+                ? "Pratinjau tampilan kartu Papan Pengumuman Bergambar di halaman Beranda aplikasi Android."
+                : "Pratinjau tampilan kartu di Pusat Notifikasi (Icon Lonceng) pada aplikasi Android."}
             </p>
 
-            {/* Simulasi Card Android */}
-            <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-md text-slate-900">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-700">
-                  {kategori}
-                </span>
-                <span className="text-[10px] text-slate-400 font-medium">Baru Saja</span>
+            {/* Simulasi Card Android Sesuai Mode */}
+            {isBanner ? (
+              // Simulasi Banner Beranda
+              <div className="rounded-xl bg-white border border-slate-200 shadow-md text-slate-900 overflow-hidden">
+                <div className="p-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-900 text-amber-300">
+                    📢 {kategori}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">Beranda Aplikasi</span>
+                </div>
+                {imageUrl && (
+                  <div className="relative w-full h-28 bg-slate-200">
+                    <Image
+                      src={imageUrl}
+                      alt="Preview Poster"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                )}
+                <div className="p-3">
+                  <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug">
+                    {judul || "Judul Banner Pengumuman Resmi"}
+                  </h4>
+                  <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
+                    {pesan || "Isi pengumuman resmi dan instruksi penting untuk petugas Coklit di lapangan."}
+                  </p>
+                </div>
               </div>
-              <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug">
-                {judul || "Judul Notifikasi Resmi Petugas"}
-              </h4>
-              <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
-                {pesan || "Pratinjau isi pemberitahuan akan terlihat di sini seperti di perangkat Android petugas lapangan."}
-              </p>
-              <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-                <span>Target: {targetRole} ({targetTps})</span>
-                <span className="font-semibold text-blue-600">P2KD Kalisalak</span>
+            ) : (
+              // Simulasi Card Notifikasi Lonceng
+              <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-md text-slate-900">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-700">
+                    {kategori}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">Baru Saja</span>
+                </div>
+                <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug">
+                  {judul || "Judul Notifikasi Resmi Petugas"}
+                </h4>
+                <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
+                  {pesan || "Pratinjau isi pemberitahuan akan terlihat di sini seperti di perangkat Android petugas lapangan."}
+                </p>
+                <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
+                  <span>Target: {targetRole} ({targetTps})</span>
+                  <span className="font-semibold text-blue-600">P2KD Kalisalak</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="mt-6 p-3 rounded-xl bg-blue-950/40 border border-blue-900/30 text-xs text-blue-300 flex items-center gap-2">
             <Info className="w-4 h-4 shrink-0 text-blue-400" />
-            <span>Notifikasi ini tersimpan eksklusif untuk aplikasi mobile dan tidak tampil di halaman berita umum warga.</span>
+            <span>Tersimpan di tabel khusus notifikasi_petugas. Bebas dari kebocoran berita website umum.</span>
           </div>
         </div>
       </div>
@@ -333,7 +524,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Bell className="w-4 h-4 text-amber-400" />
-            Daftar Notifikasi Aktif di Aplikasi Petugas ({notifications.length})
+            Daftar Notifikasi & Banner Aktif di Aplikasi Petugas ({notifications.length})
           </h3>
           <span className="text-xs text-slate-400">Dapat dihapus sewaktu-waktu oleh Admin</span>
         </div>
@@ -345,32 +536,55 @@ export const TabNotifikasiPetugas: React.FC = () => {
           </div>
         ) : notifications.length === 0 ? (
           <div className="py-12 text-center text-slate-500 text-xs">
-            Belum ada notifikasi petugas yang diterbitkan. Gunakan formulir di atas untuk mengirim instruksi pertama.
+            Belum ada notifikasi petugas yang diterbitkan. Gunakan formulir di atas untuk mengirim instruksi atau banner pertama.
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
             {notifications.map((item) => (
               <div key={item.id} className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-800/30 px-3 rounded-xl transition">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    {getKategoriBadge(item.kategori)}
-                    <h4 className="text-xs font-bold text-white">{item.judul}</h4>
-                    <span className="text-[10px] text-slate-500">
-                      • {new Date(item.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-300 line-clamp-2 max-w-2xl">{item.pesan}</p>
-                  <div className="flex items-center gap-3 text-[10px] text-slate-400 pt-0.5">
-                    <span>Oleh: <strong className="text-slate-300">{item.author}</strong></span>
-                    <span>• Target Role: <strong className="text-slate-300">{item.target_role}</strong></span>
-                    <span>• Target Wilayah: <strong className="text-slate-300">{item.target_tps}</strong></span>
+                <div className="flex items-start gap-3">
+                  {item.image_url ? (
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-700 shrink-0 bg-slate-950">
+                      <Image
+                        src={item.image_url}
+                        alt="Thumbnail"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                      <Bell className="w-4 h-4" />
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {item.is_banner && (
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          ★ BANNER BERANDA
+                        </span>
+                      )}
+                      {getKategoriBadge(item.kategori)}
+                      <h4 className="text-xs font-bold text-white">{item.judul}</h4>
+                      <span className="text-[10px] text-slate-500">
+                        • {new Date(item.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 line-clamp-2 max-w-2xl">{item.pesan}</p>
+                    <div className="flex items-center gap-3 text-[10px] text-slate-400 pt-0.5">
+                      <span>Oleh: <strong className="text-slate-300">{item.author}</strong></span>
+                      <span>• Target Role: <strong className="text-slate-300">{item.target_role}</strong></span>
+                      <span>• Target Wilayah: <strong className="text-slate-300">{item.target_tps}</strong></span>
+                    </div>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleDelete(item.id)}
                   title="Hapus Notifikasi"
-                  className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/60 transition"
+                  className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/60 transition shrink-0"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

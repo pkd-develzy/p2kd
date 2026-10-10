@@ -3,6 +3,15 @@ import { getSupabaseServer3Admin } from "@/lib/supabase";
 import { verifyAuthToken } from "@/lib/encryption";
 import { Pool } from "pg";
 
+interface TelegramStatusRow {
+  id: string;
+  username: string;
+  nama_lengkap: string;
+  telegram_chat_id?: string | null;
+  telegram_username?: string | null;
+  telegram_linked_at?: string | null;
+}
+
 export async function GET(req: Request) {
   try {
     const authHeader = req.headers.get("authorization");
@@ -27,7 +36,7 @@ export async function GET(req: Request) {
     }
 
     // Query dari database Supabase / PG
-    let row: any = null;
+    let row: TelegramStatusRow | null = null;
     if (process.env.DATABASE_URL) {
       const pool = new Pool({ connectionString: process.env.DATABASE_URL });
       const res = await pool.query(
@@ -35,7 +44,7 @@ export async function GET(req: Request) {
         [targetUsername.trim()]
       );
       await pool.end();
-      row = res.rows[0];
+      row = (res.rows[0] as TelegramStatusRow) || null;
     }
 
     if (!row) {
@@ -46,7 +55,7 @@ export async function GET(req: Request) {
         .ilike("username", targetUsername.trim())
         .limit(1)
         .single();
-      row = data;
+      row = (data as TelegramStatusRow) || null;
     }
 
     if (!row) {
@@ -66,7 +75,7 @@ export async function GET(req: Request) {
       telegramLinkedAt: row.telegram_linked_at || null,
       botUsername: "pantarlih_bot",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error in telegram-status route:", err);
     return NextResponse.json(
       { success: false, message: "Gagal memeriksa status tautan Telegram." },

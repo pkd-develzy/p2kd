@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       success: true,
       message: "Tautan akun Telegram berhasil dihapus dari database. Akun tidak lagi terhubung dengan bot Telegram.",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error in telegram-unlink route:", err);
     return NextResponse.json(
       { success: false, message: "Gagal menghapus keterkaitan akun Telegram." },

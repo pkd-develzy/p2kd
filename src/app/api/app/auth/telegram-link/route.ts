@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     if (!updated) {
       const s3 = getSupabaseServer3Admin();
-      const { data, error } = await s3
+      const { data } = await s3
         .from("anggota_p2kd")
         .update({
           telegram_chat_id: cleanChatId,
@@ -97,7 +97,7 @@ Akun Telegram pribadi Anda telah resmi terhubung dengan sistem keamanan aplikasi
       telegramChatId: cleanChatId,
       telegramUsername: cleanTgUname,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error in telegram-link route:", err);
     return NextResponse.json(
       { success: false, message: "Terjadi kesalahan saat menautkan akun Telegram." },

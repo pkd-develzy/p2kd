@@ -3,6 +3,14 @@ import { TelegramAuthService } from "@/lib/telegram-auth-service";
 import { getSupabaseServer3Admin } from "@/lib/supabase";
 import { Pool } from "pg";
 
+interface PetugasTelegramRow {
+  id: string;
+  username: string;
+  nama_lengkap: string;
+  telegram_chat_id?: string | null;
+  telegram_username?: string | null;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -18,7 +26,7 @@ export async function POST(req: Request) {
     const cleanUsername = username.trim();
 
     // 1. Ambil data petugas dan telegram_chat_id pribadi
-    let userRow: any = null;
+    let userRow: PetugasTelegramRow | null = null;
 
     if (process.env.DATABASE_URL) {
       const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -27,7 +35,7 @@ export async function POST(req: Request) {
         [cleanUsername]
       );
       await pool.end();
-      userRow = res.rows[0];
+      userRow = (res.rows[0] as PetugasTelegramRow) || null;
     }
 
     if (!userRow) {
@@ -38,7 +46,7 @@ export async function POST(req: Request) {
         .or(`username.ilike.${cleanUsername},nik.eq.${cleanUsername}`)
         .limit(1)
         .single();
-      userRow = data;
+      userRow = (data as PetugasTelegramRow) || null;
     }
 
     if (!userRow) {
@@ -124,7 +132,7 @@ Silakan klik tautan resmi di bawah ini untuk membuat Kata Sandi baru:
       message: `Tautan pemulihan kata sandi telah dikirim langsung ke ruang obrolan pribadi Telegram Anda (@${userRow.telegram_username || "Pribadi"}).`,
       resetUrl,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Error in forgot-password route:", err);
     return NextResponse.json(
       { success: false, message: "Gagal memproses permintaan reset kata sandi." },

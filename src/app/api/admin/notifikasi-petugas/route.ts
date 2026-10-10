@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { judul, pesan, kategori, target_role, target_tps } = body;
+    const { judul, pesan, kategori, target_role, target_tps, image_url, is_banner } = body;
 
     if (!judul || !pesan) {
       return NextResponse.json(
@@ -54,6 +54,16 @@ export async function POST(req: Request) {
     }
 
     const s1 = SupabaseDbService.getSeksi1Client();
+    const isBannerVal = Boolean(is_banner);
+
+    // Jika notifikasi baru ini disetel sebagai banner beranda, nonaktifkan flag is_banner pada pengumuman lama
+    if (isBannerVal) {
+      await s1
+        .from("notifikasi_petugas")
+        .update({ is_banner: false })
+        .eq("is_banner", true);
+    }
+
     const { data, error } = await s1
       .from("notifikasi_petugas")
       .insert({
@@ -63,6 +73,8 @@ export async function POST(req: Request) {
         target_role: target_role || "SEMUA",
         target_tps: target_tps || "SEMUA",
         author: session.user.nama || session.user.username || "Admin P2KD",
+        image_url: image_url ? String(image_url).trim() : null,
+        is_banner: isBannerVal,
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -80,7 +92,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Notifikasi khusus aplikasi native petugas berhasil diterbitkan!",
+      message: isBannerVal 
+        ? "Banner Pengumuman Bergambar In-App Berhasil Diterbitkan ke Beranda Aplikasi Petugas!"
+        : "Notifikasi khusus aplikasi native petugas berhasil diterbitkan!",
       notification: data,
     });
   } catch (err: unknown) {

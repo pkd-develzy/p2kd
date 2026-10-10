@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { TelegramAuthService } from "@/lib/telegram-auth-service";
+import { SupabaseDbService } from "@/lib/supabase-db";
+import { createStoredPassword } from "@/lib/encryption";
 
 export async function POST(req: Request) {
   try {
@@ -29,6 +31,25 @@ export async function POST(req: Request) {
           { success: false, message: "Kata sandi baru minimal 6 karakter." },
           { status: 400 }
         );
+      }
+
+      // Perbarui kata sandi di database Supabase Server 3
+      try {
+        const s3 = SupabaseDbService.getServer3Client();
+        const newStoredHash = createStoredPassword(newPassword);
+        const { error: errUpdate } = await s3
+          .from("anggota_p2kd")
+          .update({
+            password_hash: newStoredHash,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("username", username);
+
+        if (errUpdate) {
+          console.error("[ResetAuth] DB password update error:", errUpdate);
+        }
+      } catch (dbErr) {
+        console.error("[ResetAuth] DB error on updating password:", dbErr);
       }
     }
 

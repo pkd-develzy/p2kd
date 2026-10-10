@@ -254,6 +254,9 @@ export interface MasterAnggotaP2KD {
   hasChangedPassword?: boolean;
   lastLoginAt?: string;
   loginCount?: number;
+  telegramChatId?: string;
+  telegramUsername?: string;
+  telegramLinkedAt?: string;
 }
 
 /**

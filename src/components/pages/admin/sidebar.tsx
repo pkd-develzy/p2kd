@@ -22,6 +22,7 @@ import {
   Newspaper,
   Vote,
   Terminal,
+  Smartphone,
 } from "lucide-react";
 import { Logo } from "@/components/ui";
 import { TabType, DbStatus, SeksiP2KDType } from "./types";
@@ -139,6 +140,14 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           badge: petugasCount > 0 ? `${petugasCount} Berkas` : "Pantarlih",
           badgeColor: petugasCount > 0 ? "bg-blue-600 text-white font-bold" : "bg-slate-800 text-slate-400 border-slate-700",
           allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH"],
+        },
+        {
+          id: "notifikasi_petugas" as TabType,
+          label: "Notifikasi Petugas (Aplikasi Native)",
+          icon: Smartphone,
+          badge: "App Native",
+          badgeColor: "bg-blue-600 text-white font-bold",
+          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
         },
         {
           id: "aduan" as TabType,

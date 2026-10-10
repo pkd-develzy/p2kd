@@ -118,6 +118,12 @@ const tabTitles: Record<
       "CMS Penulisan & Publikasi Berita Warga, Liputan Kegiatan P2KD, dan Rilis Pers Resmi",
     shortTitle: "Berita Warga",
   },
+  notifikasi_petugas: {
+    title: "Pusat Notifikasi Aplikasi Native Petugas",
+    subtitle:
+      "Penyiaran pemberitahuan khusus, instruksi penugasan lapangan, dan rilis pembaruan ke aplikasi Android",
+    shortTitle: "Notifikasi Petugas",
+  },
 };
 
 export const AdminHeader: React.FC<HeaderProps> = ({

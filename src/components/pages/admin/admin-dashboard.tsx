@@ -48,6 +48,7 @@ import { TabPengaturanWeb } from "./tabs/tab-pengaturan-web";
 import { TabPetugasDpt } from "./tabs/tab-petugas-dpt";
 import { TabCalonKades } from "./tabs/tab-calon-kades";
 import { TabAkunPetugas } from "./tabs/tab-akun-petugas";
+import { TabNotifikasiPetugas } from "./tabs/tab-notifikasi-petugas";
 
 // Code-split heavy modules via next/dynamic to minimize initial bundle footprint
 const TabPrintCenter = dynamic(
@@ -2014,6 +2015,10 @@ export const AdminDashboard: React.FC = () => {
               onRejectAduan={handleRejectAduan}
               onDeleteAduan={handleDeleteAduan}
             />
+          )}
+
+          {effectiveActiveTab === "notifikasi_petugas" && (
+            <TabNotifikasiPetugas />
           )}
 
           {effectiveActiveTab === "print" && (

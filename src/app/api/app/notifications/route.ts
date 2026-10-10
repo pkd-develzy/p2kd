@@ -2,11 +2,15 @@ import { NextResponse } from "next/server";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { verifyAdminSession, canAccessVoterData } from "@/lib/auth-middleware";
 
-interface NotificationPengumuman {
+interface NotifikasiPetugasRow {
   id: string;
   judul: string;
-  ringkasan?: string | null;
-  tanggal?: string | null;
+  pesan: string;
+  kategori?: string | null;
+  target_role?: string | null;
+  target_tps?: string | null;
+  author?: string | null;
+  is_active?: boolean | null;
   created_at?: string | null;
 }
 
@@ -20,16 +24,6 @@ interface NotificationAduan {
   jenis_aduan?: string | null;
   status?: string | null;
   tanggal?: string | null;
-  created_at?: string | null;
-}
-
-interface NotificationVisit {
-  id: string;
-  qr_token?: string | null;
-  petugas_nama?: string | null;
-  total_anggota?: number | null;
-  status_kunjungan?: string | null;
-  waktu_kunjungan?: string | null;
   created_at?: string | null;
 }
 
@@ -78,62 +72,74 @@ export async function GET(req: Request) {
       console.warn("Error fetching user_deleted_notifications:", e);
     }
 
-    // 1. Ambil aduan terkini untuk notifikasi
-    let aduanQuery = adminClient
-      .from("aduan_pemilih")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(20);
-
-    if (user.role === "pantarlih" && rwClean) {
-      aduanQuery = aduanQuery.eq("rw", rwClean);
-    }
-
-    const { data: rawAduanList } = await aduanQuery;
-    const aduanList = (rawAduanList as NotificationAduan[]) || [];
-
-    // 2. Ambil pengumuman resmi
-    let pengumumanList: NotificationPengumuman[] = [];
+    // 1. Ambil Notifikasi Resmi Petugas dari Tabel Khusus (bukan pengumuman website publik!)
+    let notifikasiPetugasList: NotifikasiPetugasRow[] = [];
     try {
-      pengumumanList = (await SupabaseDbService.fetchPengumuman()) as NotificationPengumuman[];
-    } catch (e) {
-      console.warn("Notifications: pengumuman warning:", e);
+      const { data: notifData } = await client
+        .from("notifikasi_petugas")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(25);
+
+      if (notifData && Array.isArray(notifData)) {
+        notifikasiPetugasList = notifData;
+      }
+    } catch (errNotif) {
+      console.warn("Error querying notifikasi_petugas:", errNotif);
     }
 
-    // 3. Ambil kunjungan terkini di TPS petugas
-    let visitQuery = client
-      .from("kunjungan_coklit")
-      .select("*")
-      .order("waktu_kunjungan", { ascending: false })
-      .limit(10);
+    // 2. Ambil aduan warga relevan untuk petugas TPS / Koordinator
+    let aduanList: NotificationAduan[] = [];
+    try {
+      let aduanQuery = adminClient
+        .from("aduan_pemilih")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
 
-    if (user.role === "pantarlih" && user.assignedTps) {
-      visitQuery = visitQuery.eq("tps", user.assignedTps);
+      if (user.role === "pantarlih" && rwClean) {
+        aduanQuery = aduanQuery.eq("rw", rwClean);
+      }
+      const { data: rawAduanList } = await aduanQuery;
+      if (rawAduanList) aduanList = rawAduanList as NotificationAduan[];
+    } catch (errAduan) {
+      console.warn("Error querying aduan_pemilih:", errAduan);
     }
-    const { data: rawVisits } = await visitQuery;
-    const visits = (rawVisits as NotificationVisit[]) || [];
 
-    // Konstruksi daftar notifikasi dinamis
+    // 3. Konstruksi daftar notifikasi terpadu khusus aplikasi native
     const rawNotifications: NotificationItemData[] = [];
 
-    // Notifikasi dari pengumuman resmi
-    pengumumanList.slice(0, 5).forEach((p) => {
-      rawNotifications.push({
-        id: `notif-pengumuman-${p.id}`,
-        title: `📢 Pengumuman: ${p.judul}`,
-        body: p.ringkasan || "Informasi resmi panitia pemilihan kepala desa.",
-        category: "PENGUMUMAN",
-        timestamp: p.tanggal || p.created_at || new Date().toISOString(),
-        read: false,
-        deepLink: "activity/pengumuman",
-      });
+    // Prioritas Utama: Notifikasi Khusus Aplikasi Native Petugas
+    notifikasiPetugasList.forEach((n) => {
+      // Cek apakah target sesuai dengan petugas (role atau assigned TPS)
+      const targetRole = (n.target_role || "SEMUA").toUpperCase();
+      const targetTps = (n.target_tps || "SEMUA").toUpperCase();
+
+      const userRole = (user.role || "").toUpperCase();
+      const userTps = (user.assignedTps || "SEMUA").toUpperCase();
+
+      const roleMatch = targetRole === "SEMUA" || targetRole === userRole;
+      const tpsMatch = targetTps === "SEMUA" || targetTps === userTps;
+
+      if (roleMatch && tpsMatch) {
+        rawNotifications.push({
+          id: `petugas-${n.id}`,
+          title: n.judul,
+          body: n.pesan,
+          category: (n.kategori || "INFORMASI").toUpperCase(),
+          timestamp: n.created_at || new Date().toISOString(),
+          read: false,
+          deepLink: "activity/notifikasi",
+        });
+      }
     });
 
-    // Notifikasi dari aduan warga
-    aduanList.slice(0, 10).forEach((a) => {
+    // Notifikasi dari aduan warga yang ditugaskan
+    aduanList.forEach((a) => {
       rawNotifications.push({
-        id: `notif-aduan-${a.id || a.nomor_aduan || "aduan"}`,
-        title: `⚠️ Aduan Warga RT ${a.rt || "-"}/RW ${a.rw || "-"}`,
+        id: `aduan-${a.id || a.nomor_aduan || Math.random()}`,
+        title: `⚠️ Aduan Masuk RT ${a.rt || "-"}/RW ${a.rw || "-"}`,
         body: `${a.nama_pelapor || "Warga"}: ${a.isi_aduan || a.jenis_aduan || "-"} (${a.status || "MENUNGGU"})`,
         category: "ADUAN",
         timestamp: a.tanggal || a.created_at || new Date().toISOString(),
@@ -142,20 +148,7 @@ export async function GET(req: Request) {
       });
     });
 
-    // Notifikasi dari progres kunjungan / sinkronisasi
-    visits.slice(0, 5).forEach((v) => {
-      rawNotifications.push({
-        id: `notif-visit-${v.id}`,
-        title: `✅ Coklit Tersimpan: Rumah ${v.qr_token || "QR"}`,
-        body: `${v.petugas_nama || "Petugas"} mencatat ${v.total_anggota || 0} jiwa. Status: ${v.status_kunjungan || "SELESAI"}.`,
-        category: "SINKRONISASI",
-        timestamp: v.waktu_kunjungan || v.created_at || new Date().toISOString(),
-        read: true,
-        deepLink: "activity/kunjungan",
-      });
-    });
-
-    // Filter out notifications yang sudah dihapus permanen oleh user ini
+    // Filter out notifikasi yang sudah dihapus permanen oleh petugas
     const filteredNotifications = rawNotifications.filter((n) => !deletedIds.has(n.id));
 
     // Sort by timestamp descending
@@ -201,9 +194,7 @@ export async function DELETE(req: Request) {
       ids.forEach((i: string) => toDelete.push(String(i)));
     }
 
-    // Jika deleteAll tapi ids kosong, ambil semua ID notifikasi yang relevan lalu catat
     if (deleteAll && toDelete.length === 0) {
-      // Masukkan penanda wildcard untuk user ini atau hapus semua
       const wildcardId = `all-${Date.now()}`;
       toDelete.push(wildcardId);
     }

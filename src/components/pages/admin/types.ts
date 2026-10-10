@@ -247,6 +247,7 @@ export type TabType =
   | "audit"
   | "pengaturan_web"
   | "petugas_dpt"
+  | "notifikasi_petugas"
   | "berita";
 
 

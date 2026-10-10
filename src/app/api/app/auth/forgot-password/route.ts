@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { TelegramAuthService } from "@/lib/telegram-auth-service";
+import { sendTelegramNotification } from "@/lib/telegram";
 
 export async function POST(req: Request) {
   try {
@@ -26,16 +27,20 @@ export async function POST(req: Request) {
       `• Tautan ini berlaku selama <b>15 MENIT</b>.\n` +
       `• Tautan ini adalah <b>SATU KALI PAKAI</b>.\n` +
       `• Jangan pernah memberikan tautan ini kepada siapa pun.\n\n` +
-      `<i>Sekretariat Panitia Pemilihan Kepala Desa Kalisalak 2026</i>`;
+      `<i>Sekretariat Panitia Pemilihan Kepala Desa Kalisalak 2026 (@pantarlih_bot)</i>`;
 
-    const targetChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || "";
-    if (targetChatId) {
-      await TelegramAuthService.sendTelegramMessage(targetChatId, message);
-    }
+    // Kirim notifikasi via bot telegram resmi
+    await sendTelegramNotification(message, {
+      inline_keyboard: [
+        [
+          { text: "🔑 Buka Formulir Reset Kata Sandi (15 Menit)", url: resetUrl }
+        ]
+      ]
+    });
 
     return NextResponse.json({
       success: true,
-      message: "Tautan pemulihan kata sandi telah dikirim ke Telegram Anda.",
+      message: "Tautan pemulihan kata sandi telah dikirim ke Telegram resmi @pantarlih_bot.",
       resetUrl,
     });
   } catch (err) {

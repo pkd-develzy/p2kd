@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { TelegramAuthService } from "@/lib/telegram-auth-service";
+import { sendTelegramNotification } from "@/lib/telegram";
 
 export async function POST(req: Request) {
   try {
@@ -26,18 +27,21 @@ export async function POST(req: Request) {
       `• Tautan ini berlaku selama <b>15 MENIT</b>.\n` +
       `• Tautan ini adalah <b>SATU KALI PAKAI</b>.\n` +
       `• Jangan pernah memberikan tautan ini kepada orang lain.\n\n` +
-      `<i>Sekretariat Panitia Pemilihan Kepala Desa Kalisalak 2026</i>`;
+      `<i>Sekretariat Panitia Pemilihan Kepala Desa Kalisalak 2026 (@pantarlih_bot)</i>`;
 
-    // Ambil default telegram chat ID jika ada
-    const targetChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || "";
-    if (targetChatId) {
-      await TelegramAuthService.sendTelegramMessage(targetChatId, message);
-    }
+    // Kirim notifikasi via bot telegram resmi
+    await sendTelegramNotification(message, {
+      inline_keyboard: [
+        [
+          { text: "🔐 Buka Formulir Reset PIN (15 Menit)", url: resetUrl }
+        ]
+      ]
+    });
 
     return NextResponse.json({
       success: true,
-      message: "Tautan pemulihan 15 menit telah dikirim ke Telegram Anda.",
-      resetUrl, // Diberikan untuk preview lokal / fallback
+      message: "Tautan pemulihan 15 menit telah dikirim ke Telegram resmi @pantarlih_bot.",
+      resetUrl,
     });
   } catch (err) {
     console.error("Error in forgot-pin route:", err);

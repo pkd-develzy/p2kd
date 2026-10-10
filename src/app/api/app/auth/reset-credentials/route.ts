@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { TelegramAuthService } from "@/lib/telegram-auth-service";
 import { SupabaseDbService } from "@/lib/supabase-db";
 import { createStoredPassword } from "@/lib/encryption";
+import { sendTelegramNotification } from "@/lib/telegram";
 
 export async function POST(req: Request) {
   try {
@@ -56,15 +57,12 @@ export async function POST(req: Request) {
     // Hanguskan token seketika (Single-Use / Burn after use)
     TelegramAuthService.consumeToken(token);
 
-    // Kirim notifikasi konfirmasi ke Telegram
-    const targetChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || "";
-    if (targetChatId) {
-      const confirmMessage = `✅ <b>SUKSES PEMBARUAN ${type}</b>\n\n` +
-        `Halo <b>${username}</b>, ${type === "PIN" ? "6-Digit PIN Keamanan" : "Kata Sandi"} akun Anda telah berhasil diperbarui.\n` +
-        `Waktu Pembaruan: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.\n\n` +
-        `Jika Anda tidak melakukan perubahan ini, segera hubungi Sekretariat P2KD Kalisalak.`;
-      await TelegramAuthService.sendTelegramMessage(targetChatId, confirmMessage);
-    }
+    // Kirim notifikasi konfirmasi ke Telegram resmi
+    const confirmMessage = `✅ <b>SUKSES PEMBARUAN ${type}</b>\n\n` +
+      `Halo <b>${username}</b>, ${type === "PIN" ? "6-Digit PIN Keamanan" : "Kata Sandi"} akun Anda telah berhasil diperbarui.\n` +
+      `Waktu Pembaruan: ${new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB.\n\n` +
+      `Jika Anda tidak melakukan perubahan ini, segera hubungi Sekretariat P2KD Kalisalak.`;
+    await sendTelegramNotification(confirmMessage);
 
     return NextResponse.json({
       success: true,

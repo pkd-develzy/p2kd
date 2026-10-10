@@ -14,18 +14,33 @@ export interface SessionVerificationResult {
 export function verifyAdminSession(req: Request): SessionVerificationResult {
   let token: string | null = null;
 
-  // 1. Check Authorization header: Bearer <token>
-  const authHeader = req.headers.get("authorization");
-  if (authHeader && authHeader.startsWith("Bearer ")) {
+  // 1. Check Authorization or X-Authorization header: Bearer <token>
+  const authHeader = req.headers.get("authorization") || req.headers.get("x-authorization");
+  if (authHeader && authHeader.toLowerCase().startsWith("bearer ")) {
     token = authHeader.substring(7).trim();
   }
 
-  // 2. Check Cookie if header not present
+  // 2. Check Custom App Token headers
+  if (!token) {
+    token = req.headers.get("x-app-token") || req.headers.get("x-auth-token");
+  }
+
+  // 3. Check Cookie if header not present
   if (!token) {
     const cookieHeader = req.headers.get("cookie") || "";
     const match = cookieHeader.match(/admin_token=([^;]+)/);
     if (match && match[1]) {
       token = match[1];
+    }
+  }
+
+  // 4. Fallback URL query parameter (?token=... or ?auth_token=...)
+  if (!token) {
+    try {
+      const url = new URL(req.url);
+      token = url.searchParams.get("token") || url.searchParams.get("auth_token");
+    } catch {
+      // ignore URL parse errors
     }
   }
 
@@ -147,6 +162,7 @@ export function isPantarlih(user?: AuthTokenPayload): boolean {
   return (
     role === "PETUGAS_TPS" ||
     role === "PANTARLIH" ||
+    role === "PETUGAS" ||
     seksi === "PANTARLIH_LAPANGAN" ||
     username.startsWith("pps") ||
     username.includes("pantarlih") ||

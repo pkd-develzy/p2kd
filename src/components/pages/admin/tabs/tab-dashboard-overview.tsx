@@ -17,6 +17,8 @@ import {
   Printer,
   UserCheck,
   MessageSquare,
+  Smartphone,
+  Bell,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui";
@@ -137,6 +139,15 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
               <Printer className="w-4 h-4 text-cyan-400" />
               <span>Cetak C6 & Berita Acara</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigateTab("notifikasi_petugas")}
+              className="px-4 py-2.5 rounded-2xl bg-blue-600/30 hover:bg-blue-600/50 text-white border border-blue-400/40 font-bold text-xs flex items-center gap-2 backdrop-blur-md transition-all shadow-sm cursor-pointer"
+            >
+              <Bell className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>Notifikasi App Petugas</span>
+            </button>
           </div>
         </div>
 
@@ -207,8 +218,8 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
         </div>
       </Card>
 
-      {/* 2. Top Executive 6 KPI Cards Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
+      {/* 2. Top Executive 7 KPI Cards Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3.5">
         {/* KPI 1: Pemilih Aktif */}
         <Card
           onClick={() => onNavigateTab("pemilih")}
@@ -337,6 +348,28 @@ export const TabDashboardOverview: React.FC<TabDashboardOverviewProps> = ({
             <div className="text-2xl font-black text-purple-600">{aduanList.length} Aduan</div>
             <span className="text-[10px] text-slate-500 font-medium block">
               {aduanMenunggu} Menunggu Verifikasi
+            </span>
+          </div>
+        </Card>
+
+        {/* KPI 7: Notifikasi App Petugas (Aplikasi Native Android) */}
+        <Card
+          onClick={() => onNavigateTab("notifikasi_petugas")}
+          className="p-4 bg-linear-to-br from-blue-950 to-slate-900 border-blue-500/40 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer rounded-2xl group space-y-1.5 text-white"
+        >
+          <div className="flex items-center justify-between">
+            <div className="p-2 rounded-xl bg-blue-500/20 text-blue-300 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <Smartphone className="w-4 h-4 animate-pulse" />
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-blue-300 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+          </div>
+          <div>
+            <span className="text-[11px] font-bold text-blue-300 uppercase tracking-wider block">
+              Notifikasi Petugas
+            </span>
+            <div className="text-xl font-black text-white">App Native</div>
+            <span className="text-[10px] text-blue-200 font-medium block">
+              Siaran HP Android
             </span>
           </div>
         </Card>

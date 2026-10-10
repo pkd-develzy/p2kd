@@ -142,14 +142,6 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH"],
         },
         {
-          id: "notifikasi_petugas" as TabType,
-          label: "Notifikasi Petugas (Aplikasi Native)",
-          icon: Smartphone,
-          badge: "App Native",
-          badgeColor: "bg-blue-600 text-white font-bold",
-          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
-        },
-        {
           id: "aduan" as TabType,
           label: "Aduan & Masukan Warga",
           icon: AlertTriangle,
@@ -177,6 +169,22 @@ export const AdminSidebar: React.FC<SidebarProps> = ({
           badge: ".XLSX",
           badgeColor: "bg-emerald-900/80 text-emerald-200 border-emerald-600/70 font-bold",
           allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH"],
+        },
+      ],
+    },
+    {
+      title: "APLIKASI MOBILE PETUGAS",
+      icon: Smartphone,
+      color: "text-blue-400",
+      allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
+      items: [
+        {
+          id: "notifikasi_petugas" as TabType,
+          label: "Pusat Notifikasi Petugas (App Native)",
+          icon: Smartphone,
+          badge: "Siaran HP",
+          badgeColor: "bg-blue-600 text-white font-bold animate-pulse",
+          allowedRoles: ["SUPER_ADMIN", "SEKSI_PEMILIH", "PETUGAS_TPS", "PANTARLIH_LAPANGAN"],
         },
       ],
     },

@@ -564,8 +564,8 @@ export const TabNotifikasiPetugas: React.FC = () => {
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                disabled={isSubmitting || !judul.trim() || !pesan.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-900/30"
+                disabled={isSubmitting || (!imageUrl.trim() && (!judul.trim() || !pesan.trim()))}
+                className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition shadow-lg shadow-blue-900/30 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -622,14 +622,28 @@ export const TabNotifikasiPetugas: React.FC = () => {
                     />
                   </div>
                 )}
-                <div className="p-3">
-                  <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug">
-                    {judul || "Judul Banner Pengumuman Resmi"}
-                  </h4>
-                  <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
-                    {pesan || "Isi pengumuman resmi dan instruksi penting untuk petugas Coklit di lapangan."}
-                  </p>
-                </div>
+                {(judul.trim() || pesan.trim() || !imageUrl) && (
+                  <div className="p-3">
+                    {judul ? (
+                      <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug">
+                        {judul}
+                      </h4>
+                    ) : !imageUrl ? (
+                      <h4 className="text-xs font-bold text-slate-900 mb-1 leading-snug">
+                        Judul Banner Pengumuman Resmi
+                      </h4>
+                    ) : null}
+                    {pesan ? (
+                      <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
+                        {pesan}
+                      </p>
+                    ) : !imageUrl ? (
+                      <p className="text-[11px] text-slate-600 line-clamp-3 leading-relaxed">
+                        Isi pengumuman resmi dan instruksi penting untuk petugas Coklit di lapangan.
+                      </p>
+                    ) : null}
+                  </div>
+                )}
               </div>
             ) : (
               // Simulasi Card Notifikasi Lonceng

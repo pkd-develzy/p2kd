@@ -336,7 +336,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
 
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+              <label className="flex items-center justify-between text-xs font-semibold text-slate-300 mb-1.5">
                 <span>Judul Notifikasi / Pengumuman {imageUrl ? <span className="text-emerald-400 font-normal">(Opsional untuk Foto Poster)</span> : "*"}</span>
               </label>
               <input
@@ -405,7 +405,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+              <label className="flex items-center justify-between text-xs font-semibold text-slate-300 mb-1.5">
                 <span>Isi Pesan / Instruksi Petugas {imageUrl ? <span className="text-emerald-400 font-normal">(Opsional untuk Foto Poster)</span> : "*"}</span>
               </label>
               <textarea

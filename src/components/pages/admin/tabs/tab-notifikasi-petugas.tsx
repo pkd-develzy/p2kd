@@ -145,8 +145,9 @@ export const TabNotifikasiPetugas: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!judul.trim() || !pesan.trim()) {
-      setStatusMessage({ type: "error", text: "Judul dan isi pesan wajib diisi." });
+    const hasImage = Boolean(imageUrl.trim());
+    if (!hasImage && (!judul.trim() || !pesan.trim())) {
+      setStatusMessage({ type: "error", text: "Judul dan isi pesan wajib diisi jika tidak menyertakan foto/poster." });
       return;
     }
 
@@ -335,16 +336,16 @@ export const TabNotifikasiPetugas: React.FC = () => {
 
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Judul Notifikasi / Pengumuman *
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                <span>Judul Notifikasi / Pengumuman {imageUrl ? <span className="text-emerald-400 font-normal">(Opsional untuk Foto Poster)</span> : "*"}</span>
               </label>
               <input
                 type="text"
                 value={judul}
                 onChange={(e) => setJudul(e.target.value)}
-                placeholder="Contoh: Jadwal Penyerahan Berkas Model A-Pilkades Kalisalak"
+                placeholder={imageUrl ? "Opsional — Bisa dikosongkan jika hanya ingin menampilkan foto/poster" : "Contoh: Jadwal Penyerahan Berkas Model A-Pilkades Kalisalak"}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500"
-                required
+                required={!imageUrl}
               />
             </div>
 
@@ -404,16 +405,16 @@ export const TabNotifikasiPetugas: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Isi Pesan / Instruksi Petugas *
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 flex items-center justify-between">
+                <span>Isi Pesan / Instruksi Petugas {imageUrl ? <span className="text-emerald-400 font-normal">(Opsional untuk Foto Poster)</span> : "*"}</span>
               </label>
               <textarea
                 value={pesan}
                 onChange={(e) => setPesan(e.target.value)}
                 rows={3}
-                placeholder="Tuliskan instruksi atau pengumuman secara jelas untuk petugas di lapangan..."
+                placeholder={imageUrl ? "Opsional — Bisa dikosongkan jika hanya ingin menampilkan foto/poster banner saja" : "Tuliskan instruksi atau pengumuman secara jelas untuk petugas di lapangan..."}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500 leading-relaxed"
-                required
+                required={!imageUrl}
               />
             </div>
 

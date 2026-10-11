@@ -56,15 +56,16 @@ export async function POST(req: Request) {
       end_date,
     } = body;
 
-    if (!judul || !pesan) {
+    const hasImage = Boolean(image_url && String(image_url).trim());
+    if (!hasImage && (!judul || !pesan)) {
       return NextResponse.json(
-        { success: false, message: "Judul dan isi pesan notifikasi wajib diisi." },
+        { success: false, message: "Judul dan isi pesan notifikasi wajib diisi jika tidak menyertakan foto/poster banner." },
         { status: 400 }
       );
     }
 
     const s1 = SupabaseDbService.getSeksi1Client();
-    const isBannerVal = Boolean(is_banner);
+    const isBannerVal = Boolean(is_banner) || hasImage;
 
     // Format waktu publikasi WIB (ISO UTC string for DB)
     const startDateIso = start_date ? new Date(start_date).toISOString() : new Date().toISOString();
@@ -81,16 +82,19 @@ export async function POST(req: Request) {
         .eq("is_banner", true);
     }
 
+    const cleanJudul = judul ? String(judul).trim() : "";
+    const cleanPesan = pesan ? String(pesan).trim() : "";
+
     const { data, error } = await s1
       .from("notifikasi_petugas")
       .insert({
-        judul: String(judul).trim(),
-        pesan: String(pesan).trim(),
-        kategori: kategori || "INFO",
+        judul: cleanJudul,
+        pesan: cleanPesan,
+        kategori: kategori || (hasImage ? "PENGUMUMAN" : "INFO"),
         target_role: target_role || "SEMUA",
         target_tps: target_tps || "SEMUA",
         author: session.user.nama || session.user.username || "Admin P2KD",
-        image_url: image_url ? String(image_url).trim() : null,
+        image_url: hasImage ? String(image_url).trim() : null,
         is_banner: isBannerVal,
         start_date: startDateIso,
         end_date: endDateIso,

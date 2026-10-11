@@ -13,8 +13,11 @@ import {
   Info,
   ImageIcon,
   Upload,
-  LayoutTemplate,
   X,
+  Calendar,
+  Clock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 interface NotifikasiPetugasItem {
@@ -28,6 +31,8 @@ interface NotifikasiPetugasItem {
   image_url?: string | null;
   is_banner?: boolean;
   is_active: boolean;
+  start_date?: string | null;
+  end_date?: string | null;
   created_at: string;
 }
 
@@ -49,6 +54,14 @@ export const TabNotifikasiPetugas: React.FC = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Jadwal Penayangan Otomatis (Waktu Indonesia Barat - WIB)
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    const tzOffset = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
+  });
+  const [endDate, setEndDate] = useState("");
 
   const fetchNotifications = async () => {
     setIsLoading(true);
@@ -95,8 +108,8 @@ export const TabNotifikasiPetugas: React.FC = () => {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setStatusMessage({ type: "error", text: "Ukuran gambar maksimal 5 MB." });
+    if (file.size > 10 * 1024 * 1024) {
+      setStatusMessage({ type: "error", text: "Ukuran gambar maksimal 10 MB." });
       return;
     }
 
@@ -106,23 +119,25 @@ export const TabNotifikasiPetugas: React.FC = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", "p2kd_banner_petugas");
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/admin/upload", {
         method: "POST",
         body: formData,
       });
       const data = await res.json();
 
-      if (data.secure_url || data.url) {
-        const uploadedUrl = data.secure_url || data.url;
+      const uploadedUrl = data.data?.url || data.secure_url || data.url;
+
+      if (uploadedUrl) {
         setImageUrl(uploadedUrl);
-        setIsBanner(true); // Otomatis aktifkan banner jika mengunggah gambar
-        setStatusMessage({ type: "success", text: "Gambar poster banner berhasil diunggah!" });
+        setIsBanner(true); // Otomatis aktifkan mode banner jika ada poster gambar
+        setStatusMessage({ type: "success", text: "Gambar poster banner berhasil diunggah ke Cloudinary!" });
       } else {
         setStatusMessage({ type: "error", text: data.message || "Gagal mengunggah gambar." });
       }
     } catch {
-      setStatusMessage({ type: "error", text: "Terjadi kesalahan saat mengunggah gambar." });
+      setStatusMessage({ type: "error", text: "Terjadi kesalahan saat mengunggah gambar ke server." });
     } finally {
       setIsUploadingImage(false);
     }
@@ -132,6 +147,11 @@ export const TabNotifikasiPetugas: React.FC = () => {
     e.preventDefault();
     if (!judul.trim() || !pesan.trim()) {
       setStatusMessage({ type: "error", text: "Judul dan isi pesan wajib diisi." });
+      return;
+    }
+
+    if (startDate && endDate && new Date(startDate) >= new Date(endDate)) {
+      setStatusMessage({ type: "error", text: "Jadwal berakhir harus lebih lama dari jadwal mulai publikasi." });
       return;
     }
 
@@ -149,6 +169,8 @@ export const TabNotifikasiPetugas: React.FC = () => {
           target_tps: targetTps,
           image_url: imageUrl.trim() || null,
           is_banner: isBanner,
+          start_date: startDate ? new Date(startDate).toISOString() : new Date().toISOString(),
+          end_date: endDate && endDate.trim() ? new Date(endDate).toISOString() : null,
         }),
       });
       const json = await res.json();
@@ -156,22 +178,45 @@ export const TabNotifikasiPetugas: React.FC = () => {
         setStatusMessage({ 
           type: "success", 
           text: isBanner 
-            ? "Banner pengumuman bergambar berhasil diterbitkan ke Beranda Aplikasi Petugas!" 
-            : "Notifikasi berhasil disiarkan ke aplikasi Android petugas!" 
+            ? "Banner pengumuman bergambar berhasil diterbitkan/dijadwalkan ke Beranda Aplikasi Petugas!" 
+            : "Notifikasi berhasil disiarkan/dijadwalkan ke aplikasi Android petugas!" 
         });
         setJudul("");
         setPesan("");
         setImageUrl("");
         setIsBanner(false);
-        setKategori("INFORMASI");
-        fetchNotifications();
+        setEndDate("");
+        await fetchNotifications();
       } else {
-        setStatusMessage({ type: "error", text: json.message || "Gagal menyiarkan notifikasi." });
+        setStatusMessage({ type: "error", text: json.message || "Gagal menerbitkan notifikasi." });
       }
     } catch {
       setStatusMessage({ type: "error", text: "Terjadi kesalahan jaringan saat mengirim notifikasi." });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (id: string, currentActive: boolean) => {
+    try {
+      const res = await fetch("/api/admin/notifikasi-petugas", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          is_active: !currentActive,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === id ? { ...n, is_active: !currentActive } : n))
+        );
+      } else {
+        alert(json.message || "Gagal mengubah status aktif.");
+      }
+    } catch {
+      alert("Kesalahan koneksi saat mengubah status notifikasi.");
     }
   };
 
@@ -190,6 +235,39 @@ export const TabNotifikasiPetugas: React.FC = () => {
     } catch {
       alert("Kesalahan koneksi saat menghapus notifikasi");
     }
+  };
+
+  const getScheduleStatus = (item: NotifikasiPetugasItem) => {
+    if (!item.is_active) {
+      return {
+        label: "NONAKTIF",
+        style: "bg-slate-800 text-slate-400 border-slate-700",
+        icon: "⚪",
+      };
+    }
+    const now = new Date();
+    const start = item.start_date ? new Date(item.start_date) : null;
+    const end = item.end_date ? new Date(item.end_date) : null;
+
+    if (start && start > now) {
+      return {
+        label: "TERJADWAL (AKAN TAYANG)",
+        style: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+        icon: "⏳",
+      };
+    }
+    if (end && end < now) {
+      return {
+        label: "BERAKHIR / KADALUARSA",
+        style: "bg-rose-500/20 text-rose-300 border-rose-500/40",
+        icon: "🛑",
+      };
+    }
+    return {
+      label: "SEDANG TAYANG",
+      style: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+      icon: "🟢",
+    };
   };
 
   const getKategoriBadge = (kat: string) => {
@@ -258,59 +336,66 @@ export const TabNotifikasiPetugas: React.FC = () => {
           <form onSubmit={handleCreate} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Judul Notifikasi / Banner <span className="text-rose-400">*</span>
+                Judul Notifikasi / Pengumuman *
               </label>
               <input
                 type="text"
                 value={judul}
                 onChange={(e) => setJudul(e.target.value)}
-                placeholder="Contoh: Batas Akhir Coklit RW 04 Hari Ini Jam 17:00"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500 transition"
+                placeholder="Contoh: Jadwal Penyerahan Berkas Model A-Pilkades Kalisalak"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500"
+                required
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Kategori</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Kategori Notifikasi
+                </label>
                 <select
                   value={kategori}
-                  onChange={(e) => setKategori(e.target.value as "INFORMASI")}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-blue-500 transition"
+                  onChange={(e) => setKategori(e.target.value as "INFORMASI" | "PENTING" | "INSTRUKSI" | "PEMBARUAN")}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-blue-500"
                 >
-                  <option value="INFORMASI">INFORMASI (Biru)</option>
-                  <option value="INSTRUKSI">INSTRUKSI (Biru Terang)</option>
-                  <option value="PENTING">PENTING (Merah)</option>
-                  <option value="PEMBARUAN">PEMBARUAN (Hijau)</option>
+                  <option value="INFORMASI">INFORMASI (Reguler)</option>
+                  <option value="PENTING">PENTING (Darurat/Urgent)</option>
+                  <option value="INSTRUKSI">INSTRUKSI (Tugas Lapangan)</option>
+                  <option value="PEMBARUAN">PEMBARUAN (Data/Sistem)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Target Peran Petugas</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Target Petugas
+                </label>
                 <select
                   value={targetRole}
                   onChange={(e) => setTargetRole(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-blue-500 transition"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-blue-500"
                 >
-                  <option value="SEMUA">Semua Petugas (Umum)</option>
-                  <option value="PANTARLIH">Khusus Pantarlih Lapangan</option>
-                  <option value="PETUGAS">Petugas Coklit</option>
+                  <option value="SEMUA">Semua Petugas & Panitia</option>
+                  <option value="PANTARLIH">Petugas Pantarlih Lapangan</option>
+                  <option value="KOORDINATOR">Koordinator RW</option>
                   <option value="SEKSI1">Koordinator Seksi 1</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">Target Wilayah RW / TPS</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Target Wilayah TPS / RW
+                </label>
                 <select
                   value={targetTps}
                   onChange={(e) => setTargetTps(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-blue-500 transition"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-blue-500"
                 >
-                  <option value="SEMUA">Semua RW (01 s/d 13)</option>
+                  <option value="SEMUA">Semua Wilayah (RW 01 s/d 13)</option>
                   {Array.from({ length: 13 }, (_, i) => {
-                    const num = String(i + 1).padStart(2, "0");
+                    const no = (i + 1).toString().padStart(2, "0");
                     return (
-                      <option key={num} value={`TPS ${num}`}>
-                        RW {num} (TPS {num})
+                      <option key={no} value={`RW ${no}`}>
+                        Wilayah RW {no} (TPS {no})
                       </option>
                     );
                   })}
@@ -320,28 +405,29 @@ export const TabNotifikasiPetugas: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Isi Pesan Notifikasi <span className="text-rose-400">*</span>
+                Isi Pesan / Instruksi Petugas *
               </label>
               <textarea
-                rows={3}
                 value={pesan}
                 onChange={(e) => setPesan(e.target.value)}
-                placeholder="Tuliskan arahan, penjelasan teknis, batas waktu, atau instruksi kerja yang harus dipahami petugas lapangan..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500 transition"
+                rows={3}
+                placeholder="Tuliskan instruksi atau pengumuman secara jelas untuk petugas di lapangan..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-hidden focus:border-blue-500 leading-relaxed"
+                required
               />
             </div>
 
             {/* In-App Announcement Banner Settings */}
-            <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <LayoutTemplate className="w-4 h-4 text-emerald-400" />
+                  <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                    <ImageIcon className="w-4 h-4" />
+                  </span>
                   <div>
-                    <span className="text-xs font-bold text-white block">
-                      Tampilkan Sebagai Banner di Beranda Aplikasi
-                    </span>
-                    <span className="text-[11px] text-slate-400 block">
-                      Muncul di kartu papan pengumuman Beranda aplikasi HP petugas (menggantikan banner lama).
+                    <h4 className="text-xs font-bold text-white">Tampilkan Sebagai Banner di Beranda Aplikasi</h4>
+                    <span className="text-[11px] text-slate-400">
+                      Poster pengumuman akan muncul di bagian atas halaman Beranda HP petugas.
                     </span>
                   </div>
                 </div>
@@ -416,6 +502,61 @@ export const TabNotifikasiPetugas: React.FC = () => {
                     />
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Pengaturan Jadwal Penayangan Otomatis (WIB) */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                  <Calendar className="w-4 h-4" />
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                    Jadwal Penayangan Otomatis (WIB)
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                      Waktu Indonesia Barat (WIB)
+                    </span>
+                  </h4>
+                  <span className="text-[11px] text-slate-400">
+                    Atur jadwal kapan pengumuman mulai tayang secara otomatis dan kapan berakhir di aplikasi.
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-blue-400" />
+                    Jadwal Mulai Publikasi (WIB) *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-emerald-500"
+                    required
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Pengumuman otomatis publik saat waktu ini tiba.
+                  </span>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-rose-400" />
+                    Jadwal Berakhir Publikasi (WIB - Opsional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white focus:outline-hidden focus:border-emerald-500"
+                  />
+                  <span className="text-[10px] text-slate-500 mt-1 block">
+                    Kosongkan jika ingin terus tayang tanpa batas waktu.
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -519,14 +660,14 @@ export const TabNotifikasiPetugas: React.FC = () => {
         </div>
       </div>
 
-      {/* Riwayat Notifikasi Aktif */}
+      {/* Riwayat Notifikasi Aktif & Terjadwal */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
             <Bell className="w-4 h-4 text-amber-400" />
-            Daftar Notifikasi & Banner Aktif di Aplikasi Petugas ({notifications.length})
+            Daftar Notifikasi & Banner Petugas ({notifications.length})
           </h3>
-          <span className="text-xs text-slate-400">Dapat dihapus sewaktu-waktu oleh Admin</span>
+          <span className="text-xs text-slate-400">Mendukung otomatisasi jadwal publikasi & masa tayang (WIB)</span>
         </div>
 
         {isLoading ? (
@@ -540,56 +681,88 @@ export const TabNotifikasiPetugas: React.FC = () => {
           </div>
         ) : (
           <div className="divide-y divide-slate-800/60">
-            {notifications.map((item) => (
-              <div key={item.id} className="py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-800/30 px-3 rounded-xl transition">
-                <div className="flex items-start gap-3">
-                  {item.image_url ? (
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-700 shrink-0 bg-slate-950">
-                      <Image
-                        src={item.image_url}
-                        alt="Thumbnail"
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
-                      <Bell className="w-4 h-4" />
-                    </div>
-                  )}
+            {notifications.map((item) => {
+              const schedule = getScheduleStatus(item);
+              return (
+                <div key={item.id} className="py-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 hover:bg-slate-800/30 px-3 rounded-xl transition">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    {item.image_url ? (
+                      <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-700 shrink-0 bg-slate-950">
+                        <Image
+                          src={item.image_url}
+                          alt="Thumbnail"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
+                        <Bell className="w-5 h-5" />
+                      </div>
+                    )}
 
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {item.is_banner && (
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                          ★ BANNER BERANDA
+                    <div className="space-y-1.5 flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {item.is_banner && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                            ★ BANNER BERANDA
+                          </span>
+                        )}
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border flex items-center gap-1 ${schedule.style}`}>
+                          <span>{schedule.icon}</span>
+                          {schedule.label}
                         </span>
-                      )}
-                      {getKategoriBadge(item.kategori)}
-                      <h4 className="text-xs font-bold text-white">{item.judul}</h4>
-                      <span className="text-[10px] text-slate-500">
-                        • {new Date(item.created_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 line-clamp-2 max-w-2xl">{item.pesan}</p>
-                    <div className="flex items-center gap-3 text-[10px] text-slate-400 pt-0.5">
-                      <span>Oleh: <strong className="text-slate-300">{item.author}</strong></span>
-                      <span>• Target Role: <strong className="text-slate-300">{item.target_role}</strong></span>
-                      <span>• Target Wilayah: <strong className="text-slate-300">{item.target_tps}</strong></span>
+                        {getKategoriBadge(item.kategori)}
+                        <h4 className="text-xs font-bold text-white truncate max-w-md">{item.judul}</h4>
+                      </div>
+
+                      <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">{item.pesan}</p>
+
+                      <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-[10px] text-slate-400 pt-0.5">
+                        <span className="flex items-center gap-1 text-slate-300">
+                          <Calendar className="w-3 h-3 text-emerald-400" />
+                          Mulai: <strong>{item.start_date ? new Date(item.start_date).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }) : "-"} WIB</strong>
+                        </span>
+                        {item.end_date ? (
+                          <span className="flex items-center gap-1 text-slate-300">
+                            <Clock className="w-3 h-3 text-rose-400" />
+                            Berakhir: <strong>{new Date(item.end_date).toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB</strong>
+                          </span>
+                        ) : (
+                          <span className="text-slate-500 italic">Tanpa Batas Waktu</span>
+                        )}
+                        <span>• Target: <strong className="text-slate-300">{item.target_role} ({item.target_tps})</strong></span>
+                        <span>• Oleh: <strong className="text-slate-300">{item.author}</strong></span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  title="Hapus Notifikasi"
-                  className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/60 transition shrink-0"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-1.5 shrink-0 self-end lg:self-center">
+                    <button
+                      onClick={() => handleToggleActive(item.id, item.is_active)}
+                      title={item.is_active ? "Nonaktifkan Notifikasi" : "Aktifkan Notifikasi"}
+                      className={`p-2 rounded-lg border transition flex items-center gap-1 text-xs font-medium ${
+                        item.is_active
+                          ? "text-slate-300 hover:text-amber-400 hover:bg-amber-950/30 border-slate-700"
+                          : "text-emerald-400 hover:bg-emerald-950/30 border-emerald-900/60"
+                      }`}
+                    >
+                      {item.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span className="text-[11px]">{item.is_active ? "Jeda" : "Aktifkan"}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      title="Hapus Notifikasi"
+                      className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/60 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

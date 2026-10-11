@@ -20,35 +20,44 @@ export async function POST(req: Request) {
 
     let updated = false;
 
-    if (process.env.DATABASE_URL) {
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      const res = await pool.query(
-        `UPDATE anggota_p2kd 
-         SET telegram_chat_id = $1, telegram_username = $2, telegram_linked_at = NOW() 
-         WHERE LOWER(username) = LOWER($3)
-         RETURNING id, nama_lengkap, username, telegram_chat_id`,
-        [cleanChatId, cleanTgUname, cleanUsername]
-      );
-      await pool.end();
-      if (res.rowCount && res.rowCount > 0) {
-        updated = true;
+    const s3Url = process.env.DIRECT_SERVER3_URL || process.env.DATABASE_SERVER3_URL;
+    if (s3Url) {
+      try {
+        const pool = new Pool({ connectionString: s3Url, ssl: { rejectUnauthorized: false } });
+        const res = await pool.query(
+          `UPDATE anggota_p2kd 
+           SET telegram_chat_id = $1, telegram_username = $2, telegram_linked_at = NOW() 
+           WHERE LOWER(username) = LOWER($3) OR nik = $3
+           RETURNING id, nama_lengkap, username, telegram_chat_id`,
+          [cleanChatId, cleanTgUname, cleanUsername]
+        );
+        await pool.end();
+        if (res.rowCount && res.rowCount > 0) {
+          updated = true;
+        }
+      } catch (errPool) {
+        console.warn("Direct PG Server 3 update telegram-link fallback:", errPool);
       }
     }
 
     if (!updated) {
-      const s3 = getSupabaseServer3Admin();
-      const { data } = await s3
-        .from("anggota_p2kd")
-        .update({
-          telegram_chat_id: cleanChatId,
-          telegram_username: cleanTgUname,
-          telegram_linked_at: new Date().toISOString(),
-        })
-        .ilike("username", cleanUsername)
-        .select("id, nama_lengkap, username, telegram_chat_id");
+      try {
+        const s3 = getSupabaseServer3Admin();
+        const { data } = await s3
+          .from("anggota_p2kd")
+          .update({
+            telegram_chat_id: cleanChatId,
+            telegram_username: cleanTgUname,
+            telegram_linked_at: new Date().toISOString(),
+          })
+          .or(`username.ilike.${cleanUsername},nik.eq.${cleanUsername}`)
+          .select("id, nama_lengkap, username, telegram_chat_id");
 
-      if (data && data.length > 0) {
-        updated = true;
+        if (data && data.length > 0) {
+          updated = true;
+        }
+      } catch (errS3) {
+        console.warn("Supabase Server 3 update telegram-link fallback:", errS3);
       }
     }
 

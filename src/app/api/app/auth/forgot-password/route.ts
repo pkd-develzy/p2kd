@@ -25,33 +25,58 @@ export async function POST(req: Request) {
 
     const cleanUsername = username.trim();
 
-    // 1. Ambil data petugas dan telegram_chat_id pribadi
+    // 1. Ambil data petugas dan telegram_chat_id pribadi dari Server 3 / Supabase
     let userRow: PetugasTelegramRow | null = null;
 
-    if (process.env.DATABASE_URL) {
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      const res = await pool.query(
-        "SELECT id, username, nama_lengkap, telegram_chat_id, telegram_username FROM anggota_p2kd WHERE LOWER(username) = LOWER($1) OR nik = $1 LIMIT 1",
-        [cleanUsername]
-      );
-      await pool.end();
-      userRow = (res.rows[0] as PetugasTelegramRow) || null;
+    const s3Url = process.env.DIRECT_SERVER3_URL || process.env.DATABASE_SERVER3_URL;
+    if (s3Url) {
+      try {
+        const pool = new Pool({ connectionString: s3Url, ssl: { rejectUnauthorized: false } });
+        const res = await pool.query(
+          "SELECT id, username, nama_lengkap, telegram_chat_id, telegram_username FROM anggota_p2kd WHERE LOWER(username) = LOWER($1) OR nik = $1 LIMIT 1",
+          [cleanUsername]
+        );
+        await pool.end();
+        if (res.rows && res.rows.length > 0) {
+          userRow = res.rows[0] as PetugasTelegramRow;
+        }
+      } catch (errPool) {
+        console.warn("Direct PG Server 3 query fallback:", errPool);
+      }
     }
 
     if (!userRow) {
-      const s3 = getSupabaseServer3Admin();
-      const { data } = await s3
-        .from("anggota_p2kd")
-        .select("id, username, nama_lengkap, telegram_chat_id, telegram_username")
-        .or(`username.ilike.${cleanUsername},nik.eq.${cleanUsername}`)
-        .limit(1)
-        .single();
-      userRow = (data as PetugasTelegramRow) || null;
+      try {
+        const s3 = getSupabaseServer3Admin();
+        const { data } = await s3
+          .from("anggota_p2kd")
+          .select("id, username, nama_lengkap, telegram_chat_id, telegram_username")
+          .or(`username.ilike.${cleanUsername},nik.eq.${cleanUsername}`)
+          .limit(1)
+          .maybeSingle();
+        userRow = (data as PetugasTelegramRow) || null;
+      } catch (errS3) {
+        console.warn("Supabase Server 3 fallback:", errS3);
+      }
+    }
+
+    if (!userRow && process.env.DATABASE_URL) {
+      try {
+        const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+        const res = await pool.query(
+          "SELECT id, username, nama_lengkap, telegram_chat_id, telegram_username FROM anggota_p2kd WHERE LOWER(username) = LOWER($1) OR nik = $1 LIMIT 1",
+          [cleanUsername]
+        );
+        await pool.end();
+        userRow = (res.rows[0] as PetugasTelegramRow) || null;
+      } catch {
+        // ignore
+      }
     }
 
     if (!userRow) {
       return NextResponse.json(
-        { success: false, message: "Akun petugas tidak terdaftar di database P2KD." },
+        { success: false, message: `Akun petugas "${cleanUsername}" tidak terdaftar di sistem P2KD. Silakan periksa kembali username atau NIK Anda.` },
         { status: 404 }
       );
     }
@@ -63,7 +88,7 @@ export async function POST(req: Request) {
         {
           success: false,
           notLinked: true,
-          message: "Akun Anda belum ditautkan dengan akun Telegram pribadi. Silakan buka menu Akun / Pengaturan di aplikasi untuk menghubungkan Telegram Anda demi keamanan data Anda.",
+          message: `Akun atas nama ${userRow.nama_lengkap} (@${userRow.username}) belum ditautkan ke akun Telegram pribadi. Silakan hubungi Sekretariat Panitia di WhatsApp 0851-7154-2025 untuk bantuan pemulihan kata sandi Anda.`,
         },
         { status: 400 }
       );

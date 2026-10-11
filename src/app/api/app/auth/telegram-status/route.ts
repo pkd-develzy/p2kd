@@ -35,27 +35,38 @@ export async function GET(req: Request) {
       );
     }
 
-    // Query dari database Supabase / PG
+    // Query dari database Server 3 / Supabase
     let row: TelegramStatusRow | null = null;
-    if (process.env.DATABASE_URL) {
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      const res = await pool.query(
-        "SELECT id, username, nama_lengkap, telegram_chat_id, telegram_username, telegram_linked_at FROM anggota_p2kd WHERE LOWER(username) = LOWER($1) LIMIT 1",
-        [targetUsername.trim()]
-      );
-      await pool.end();
-      row = (res.rows[0] as TelegramStatusRow) || null;
+    const s3Url = process.env.DIRECT_SERVER3_URL || process.env.DATABASE_SERVER3_URL;
+    if (s3Url) {
+      try {
+        const pool = new Pool({ connectionString: s3Url, ssl: { rejectUnauthorized: false } });
+        const res = await pool.query(
+          "SELECT id, username, nama_lengkap, telegram_chat_id, telegram_username, telegram_linked_at FROM anggota_p2kd WHERE LOWER(username) = LOWER($1) OR nik = $1 LIMIT 1",
+          [targetUsername.trim()]
+        );
+        await pool.end();
+        if (res.rows && res.rows.length > 0) {
+          row = res.rows[0] as TelegramStatusRow;
+        }
+      } catch (errPool) {
+        console.warn("Direct PG Server 3 query fallback:", errPool);
+      }
     }
 
     if (!row) {
-      const s3 = getSupabaseServer3Admin();
-      const { data } = await s3
-        .from("anggota_p2kd")
-        .select("id, username, nama_lengkap, telegram_chat_id, telegram_username, telegram_linked_at")
-        .ilike("username", targetUsername.trim())
-        .limit(1)
-        .single();
-      row = (data as TelegramStatusRow) || null;
+      try {
+        const s3 = getSupabaseServer3Admin();
+        const { data } = await s3
+          .from("anggota_p2kd")
+          .select("id, username, nama_lengkap, telegram_chat_id, telegram_username, telegram_linked_at")
+          .or(`username.ilike.${targetUsername.trim()},nik.eq.${targetUsername.trim()}`)
+          .limit(1)
+          .maybeSingle();
+        row = (data as TelegramStatusRow) || null;
+      } catch (errS3) {
+        console.warn("Supabase Server 3 fallback:", errS3);
+      }
     }
 
     if (!row) {

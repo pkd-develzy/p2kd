@@ -16,26 +16,35 @@ export async function POST(req: Request) {
 
     const cleanUsername = String(username).trim();
 
-    if (process.env.DATABASE_URL) {
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      await pool.query(
-        `UPDATE anggota_p2kd 
-         SET telegram_chat_id = NULL, telegram_username = NULL, telegram_linked_at = NULL 
-         WHERE LOWER(username) = LOWER($1)`,
-        [cleanUsername]
-      );
-      await pool.end();
+    const s3Url = process.env.DIRECT_SERVER3_URL || process.env.DATABASE_SERVER3_URL;
+    if (s3Url) {
+      try {
+        const pool = new Pool({ connectionString: s3Url, ssl: { rejectUnauthorized: false } });
+        await pool.query(
+          `UPDATE anggota_p2kd 
+           SET telegram_chat_id = NULL, telegram_username = NULL, telegram_linked_at = NULL 
+           WHERE LOWER(username) = LOWER($1) OR nik = $1`,
+          [cleanUsername]
+        );
+        await pool.end();
+      } catch (errPool) {
+        console.warn("Direct PG Server 3 unlink fallback:", errPool);
+      }
     }
 
-    const s3 = getSupabaseServer3Admin();
-    await s3
-      .from("anggota_p2kd")
-      .update({
-        telegram_chat_id: null,
-        telegram_username: null,
-        telegram_linked_at: null,
-      })
-      .ilike("username", cleanUsername);
+    try {
+      const s3 = getSupabaseServer3Admin();
+      await s3
+        .from("anggota_p2kd")
+        .update({
+          telegram_chat_id: null,
+          telegram_username: null,
+          telegram_linked_at: null,
+        })
+        .or(`username.ilike.${cleanUsername},nik.eq.${cleanUsername}`);
+    } catch (errS3) {
+      console.warn("Supabase Server 3 unlink fallback:", errS3);
+    }
 
     return NextResponse.json({
       success: true,

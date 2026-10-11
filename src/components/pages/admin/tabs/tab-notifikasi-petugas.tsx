@@ -526,7 +526,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                  <label className="flex items-center gap-1 text-xs font-semibold text-slate-300 mb-1">
                     <Clock className="w-3.5 h-3.5 text-blue-400" />
                     Jadwal Mulai Publikasi (WIB) *
                   </label>
@@ -543,7 +543,7 @@ export const TabNotifikasiPetugas: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1 flex items-center gap-1">
+                  <label className="flex items-center gap-1 text-xs font-semibold text-slate-300 mb-1">
                     <Clock className="w-3.5 h-3.5 text-rose-400" />
                     Jadwal Berakhir Publikasi (WIB - Opsional)
                   </label>
